@@ -1,1 +1,472 @@
-{}
+{
+  "common": {
+    "appName": "Devgame",
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "back": "Back",
+    "retry": "Retry",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "energy": "Energy",
+    "debt": "Debt",
+    "reputation": "Reputation",
+    "commits": "Commits",
+    "sprint": "Sprint",
+    "turn": "Turn",
+    "score": "Score"
+  },
+  "nav": {
+    "play": "Play",
+    "leaderboard": "Leaderboard",
+    "profile": "Profile",
+    "home": "Home"
+  },
+  "landing": {
+    "title": "Devgame",
+    "tagline": "A roguelike whose dungeon is a Git graph.",
+    "pitch": "You work on a project that never ends, one commit at a time. At every node there are two ways forward: by hand, slow and safe, or with the AI, fast and risky. Rival bots push to the same main branch, and the repository has no room for everyone.",
+    "cta": "Start a run",
+    "howItWorksTitle": "How it works",
+    "howItWorks1": "Pick a profile, then walk the graph node by node.",
+    "howItWorks2": "Every commit is a bet, and the odds are shown before you take it.",
+    "howItWorks3": "Stay ahead long enough to get a bot fired, or leave before it does.",
+    "dailySeed": "In daily seed mode everyone plays the same map, every UTC day."
+  },
+  "play": {
+    "title": "New run",
+    "chooseProfile": "Profile",
+    "chooseMode": "Mode",
+    "modeClassic": "Classic",
+    "modeDaily": "Daily seed",
+    "modeDailyHint": "The same map for everyone until midnight UTC.",
+    "start": "Start",
+    "resume": "Resume",
+    "abandon": "Abandon",
+    "runInProgress": "A run is already in progress.",
+    "loading": "Loading the run…",
+    "signInToSubmit": "Sign in to send your score to the leaderboard.",
+    "submitScore": "Submit score",
+    "submitted": "Score submitted",
+    "runOver": "Run over",
+    "burnout": "Burnout: there is no energy left.",
+    "fired": "Fired: the bots left you behind.",
+    "playAgain": "Play again"
+  },
+  "hud": {
+    "resourcesTitle": "Resources",
+    "energy": "Energy",
+    "energyValue": "{value} / {max}",
+    "debt": "Debt",
+    "debtRange": "between {min} and {max}",
+    "debtHint": "Debt is only shown exactly once a linter is watching.",
+    "reputation": "Reputation",
+    "commits": "Commits",
+    "sprint": "Sprint {sprint}",
+    "turn": "Turn {turn}",
+    "crunch": "Crunch",
+    "crunchHint": "Low energy: every roll takes a malus.",
+    "actionsTitle": "Actions",
+    "craftCommit": "Craft commit",
+    "craftCommitHint": "Expensive in energy, rarely misses.",
+    "aiCommit": "AI commit",
+    "aiCommitHint": "Cheap, goes further, adds debt.",
+    "review": "Review",
+    "reviewHint": "Reads back AI commits and repays debt.",
+    "devops": "DevOps",
+    "devopsTitle": "DevOps tree",
+    "devopsHint": "Automating costs no turn, only points.",
+    "devopsPoints": "{count, plural, one {# DevOps point} other {# DevOps points}}",
+    "devopsLevel": "Level {level} / {max}",
+    "rivalsTitle": "Rivals",
+    "rivalPace": "Pace",
+    "rivalReputation": "Reputation",
+    "rivalFiring": "Firing",
+    "rivalFired": "Fired",
+    "rivalStalled": "Stalled",
+    "rivalLeadWarning": "The leading bot is pulling away: a few more turns and you are out.",
+    "logTitle": "Log",
+    "logEmpty": "Nothing to tell yet.",
+    "logTurn": "turn {turn}",
+    "relicTitle": "Project improvement",
+    "relicSubtitle": "The sprint is over. Pick one.",
+    "relicTake": "Take",
+    "conflictTitle": "Merge conflict",
+    "conflictManual": "Resolve by hand",
+    "conflictManualHint": "Costs energy and can fail.",
+    "conflictAi": "Let the machine do it",
+    "conflictAiHint": "Always works, adds debt, and may hide a bug.",
+    "previewSuccess": "Success: {percent} %",
+    "previewEnergy": "Energy: {cost}",
+    "previewProgress": "Progress: {min} to {max}",
+    "previewDebt": "Debt: {min} to {max}",
+    "previewBotsAdvance": "The rivals advance",
+    "previewFreeMove": "Free move",
+    "previewBlocked": "Unavailable",
+    "previewNotes": "How it adds up",
+    "unreviewed": "{count, plural, one {# unread commit} other {# unread commits}}",
+    "overextended": "Two features open",
+    "overextendedHint": "Everything costs double and every roll is penalised.",
+    "chooseNode": "Pick the next commit on the graph."
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "tabClassic": "Classic",
+    "tabDaily": "Daily seed",
+    "columnRank": "Rank",
+    "columnPlayer": "Player",
+    "columnScore": "Score",
+    "columnSprints": "Sprints",
+    "columnBots": "Bots fired",
+    "columnDate": "Date",
+    "empty": "No scores yet.",
+    "yourRank": "Your rank: {rank}",
+    "dailyResetsIn": "New seed in {time}"
+  },
+  "profile": {
+    "title": "Profile",
+    "level": "Level {level}",
+    "xp": "XP",
+    "xpProgress": "{current} / {next} XP",
+    "unlocks": "Unlocked",
+    "runHistory": "Run history",
+    "columnDate": "Date",
+    "columnMode": "Mode",
+    "columnProfile": "Profile",
+    "columnScore": "Score",
+    "columnSprints": "Sprints",
+    "columnBots": "Bots fired",
+    "empty": "No runs recorded.",
+    "displayName": "Display name"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "A sign-in link, no password.",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "sendLink": "Send me the link",
+    "linkSent": "Link sent",
+    "linkSentHint": "Open the link on this device to finish signing in.",
+    "googleButton": "Continue with Google",
+    "devHint": "In development, the link is printed to the server log."
+  },
+  "errors": {
+    "unauthorized": "Sign in to do that.",
+    "invalid": "Invalid data. Check the form, then try again.",
+    "rate-limited": "Too many requests. Wait a few seconds.",
+    "rejected": "The server rejected this run: the replay does not produce the same result.",
+    "conflict": "Another session took over. Reload to see the current state.",
+    "internal": "Server error. Try again in a moment.",
+    "offline": "Offline. The run continues locally and will sync later.",
+    "unknown": "Unknown error. Try again."
+  },
+  "game": {
+    "skills": {
+      "unit_tests": {
+        "name": "Unit tests",
+        "desc": "Makes AI commits more reliable and absorbs a rejected PR without losing ground."
+      },
+      "ci_cd": {
+        "name": "CI/CD",
+        "desc": "Merges no longer cost energy."
+      },
+      "linter": {
+        "name": "Linter",
+        "desc": "Shows the exact debt and repays a little of it every turn."
+      },
+      "pair_programming": {
+        "name": "Pair programming",
+        "desc": "Cheaper reviews, and one failed roll can be rolled again each sprint."
+      },
+      "copilot_v2": {
+        "name": "Copilot v2",
+        "desc": "Lowers the risk of AI commits."
+      },
+      "coffee": {
+        "name": "Coffee",
+        "desc": "Raises the energy ceiling."
+      },
+      "strict_typing": {
+        "name": "Strict typing",
+        "desc": "Improves every roll, whichever way you commit."
+      },
+      "documentation": {
+        "name": "Documentation",
+        "desc": "One review reads back more AI commits."
+      },
+      "hot_reload": {
+        "name": "Hot reload",
+        "desc": "Improves craft commits."
+      },
+      "observability": {
+        "name": "Observability",
+        "desc": "Warns a node ahead of a production bug, and shortens the hotfix."
+      },
+      "rubber_duck": {
+        "name": "Rubber duck",
+        "desc": "Improves resolving conflicts by hand."
+      },
+      "feature_flags": {
+        "name": "Feature flags",
+        "desc": "Absorbs forced rebases: no node to replay."
+      },
+      "sprint_final": {
+        "name": "Final sprint",
+        "desc": "Trophy from the Fast one. A successful AI commit jumps one more node."
+      },
+      "lynx_eye": {
+        "name": "Lynx eye",
+        "desc": "Trophy from the Reviewer. Technical debt is shown exactly."
+      },
+      "rebase_master": {
+        "name": "Rebase master",
+        "desc": "Trophy from the Force-pusher. A forced rebase costs no node."
+      },
+      "zen": {
+        "name": "Zen",
+        "desc": "Trophy from the Tortoise. Merges give back more energy."
+      }
+    },
+    "relics": {
+      "agile_board": {
+        "name": "Agile board",
+        "desc": "Raises the energy ceiling for the rest of the run."
+      },
+      "tech_radar": {
+        "name": "Tech radar",
+        "desc": "Improves every roll."
+      },
+      "code_freeze": {
+        "name": "Code freeze",
+        "desc": "Repays part of the debt right away, then a little every turn."
+      },
+      "onboarding": {
+        "name": "Onboarding",
+        "desc": "Grants DevOps points immediately."
+      },
+      "retrospective": {
+        "name": "Retrospective",
+        "desc": "One review reads back one more AI commit."
+      },
+      "war_room": {
+        "name": "War room",
+        "desc": "Warns a node ahead of a production bug."
+      },
+      "four_day_week": {
+        "name": "Four-day week",
+        "desc": "Merges give back more energy."
+      },
+      "open_source": {
+        "name": "Open source",
+        "desc": "Lowers the risk of AI commits."
+      }
+    },
+    "devops": {
+      "ci": {
+        "name": "CI",
+        "desc": "Tests on every commit: each level improves every roll."
+      },
+      "cd": {
+        "name": "CD",
+        "desc": "Merges no longer cost energy."
+      },
+      "auto_linter": {
+        "name": "Auto linter",
+        "desc": "Makes debt exact and lets it decay on its own."
+      },
+      "dependabot": {
+        "name": "Dependabot",
+        "desc": "The obsolete library never comes up again."
+      },
+      "auto_rebase": {
+        "name": "Auto rebase",
+        "desc": "A forced rebase no longer costs a replayed node."
+      },
+      "review_bot": {
+        "name": "Review bot",
+        "desc": "A free review comes around regularly, and more and more often."
+      },
+      "monitoring": {
+        "name": "Monitoring",
+        "desc": "Warns a node ahead of a production bug, and shortens the hotfix."
+      }
+    },
+    "bots": {
+      "rapide": {
+        "name": "The Fast one",
+        "desc": "Moves fast, breaks things often, and leaves you its debt on the way out."
+      },
+      "reviewer": {
+        "name": "The Reviewer",
+        "desc": "Steady pace, rejects your PRs. Going for it first eases the whole run."
+      },
+      "force_pusher": {
+        "name": "The Force-pusher",
+        "desc": "Pushes to main without warning and makes you replay nodes."
+      },
+      "tortue": {
+        "name": "The Tortoise",
+        "desc": "Slow, debt-free, and the hardest one to get fired."
+      }
+    },
+    "profiles": {
+      "junior": {
+        "name": "Junior",
+        "desc": "Boundless energy, no instinct for when the machine is lying."
+      },
+      "senior": {
+        "name": "Senior",
+        "desc": "Solid craft commits and steady in a conflict; wary of the AI."
+      },
+      "vibe_coder": {
+        "name": "Vibe coder",
+        "desc": "All in on the AI, unsure by hand, and the debt is blurrier than ever."
+      },
+      "devops": {
+        "name": "DevOps",
+        "desc": "Starts with CI already in place."
+      }
+    },
+    "nodes": {
+      "sprint_start": {
+        "name": "Sprint start",
+        "desc": "The anchor the sprint opens on. You stand there, you do not code there."
+      },
+      "commit": {
+        "name": "Commit",
+        "desc": "An ordinary node on main: by hand or with the AI."
+      },
+      "refactor": {
+        "name": "Refactor",
+        "desc": "Detour that repays technical debt."
+      },
+      "risky": {
+        "name": "Risky node",
+        "desc": "Goes further, against a noticeably worse roll."
+      },
+      "chore": {
+        "name": "Chore",
+        "desc": "Detour that draws an everyday event."
+      },
+      "fork": {
+        "name": "Fork",
+        "desc": "A node on main a feature branch leaves from."
+      },
+      "feature": {
+        "name": "Feature",
+        "desc": "A node on a branch: while it is open, main does not move."
+      },
+      "feature_merge": {
+        "name": "Feature merge",
+        "desc": "The last node of the branch: merging it grants the skill."
+      },
+      "hotfix": {
+        "name": "Hotfix",
+        "desc": "Branch forced by a production bug, to walk before you pick up again."
+      },
+      "sprint_merge": {
+        "name": "Sprint merge",
+        "desc": "Back into main at the end of the sprint. The merge is the rest."
+      },
+      "release": {
+        "name": "Release",
+        "desc": "The last node of the sprint. Resolving it closes the sprint."
+      }
+    },
+    "events": {
+      "merge_conflict": {
+        "title": "Merge conflict",
+        "log": "two versions of the same file, only one survives"
+      },
+      "prod_bug": {
+        "title": "Production bug",
+        "log": "prod is red, opening a hotfix"
+      },
+      "pr_rejected": {
+        "title": "PR rejected",
+        "log": "a reviewer closed the PR without a word"
+      },
+      "forced_rebase": {
+        "title": "Forced rebase",
+        "log": "someone pushed to main while we were coding"
+      },
+      "helpful_colleague": {
+        "title": "Helpful colleague",
+        "log": "a colleague walks by and unblocks it in two minutes"
+      },
+      "perfect_lib": {
+        "title": "The perfect library",
+        "log": "found the lib that does exactly that"
+      },
+      "no_meeting_friday": {
+        "title": "No-meeting Friday",
+        "log": "no meetings today, actual coding happens"
+      },
+      "obsolete_lib": {
+        "title": "Obsolete library",
+        "log": "the lib has been deprecated for two years"
+      }
+    },
+    "log": {
+      "_comment": "The node, skill, bot, relic and devops parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
+      "node_done": {
+        "craft": "{node} written by hand",
+        "ai": "{node} generated by the machine, it compiles"
+      },
+      "branch_merged": "branch merged into main",
+      "branch_merged_skill": "{skill} merged into main",
+      "skill_gained": "{skill} acquired for the rest of the run",
+      "conflict": "two branches, one file",
+      "conflict_resolved": {
+        "manual": "conflict untangled by hand, line by line",
+        "ai": "conflict resolved by the machine, unread"
+      },
+      "rebase_absorbed": "rebase absorbed by automation",
+      "rebase_forced": "forced rebase, one node to replay",
+      "pr_countered": "PR challenged, the tests settled it",
+      "pr_rejected": "PR refused, back one node",
+      "reviewed": "{count, plural, one {# commit reviewed} other {# commits reviewed}}",
+      "reviewed_free": "{count, plural, one {# commit reviewed by the bot} other {# commits reviewed by the bot}}",
+      "injected": {
+        "feature": "{count, plural, one {# node added to the feature} other {# nodes added to the feature}}",
+        "subfeature": "{count, plural, one {# node added to the subfeature} other {# nodes added to the subfeature}}",
+        "hotfix": "hotfix opened, {count, plural, one {# node to walk} other {# nodes to walk}}",
+        "refactor": "{count, plural, one {# refactor node forced} other {# refactor nodes forced}}"
+      },
+      "debt_explosion": "the debt blew up, refactor is mandatory",
+      "bot_mistake": "{bot} got it wrong and is back a step",
+      "bot_fired": "{bot} is gone, we inherit its branches",
+      "bot_arrived": "{bot} joins the repository",
+      "sprint_ended": "sprint {sprint} closed",
+      "sprint_started": "sprint {sprint} opened",
+      "relic_chosen": "{relic} added to the project",
+      "devops_placed": "{devops} moved up to level {level}",
+      "game_over": {
+        "burnout": "out of energy, the run stops at {score}",
+        "fired": "fired, the run stops at {score}"
+      }
+    },
+    "notes": {
+      "build": "Build {points}",
+      "automation": "Automation {points}",
+      "debt": "Debt {points}",
+      "crunch": "Crunch {points}",
+      "overextended": "Two open features {points}",
+      "free_refactor": "Refactor free, courtesy of the last craft commit",
+      "merge_free": "Merge costs no energy",
+      "overextended_cost": "Energy doubled: two open features",
+      "pair_programming": "Review made cheaper by pair programming",
+      "fresh": "Reviewed while fresh: better repayment",
+      "nothing_to_review": "Nothing to review",
+      "repays_debt": "Repays debt",
+      "risky_node": "Risky node: worse roll, more progress",
+      "chore_node": "Chore: draws an event",
+      "grants_skill": "Merging this branch grants a skill",
+      "devops_cost": "{points, plural, one {# DevOps point} other {# DevOps points}}",
+      "devops_maxed": "Maximum level reached ({max})",
+      "devops_too_expensive": "Not enough points: {points} needed",
+      "hidden_bug_risk": "{percent} % chance of a hidden bug"
+    }
+  }
+}

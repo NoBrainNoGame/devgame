@@ -146,6 +146,8 @@ export type Phase =
   | { kind: "game_over"; reason: GameOverReason };
 
 export interface LogLine {
+  /** Monotonic within a run. Append-only, so it is a stable React key. */
+  seq: number;
   turn: number;
   /** Rendered as a commit subject: `feat:`, `fix:`, `chore:`… */
   kind: "feat" | "fix" | "chore" | "merge" | "revert" | "note";
@@ -196,6 +198,7 @@ export interface RunState {
 
   phase: Phase;
   log: LogLine[];
+  nextLogSeq: number;
 }
 
 export type PlayerAction =
@@ -244,9 +247,9 @@ export type GameEvent =
   | { type: "ambient_event"; eventId: AmbientEventId }
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
   | { type: "bot_advanced"; botId: BotId; from: number; to: number }
-  | { type: "bot_mistake"; botId: BotId }
+  | { type: "bot_mistake"; botId: BotId; archetype: BotArchetypeId }
   | { type: "reputation"; botId: BotId; value: number; firingProgress: number }
-  | { type: "bot_fired"; botId: BotId; rewards: BotFiringRewards }
+  | { type: "bot_fired"; botId: BotId; archetype: BotArchetypeId; rewards: BotFiringRewards }
   | { type: "bot_arrived"; botId: BotId; archetype: BotArchetypeId }
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }

@@ -115,6 +115,7 @@ export function createRun(options: CreateRunOptions): RunState {
 
     phase: { kind: "choose_action" },
     log: [],
+    nextLogSeq: 0,
   };
 
   const context = createContext(state);

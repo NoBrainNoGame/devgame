@@ -101,7 +101,7 @@ export function advanceBots(context: RuleContext): void {
 
     if (context.rng.chance(def.mistakePct)) {
       bot.stalled = 1;
-      emit(context, { type: "bot_mistake", botId: bot.id });
+      emit(context, { type: "bot_mistake", botId: bot.id, archetype: bot.archetype });
       // The Rapide's mistakes land on a shared `main`, so they land on you.
       if (def.pressure.debtPerMistake !== undefined) {
         addDebt(context, def.pressure.debtPerMistake);
@@ -182,6 +182,7 @@ function fireBot(context: RuleContext, bot: Bot): void {
   emit(context, {
     type: "bot_fired",
     botId: bot.id,
+    archetype: bot.archetype,
     rewards: { xp, commits, debt: bot.debt, skillId: def.trophy },
   });
 

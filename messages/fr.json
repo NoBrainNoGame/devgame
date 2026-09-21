@@ -1,1 +1,472 @@
-{}
+{
+  "common": {
+    "appName": "Devgame",
+    "loading": "Chargement…",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "back": "Retour",
+    "retry": "Réessayer",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "energy": "Énergie",
+    "debt": "Dette",
+    "reputation": "Réputation",
+    "commits": "Commits",
+    "sprint": "Sprint",
+    "turn": "Tour",
+    "score": "Score"
+  },
+  "nav": {
+    "play": "Jouer",
+    "leaderboard": "Classement",
+    "profile": "Profil",
+    "home": "Accueil"
+  },
+  "landing": {
+    "title": "Devgame",
+    "tagline": "Un roguelike dont le donjon est un graphe Git.",
+    "pitch": "Vous codez sur un projet qui ne se termine jamais, commit par commit. À chaque nœud, deux façons d'avancer : à la main, lent et sûr, ou avec l'IA, rapide et risqué. Des bots rivaux poussent sur la même branche main, et le dépôt n'a pas de place pour tout le monde.",
+    "cta": "Lancer une run",
+    "howItWorksTitle": "Comment ça marche",
+    "howItWorks1": "Choisissez un profil, puis avancez sur le graphe nœud par nœud.",
+    "howItWorks2": "Chaque commit est un pari, et les chances de réussite sont affichées avant le choix.",
+    "howItWorks3": "Tenez la tête assez longtemps pour faire virer un bot, ou partez avant lui.",
+    "dailySeed": "En mode graine du jour, tout le monde joue la même carte, chaque jour UTC."
+  },
+  "play": {
+    "title": "Nouvelle run",
+    "chooseProfile": "Profil",
+    "chooseMode": "Mode",
+    "modeClassic": "Classique",
+    "modeDaily": "Graine du jour",
+    "modeDailyHint": "La même carte pour tout le monde jusqu'à minuit UTC.",
+    "start": "Commencer",
+    "resume": "Reprendre",
+    "abandon": "Abandonner",
+    "runInProgress": "Une run est déjà en cours.",
+    "loading": "Chargement de la partie…",
+    "signInToSubmit": "Connectez-vous pour envoyer votre score au classement.",
+    "submitScore": "Envoyer le score",
+    "submitted": "Score envoyé",
+    "runOver": "Run terminée",
+    "burnout": "Burnout : il ne reste plus d'énergie.",
+    "fired": "Licenciement : les bots vous ont distancé.",
+    "playAgain": "Rejouer"
+  },
+  "hud": {
+    "resourcesTitle": "Ressources",
+    "energy": "Énergie",
+    "energyValue": "{value} / {max}",
+    "debt": "Dette",
+    "debtRange": "entre {min} et {max}",
+    "debtHint": "La dette n'est affichée précisément qu'avec un linter.",
+    "reputation": "Réputation",
+    "commits": "Commits",
+    "sprint": "Sprint {sprint}",
+    "turn": "Tour {turn}",
+    "crunch": "Crunch",
+    "crunchHint": "Énergie basse : tous les jets sont pénalisés.",
+    "actionsTitle": "Actions",
+    "craftCommit": "Commit artisanal",
+    "craftCommitHint": "Coûte cher en énergie, rate rarement.",
+    "aiCommit": "Commit IA",
+    "aiCommitHint": "Pas cher, avance plus loin, ajoute de la dette.",
+    "review": "Review",
+    "reviewHint": "Relit les commits IA et rembourse de la dette.",
+    "devops": "DevOps",
+    "devopsTitle": "Arbre DevOps",
+    "devopsHint": "Automatiser ne coûte pas de tour, seulement des points.",
+    "devopsPoints": "{count, plural, one {# point DevOps} other {# points DevOps}}",
+    "devopsLevel": "Niveau {level} / {max}",
+    "rivalsTitle": "Rivaux",
+    "rivalPace": "Rythme",
+    "rivalReputation": "Réputation",
+    "rivalFiring": "Licenciement",
+    "rivalFired": "Viré",
+    "rivalStalled": "À l'arrêt",
+    "rivalLeadWarning": "Le bot de tête vous distance : encore quelques tours et vous partez.",
+    "logTitle": "Journal",
+    "logEmpty": "Rien à raconter pour l'instant.",
+    "logTurn": "tour {turn}",
+    "relicTitle": "Amélioration de projet",
+    "relicSubtitle": "Le sprint est clos. Choisissez-en une.",
+    "relicTake": "Prendre",
+    "conflictTitle": "Conflit de merge",
+    "conflictManual": "Résoudre à la main",
+    "conflictManualHint": "Coûte de l'énergie et peut rater.",
+    "conflictAi": "Laisser la machine faire",
+    "conflictAiHint": "Passe toujours, ajoute de la dette et peut cacher un bug.",
+    "previewSuccess": "Réussite : {percent} %",
+    "previewEnergy": "Énergie : {cost}",
+    "previewProgress": "Progression : {min} à {max}",
+    "previewDebt": "Dette : {min} à {max}",
+    "previewBotsAdvance": "Les rivaux avancent",
+    "previewFreeMove": "Coup gratuit",
+    "previewBlocked": "Indisponible",
+    "previewNotes": "Détail du calcul",
+    "unreviewed": "{count, plural, one {# commit non relu} other {# commits non relus}}",
+    "overextended": "Deux features ouvertes",
+    "overextendedHint": "Tout coûte le double et tous les jets sont pénalisés.",
+    "chooseNode": "Choisissez le prochain commit sur le graphe."
+  },
+  "leaderboard": {
+    "title": "Classement",
+    "tabClassic": "Classique",
+    "tabDaily": "Graine du jour",
+    "columnRank": "Rang",
+    "columnPlayer": "Joueur",
+    "columnScore": "Score",
+    "columnSprints": "Sprints",
+    "columnBots": "Bots virés",
+    "columnDate": "Date",
+    "empty": "Aucun score pour l'instant.",
+    "yourRank": "Votre rang : {rank}",
+    "dailyResetsIn": "Nouvelle graine dans {time}"
+  },
+  "profile": {
+    "title": "Profil",
+    "level": "Niveau {level}",
+    "xp": "XP",
+    "xpProgress": "{current} / {next} XP",
+    "unlocks": "Débloqués",
+    "runHistory": "Historique des runs",
+    "columnDate": "Date",
+    "columnMode": "Mode",
+    "columnProfile": "Profil",
+    "columnScore": "Score",
+    "columnSprints": "Sprints",
+    "columnBots": "Bots virés",
+    "empty": "Aucune run enregistrée.",
+    "displayName": "Nom affiché"
+  },
+  "login": {
+    "title": "Connexion",
+    "subtitle": "Un lien de connexion, pas de mot de passe.",
+    "emailLabel": "Adresse e-mail",
+    "emailPlaceholder": "vous@exemple.com",
+    "sendLink": "Recevoir le lien",
+    "linkSent": "Lien envoyé",
+    "linkSentHint": "Ouvrez le lien depuis cet appareil pour terminer la connexion.",
+    "googleButton": "Continuer avec Google",
+    "devHint": "En développement, le lien est écrit dans le log du serveur."
+  },
+  "errors": {
+    "unauthorized": "Connectez-vous pour faire ça.",
+    "invalid": "Données invalides. Vérifiez le formulaire, puis réessayez.",
+    "rate-limited": "Trop de requêtes. Attendez quelques secondes.",
+    "rejected": "Le serveur a rejeté cette run : le rejeu ne donne pas le même résultat.",
+    "conflict": "Une autre partie a pris la main. Rechargez pour voir l'état à jour.",
+    "internal": "Erreur serveur. Réessayez dans un instant.",
+    "offline": "Hors ligne. La partie continue en local et se synchronisera plus tard.",
+    "unknown": "Erreur inconnue. Réessayez."
+  },
+  "game": {
+    "skills": {
+      "unit_tests": {
+        "name": "Tests unitaires",
+        "desc": "Fiabilise les commits IA et encaisse une PR rejetée sans perdre de terrain."
+      },
+      "ci_cd": {
+        "name": "CI/CD",
+        "desc": "Les merges ne coûtent plus d'énergie."
+      },
+      "linter": {
+        "name": "Linter",
+        "desc": "Affiche la dette exacte et en rembourse un peu à chaque tour."
+      },
+      "pair_programming": {
+        "name": "Pair programming",
+        "desc": "Reviews moins chères, et un jet raté peut être relancé une fois par sprint."
+      },
+      "copilot_v2": {
+        "name": "Copilot v2",
+        "desc": "Réduit le risque des commits IA."
+      },
+      "coffee": {
+        "name": "Café",
+        "desc": "Relève le plafond d'énergie."
+      },
+      "strict_typing": {
+        "name": "Typage strict",
+        "desc": "Améliore tous les jets, quelle que soit la façon de commiter."
+      },
+      "documentation": {
+        "name": "Documentation",
+        "desc": "Une review relit davantage de commits IA."
+      },
+      "hot_reload": {
+        "name": "Hot reload",
+        "desc": "Améliore les commits artisanaux."
+      },
+      "observability": {
+        "name": "Observabilité",
+        "desc": "Prévient un nœud à l'avance d'un bug en production, et raccourcit le hotfix."
+      },
+      "rubber_duck": {
+        "name": "Canard en plastique",
+        "desc": "Améliore la résolution des conflits à la main."
+      },
+      "feature_flags": {
+        "name": "Feature flags",
+        "desc": "Absorbe les rebases forcés : plus aucun nœud à rejouer."
+      },
+      "sprint_final": {
+        "name": "Sprint final",
+        "desc": "Trophée du Rapide. Un commit IA réussi saute un nœud de plus."
+      },
+      "lynx_eye": {
+        "name": "Œil de lynx",
+        "desc": "Trophée du Reviewer. La dette technique s'affiche au point près."
+      },
+      "rebase_master": {
+        "name": "Maître du rebase",
+        "desc": "Trophée du Force-pusher. Un rebase forcé ne coûte plus de nœud."
+      },
+      "zen": {
+        "name": "Zen",
+        "desc": "Trophée de la Tortue. Les merges rendent plus d'énergie."
+      }
+    },
+    "relics": {
+      "agile_board": {
+        "name": "Tableau agile",
+        "desc": "Relève le plafond d'énergie pour le reste de la run."
+      },
+      "tech_radar": {
+        "name": "Radar technologique",
+        "desc": "Améliore tous les jets."
+      },
+      "code_freeze": {
+        "name": "Gel du code",
+        "desc": "Rembourse une partie de la dette tout de suite, puis un peu à chaque tour."
+      },
+      "onboarding": {
+        "name": "Onboarding",
+        "desc": "Donne des points DevOps immédiatement."
+      },
+      "retrospective": {
+        "name": "Rétrospective",
+        "desc": "Une review relit un commit IA de plus."
+      },
+      "war_room": {
+        "name": "War room",
+        "desc": "Prévient un nœud à l'avance d'un bug en production."
+      },
+      "four_day_week": {
+        "name": "Semaine de quatre jours",
+        "desc": "Les merges rendent plus d'énergie."
+      },
+      "open_source": {
+        "name": "Open source",
+        "desc": "Réduit le risque des commits IA."
+      }
+    },
+    "devops": {
+      "ci": {
+        "name": "CI",
+        "desc": "Des tests à chaque commit : chaque niveau améliore tous les jets."
+      },
+      "cd": {
+        "name": "CD",
+        "desc": "Les merges ne coûtent plus d'énergie."
+      },
+      "auto_linter": {
+        "name": "Linter automatique",
+        "desc": "Rend la dette exacte et la fait décroître toute seule."
+      },
+      "dependabot": {
+        "name": "Dependabot",
+        "desc": "La bibliothèque obsolète ne sort plus jamais du chapeau."
+      },
+      "auto_rebase": {
+        "name": "Auto-rebase",
+        "desc": "Un rebase forcé ne coûte plus de nœud rejoué."
+      },
+      "review_bot": {
+        "name": "Bot de review",
+        "desc": "Une review gratuite revient régulièrement, et de plus en plus souvent."
+      },
+      "monitoring": {
+        "name": "Monitoring",
+        "desc": "Prévient un nœud à l'avance d'un bug en production, et raccourcit le hotfix."
+      }
+    },
+    "bots": {
+      "rapide": {
+        "name": "Le Rapide",
+        "desc": "Avance vite, se trompe souvent, et vous laisse sa dette en partant."
+      },
+      "reviewer": {
+        "name": "Le Reviewer",
+        "desc": "Rythme modéré, rejette vos PR. Le viser en premier soulage toute la run."
+      },
+      "force_pusher": {
+        "name": "Le Force-pusher",
+        "desc": "Pousse sur main sans prévenir et vous fait rejouer des nœuds."
+      },
+      "tortue": {
+        "name": "La Tortue",
+        "desc": "Lente, sans dette, et la plus difficile à faire virer."
+      }
+    },
+    "profiles": {
+      "junior": {
+        "name": "Junior",
+        "desc": "Beaucoup d'énergie, aucun instinct pour savoir quand la machine ment."
+      },
+      "senior": {
+        "name": "Senior",
+        "desc": "Commits artisanaux solides et bonne tenue dans les conflits ; se méfie de l'IA."
+      },
+      "vibe_coder": {
+        "name": "Vibe coder",
+        "desc": "Tout à l'IA, la main hésitante, et une dette plus floue que jamais."
+      },
+      "devops": {
+        "name": "DevOps",
+        "desc": "Démarre avec de la CI déjà en place."
+      }
+    },
+    "nodes": {
+      "sprint_start": {
+        "name": "Début de sprint",
+        "desc": "Le point d'ancrage du sprint. On s'y tient, on n'y code pas."
+      },
+      "commit": {
+        "name": "Commit",
+        "desc": "Un nœud ordinaire de main : à la main ou à l'IA."
+      },
+      "refactor": {
+        "name": "Refacto",
+        "desc": "Détour qui rembourse de la dette technique."
+      },
+      "risky": {
+        "name": "Nœud risqué",
+        "desc": "Avance plus loin, contre un jet nettement moins sûr."
+      },
+      "chore": {
+        "name": "Corvée",
+        "desc": "Détour qui déclenche un événement du quotidien."
+      },
+      "fork": {
+        "name": "Fork",
+        "desc": "Un nœud de main d'où part une branche de feature."
+      },
+      "feature": {
+        "name": "Feature",
+        "desc": "Un nœud de branche : tant qu'elle est ouverte, main n'avance pas."
+      },
+      "feature_merge": {
+        "name": "Merge de feature",
+        "desc": "Le dernier nœud de la branche : le merger donne la compétence."
+      },
+      "hotfix": {
+        "name": "Hotfix",
+        "desc": "Branche imposée par un bug en production, à parcourir avant de reprendre."
+      },
+      "sprint_merge": {
+        "name": "Merge de sprint",
+        "desc": "Le retour dans main en fin de sprint. Le merge est le repos."
+      },
+      "release": {
+        "name": "Release",
+        "desc": "Le dernier nœud du sprint. Le résoudre clôt le sprint."
+      }
+    },
+    "events": {
+      "merge_conflict": {
+        "title": "Conflit de merge",
+        "log": "deux versions du même fichier, une seule survivra"
+      },
+      "prod_bug": {
+        "title": "Bug en production",
+        "log": "la prod est rouge, ouverture d'un hotfix"
+      },
+      "pr_rejected": {
+        "title": "PR rejetée",
+        "log": "un relecteur a fermé la PR sans commentaire"
+      },
+      "forced_rebase": {
+        "title": "Rebase forcé",
+        "log": "quelqu'un a poussé sur main pendant qu'on codait"
+      },
+      "helpful_colleague": {
+        "title": "Collègue serviable",
+        "log": "un collègue passe et débloque le truc en deux minutes"
+      },
+      "perfect_lib": {
+        "title": "La bibliothèque parfaite",
+        "log": "trouvé la lib qui fait exactement ça"
+      },
+      "no_meeting_friday": {
+        "title": "Vendredi sans réunion",
+        "log": "aucune réunion aujourd'hui, on code enfin"
+      },
+      "obsolete_lib": {
+        "title": "Bibliothèque obsolète",
+        "log": "la lib est dépréciée depuis deux ans"
+      }
+    },
+    "log": {
+      "_comment": "Les paramètres node, skill, bot, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
+      "node_done": {
+        "craft": "{node} écrit à la main",
+        "ai": "{node} généré par la machine, ça compile"
+      },
+      "branch_merged": "branche intégrée à main",
+      "branch_merged_skill": "{skill} intégré à main",
+      "skill_gained": "{skill} acquis pour le reste de la run",
+      "conflict": "deux branches, un seul fichier",
+      "conflict_resolved": {
+        "manual": "conflit démêlé à la main, ligne par ligne",
+        "ai": "conflit résolu par la machine, sans relire"
+      },
+      "rebase_absorbed": "rebase absorbé par l'automatisation",
+      "rebase_forced": "rebase forcé, un nœud à rejouer",
+      "pr_countered": "PR contestée, les tests ont tranché",
+      "pr_rejected": "PR refusée, retour en arrière",
+      "reviewed": "{count, plural, one {# commit relu} other {# commits relus}}",
+      "reviewed_free": "{count, plural, one {# commit relu par le bot} other {# commits relus par le bot}}",
+      "injected": {
+        "feature": "{count, plural, one {# nœud ajouté à la feature} other {# nœuds ajoutés à la feature}}",
+        "subfeature": "{count, plural, one {# nœud ajouté à la sous-feature} other {# nœuds ajoutés à la sous-feature}}",
+        "hotfix": "hotfix ouvert, {count, plural, one {# nœud à parcourir} other {# nœuds à parcourir}}",
+        "refactor": "{count, plural, one {# nœud de refacto imposé} other {# nœuds de refacto imposés}}"
+      },
+      "debt_explosion": "la dette a explosé, refacto obligatoire",
+      "bot_mistake": "{bot} s'est trompé et repart en arrière",
+      "bot_fired": "{bot} est parti, on hérite de ses branches",
+      "bot_arrived": "{bot} rejoint le dépôt",
+      "sprint_ended": "sprint {sprint} clos",
+      "sprint_started": "sprint {sprint} ouvert",
+      "relic_chosen": "{relic} ajouté au projet",
+      "devops_placed": "{devops} passé au niveau {level}",
+      "game_over": {
+        "burnout": "plus d'énergie, la run s'arrête à {score}",
+        "fired": "licencié, la run s'arrête à {score}"
+      }
+    },
+    "notes": {
+      "build": "Build {points}",
+      "automation": "Automatisation {points}",
+      "debt": "Dette {points}",
+      "crunch": "Crunch {points}",
+      "overextended": "Deux features ouvertes {points}",
+      "free_refactor": "Refacto offerte par le dernier commit artisanal",
+      "merge_free": "Merge gratuit en énergie",
+      "overextended_cost": "Énergie doublée : deux features ouvertes",
+      "pair_programming": "Review allégée par le pair programming",
+      "fresh": "Relu à chaud : remboursement bonifié",
+      "nothing_to_review": "Rien à relire",
+      "repays_debt": "Rembourse de la dette",
+      "risky_node": "Nœud risqué : jet moins sûr, progression plus grande",
+      "chore_node": "Corvée : déclenche un événement",
+      "grants_skill": "Merger cette branche donne une compétence",
+      "devops_cost": "{points, plural, one {# point DevOps} other {# points DevOps}}",
+      "devops_maxed": "Niveau maximum atteint ({max})",
+      "devops_too_expensive": "Pas assez de points : {points} requis",
+      "hidden_bug_risk": "{percent} % de risque de bug caché"
+    }
+  }
+}

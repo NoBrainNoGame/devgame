@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 
 import "../globals.css";
@@ -38,9 +39,21 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
 
   return (
-    <html lang={locale} className="dark" suppressHydrationWarning>
-      <body className={`${mono.variable} bg-background text-foreground antialiased`}>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+    // The font variable goes on <html>, not <body>: the Tailwind theme resolves
+    // `--font-mono` at `:root`, and a reference to a variable defined lower in
+    // the tree is invalid there — which silently drops the whole declaration.
+    <html
+      lang={locale}
+      className={`dark overflow-x-clip ${mono.variable}`}
+      suppressHydrationWarning
+    >
+      {/* Radix portals its overlays into <body>, and an overlay that sticks out
+          past the right edge would otherwise widen the document and scroll the
+          whole app sideways. */}
+      <body className="overflow-x-clip bg-background font-mono text-foreground antialiased">
+        <NextIntlClientProvider>
+          <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
+        </NextIntlClientProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>

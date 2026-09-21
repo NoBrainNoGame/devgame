@@ -22,8 +22,11 @@
  ---break---
  */
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
+    /* `--font-heading: var(--font-sans)` and the matching self-referential
+       `--font-sans` line that shadcn generates here were removed: a variable
+       that points at itself resolves to nothing and shadows the real
+       definition further down. Fonts are declared once, in the Devgame theme
+       block at the end of this file. */
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -149,4 +152,44 @@
   html {
     @apply font-sans;
     }
+}
+/*
+ * Devgame theme.
+ *
+ * The site is an IDE and the game is a git graph, so the whole thing is set in
+ * one monospace face and coloured like `git log --graph`.
+ *
+ * The hex values below are duplicated in `src/game/render/theme.ts`, because
+ * Pixi cannot read CSS custom properties. `tests/theme.test.ts` compares the two
+ * lists — change a colour here and it will tell you where the other copy is.
+ */
+@theme {
+  --font-mono: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-bg: #14161b;
+  --color-panel: #1b1e25;
+  --color-line: #2f343f;
+
+  --color-branch-main: #62c073;
+  --color-branch-feature: #5aa9e6;
+  --color-branch-hotfix: #e2645a;
+  --color-branch-bot: #d06dc4;
+
+  --color-debt: #e0a458;
+  --color-energy: #f5d76e;
+  --color-ai: #9b7fd4;
+}
+
+/* Darker and cooler than shadcn's neutral, to match the canvas behind it. */
+.dark {
+  --background: #14161b;
+  --card: #1b1e25;
+  --popover: #1b1e25;
+  --border: #2f343f;
+  --input: #2f343f;
+  --muted: #21242c;
+  --secondary: #21242c;
+  --sidebar: #1b1e25;
+  --sidebar-border: #2f343f;
 }
