@@ -1,0 +1,131 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!src/generated",
+      "!.next",
+      "!node_modules",
+      "!bun.lock",
+      "!prisma/migrations",
+      "!**/*.css"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":BUN:",
+              ":NODE:",
+              ":BLANK_LINE:",
+              ":PACKAGE:",
+              ":BLANK_LINE:",
+              ["@/**"],
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsole": {
+          "level": "warn",
+          "options": {
+            "allow": ["warn", "error", "info"]
+          }
+        }
+      },
+      "style": {
+        "useImportType": "error",
+        "useConst": "error",
+        "noNonNullAssertion": "warn"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/game/core/**", "src/game/content/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "pixi.js": "The rules engine must stay pure: no rendering here.",
+                  "react": "The rules engine must stay pure: no UI here.",
+                  "zustand": "The rules engine must stay pure: no store here.",
+                  "@ghom/booyah": "The rules engine must stay pure: chips live in src/game/chips.",
+                  "zod": "Schemas belong to src/game/dto, not to the rules engine."
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "@/lib/*",
+                      "@/components/*",
+                      "@/app/*",
+                      "@/game/chips/*",
+                      "@/game/render/*",
+                      "@/game/bridge/*"
+                    ],
+                    "message": "src/game/core and src/game/content may only import from src/game/core and src/game/content."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["scripts/**", "src/game/core/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
+  "css": {
+    "formatter": {
+      "enabled": false
+    },
+    "linter": {
+      "enabled": false
+    }
+  }
+}

@@ -1,0 +1,28 @@
+# Local development database only. Production runs on the shared Postgres
+# described in docs/hosting.md.
+
+services:
+  postgres:
+    # Plain Postgres: the schema uses no extension beyond the defaults.
+    image: postgres:17-alpine
+    container_name: devgame-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devgame
+      POSTGRES_PASSWORD: devgame
+      POSTGRES_DB: devgame
+    ports:
+      # 5433 on the host to avoid clashing with a local Postgres on 5432.
+      # Override when you run several of these projects side by side:
+      #   POSTGRES_PORT=5434 bun run db:up
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devgame -d devgame"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:

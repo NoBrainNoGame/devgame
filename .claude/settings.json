@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run check)",
+      "Bash(bun run typecheck)",
+      "Bash(bun run lint)",
+      "Bash(bun test)",
+      "Bash(bun test:*)",
+      "Bash(bun run build)",
+      "Bash(bun x tsc --noEmit)",
+      "Bash(bun x prisma validate)",
+      "Bash(bun x prisma format)",
+      "Bash(bun x prisma migrate status)",
+      "Bash(bun x prisma generate)",
+      "Bash(docker compose ps)",
+      "Bash(docker compose logs:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)"
+    ]
+  }
+}

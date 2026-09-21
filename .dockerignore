@@ -1,0 +1,26 @@
+# Everything the build produces itself, or must never reach the image.
+node_modules
+.next
+out
+build
+
+# Secrets. The container is configured by the platform, never a baked-in .env —
+# an image carrying credentials leaks them to anyone who can pull it.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.claude
+.vercel
+
+# Not read at build time.
+docs
+tests
+*.md
+
+# Local artefacts
+*.tsbuildinfo
+.DS_Store
+coverage
