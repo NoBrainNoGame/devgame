@@ -21,14 +21,32 @@ describe("sprint generation", () => {
     expect(broken).toEqual([]);
   });
 
-  test("the main line stays inside the configured length", () => {
+  test("main is the anchor, one merge per feature, and the tail", () => {
+    const { featuresPerSprint } = BALANCE.map;
+
     for (let i = 0; i < 200; i++) {
       const state = newRun(`len-${i}`);
-      expect(state.sprintLength).toBeGreaterThanOrEqual(BALANCE.sprintLength.min);
-      expect(state.sprintLength).toBeLessThanOrEqual(BALANCE.sprintLength.max);
-
       const main = Object.values(state.nodes).filter((node) => node.lane === 0);
+
       expect(main.length).toBe(state.sprintLength);
+      expect(state.sprintLength).toBeGreaterThanOrEqual(featuresPerSprint.min + 3);
+      expect(state.sprintLength).toBeLessThanOrEqual(featuresPerSprint.max + 3);
+
+      // Nothing is written on the trunk. Every node there is a merge or an end.
+      for (const node of main) {
+        expect(["sprint_start", "feature_merge", "sprint_merge", "release"]).toContain(node.kind);
+      }
+    }
+  });
+
+  test("no commit is ever made on main", () => {
+    for (let i = 0; i < 200; i++) {
+      const commits = sprintNodes(`trunk-${i}`).filter((node) => node.kind === "commit");
+      expect(commits.length).toBeGreaterThan(0);
+      for (const node of commits) {
+        expect(node.lane).not.toBe(0);
+        expect(node.branchId).toBeDefined();
+      }
     }
   });
 
@@ -40,12 +58,20 @@ describe("sprint generation", () => {
     }
   });
 
-  test("the first sprint always opens a feature branch", () => {
+  test("every merge offers a choice of features, and some of them carry a skill", () => {
     for (let i = 0; i < 100; i++) {
       const state = newRun(`feature-${i}`);
       const features = Object.values(state.branches).filter((branch) => branch.kind === "feature");
       expect(features.length).toBeGreaterThan(0);
-      for (const branch of features) expect(branch.skillId).toBeDefined();
+      expect(features.some((branch) => branch.skillId !== undefined)).toBe(true);
+
+      // Every node on main that is not an end offers at least two features.
+      for (const node of Object.values(state.nodes)) {
+        if (node.lane !== 0) continue;
+        if (node.kind === "sprint_merge" || node.kind === "release") continue;
+        if (node.kind === "feature_merge" && node.next.length === 1) continue;
+        expect(node.next.length).toBeGreaterThanOrEqual(BALANCE.map.featureOptions.min);
+      }
     }
   });
 
@@ -124,7 +150,7 @@ describe("paths through a sprint", () => {
     }
   });
 
-  test("resolving a branch's last node merges it, even when nodes were skipped", () => {
+  test("a feature is delivered by its merge commit, not by its last commit", () => {
     // Taking a sub-branch skips some of its parent's nodes by design. Requiring
     // every node to have been walked left the parent open for the rest of the
     // run: the skill it promised was swallowed, and `isOverextended` stayed
@@ -148,14 +174,12 @@ describe("paths through a sprint", () => {
 
       for (const branch of Object.values(played.state.branches)) {
         if (branch.kind !== "feature" && branch.kind !== "subfeature") continue;
+        if (!branch.open && !branch.merged) continue;
 
-        const last = branch.nodeIds[branch.nodeIds.length - 1];
-        if (last === undefined) continue;
-        if (played.state.nodes[last]?.status !== "done") continue;
-
+        const mergeResolved = played.state.nodes[branch.mergeInto]?.status === "done";
         checked += 1;
-        expect(branch.merged).toBe(true);
-        expect(branch.open).toBe(false);
+        expect(branch.merged).toBe(mergeResolved);
+        expect(branch.open).toBe(!mergeResolved);
       }
     }
 

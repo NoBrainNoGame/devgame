@@ -129,9 +129,9 @@
     "unreviewed": "{count, plural, one {# unread commit} other {# unread commits}}",
     "overextended": "Two features open",
     "overextendedHint": "Everything costs double and every roll is penalised.",
-    "chooseNode": "Where next? Each option opens a different commit.",
-    "openBranch": "New branch",
-    "openBranchHint": "Opens a feature branch. While it is open, main does not move; merging it grants its skill.",
+    "chooseNode": "Which feature do you build? Each branch is a different road to the next merge.",
+    "openBranch": "New feature",
+    "openBranchHint": "Opens a branch off main. Nothing is ever written anywhere else: merging it is what delivers, and what grants its skill.",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "zoomFit": "Fit the whole history",
@@ -545,7 +545,7 @@
       },
       "commit": {
         "name": "Commit",
-        "desc": "An ordinary node on main: by hand or with the AI."
+        "desc": "One more step inside the feature you are building."
       },
       "refactor": {
         "name": "Refactor",
@@ -560,16 +560,16 @@
         "desc": "Detour that draws an everyday event."
       },
       "fork": {
-        "name": "Fork",
-        "desc": "A node on main a feature branch leaves from."
+        "name": "New feature",
+        "desc": "A branch leaving main: that is where all the work happens."
       },
       "feature": {
-        "name": "Feature",
-        "desc": "A node on a branch: while it is open, main does not move."
+        "name": "Feature commit",
+        "desc": "One more step inside the feature you are building."
       },
       "feature_merge": {
         "name": "Feature merge",
-        "desc": "The last node of the branch: merging it grants the skill."
+        "desc": "The end of the feature: landing it on main delivers what it promised."
       },
       "hotfix": {
         "name": "Hotfix",

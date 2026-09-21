@@ -40,15 +40,15 @@ export function mainLineNodes(state: RunState, sprint: number): MapNode[] {
  * adding to the count.
  */
 export function mainLineIndexOf(state: RunState, node: MapNode): number {
-  const main = mainLineNodes(state, node.sprint);
-
-  let index = 0;
-  for (let i = 0; i < main.length; i += 1) {
-    const trunk = main[i];
-    if (trunk === undefined || trunk.depth > node.depth) break;
-    index = i;
+  // Counted rather than sorted. This runs on every node the player resolves,
+  // and the node map grows for the whole run: sorting it here made a long run
+  // measurably slower with every turn.
+  let seen = 0;
+  for (const candidate of Object.values(state.nodes)) {
+    if (candidate.sprint !== node.sprint || candidate.lane !== 0) continue;
+    if (candidate.depth <= node.depth) seen += 1;
   }
-  return index;
+  return Math.max(0, seen - 1);
 }
 
 /** Every node in the run, in a stable order. Iteration order must never vary. */
@@ -63,7 +63,9 @@ export function allNodes(state: RunState): MapNode[] {
  * candidacy. Nodes already resolved keep their `done` status.
  */
 export function setCandidates(state: RunState, ids: readonly NodeId[]): void {
-  for (const node of allNodes(state)) {
+  // Unsorted on purpose: clearing a status is order-independent, and this walks
+  // every node in the run every time the player moves.
+  for (const node of Object.values(state.nodes)) {
     if (node.status === "candidate") node.status = "locked";
   }
   for (const id of ids) {

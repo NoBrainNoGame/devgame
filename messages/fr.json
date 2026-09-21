@@ -129,9 +129,9 @@
     "unreviewed": "{count, plural, one {# commit non relu} other {# commits non relus}}",
     "overextended": "Deux features ouvertes",
     "overextendedHint": "Tout coûte le double et tous les jets sont pénalisés.",
-    "chooseNode": "Où continuer ? Chaque option ouvre un commit différent.",
-    "openBranch": "Nouvelle branche",
-    "openBranchHint": "Ouvre une branche de feature. Tant qu'elle est ouverte, main n'avance pas ; la merger donne sa compétence.",
+    "chooseNode": "Quelle feature construire ? Chaque branche est un chemin différent jusqu'au prochain merge.",
+    "openBranch": "Nouvelle feature",
+    "openBranchHint": "Ouvre une branche depuis main. Rien ne s'écrit ailleurs : c'est en la mergeant qu'on livre, et qu'on gagne sa compétence.",
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
     "zoomFit": "Voir tout l'historique",
@@ -545,7 +545,7 @@
       },
       "commit": {
         "name": "Commit",
-        "desc": "Un nœud ordinaire de main : à la main ou à l'IA."
+        "desc": "Un pas de plus dans la feature en cours."
       },
       "refactor": {
         "name": "Refacto",
@@ -560,16 +560,16 @@
         "desc": "Détour qui déclenche un événement du quotidien."
       },
       "fork": {
-        "name": "Fork",
-        "desc": "Un nœud de main d'où part une branche de feature."
+        "name": "Nouvelle feature",
+        "desc": "Une branche part de main : c'est là que tout le travail se fait."
       },
       "feature": {
-        "name": "Feature",
-        "desc": "Un nœud de branche : tant qu'elle est ouverte, main n'avance pas."
+        "name": "Commit de feature",
+        "desc": "Un pas de plus dans la feature en cours."
       },
       "feature_merge": {
         "name": "Merge de feature",
-        "desc": "Le dernier nœud de la branche : le merger donne la compétence."
+        "desc": "La fin de la feature : la brancher sur main livre ce qu'elle promettait."
       },
       "hotfix": {
         "name": "Hotfix",

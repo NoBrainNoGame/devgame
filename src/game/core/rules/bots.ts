@@ -9,15 +9,25 @@ import type { Bot, RunState } from "@/game/core/types";
 /**
  * The rivals.
  *
- * They do not walk the graph; they hold a position on `main` and grind forward
- * at a fixed pace, which is exactly what makes them frightening — they never
- * get a conflict and never need coffee. What they do get is mistakes, and a
- * mistake is a visible event you can read in the log and exploit.
+ * They work the way you do — commits, then a merge — but in a column of their
+ * own, and they never touch a branch of yours. What makes them frightening is
+ * that they never get a conflict and never need coffee. What they do get is
+ * mistakes, and a mistake is a visible event you can read in the log and
+ * exploit.
+ *
+ * Their column is to the left of `main`, one lane per rival, so the graph shows
+ * four repositories being written side by side and you can see at a glance who
+ * is further up.
  *
  * Reputation is deliberately not raw pace. Multiplying it by how much of your
  * code has actually been read is what stops "review" from being a turn thrown
  * away, and what makes the careful build a real strategy rather than a tax.
  */
+
+/** A rival's pace this sprint: its archetype's, plus what every sprint adds. */
+function paceForSprint(archetype: BotArchetypeId, sprint: number): number {
+  return BOT_ARCHETYPES[archetype].speedPct + BALANCE.bots.speedPerSprint * (sprint - 1);
+}
 
 export function sortedBots(state: RunState): Bot[] {
   return Object.keys(state.bots)
@@ -55,8 +65,11 @@ export function spawnBotsForSprint(context: RuleContext): void {
     state.bots[id] = {
       id,
       archetype,
-      speedPct: def.speedPct + BALANCE.bots.speedPerSprint * (state.sprint - 1),
+      speedPct: paceForSprint(archetype, state.sprint),
       acc: 0,
+      lane: botLane(state),
+      featureCommits: 0,
+      depth: currentDepth(state),
       sprintProgress: 0,
       totalProgress: 0,
       stalled: 0,
@@ -71,14 +84,45 @@ export function spawnBotsForSprint(context: RuleContext): void {
   }
 }
 
-/** Puts every surviving bot back at the top of the new sprint's main line. */
+/**
+ * The leftmost free column for a new rival.
+ *
+ * Negative, and never -1: that one belongs to hotfixes, which have to read as
+ * an interruption rather than as one more rival.
+ */
+function botLane(state: RunState): number {
+  const taken = new Set(aliveBots(state).map((bot) => bot.lane));
+  let lane = -2;
+  while (taken.has(lane)) lane -= 1;
+  return lane;
+}
+
+/** Where the graph currently is, so a newcomer starts level rather than below. */
+function currentDepth(state: RunState): number {
+  const head = state.nodes[state.player.nodeId];
+  return head?.depth ?? 0;
+}
+
+/**
+ * Puts every surviving rival back at the start of the new sprint, and speeds
+ * them all up.
+ *
+ * The speed-up used to be applied only when a rival *spawned*, and the roster
+ * caps at four — so nothing escalated after sprint four. A player who had
+ * collected every skill, every DevOps level and every relic could then not be
+ * killed by anything, which is what a run that never ends looks like from the
+ * inside.
+ */
 export function resetBotsForSprint(state: RunState): void {
   for (const bot of aliveBots(state)) {
+    bot.speedPct = paceForSprint(bot.archetype, state.sprint);
     bot.sprintProgress = 0;
     bot.acc = 0;
     bot.stalled = 0;
     bot.firingProgress = 0;
     bot.reputation = 0;
+    bot.featureCommits = 0;
+    bot.depth = Math.max(bot.depth, currentDepth(state));
   }
 }
 
@@ -89,7 +133,10 @@ export function resetBotsForSprint(state: RunState): void {
  */
 export function advanceBots(context: RuleContext): void {
   const { state } = context;
-  const ceiling = Math.max(0, state.sprintLength - 1);
+  forgetOldBotNodes(state);
+  // `main` is the anchor, one merge per feature, then the sprint merge and the
+  // release: the features on offer are what is left.
+  const ceiling = Math.max(0, state.sprintLength - 3);
 
   for (const bot of aliveBots(state)) {
     if (bot.stalled > 0) {
@@ -111,12 +158,12 @@ export function advanceBots(context: RuleContext): void {
 
     const before = bot.sprintProgress;
     bot.acc += bot.speedPct;
+
     while (bot.acc >= 100) {
       bot.acc -= 100;
-      if (bot.sprintProgress < ceiling) {
-        bot.sprintProgress += 1;
-        bot.totalProgress += 1;
-      }
+      if (bot.sprintProgress >= ceiling) continue;
+
+      writeBotCommit(context, bot);
     }
 
     if (bot.sprintProgress !== before) {
@@ -128,6 +175,56 @@ export function advanceBots(context: RuleContext): void {
       });
     }
   }
+}
+
+/**
+ * Drops rival commits that have scrolled far out of view.
+ *
+ * They are decoration: nothing walks them and no rule reads them. Keeping every
+ * one of them makes the state copy the reducer takes on each action grow
+ * without bound, which a long run feels as a slow turn.
+ */
+function forgetOldBotNodes(state: RunState): void {
+  const floor = (state.nodes[state.player.nodeId]?.depth ?? 0) - BALANCE.bots.historyDepth;
+  if (floor <= 0) return;
+
+  for (const id of Object.keys(state.botNodes)) {
+    if ((state.botNodes[id]?.depth ?? 0) < floor) delete state.botNodes[id];
+  }
+}
+
+/**
+ * One commit of rival work, and the merge that closes its feature.
+ *
+ * A rival's progress in the race is features delivered, exactly as the
+ * player's is — so it has to actually write the commits and land the merge,
+ * rather than have a number go up.
+ */
+function writeBotCommit(context: RuleContext, bot: Bot): void {
+  const { state } = context;
+
+  bot.depth += 1;
+  bot.featureCommits += 1;
+
+  const merged = bot.featureCommits >= BALANCE.bots.featureLength;
+  const id = `bot:${state.nextBotNodeSerial}`;
+  state.nextBotNodeSerial += 1;
+
+  state.botNodes[id] = {
+    id,
+    botId: bot.id,
+    kind: merged ? "feature_merge" : "commit",
+    lane: bot.lane,
+    depth: bot.depth,
+  };
+
+  if (merged) {
+    bot.featureCommits = 0;
+    bot.sprintProgress += 1;
+    bot.totalProgress += 1;
+  }
+
+  emit(context, { type: "bot_committed", botId: bot.id, nodeId: id, merged });
 }
 
 /**

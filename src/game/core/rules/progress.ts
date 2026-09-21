@@ -64,9 +64,9 @@ export function resolveNode(
   if (node.kind === "squash") performSquash(context);
   if (node.kind === "docs") writeDocs(context);
 
-  emit(context, { type: "node_done", nodeId: node.id, mode, kind: node.kind });
+  closeBranchesInto(context, node);
 
-  if (node.branchId !== undefined) closeBranchIfDone(context, node);
+  emit(context, { type: "node_done", nodeId: node.id, mode, kind: node.kind });
 }
 
 /**
@@ -129,34 +129,36 @@ function writeDocs(context: RuleContext): void {
 }
 
 /**
- * A branch is merged the moment its last node resolves — not when every node in
- * it has been walked.
+ * Closes every open branch that merges into this node, and hands over what it
+ * promised.
  *
- * The difference matters because a sub-branch is an alternative route through
- * its parent: taking it deliberately skips some of the parent's nodes. Requiring
- * all of them left the branch open for the rest of the run, silently swallowed
- * the skill it promised, and kept `isOverextended` true forever.
+ * A merge is the end of a feature — that is the whole reason `main` carries
+ * nothing else. So a branch is not closed by walking its last commit; it is
+ * closed by the merge commit the branch lands in, which for a feature is a node
+ * on `main` and for a branch off a branch is its parent's last commit.
+ *
+ * Only branches that were actually opened are merged. The other options at the
+ * same merge were never written, so they are not delivered either.
  */
-function closeBranchIfDone(context: RuleContext, node: MapNode): void {
-  const branchId = node.branchId;
-  if (branchId === undefined) return;
+function closeBranchesInto(context: RuleContext, node: MapNode): void {
+  const { state } = context;
 
-  const branch = context.state.branches[branchId];
-  if (branch === undefined || branch.merged) return;
+  for (const branchId of Object.keys(state.branches).sort()) {
+    const branch = state.branches[branchId];
+    if (branch === undefined || branch.merged || !branch.open) continue;
+    if (branch.mergeInto !== node.id) continue;
 
-  const last = branch.nodeIds[branch.nodeIds.length - 1];
-  if (last !== node.id) return;
+    branch.merged = true;
+    branch.open = false;
 
-  branch.merged = true;
-  branch.open = false;
+    emit(context, {
+      type: "branch_merged",
+      branchId,
+      ...(branch.skillId === undefined ? {} : { skillId: branch.skillId }),
+    });
 
-  emit(context, {
-    type: "branch_merged",
-    branchId,
-    ...(branch.skillId === undefined ? {} : { skillId: branch.skillId }),
-  });
-
-  if (branch.skillId !== undefined) grantSkill(context, branch.skillId);
+    if (branch.skillId !== undefined) grantSkill(context, branch.skillId);
+  }
 }
 
 /**

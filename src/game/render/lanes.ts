@@ -44,25 +44,3 @@ export function drawEdge(
 
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
 }
-
-/**
- * A dashed vertical run, drawn by hand because Pixi 8 strokes are solid.
- *
- * The caller strokes: every dash of a lane shares one colour and width, and one
- * stroke call for the whole lane is both cheaper and visually consistent.
- */
-export function dashedLine(graphics: Graphics, x: number, y1: number, y2: number): void {
-  const span = y2 - y1;
-  const towards = Math.sign(span);
-  if (towards === 0) return;
-
-  const period = DASH + DASH_GAP;
-  for (let travelled = 0; travelled < Math.abs(span); travelled += period) {
-    const from = y1 + towards * travelled;
-    const to = y1 + towards * Math.min(travelled + DASH, Math.abs(span));
-    graphics.moveTo(x, from).lineTo(x, to);
-  }
-}
-
-const DASH = 13;
-const DASH_GAP = 9;

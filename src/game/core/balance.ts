@@ -14,9 +14,6 @@ import type { CommitMode, NodeKind } from "@/game/core/types";
  * different number, bumped by hand when the *shape* of a save changes.)
  */
 export const BALANCE = {
-  /** Main-line nodes per sprint, inclusive. */
-  sprintLength: { min: 12, max: 18 },
-
   energy: {
     base: 16,
     /** Energy spent to resolve a node, by kind. */
@@ -39,11 +36,23 @@ export const BALANCE = {
     /** Added on top of the node cost, by how you chose to write the commit. */
     commitCost: { craft: 2, ai: 1 } satisfies Record<CommitMode, number>,
     reviewCost: 2,
-    /** Energy returned by merging a feature branch and by a sprint merge. */
-    featureMergeRegen: 7,
-    sprintMergeRegen: 8,
-    /** Fraction of the maximum handed back when a sprint closes. */
-    sprintEndRegenRatio: 1,
+    /**
+     * Energy returned by merging a feature branch and by a sprint merge.
+     *
+     * A feature is three to five commits at two energy each, so the merge has
+     * to give back less than that or the trunk-based shape turns energy into a
+     * resource that only ever goes up.
+     */
+    featureMergeRegen: 3,
+    sprintMergeRegen: 6,
+    /**
+     * Fraction of the maximum handed back when a sprint closes.
+     *
+     * Not a full tank. Every feature now ends in a merge, so merge energy is
+     * guaranteed rather than earned by choosing to branch — and a full refill
+     * on top of that made a run that never ends.
+     */
+    sprintEndRegenRatio: 0.7,
     /** At or below this, every roll takes the crunch malus. */
     crunchThreshold: 4,
     crunchMalusPoints: 15,
@@ -171,10 +180,25 @@ export const BALANCE = {
     max: 4,
     /** Added to a newcomer's pace for every sprint already survived. */
     speedPerSprint: 12,
-    /** Reputation the player must hold to make progress towards firing a bot. */
-    firingReputationThreshold: 4,
-    /** How far a bot must be ahead to count as overtaking the player. */
-    overtakenGap: 4,
+    /** Commits a rival writes before it merges the feature they belong to. */
+    featureLength: 4,
+    /**
+     * How far below the player a rival's commits are kept before being
+     * forgotten. They are decoration — nothing walks them — and an unbounded
+     * history makes every action's state copy a little slower than the last.
+     */
+    historyDepth: 60,
+    /**
+     * Reputation the player must hold to make progress towards firing a bot,
+     * and how far a rival must be ahead to count as overtaking.
+     *
+     * Both are measured in *features delivered*, of which a sprint holds three
+     * to five. They used to be measured in main-line nodes, of which a sprint
+     * held twelve to eighteen — on the new scale the old numbers meant "lead by
+     * the whole sprint", so nobody was ever fired and nobody ever fell behind.
+     */
+    firingReputationThreshold: 2,
+    overtakenGap: 2,
     /** Turns overtaken before the player is fired. */
     overtakenStreak: 6,
     /** XP for a firing, multiplied by the sprint it happened in. */
@@ -212,17 +236,19 @@ export const BALANCE = {
   },
 
   map: {
-    /** Chance in percent of a feature branch forking at an eligible depth. */
-    forkPct: 55,
-    featureBranchLength: { min: 3, max: 4 },
-    /** Chance in percent that a feature branch carries a sub-branch. */
-    subBranchPct: 30,
-    /** Chance in percent of a one-node detour beside a main-line node. */
-    detourPct: 45,
+    /** Features delivered into `main` per sprint. One merge each. */
+    featuresPerSprint: { min: 3, max: 5 },
+    /** Branches offered at each merge. Two is a choice, three is a fork. */
+    featureOptions: { min: 2, max: 3 },
+    /** Commits inside one feature branch. */
+    featureBranchLength: { min: 2, max: 4 },
+    /** Chance in percent that a branch carries a skill, while the pool has one. */
+    skillBranchPct: 60,
+    /** Chance in percent that a feature branch carries a branch of its own. */
+    subBranchPct: 25,
+    /** Chance in percent of a one-node detour beside a commit inside a feature. */
+    detourPct: 35,
     detourWeights: { refactor: 22, risky: 18, chore: 18, squash: 14, docs: 14, rebase: 14 },
-    /** Depth from which forks may start, and how much room a fork needs. */
-    firstForkDepth: 1,
-    tailReserve: 6,
   },
 } as const;
 

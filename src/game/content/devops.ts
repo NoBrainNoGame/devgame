@@ -40,7 +40,9 @@ export const DEVOPS: Record<DevopsId, DevopsDef> = {
   cd: {
     id: "cd",
     maxLevel: 1,
-    perLevel: { mergeEnergyDiscount: 99 },
+    // See `ci_cd`: merges are mandatory now, so they pay back more rather than
+    // costing nothing.
+    perLevel: { mergeRegenBonus: 2 },
     cost: [2],
   },
   auto_linter: {

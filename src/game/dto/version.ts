@@ -45,8 +45,15 @@ export const SAVE_VERSION = 1;
  *     main line, as a rival's always was, instead of a count of every node
  *     resolved; branch and detour work no longer advances it. Three detour
  *     kinds added — squash, docs, rebase — which changes every map.
+ * 5 — trunk-based. Nothing is written on `main`: it is a spine of merges, one
+ *     per feature, and every commit lives on a branch that leaves it and comes
+ *     back. A merge is the end of a feature rather than one more commit, so the
+ *     decision at every step is which feature to build. Rivals write their own
+ *     commits and land their own merges in a column each, and they get faster
+ *     every sprint rather than only at spawn. The energy economy was retuned
+ *     around merges being mandatory instead of optional.
  */
-export const RULES_EPOCH = 4;
+export const RULES_EPOCH = 5;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

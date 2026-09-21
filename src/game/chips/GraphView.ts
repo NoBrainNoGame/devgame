@@ -3,13 +3,13 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import { mainLineNodes } from "@/game/core/map/graph";
-import type { MapNode, NodeId } from "@/game/core/types";
+import type { BotNode, MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit, drawPending } from "@/game/render/drawNode";
-import { dashedLine, drawEdge } from "@/game/render/lanes";
+import { drawEdge } from "@/game/render/lanes";
 import { glyphStyle, labelStyle } from "@/game/render/textStyles";
 import {
+  EDGE_WIDTH,
   labelledKind,
   laneColour,
   NODE_RADIUS,
@@ -133,7 +133,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const nodes = this.revealed();
 
     this.drawEdges(nodes);
-    this.drawBotLane();
+    this.drawBotNodes();
 
     const live = new Set<NodeId>();
     for (const node of nodes) {
@@ -169,47 +169,61 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   }
 
   /**
-   * `main` as the rivals are pushing it, drawn as a dashed continuation.
+   * What the rivals have written, in a column each, to the left of `main`.
    *
-   * They do not create commits here: a bot's progress is a pace, not a list of
-   * things it wrote, and drawing nodes for it would claim more than the engine
-   * knows. A dashed lane is the honest version, and it reads the way an
-   * unfetched remote does.
-   *
-   * It is drawn wherever `main` is not already solid — behind you as well as
-   * ahead. A rival that is behind, while you are off on a branch, would
-   * otherwise have its ref floating against an empty column.
+   * They used to be a dashed line and a floating label — a pace, drawn as an
+   * absence. Now they write commits and land merges exactly as you do, so the
+   * graph shows four repositories being built side by side and "the Rapide is
+   * two features ahead" is something you can see rather than read.
    */
-  private drawBotLane(): void {
+  private drawBotNodes(): void {
     this.botLane.clear();
 
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
 
-    const main = mainLineNodes(state, state.sprint);
-    if (main.length === 0) return;
-
-    const lead = Math.max(
-      0,
-      ...Object.values(state.bots)
-        .filter((bot) => !bot.fired)
-        .map((bot) => bot.sprintProgress),
-    );
-
-    // One row past the leader, because a ref sits between two nodes while its
-    // accumulator fills.
-    const upTo = Math.min(lead + 1, main.length - 1);
-
-    for (let index = 0; index < upTo; index += 1) {
-      const below = main[index];
-      const above = main[index + 1];
-      if (below === undefined || above === undefined) continue;
-      if (below.status === "done" && above.status === "done") continue;
-
-      dashedLine(this.botLane, nodeX(0), nodeY(below.depth), nodeY(above.depth));
+    const byLane = new Map<number, BotNode[]>();
+    for (const id of Object.keys(state.botNodes).sort()) {
+      const node = state.botNodes[id];
+      if (node === undefined) continue;
+      const column = byLane.get(node.lane);
+      if (column === undefined) byLane.set(node.lane, [node]);
+      else column.push(node);
     }
 
-    this.botLane.stroke({ width: 3, color: THEME.bot, alpha: 0.32, cap: "round" });
+    for (const column of byLane.values()) {
+      column.sort((a, b) => a.depth - b.depth);
+
+      for (let i = 0; i < column.length - 1; i += 1) {
+        const below = column[i];
+        const above = column[i + 1];
+        if (below === undefined || above === undefined) continue;
+        this.botLane
+          .moveTo(nodeX(below.lane), nodeY(below.depth))
+          .lineTo(nodeX(above.lane), nodeY(above.depth));
+      }
+    }
+
+    this.botLane.stroke({ width: EDGE_WIDTH - 1, color: THEME.bot, alpha: 0.45, cap: "round" });
+
+    for (const column of byLane.values()) {
+      for (const node of column) {
+        const x = nodeX(node.lane);
+        const y = nodeY(node.depth);
+
+        if (node.kind === "feature_merge") {
+          this.botLane
+            .circle(x, y, NODE_RADIUS - 3)
+            .fill({ color: THEME.bot, alpha: 0.85 })
+            .stroke({ width: 2, color: THEME.background });
+        } else {
+          this.botLane
+            .circle(x, y, NODE_RADIUS - 6)
+            .fill({ color: THEME.background })
+            .stroke({ width: 2, color: THEME.bot, alpha: 0.7 });
+        }
+      }
+    }
   }
 
   private drawPendingNode(wave: number): void {

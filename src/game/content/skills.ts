@@ -56,8 +56,10 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   ci_cd: {
     id: "ci_cd",
     source: "feature",
-    // Large enough to cover any merge cost; merge costs clamp at zero.
-    effects: { mergeEnergyDiscount: 99 },
+    // A bigger rest, not a free one. Every feature now ends in a merge, so a
+    // discount that covered the whole cost made energy a resource that only
+    // ever went up.
+    effects: { mergeRegenBonus: 2 },
     unlockCost: 0,
   },
   linter: {

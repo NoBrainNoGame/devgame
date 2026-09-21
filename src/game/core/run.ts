@@ -90,7 +90,9 @@ export function createRun(options: CreateRunOptions): RunState {
       docsCharges: 0,
     },
     bots: {},
+    botNodes: {},
     nextBotSerial: 1,
+    nextBotNodeSerial: 1,
 
     skills: [...profile.startingSkills].sort(),
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),

@@ -6,7 +6,8 @@ import type { MapNode, NodeId } from "@/game/core/types";
  * This is `git log --graph` logic: `main` holds lane 0, every branch takes the
  * leftmost free column to its right, and a column is free again once the branch
  * occupying it has merged. Hotfixes go the other way, into negative lanes, so
- * an emergency reads as an interruption rather than as more feature work.
+ * an emergency reads as an interruption rather than as more feature work, and
+ * the rivals go further left still — see `botLane`.
  *
  * It lives in `core` rather than in the renderer because the tests assert on it
  * and because two branches sharing a column is a generation bug, not a drawing
@@ -63,11 +64,21 @@ function toSpans(nodes: MapNode[]): Span[] {
   return spans;
 }
 
+/**
+ * The kinds that live on `main`.
+ *
+ * No `commit`: nothing is written on the trunk any more. What sits there is
+ * the anchor, one merge per feature delivered, and the tail of the sprint —
+ * `main` is the base every feature leaves from, not a place you work.
+ */
 function isMainKind(node: MapNode): boolean {
+  // A merge that belongs to a branch is the end of a sub-feature, drawn in its
+  // parent's column — not on the trunk.
+  if (node.branchId !== undefined) return false;
+
   return (
     node.kind === "sprint_start" ||
-    node.kind === "commit" ||
-    node.kind === "fork" ||
+    node.kind === "feature_merge" ||
     node.kind === "sprint_merge" ||
     node.kind === "release"
   );

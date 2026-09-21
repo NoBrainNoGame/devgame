@@ -83,12 +83,36 @@ export interface Branch {
   merged: boolean;
 }
 
+/**
+ * A commit a rival wrote.
+ *
+ * Rivals build in their own column: they write commits and merge them, which is
+ * the only honest way to show a pace as work. They are kept apart from
+ * `state.nodes` because they are not part of the player's graph — nothing can
+ * be walked onto, and none of the DAG invariants apply to them.
+ */
+export interface BotNode {
+  id: NodeId;
+  botId: BotId;
+  kind: "commit" | "feature_merge";
+  lane: number;
+  depth: number;
+}
+
 export interface Bot {
   id: BotId;
   archetype: BotArchetypeId;
+  /** Commits written per turn, in percent of one. */
   speedPct: number;
-  /** Accumulates `speedPct` per turn; every full 100 is one node of progress. */
+  /** Accumulates `speedPct` per turn; every full 100 is one commit. */
   acc: number;
+  /** The column this rival works in. Never one of yours. */
+  lane: number;
+  /** Commits written into the feature it currently has open. */
+  featureCommits: number;
+  /** Depth of its last commit, so its column climbs as it works. */
+  depth: number;
+  /** Features delivered this sprint: the number the race is run in. */
   sprintProgress: number;
   totalProgress: number;
   /** Turns left to skip after a mistake. */
@@ -192,7 +216,10 @@ export interface RunState {
 
   player: Player;
   bots: Record<BotId, Bot>;
+  /** Everything the rivals have written, drawn beside your graph. */
+  botNodes: Record<NodeId, BotNode>;
   nextBotSerial: number;
+  nextBotNodeSerial: number;
 
   skills: SkillId[];
   /** Feature skills this account has unlocked; the map draws branches from it. */
@@ -273,6 +300,7 @@ export type GameEvent =
   | { type: "docs_used"; nodeId: NodeId; remaining: number }
   | { type: "rebased"; nodeIds: NodeId[] }
   | { type: "bot_advanced"; botId: BotId; from: number; to: number }
+  | { type: "bot_committed"; botId: BotId; nodeId: NodeId; merged: boolean }
   | { type: "bot_mistake"; botId: BotId; archetype: BotArchetypeId }
   | { type: "reputation"; botId: BotId; value: number; firingProgress: number }
   | { type: "bot_fired"; botId: BotId; archetype: BotArchetypeId; rewards: BotFiringRewards }

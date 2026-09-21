@@ -38,15 +38,54 @@ export function makeReviewable(state: RunState): RunState {
  * that could actually happen.
  */
 export function standingOn(kind: NodeKind, options: { prefix?: string } = {}): RunState {
+  return onKind(kind, options).state;
+}
+
+/**
+ * The same, but the craft commit on that node is known to have landed — a
+ * detour that failed its roll resolves nothing, and a test about what the node
+ * *does* has nothing to assert against.
+ */
+export function committedOn(
+  kind: NodeKind,
+  options: { prefix?: string; where?: (state: RunState) => boolean } = {},
+): { before: RunState; after: RunState; events: GameEvent[] } {
+  const { state } = onKind(kind, { ...options, mustResolve: true });
+  const result = applyAction(state, { type: "commit", mode: "craft" });
+  return { before: state, after: result.state, events: result.events };
+}
+
+function onKind(
+  kind: NodeKind,
+  options: { prefix?: string; mustResolve?: boolean; where?: (state: RunState) => boolean } = {},
+): { state: RunState } {
   const prefix = options.prefix ?? kind;
 
-  for (let attempt = 0; attempt < 600; attempt += 1) {
+  for (let attempt = 0; attempt < 800; attempt += 1) {
     let state = newRun(`${prefix}-${attempt}`);
 
     for (let step = 0; step < 300; step += 1) {
       if (state.phase.kind === "game_over") break;
-      if (state.phase.kind === "choose_action" && state.nodes[state.player.nodeId]?.kind === kind) {
-        return state;
+
+      if (
+        state.phase.kind === "choose_action" &&
+        state.nodes[state.player.nodeId]?.kind === kind &&
+        (options.where?.(state) ?? true)
+      ) {
+        if (options.mustResolve !== true) return { state };
+
+        // The roll has to have *succeeded*, not merely let the node through:
+        // the failure table can resolve a node anyway, and a node that only
+        // survived is not a node that did what it promised.
+        const probe = applyAction(state, { type: "commit", mode: "craft" });
+        const roll = probe.events.find((event) => event.type === "roll");
+        const landed =
+          (roll === undefined || (roll.type === "roll" && roll.success)) &&
+          probe.events.some(
+            (event) => event.type === "node_done" && event.nodeId === state.player.nodeId,
+          );
+        if (landed) return { state };
+        break;
       }
 
       const legal = getAvailableActions(state);
@@ -61,7 +100,7 @@ export function standingOn(kind: NodeKind, options: { prefix?: string } = {}): R
     }
   }
 
-  throw new Error(`No seed out of 600 put the player on a ${kind} node`);
+  throw new Error(`No seed out of 800 put the player on a ${kind} node`);
 }
 
 export interface PlayResult {

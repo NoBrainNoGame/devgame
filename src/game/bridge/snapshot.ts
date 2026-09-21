@@ -13,6 +13,7 @@ import { previewAll } from "@/game/core/rules/preview";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
+  BotNode,
   Branch,
   BranchId,
   MapNode,
@@ -101,6 +102,14 @@ export interface RunSnapshot {
    * nobody has walked yet, and the graph is not allowed to know it.
    */
   branches: Record<BranchId, Pick<Branch, "id" | "kind" | "skillId" | "open" | "merged">>;
+
+  /**
+   * What the rivals have written, in their own columns.
+   *
+   * A pace is not a thing you can look at. Commits and merges are, and the
+   * whole point of a rival is that you can see it gaining on you.
+   */
+  botNodes: BotNode[];
 }
 
 export function toSnapshot(state: RunState): RunSnapshot {
@@ -195,5 +204,9 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     nodes,
     branches,
+    botNodes: Object.keys(state.botNodes)
+      .sort()
+      .map((id) => state.botNodes[id])
+      .filter((node): node is BotNode => node !== undefined),
   };
 }

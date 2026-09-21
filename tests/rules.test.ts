@@ -8,7 +8,6 @@ import {
   debtView,
   gatherEffects,
   isCrunch,
-  nodeEnergyCost,
   reviewCleanCount,
   reviewedRatio,
 } from "@/game/core/rules/modifiers";
@@ -16,6 +15,7 @@ import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
 
 import {
+  committedOn,
   eventsOfType,
   findSeed,
   isCommit,
@@ -407,17 +407,21 @@ describe("free actions", () => {
     expect(commitChance(withCi, "ai", node).value).toBe(commitChance(state, "ai", node).value + 10);
   });
 
-  test("CD makes merges free", () => {
-    const state = newRun("cd");
-    const merge = Object.values(state.nodes).find((node) => node.kind === "sprint_merge");
+  test("CD makes a merge a bigger rest", () => {
+    const { state } = play(newRun("cd"), { limit: 1 });
+    const merge = Object.values(state.nodes).find((node) => node.kind === "feature_merge");
     expect(merge).toBeDefined();
     if (merge === undefined) return;
 
-    expect(nodeEnergyCost(state, merge, undefined).value).toBeGreaterThan(0);
-
     const automated = structuredClone(state);
     automated.devops.cd = 1;
-    expect(nodeEnergyCost(automated, merge, undefined, gatherEffects(automated)).value).toBe(0);
+
+    // CD used to make merges cost nothing. Every feature now ends in a merge,
+    // so a free one made energy a resource that only ever went up: it pays
+    // back more instead.
+    expect(gatherEffects(automated).mergeRegenBonus).toBeGreaterThan(
+      gatherEffects(state).mergeRegenBonus,
+    );
   });
 });
 
@@ -469,40 +473,44 @@ describe("the race", () => {
 
 describe("squash", () => {
   test("erases machine-written commits, their debt and their score", () => {
-    const state = standingOn("squash");
-    const unread = state.player.aiHistory.filter((entry) => !entry.reviewed).length;
-    expect(unread).toBeGreaterThan(0);
+    const { before, after, events } = committedOn("squash", {
+      where: (state) => state.player.aiHistory.filter((entry) => !entry.reviewed).length >= 2,
+    });
 
-    const result = applyAction(state, { type: "commit", mode: "craft" });
-    const squashed = eventsOfType(result.events, "squashed")[0];
+    const squashed = eventsOfType(events, "squashed")[0];
     expect(squashed).toBeDefined();
     if (squashed === undefined) return;
 
     expect(squashed.nodeIds.length).toBeGreaterThan(0);
     expect(squashed.debtDelta).toBeLessThan(0);
-    expect(result.state.debt).toBeLessThan(state.debt);
+    expect(after.debt).toBeLessThan(before.debt);
     // The commits are gone from the history, so they are gone from the count.
-    expect(result.state.player.totalCommits).toBeLessThan(state.player.totalCommits + 1);
+    // The squash node is itself a commit, so the count moves by one up and
+    // `commitsLost` down: everything the fold swallowed beyond the one it kept.
+    expect(squashed.commitsLost).toBe(squashed.nodeIds.length - BALANCE.squash.keptCommits);
+    expect(after.player.totalCommits).toBe(before.player.totalCommits + 1 - squashed.commitsLost);
   });
 
   test("works without ever having learned to review", () => {
-    const state = standingOn("squash");
-    expect(state.skills).not.toContain("code_review");
-    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
-
-    const result = applyAction(state, { type: "commit", mode: "craft" });
-    expect(eventsOfType(result.events, "squashed").length).toBe(1);
+    // Neither route to review: not the Code review branch, not Pair
+    // programming, which grants the same habit under another name.
+    const { before, events } = committedOn("squash", {
+      prefix: "squash-unlearned",
+      where: (state) => !gatherEffects(state).canReview,
+    });
+    expect(getAvailableActions(before).some(isType("review"))).toBe(false);
+    expect(eventsOfType(events, "squashed").length).toBe(1);
   });
 });
 
 describe("documentation", () => {
   test("buys the next machine-written commits out of their debt", () => {
-    const state = standingOn("docs");
-    const written = applyAction(state, { type: "commit", mode: "craft" }).state;
+    const { after: written } = committedOn("docs");
     expect(written.player.docsCharges).toBe(BALANCE.docs.charges);
 
-    // Two actions: the free step off the detour, then the commit itself.
-    const after = play(written, { pick: prefer(isCommit("ai")), limit: 2 });
+    // Free steps off the detour, then whatever machine-written work comes next.
+    // A detour lands back on the feature, so it can take a couple of moves.
+    const after = play(written, { pick: prefer(isCommit("ai")), limit: 6 });
 
     // Every machine-written node in that window was covered. Total debt is not
     // the assertion — a failure event can move it for reasons of its own.
@@ -515,8 +523,7 @@ describe("documentation", () => {
   });
 
   test("the preview stops advertising a debt it will not charge", () => {
-    const state = standingOn("docs");
-    const written = applyAction(state, { type: "commit", mode: "craft" }).state;
+    const { after: written } = committedOn("docs");
 
     const moved = play(written, { limit: 1 }).state;
     const preview = getActionPreview(moved, { type: "commit", mode: "ai" });
@@ -541,23 +548,16 @@ describe("rebase", () => {
     expect(cleanChance).toBeGreaterThan(dirtyChance + 20);
   });
 
-  test("landing it carries the next node of the trunk for free", () => {
-    const state = standingOn("rebase");
-    const clean = structuredClone(state);
-    clean.debt = 0;
-
-    const result = applyAction(clean, { type: "commit", mode: "craft" });
-    const roll = eventsOfType(result.events, "roll")[0];
-    if (roll?.success !== true) return;
-
-    const carried = eventsOfType(result.events, "rebased")[0];
+  test("landing it carries the next commit for free", () => {
+    const { after, events } = committedOn("rebase");
+    const carried = eventsOfType(events, "rebased")[0];
     expect(carried).toBeDefined();
     if (carried === undefined) return;
 
     expect(carried.nodeIds.length).toBe(BALANCE.rebase.carry);
     // Carried by hand, not by the machine: a replay adds no debt of its own.
     for (const id of carried.nodeIds) {
-      expect(result.state.nodes[id]?.commit?.mode).toBe("craft");
+      expect(after.nodes[id]?.commit?.mode).toBe("craft");
     }
   });
 });

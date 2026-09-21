@@ -36,11 +36,21 @@ réalisés, des bots virés et des sprints tenus.
 ### Le chemin
 
 Le graphe est généré procéduralement, sprint par sprint, à partir de la graine
-de la run. `main` est la colonne centrale ; des branches de feature en partent
-et y reviennent ; des branches de hotfix sont imposées par les événements.
+de la run.
 
-À chaque nœud franchi, le joueur choisit son prochain nœud parmi deux ou trois
-options — le principe des cartes de Slay the Spire, transposé à un graphe Git.
+**Rien ne s'écrit sur `main`.** C'est une colonne de merges : l'ancre du sprint,
+un merge par feature livrée, le merge de sprint, la release. Tout le travail se
+fait sur une branche qui en part et y revient. C'est ce qui donne son sens au
+merge — **un merge est la fin d'une feature, jamais un commit de plus** — et ce
+qui fait qu'une feature est toujours une bifurcation.
+
+Les commits à l'intérieur d'une branche sont **l'avancement de cette feature**,
+pas des features en soi.
+
+À chaque merge, deux ou trois branches sont proposées : chacune a sa longueur,
+ses détours et parfois sa compétence. On en construit une, les autres ne sont
+jamais écrites. C'est le principe des cartes de Slay the Spire, transposé à un
+graphe Git : le choix n'est pas « quel nœud » mais **quelle feature**.
 Les détours proposent des nœuds typés. Trois sont des outils simples :
 
 - **Refacto** — rembourse de la dette.
@@ -63,8 +73,13 @@ du jeu pose sans y répondre :
   dette** : quasi gratuit sur un historique propre, pile ou face à soixante. Un
   rebase raté laisse un demi-replay derrière lui, et de la dette avec.
 
-La position de chaque bot est visible sur `main` : c'est la vague qui vous
-poursuit, et c'est l'information qui décide de la plupart des choix.
+Chaque rival travaille dans **sa propre colonne**, à gauche de `main` : il écrit
+des commits et livre des merges exactement comme vous, et il ne touche jamais à
+une de vos branches. Le graphe montre donc quatre dépôts qui s'écrivent côte à
+côte, et « le Rapide a deux features d'avance » est quelque chose qui se voit.
+C'est la vague qui vous poursuit, et l'information qui décide de la plupart des
+choix. Les rivaux accélèrent à chaque sprint — sans quoi un joueur équipé de
+tout finit par ne plus pouvoir mourir.
 
 Le graphe est un DAG : tout nœud est atteignable depuis le début du sprint, tout
 chemin finit sur la release. Le moteur le vérifie à la génération ; une carte

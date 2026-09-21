@@ -7,10 +7,16 @@ import type { Branch, BranchId, MapNode, NodeId, NodeKind } from "@/game/core/ty
 /**
  * One sprint of git graph.
  *
- * The shape the design asks for: `main` runs down the middle, feature branches
- * leave it and come back, and every step offers a real choice. The generator
- * guarantees the last part — a node with one exit is a corridor, and a corridor
- * is not a decision.
+ * `main` carries no work. It is a spine of merge commits — the sprint anchor,
+ * one merge per feature delivered, the sprint merge, the release — and every
+ * line of work happens on a branch that leaves it and comes back. That is what
+ * a trunk-based repository looks like, and it is what makes a merge mean
+ * something: a merge is the end of a feature, never "one more commit".
+ *
+ * So the decision at every merge is *which feature to build next*. Two or three
+ * branches are offered, each with its own length, its own detours and possibly
+ * its own skill; you walk one and the others are never written. The commits
+ * inside a branch are progress within that feature, not features of their own.
  *
  * Everything is drawn from the run's PRNG, so the same seed always produces the
  * same sprint. That is what makes a run replayable on the server.
@@ -19,7 +25,7 @@ import type { Branch, BranchId, MapNode, NodeId, NodeKind } from "@/game/core/ty
 export interface SprintPlan {
   nodes: MapNode[];
   branches: Branch[];
-  /** Number of main-line nodes. Bots race along these. */
+  /** Number of main-line nodes: the anchor, the merges, and the tail. */
   length: number;
   startId: NodeId;
   releaseId: NodeId;
@@ -63,140 +69,185 @@ function makeNode(
   };
 }
 
+interface BuiltBranch {
+  head: MapNode;
+  tail: MapNode;
+  nodes: MapNode[];
+  /** The feature itself, followed by any branch that left it. */
+  branches: Branch[];
+}
+
 export function generateSprint(options: GenerateSprintOptions): SprintPlan {
   const { sprint, offset, rng, serial, branchSerial } = options;
   const { map } = BALANCE;
 
-  const length = rng.int(BALANCE.sprintLength.min, BALANCE.sprintLength.max);
+  const featureCount = rng.int(map.featuresPerSprint.min, map.featuresPerSprint.max);
 
-  // ---- main line ---------------------------------------------------------
-  const main: MapNode[] = [];
-  for (let i = 0; i < length; i++) {
-    const kind: NodeKind =
-      i === 0
-        ? "sprint_start"
-        : i === length - 2
-          ? "sprint_merge"
-          : i === length - 1
-            ? "release"
-            : "commit";
-    main.push(makeNode(serial, sprint, kind, offset + i));
-  }
-  for (let i = 0; i < length - 1; i++) {
-    const node = main[i];
-    const successor = main[i + 1];
-    if (node === undefined || successor === undefined) continue;
-    node.next = [successor.id];
-  }
-
-  const nodes: MapNode[] = [...main];
+  const nodes: MapNode[] = [];
   const branches: Branch[] = [];
   const offeredSkills: SkillId[] = [];
   const pool = [...options.skillPool];
 
-  // ---- feature branches --------------------------------------------------
-  // `lastMergeDepth` keeps branches from nesting into each other: a new fork
-  // may only start once the previous branch has come home.
-  let lastMergeIndex = 0;
-  const lastForkIndex = length - map.tailReserve;
+  const start = makeNode(serial, sprint, "sprint_start", offset);
+  nodes.push(start);
 
-  for (let i = map.firstForkDepth; i <= lastForkIndex; i++) {
-    if (i <= lastMergeIndex) continue;
+  const main: MapNode[] = [start];
+  let from = start;
+  let depth = offset;
 
-    const forkNode = main[i];
-    if (forkNode === undefined || forkNode.kind !== "commit") continue;
+  for (let feature = 0; feature < featureCount; feature += 1) {
+    const optionCount = rng.int(map.featureOptions.min, map.featureOptions.max);
 
-    // The first sprint always opens with a feature: the whole skill economy is
-    // invisible until you have merged one, so it must not be left to the dice.
-    const guaranteed = sprint === 1 && i <= map.firstForkDepth + 1 && branches.length === 0;
-    if (!guaranteed && !rng.chance(map.forkPct)) continue;
+    const built: BuiltBranch[] = [];
+    let span = 0;
 
-    if (pool.length === 0) continue;
+    for (let option = 0; option < optionCount; option += 1) {
+      const branch = buildBranch(depth);
+      built.push(branch);
+      span = Math.max(span, branch.tail.depth - depth);
+    }
 
-    const branchLength = rng.int(map.featureBranchLength.min, map.featureBranchLength.max);
-    const mergeIndex = i + branchLength + 1;
-    // Merging onto the release node would skip the sprint merge.
-    if (mergeIndex > length - 2) continue;
+    // Every option merges into the same node: the feature lands on `main`
+    // whichever one you picked, and the ones you did not pick are never
+    // written. The merge sits one clear step past the longest of them.
+    const mergeDepth = depth + span + 1;
+    const merge = makeNode(serial, sprint, "feature_merge", mergeDepth);
 
-    const mergeTarget = main[mergeIndex];
-    if (mergeTarget === undefined) continue;
+    for (const option of built) {
+      option.tail.next = [merge.id];
+      const feature = option.branches[0];
+      if (feature !== undefined) {
+        feature.mergeInto = merge.id;
+        if (feature.skillId !== undefined) offeredSkills.push(feature.skillId);
+      }
+      nodes.push(...option.nodes);
+      branches.push(...option.branches);
+    }
 
-    const skillId = rng.pick(pool);
-    pool.splice(pool.indexOf(skillId), 1);
-    offeredSkills.push(skillId);
+    from.next = built.map((branch) => branch.head.id).sort();
+    nodes.push(merge);
+    main.push(merge);
 
+    from = merge;
+    depth = mergeDepth;
+  }
+
+  // The tail is plumbing rather than a decision: the last merge leads to the
+  // sprint merge, which leads to the release.
+  const sprintMerge = makeNode(serial, sprint, "sprint_merge", depth + 1);
+  const release = makeNode(serial, sprint, "release", depth + 2);
+
+  from.next = [sprintMerge.id];
+  sprintMerge.next = [release.id];
+
+  nodes.push(sprintMerge, release);
+  main.push(sprintMerge, release);
+
+  assignLanes(nodes);
+
+  return {
+    nodes,
+    branches,
+    length: main.length,
+    startId: start.id,
+    releaseId: release.id,
+    offeredSkills,
+  };
+
+  /**
+   * One feature branch: a chain of commits, its own optional detours, and
+   * sometimes a bifurcation of its own. The caller wires its tail to the merge.
+   */
+  function buildBranch(from: number): BuiltBranch {
     const branchId: BranchId = `b${branchSerial.next}`;
     branchSerial.next += 1;
 
-    const branchNodes: MapNode[] = [];
-    for (let j = 0; j < branchLength; j++) {
-      const isLast = j === branchLength - 1;
-      branchNodes.push(
-        makeNode(serial, sprint, isLast ? "feature_merge" : "feature", forkNode.depth + 1 + j, {
-          branchId,
-          ...(isLast ? { skillId } : {}),
-        }),
-      );
+    const length = rng.int(map.featureBranchLength.min, map.featureBranchLength.max);
+
+    const chain: MapNode[] = [];
+    for (let i = 0; i < length; i += 1) {
+      chain.push(makeNode(serial, sprint, "commit", from + 1 + i, { branchId }));
     }
-    for (let j = 0; j < branchLength - 1; j++) {
-      const node = branchNodes[j];
-      const successor = branchNodes[j + 1];
+    for (let i = 0; i < length - 1; i += 1) {
+      const node = chain[i];
+      const successor = chain[i + 1];
       if (node === undefined || successor === undefined) continue;
       node.next = [successor.id];
     }
-    const tail = branchNodes[branchLength - 1];
-    const head = branchNodes[0];
-    if (tail === undefined || head === undefined) continue;
-    tail.next = [mergeTarget.id];
 
-    forkNode.kind = "fork";
-    forkNode.next = [...forkNode.next, head.id].sort();
+    const head = chain[0];
+    const tail = chain[length - 1];
+    if (head === undefined || tail === undefined) {
+      throw new Error(`generateSprint: sprint ${sprint} produced an empty branch`);
+    }
 
-    nodes.push(...branchNodes);
-    branches.push({
+    const skillId = pool.length > 0 && rng.chance(map.skillBranchPct) ? rng.pick(pool) : undefined;
+    if (skillId !== undefined) pool.splice(pool.indexOf(skillId), 1);
+
+    const branch: Branch = {
       id: branchId,
       kind: "feature",
-      skillId,
-      nodeIds: branchNodes.map((node) => node.id),
-      mergeInto: mergeTarget.id,
+      ...(skillId === undefined ? {} : { skillId }),
+      nodeIds: chain.map((node) => node.id),
+      mergeInto: tail.id,
       open: false,
       merged: false,
-    });
+    };
 
-    // ---- sub-branch ------------------------------------------------------
-    // A branch off a branch: the design's "second feature open" penalty, made
+    const built: Branch[] = [branch];
+    const extra: MapNode[] = [];
+
+    // ---- detours inside the feature ---------------------------------------
+    // A one-node alternative that rejoins two commits later: same distance
+    // through the feature, very different cost.
+    for (let i = 0; i + 2 < length; i += 1) {
+      const branchFrom = chain[i];
+      const branchTo = chain[i + 2];
+      if (branchFrom === undefined || branchTo === undefined) continue;
+      if (branchFrom.next.length > 1) continue;
+      if (!rng.chance(map.detourPct)) continue;
+
+      const kind = rng.weighted(DETOURS);
+      const detour = makeNode(serial, sprint, kind, branchFrom.depth + 1);
+      detour.next = [branchTo.id];
+      branchFrom.next = [...branchFrom.next, detour.id].sort();
+      extra.push(detour);
+    }
+
+    // ---- a feature off a feature ------------------------------------------
+    // Two branches open at once is the design's overextension penalty, made
     // concrete. It is optional, so the player chooses to pay for it.
-    const subLength = branchLength - 2;
+    const subLength = length - 2;
     if (subLength >= 1 && rng.chance(map.subBranchPct)) {
       const subId: BranchId = `b${branchSerial.next}`;
       branchSerial.next += 1;
 
-      const subNodes: MapNode[] = [];
-      for (let j = 0; j < subLength; j++) {
-        subNodes.push(
-          makeNode(serial, sprint, "feature", head.depth + 1 + j, {
-            branchId: subId,
-          }),
-        );
+      const subChain: MapNode[] = [];
+      for (let i = 0; i < subLength; i += 1) {
+        subChain.push(makeNode(serial, sprint, "commit", head.depth + 1 + i, { branchId: subId }));
       }
-      for (let j = 0; j < subLength - 1; j++) {
-        const node = subNodes[j];
-        const successor = subNodes[j + 1];
+      for (let i = 0; i < subLength - 1; i += 1) {
+        const node = subChain[i];
+        const successor = subChain[i + 1];
         if (node === undefined || successor === undefined) continue;
         node.next = [successor.id];
       }
-      const subTail = subNodes[subLength - 1];
-      const subHead = subNodes[0];
-      if (subTail !== undefined && subHead !== undefined) {
-        subTail.next = [tail.id];
-        head.kind = "fork";
-        head.next = [...head.next, subHead.id].sort();
 
-        nodes.push(...subNodes);
-        branches.push({
+      const subHead = subChain[0];
+      const subTail = subChain[subLength - 1];
+      if (subHead !== undefined && subTail !== undefined) {
+        subTail.next = [tail.id];
+        head.next = [...head.next, subHead.id].sort();
+        extra.push(...subChain);
+
+        // A merge is the end of a feature, here too: the parent's last commit
+        // becomes the merge that brings the sub-feature home. It keeps its
+        // branch, so it stays in the branch's lane rather than on `main`.
+        tail.kind = "feature_merge";
+        built.push({
           id: subId,
           kind: "subfeature",
-          nodeIds: subNodes.map((node) => node.id),
+          nodeIds: subChain.map((node) => node.id),
           mergeInto: tail.id,
           parentBranchId: branchId,
           open: false,
@@ -205,52 +256,15 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
       }
     }
 
-    lastMergeIndex = mergeIndex;
+    return { head, tail, nodes: [...chain, ...extra], branches: built };
   }
-
-  // ---- detours -----------------------------------------------------------
-  // A one-node alternative that rejoins two steps later: same distance, very
-  // different cost. This is what keeps a plain stretch of `main` interesting.
-  const detourKinds = [
-    { value: "refactor" as const, weight: map.detourWeights.refactor },
-    { value: "risky" as const, weight: map.detourWeights.risky },
-    { value: "chore" as const, weight: map.detourWeights.chore },
-    { value: "squash" as const, weight: map.detourWeights.squash },
-    { value: "docs" as const, weight: map.detourWeights.docs },
-    { value: "rebase" as const, weight: map.detourWeights.rebase },
-  ];
-
-  // `length - 4` rather than `length - 3`: landing on `main[length - 1]` would
-  // hop straight over the sprint merge, which is the same mistake the feature
-  // branches guard against above.
-  for (let i = 1; i <= length - 4; i++) {
-    const from = main[i];
-    const to = main[i + 2];
-    if (from === undefined || to === undefined) continue;
-    if (from.kind !== "commit") continue;
-    if (!rng.chance(map.detourPct)) continue;
-
-    const kind = rng.weighted(detourKinds);
-    const detour = makeNode(serial, sprint, kind, from.depth + 1);
-    detour.next = [to.id];
-    from.next = [...from.next, detour.id].sort();
-    nodes.push(detour);
-  }
-
-  assignLanes(nodes);
-
-  const start = main[0];
-  const release = main[length - 1];
-  if (start === undefined || release === undefined) {
-    throw new Error(`generateSprint: sprint ${sprint} produced no main line`);
-  }
-
-  return {
-    nodes,
-    branches,
-    length,
-    startId: start.id,
-    releaseId: release.id,
-    offeredSkills,
-  };
 }
+
+const DETOURS = [
+  { value: "refactor" as const, weight: BALANCE.map.detourWeights.refactor },
+  { value: "risky" as const, weight: BALANCE.map.detourWeights.risky },
+  { value: "chore" as const, weight: BALANCE.map.detourWeights.chore },
+  { value: "squash" as const, weight: BALANCE.map.detourWeights.squash },
+  { value: "docs" as const, weight: BALANCE.map.detourWeights.docs },
+  { value: "rebase" as const, weight: BALANCE.map.detourWeights.rebase },
+];

@@ -2,8 +2,7 @@ import { Container, Graphics, Text } from "pixi.js";
 
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import { mainLineNodes } from "@/game/core/map/graph";
-import { nodeY } from "@/game/render/coords";
+import { nodeX, nodeY } from "@/game/render/coords";
 import { cursorStyle } from "@/game/render/textStyles";
 import { NODE_RADIUS, THEME } from "@/game/render/theme";
 
@@ -58,7 +57,6 @@ export class BotCursors extends ContainerChip {
   private sync(): void {
     const { session, translate } = sceneContext(this.chipContext);
     const state = session.getState();
-    const main = mainLineNodes(state, state.sprint);
 
     for (const id of Object.keys(state.bots).sort()) {
       const bot = state.bots[id];
@@ -71,15 +69,15 @@ export class BotCursors extends ContainerChip {
         continue;
       }
 
-      const index = Math.min(bot.sprintProgress, Math.max(0, main.length - 1));
-      const node = main[index];
-      const next = main[Math.min(index + 1, main.length - 1)];
-      if (node === undefined || next === undefined) continue;
+      // The ref rides the rival's newest commit, so it climbs as they work.
+      let top = Number.NEGATIVE_INFINITY;
+      for (const id of Object.keys(state.botNodes).sort()) {
+        const node = state.botNodes[id];
+        if (node === undefined || node.botId !== bot.id) continue;
+        if (node.depth > top) top = node.depth;
+      }
 
-      // The fraction of a node the accumulator has banked, so a rival about to
-      // land a commit visibly leans into it.
-      const fraction = Math.min(1, bot.acc / 100);
-      const target = nodeY(node.depth) + (nodeY(next.depth) - nodeY(node.depth)) * fraction;
+      const target = nodeY(top === Number.NEGATIVE_INFINITY ? 0 : top);
 
       if (existing !== undefined) {
         existing.target = target;
@@ -94,27 +92,22 @@ export class BotCursors extends ContainerChip {
         style: cursorStyle,
       });
       label.anchor.set(1, 0.5);
-      label.x = -GUTTER - 8;
+      label.x = nodeX(bot.lane) - GUTTER - 8;
 
       // A left gutter, well clear of the trunk and of the commit labels that
       // run down the right. A ref that lands on a commit reads as that commit's
       // author, which is the one thing it is not.
       const chip = new Graphics();
       chip
-        .roundRect(-GUTTER - label.width - 16, -11, label.width + 16, 22, 11)
+        .roundRect(nodeX(bot.lane) - GUTTER - label.width - 16, -11, label.width + 16, 22, 11)
         .fill({ color: THEME.background, alpha: 0.92 })
         .stroke({ width: 1.5, color: THEME.bot, alpha: 0.8 });
 
       const arrow = new Graphics();
       arrow
-        .moveTo(-GUTTER + 4, 0)
-        .lineTo(-NODE_RADIUS - 8, 0)
+        .moveTo(nodeX(bot.lane) - GUTTER + 4, 0)
+        .lineTo(nodeX(bot.lane) - NODE_RADIUS + 2, 0)
         .stroke({ width: 1.5, color: THEME.bot, alpha: 0.45 });
-      arrow
-        .moveTo(-NODE_RADIUS - 12, -5)
-        .lineTo(-NODE_RADIUS - 3, 0)
-        .lineTo(-NODE_RADIUS - 12, 5)
-        .fill(THEME.bot);
 
       root.addChild(arrow, chip, label);
       root.y = target;

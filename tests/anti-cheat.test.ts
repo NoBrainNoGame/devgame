@@ -95,7 +95,12 @@ describe("forged starting conditions", () => {
     expect(forged.valid).toBe(true);
     if (!honest.valid || !forged.valid) return;
 
-    expect(forged.score).toBeGreaterThan(honest.score * 2);
+    // They score differently, and the replay has no way to say which set of
+    // stats it was entitled to. Forged energy no longer simply wins — the
+    // rivals get faster every sprint, so an unburnable player still gets
+    // fired — but a different score from the same action log is exactly the
+    // hole `overclaims` exists to close.
+    expect(forged.score).not.toBe(honest.score);
   });
 
   test("the claimed unlocks decide which skills the map offers", () => {
