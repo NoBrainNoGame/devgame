@@ -158,6 +158,16 @@ export const BALANCE = {
   },
 
   failure: {
+    /**
+     * A merge is where conflicts come from, in git and here. These are the
+     * odds of one when a branch lands: a floor, plus what the debt and the
+     * unread machine-written work in the branch add.
+     */
+    mergeConflictBase: 12,
+    mergeConflictDebtDivisor: 6,
+    mergeConflictPerUnread: 4,
+    /** However bad it gets, landing a branch is not a coin flip. */
+    mergeConflictMax: 55,
     /** Energy lost resolving a merge conflict by hand. */
     conflictManualEnergy: 3,
     /** Base chance in percent of resolving a conflict by hand. */

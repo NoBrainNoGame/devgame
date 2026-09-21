@@ -62,12 +62,13 @@ describe("commit", () => {
     );
     expect(craft.state.debt).toBe(0);
 
-    const ai = findSeed((r) => r.state.debt > 0, {
-      prefix: "ai-debt",
-      pick: prefer(isCommit("ai")),
-      limit: 6,
-    });
-    expect(ai.state.debt).toBeGreaterThanOrEqual(BALANCE.debt.perAiCommit);
+    // Asserted on the emitted delta, not the total: a detour on the way can
+    // repay some of it in the same handful of turns.
+    const ai = findSeed(
+      (r) => eventsOfType(r.events, "debt").some((e) => e.delta === BALANCE.debt.perAiCommit),
+      { prefix: "ai-debt", pick: prefer(isCommit("ai")), limit: 6 },
+    );
+    expect(ai.state.debt).toBeGreaterThan(0);
   });
 
   test("debt makes every roll worse", () => {

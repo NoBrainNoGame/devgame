@@ -35,6 +35,17 @@ export type FailureOutcome =
   /** It shipped, and it broke production. A hotfix branch is now in the way. */
   | { kind: "resolve_then_hotfix" };
 
+/**
+ * Where a merge conflict may come from.
+ *
+ * Two histories have to actually meet. A merge is one place that happens and a
+ * rebase is the other — writing a commit is not. The merge half is rolled in
+ * `beginMerge`; this is the rebase half.
+ */
+function canTangle(context: RuleContext): boolean {
+  return context.state.nodes[context.state.player.nodeId]?.kind === "rebase";
+}
+
 export function resolveFailure(context: RuleContext): FailureOutcome {
   const eventId = drawFailure(context);
 
@@ -95,6 +106,7 @@ function drawFailure(context: RuleContext): FailureEventId {
     const def = FAILURE_EVENTS[id];
     if (def.requiresUnreviewedAi && !unreviewed) continue;
     if (def.forbiddenOnHotfix && onHotfix) continue;
+    if (id === "merge_conflict" && !canTangle(context)) continue;
 
     let weight = def.weight;
 
@@ -111,7 +123,8 @@ function drawFailure(context: RuleContext): FailureEventId {
     if (weight > 0) entries.push({ value: id, weight });
   }
 
-  if (entries.length === 0) return "merge_conflict";
+  // `forced_rebase` carries no prerequisite, so this is a guard, not a path.
+  if (entries.length === 0) return "forced_rebase";
   return context.rng.weighted(entries);
 }
 

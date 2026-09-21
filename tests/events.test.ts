@@ -110,7 +110,14 @@ describe("failures", () => {
     const machine = applyAction(state, { type: "resolve_conflict", how: "ai" });
     const fix = eventsOfType(machine.events, "debt")[0];
     expect(fix?.delta).toBe(BALANCE.debt.perAiConflictFix);
-    expect(machine.state.player.energy).toBe(state.player.energy);
+
+    // Energy is not asserted against a total any more: a conflict now happens
+    // at a merge, and finishing one spends the merge's cost and hands back its
+    // rest. What matters is that the machine's fix itself charged nothing.
+    const spent = eventsOfType(machine.events, "energy").filter(
+      (event) => event.reason === "conflict",
+    );
+    expect(spent).toEqual([]);
   });
 
   test("a conflict does not cost two turns", () => {

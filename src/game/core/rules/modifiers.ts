@@ -96,6 +96,26 @@ export function reviewedRatio(state: RunState): number {
  * already clamped. `risky` nodes replace the base chance rather than adding to
  * it: they are a different kind of gamble, not a worse commit.
  */
+/**
+ * The odds that landing a branch tangles.
+ *
+ * A conflict is not something that happens while you write a commit — it is
+ * what happens when two histories meet. So it is priced by what you are
+ * bringing to the merge: how much debt, and how much machine-written work
+ * nobody has read.
+ */
+export function mergeConflictChance(state: RunState): number {
+  const { failure } = BALANCE;
+  const unread = state.player.aiHistory.filter((entry) => !entry.reviewed).length;
+
+  const value =
+    failure.mergeConflictBase +
+    Math.floor(state.debt / failure.mergeConflictDebtDivisor) +
+    unread * failure.mergeConflictPerUnread;
+
+  return Math.max(0, Math.min(failure.mergeConflictMax, value));
+}
+
 export function commitChance(
   state: RunState,
   mode: CommitMode,

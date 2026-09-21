@@ -10,7 +10,7 @@ import { checkBurnout, reportCrunch } from "@/game/core/rules/energy";
 import { resolveConflict } from "@/game/core/rules/events";
 import { grantRelic } from "@/game/core/rules/grants";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
-import { type AfterResolution, arriveAt } from "@/game/core/rules/progress";
+import { type AfterResolution, arriveAt, isMergeNode } from "@/game/core/rules/progress";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
 import { endSprint, startNextSprint } from "@/game/core/rules/sprint";
 import { computeScore } from "@/game/core/score";
@@ -85,8 +85,14 @@ function dispatch(
       const mode = phase.kind === "resolve_conflict" ? phase.mode : "craft";
 
       if (!resolveConflict(context, action.how)) {
-        // Still tangled. The node waits, and so does the work.
-        state.phase = { kind: "choose_action" };
+        // Still tangled. A merge cannot be walked away from — the branch is
+        // half-applied and the only way out is through — so the question stays
+        // on the table. Anywhere else the node simply waits.
+        const node = state.nodes[state.player.nodeId];
+        state.phase =
+          node !== undefined && isMergeNode(node)
+            ? { kind: "resolve_conflict", nodeId: node.id, mode }
+            : { kind: "choose_action" };
         return { after: "continue", consumesTurn: true };
       }
 

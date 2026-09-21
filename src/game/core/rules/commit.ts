@@ -9,6 +9,8 @@ import {
   type AfterResolution,
   afterResolution,
   autoWalk,
+  completeMerge,
+  isMergeNode,
   replayOntoTrunk,
   resolveNode,
 } from "@/game/core/rules/progress";
@@ -106,9 +108,13 @@ function succeed(context: RuleContext, mode: CommitMode): AfterResolution {
   return afterResolution(context);
 }
 
-/** Finishes the commit that a merge conflict interrupted. */
+/** Finishes the work that a merge conflict interrupted. */
 export function completeConflict(context: RuleContext, mode: CommitMode): AfterResolution {
   const node = getNode(context.state, context.state.player.nodeId);
+  // A conflict on a merge is still a merge: it has to cost and pay back what a
+  // merge does, not resolve like an ordinary commit.
+  if (isMergeNode(node)) return completeMerge(context, node);
+
   resolveNode(context, node, mode);
   return afterResolution(context);
 }

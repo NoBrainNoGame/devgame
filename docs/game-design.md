@@ -51,6 +51,11 @@ pas des features en soi.
 ses détours et parfois sa compétence. On en construit une, les autres ne sont
 jamais écrites. C'est le principe des cartes de Slay the Spire, transposé à un
 graphe Git : le choix n'est pas « quel nœud » mais **quelle feature**.
+
+**Un pas obligé n'est pas un choix.** Quand il n'y a qu'une seule suite, le jeu
+la franchit tout seul au lieu d'afficher une liste d'un élément. Tout ce que le
+panneau propose est donc un vrai choix — et s'il y en a plusieurs, ce sont des
+features, jamais « un autre commit ».
 Les détours proposent des nœuds typés. Trois sont des outils simples :
 
 - **Refacto** — rembourse de la dette.
@@ -212,12 +217,20 @@ dette exploser.
 
 ## Événements et obstacles
 
-Un jet raté déclenche un événement négatif, tiré selon des poids qui dépendent
-de l'état de la run — certains exigent un commit IA non relu, d'autres sont plus
-probables tant qu'un archétype de bot précis est encore en poste.
+**Le conflit de merge ne vient pas d'un commit raté.** Deux historiques doivent
+réellement se rencontrer, et ça n'arrive qu'à deux endroits : un **merge** et un
+**rebase**. Livrer une branche tire donc son propre jet de conflit, d'autant plus
+probable que la dette est haute et qu'il reste du code IA non relu dedans — ce
+qui donne une seconde raison de relire avant de merger. Un conflit de merge ne se
+fuit pas : la branche est à moitié appliquée, la question reste posée jusqu'à ce
+qu'on tranche (à la main, contre de l'énergie ; par l'IA, contre de la dette et
+un risque de bug caché).
 
-- **Conflit de merge** — mini-choix : résoudre à la main coûte de l'énergie,
-  résoudre par IA coûte de la dette et risque un bug caché.
+Un jet de commit raté déclenche un autre événement négatif, tiré selon des poids
+qui dépendent de l'état de la run — certains exigent un commit IA non relu,
+d'autres sont plus probables tant qu'un archétype de bot précis est encore en
+poste.
+
 - **Bug en production** — ouverture forcée d'une branche `hotfix/` de quelques
   nœuds à parcourir avant de reprendre. Le Monitoring la raccourcit.
 - **PR rejetée** — un bot Reviewer refuse votre travail, vous perdez un nœud.

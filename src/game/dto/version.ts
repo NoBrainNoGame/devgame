@@ -52,8 +52,14 @@ export const SAVE_VERSION = 1;
  *     commits and land their own merges in a column each, and they get faster
  *     every sprint rather than only at spawn. The energy economy was retuned
  *     around merges being mandatory instead of optional.
+ * 6 — a merge conflict comes from a merge or a rebase, the two places two
+ *     histories actually meet, instead of from any missed commit roll. Landing
+ *     a branch now rolls for one, and a merge conflict cannot be walked away
+ *     from. A step with one way forward is walked automatically rather than
+ *     offered as a list of one, so every choice the panel shows is a choice
+ *     between features.
  */
-export const RULES_EPOCH = 5;
+export const RULES_EPOCH = 6;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

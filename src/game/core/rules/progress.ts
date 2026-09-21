@@ -5,7 +5,7 @@ import { addDebt, repayDebt, shouldExplode } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { drawAmbient, injectRefactor } from "@/game/core/rules/events";
 import { grantSkill } from "@/game/core/rules/grants";
-import { nodeEnergyCost } from "@/game/core/rules/modifiers";
+import { mergeConflictChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { recordAiCommit } from "@/game/core/rules/review";
 import type { CommitMode, MapNode, NodeId } from "@/game/core/types";
 
@@ -217,7 +217,7 @@ function isAutoWalkable(node: MapNode): boolean {
  * Steps onto `nodeId`. Merges, releases and sprint anchors resolve on arrival;
  * everything else waits for the player to decide how to write it.
  */
-export function arriveAt(context: RuleContext, nodeId: NodeId): AfterResolution {
+export function arriveAt(context: RuleContext, nodeId: NodeId, depth = 0): AfterResolution {
   const { state } = context;
   const from = state.player.nodeId;
   const node = getNode(state, nodeId);
@@ -229,29 +229,9 @@ export function arriveAt(context: RuleContext, nodeId: NodeId): AfterResolution 
   openBranchOf(context, node);
 
   switch (node.kind) {
-    case "feature_merge": {
-      const cost = nodeEnergyCost(state, node, undefined, context.effects);
-      spendEnergy(context, cost.value, "merge");
-      resolveNode(context, node, "craft");
-      gainEnergy(
-        context,
-        BALANCE.energy.featureMergeRegen + context.effects.mergeRegenBonus,
-        "merge_regen",
-      );
-      return afterResolution(context);
-    }
-
-    case "sprint_merge": {
-      const cost = nodeEnergyCost(state, node, undefined, context.effects);
-      spendEnergy(context, cost.value, "merge");
-      resolveNode(context, node, "craft");
-      gainEnergy(
-        context,
-        BALANCE.energy.sprintMergeRegen + context.effects.mergeRegenBonus,
-        "merge_regen",
-      );
-      return afterResolution(context);
-    }
+    case "feature_merge":
+    case "sprint_merge":
+      return beginMerge(context, node, depth);
 
     case "release":
       node.status = "done";
@@ -279,6 +259,45 @@ export function arriveAt(context: RuleContext, nodeId: NodeId): AfterResolution 
   }
 }
 
+/**
+ * Landing a branch on the thing it came from.
+ *
+ * This is the only place a merge conflict can start, because it is the only
+ * place two histories meet — that and a rebase, which is the same act under
+ * another name. A conflict here does not cost you the merge; it costs you the
+ * decision of how to untangle it, and the merge finishes either way.
+ */
+function beginMerge(context: RuleContext, node: MapNode, depth: number): AfterResolution {
+  if (context.rng.chance(mergeConflictChance(context.state))) {
+    context.state.phase = { kind: "resolve_conflict", nodeId: node.id, mode: "craft" };
+    emit(context, { type: "conflict", nodeId: node.id });
+    return "continue";
+  }
+
+  return completeMerge(context, node, depth);
+}
+
+/** The merge itself: it costs, it lands, and it hands energy back. */
+export function completeMerge(context: RuleContext, node: MapNode, depth = 0): AfterResolution {
+  const { state } = context;
+
+  const cost = nodeEnergyCost(state, node, undefined, context.effects);
+  spendEnergy(context, cost.value, "merge");
+  resolveNode(context, node, "craft");
+
+  const regen =
+    node.kind === "sprint_merge"
+      ? BALANCE.energy.sprintMergeRegen
+      : BALANCE.energy.featureMergeRegen;
+  gainEnergy(context, regen + context.effects.mergeRegenBonus, "merge_regen");
+
+  return afterResolution(context, depth);
+}
+
+export function isMergeNode(node: MapNode): boolean {
+  return node.kind === "feature_merge" || node.kind === "sprint_merge";
+}
+
 function openBranchOf(context: RuleContext, node: MapNode): void {
   const branchId = node.branchId;
   if (branchId === undefined) return;
@@ -294,7 +313,7 @@ function openBranchOf(context: RuleContext, node: MapNode): void {
  * Works out where the player may go now. Called after anything that resolves a
  * node, including a merge that resolved itself.
  */
-export function afterResolution(context: RuleContext): AfterResolution {
+export function afterResolution(context: RuleContext, depth = 0): AfterResolution {
   const { state } = context;
   const current = getNode(state, state.player.nodeId);
 
@@ -312,6 +331,14 @@ export function afterResolution(context: RuleContext): AfterResolution {
     .map((node) => node.id)
     .sort();
 
+  // One way forward is not a choice. Asking the player to click it taught them
+  // nothing and read as a list of one — so the graph walks it for them. When
+  // there *are* several, they are features to open, never another commit.
+  const only = candidates[0];
+  if (candidates.length === 1 && only !== undefined && depth < AUTO_ADVANCE_LIMIT) {
+    return arriveAt(context, only, depth + 1);
+  }
+
   if (candidates.length === 0) {
     // Everything ahead is already resolved — only reachable if an AI burst
     // overshot onto a node the player had already been through.
@@ -325,3 +352,12 @@ export function afterResolution(context: RuleContext): AfterResolution {
 
   return "continue";
 }
+
+/**
+ * How many forced steps may be walked in one go.
+ *
+ * A merge leads to the next decision, which can itself be forced, so the walk
+ * recurses. The bound is a guard against a malformed graph, not a rule: a real
+ * sprint never chains more than a handful.
+ */
+const AUTO_ADVANCE_LIMIT = 32;
