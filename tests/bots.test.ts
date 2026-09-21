@@ -6,7 +6,17 @@ import { aliveBots, botCountForSprint } from "@/game/core/rules/bots";
 import { reviewedRatio } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 
-import { eventsOfType, findSeed, isCommit, isType, newRun, play, prefer } from "./helpers";
+import {
+  eventsOfType,
+  findSeed,
+  isCommit,
+  isType,
+  makeReviewable,
+  newRun,
+  play,
+  prefer,
+  withReviewSkill,
+} from "./helpers";
 
 describe("rivals", () => {
   test("the first sprint faces one bot, and the count grows to the cap", () => {
@@ -65,7 +75,10 @@ describe("rivals", () => {
     );
 
     const before = reviewedRatio(withAi.state);
-    const after = play(withAi.state, { pick: prefer(isType("review")), limit: 1 }).state;
+    const after = play(withReviewSkill(withAi.state), {
+      pick: prefer(isType("review")),
+      limit: 1,
+    }).state;
 
     expect(reviewedRatio(after)).toBeGreaterThan(before);
     expect(after.player.sprintProgress).toBe(withAi.state.player.sprintProgress);
@@ -99,7 +112,7 @@ describe("rivals", () => {
     target.firingProgress = 3;
     target.sprintProgress = behind.player.sprintProgress + 5;
 
-    const after = applyAction(behind, { type: "review" }).state;
+    const after = applyAction(makeReviewable(behind), { type: "review" }).state;
     expect(after.bots[bot.id]?.firingProgress).toBeLessThan(3);
   });
 
@@ -112,7 +125,7 @@ describe("rivals", () => {
       bot.stalled = 5;
     }
 
-    const after = applyAction(doomed, { type: "review" }).state;
+    const after = applyAction(makeReviewable(doomed), { type: "review" }).state;
     expect(after.phase.kind === "game_over" && after.phase.reason).toBe("fired");
   });
 

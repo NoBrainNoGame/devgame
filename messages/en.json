@@ -357,6 +357,10 @@
   },
   "game": {
     "skills": {
+      "code_review": {
+        "name": "Code review",
+        "desc": "Unlocks the Review action: you can finally read back what the machine wrote."
+      },
       "unit_tests": {
         "name": "Unit tests",
         "desc": "Makes AI commits more reliable and absorbs a rejected PR without losing ground."
@@ -653,7 +657,6 @@
       "overextended_cost": "Energy doubled: two open features",
       "pair_programming": "Review made cheaper by pair programming",
       "fresh": "Reviewed while fresh: better repayment",
-      "nothing_to_review": "Nothing to review",
       "repays_debt": "Repays debt",
       "risky_node": "Risky node: worse roll, more progress",
       "chore_node": "Chore: draws an event",

@@ -10,8 +10,10 @@
  * never fires, and a policy that dominates every other.
  */
 
+import { SKILLS } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
@@ -68,6 +70,11 @@ function prefer(actions: PlayerAction[], ...matchers: ((a: PlayerAction) => bool
  * and, because merging is the game's only rest, most of the energy. A policy
  * that always walks `main` starves, which says more about the policy than
  * about the balance.
+ *
+ * A branch that teaches something the run cannot otherwise do outranks the
+ * rest. Review is the case that matters: it does not exist until a branch
+ * grants it, so a policy that walked past the one offering it would be
+ * measuring a player who does not read their own options.
  */
 function chooseMove(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
   const moves = actions.filter(
@@ -75,9 +82,18 @@ function chooseMove(state: RunState, actions: PlayerAction[]): PlayerAction | un
   );
   if (moves.length === 0) return undefined;
 
+  const wantsReview = !gatherEffects(state).canReview;
+
+  const branchTeaches = (nodeId: string): boolean => {
+    const branchId = state.nodes[nodeId]?.branchId;
+    const skillId = branchId === undefined ? undefined : state.branches[branchId]?.skillId;
+    return skillId !== undefined && SKILLS[skillId].effects.canReview === true;
+  };
+
   const score = (nodeId: string): number => {
     const node = state.nodes[nodeId];
     if (node === undefined) return 0;
+    if (wantsReview && branchTeaches(nodeId)) return 9;
     switch (node.kind) {
       case "feature_merge":
         return 5;

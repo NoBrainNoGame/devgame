@@ -1,12 +1,13 @@
 import type { PartialEffects } from "@/game/content/effects";
 
 /**
- * Skills are permanent for the length of a run. Twelve of them are feature
+ * Skills are permanent for the length of a run. Thirteen of them are feature
  * branches you merge; four are trophies for getting a rival bot fired and can
  * never appear on the map.
  */
 
 export const FEATURE_SKILL_IDS = [
+  "code_review",
   "unit_tests",
   "ci_cd",
   "linter",
@@ -39,6 +40,13 @@ export interface SkillDef {
 }
 
 export const SKILLS: Record<SkillId, SkillDef> = {
+  // The review action does not exist until a run merges this. See `canReview`.
+  code_review: {
+    id: "code_review",
+    source: "feature",
+    effects: { canReview: true },
+    unlockCost: 0,
+  },
   unit_tests: {
     id: "unit_tests",
     source: "feature",
@@ -61,7 +69,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   pair_programming: {
     id: "pair_programming",
     source: "feature",
-    effects: { reviewEnergyDiscount: 1, rerollFailedRoll: true },
+    effects: { canReview: true, reviewEnergyDiscount: 1, rerollFailedRoll: true },
     unlockCost: 0,
   },
   copilot_v2: {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
+import { getAvailableActions } from "@/game/core/rules/actions";
 import {
   commitChance,
   debtView,
@@ -13,7 +14,17 @@ import {
 import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
 
-import { eventsOfType, findSeed, isCommit, isType, newRun, play, prefer } from "./helpers";
+import {
+  eventsOfType,
+  findSeed,
+  isCommit,
+  isType,
+  makeReviewable,
+  newRun,
+  play,
+  prefer,
+  withReviewSkill,
+} from "./helpers";
 
 describe("commit", () => {
   test("the preview's odds are the odds actually rolled", () => {
@@ -232,10 +243,12 @@ describe("debt visibility", () => {
       limit: 1,
     });
 
-    const result = applyAction(state, { type: "review" });
-    if (result.events.some((event) => event.type === "bot_mistake")) return;
+    // A craft commit carries no debt of its own. Unless an event intervened,
+    // the band has to be exactly where it was: re-rolling the noise on a turn
+    // that changed nothing would make the number look alive when it is not.
+    const result = applyAction(state, { type: "commit", mode: "craft" });
+    if (result.state.debt !== state.debt) return;
 
-    expect(result.state.debt).toBe(state.debt);
     expect(result.state.debtNoise).toBe(state.debtNoise);
   });
 });
@@ -249,7 +262,10 @@ describe("review", () => {
     });
 
     const before = withDebt.state.debt;
-    const reviewed = play(withDebt.state, { pick: prefer(isType("review")), limit: 3 });
+    const reviewed = play(withReviewSkill(withDebt.state), {
+      pick: prefer(isType("review")),
+      limit: 3,
+    });
     expect(reviewed.state.debt).toBeLessThan(before);
   });
 
@@ -260,7 +276,10 @@ describe("review", () => {
       limit: 10,
     });
 
-    const after = play(withAi.state, { pick: prefer(isType("review")), limit: 2 }).state;
+    const after = play(withReviewSkill(withAi.state), {
+      pick: prefer(isType("review")),
+      limit: 2,
+    }).state;
     expect(reviewedRatio(after)).toBeGreaterThan(reviewedRatio(withAi.state));
   });
 
@@ -274,21 +293,32 @@ describe("review", () => {
     expect(reviewCleanCount(hot)).toBe(reviewCleanCount(cold) + BALANCE.review.chainBonus);
   });
 
-  test("a review with nothing to read says so in the preview", () => {
+  test("a review with nothing to read is not offered at all", () => {
     const { state } = play(newRun("nothing"), { limit: 1 });
-    const preview = getActionPreview(state, { type: "review" });
-    expect(preview.notes.some((note) => note.key === "notes.nothing_to_review")).toBe(true);
-    expect(preview.debtDelta).toEqual([0, 0]);
+    state.skills = ["code_review"];
+    state.player.aiHistory = [];
+
+    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+  });
+
+  test("review has to be learned before it is offered", () => {
+    const { state } = play(newRun("unlearned"), { limit: 1 });
+    state.skills = [];
+    state.player.aiHistory = [{ nodeId: state.player.nodeId, reviewed: false }];
+    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+
+    state.skills = ["code_review"];
+    expect(getAvailableActions(state).some(isType("review"))).toBe(true);
   });
 
   test("a review still costs a turn, which is what makes it a decision", () => {
-    const { state } = play(newRun("review-turn"), { limit: 1 });
+    const state = makeReviewable(play(newRun("review-turn"), { limit: 1 }).state);
     const after = applyAction(state, { type: "review" }).state;
     expect(after.turn).toBe(state.turn + 1);
   });
 
   test("a review costs the energy the preview advertised", () => {
-    const { state } = play(newRun("review-energy"), { limit: 1 });
+    const state = makeReviewable(play(newRun("review-energy"), { limit: 1 }).state);
     const cost = getActionPreview(state, { type: "review" }).energyCost;
     expect(cost).toBeGreaterThan(0);
 
@@ -297,7 +327,7 @@ describe("review", () => {
   });
 
   test("pair programming makes a review cheaper, in the rules and not only in the preview", () => {
-    const { state } = play(newRun("review-cheap"), { limit: 1 });
+    const state = makeReviewable(play(newRun("review-cheap"), { limit: 1 }).state);
     const cheap = structuredClone(state);
     cheap.skills = ["pair_programming"];
 

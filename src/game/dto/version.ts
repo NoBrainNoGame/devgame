@@ -38,8 +38,11 @@ export const SAVE_VERSION = 1;
  * 2 — a branch merges on its last node (a sub-branch used to strand its
  *     parent), a review charges energy, monitoring warns before a production
  *     bug, and a detour may no longer hop over the sprint merge.
+ * 3 — review has to be learned. It is offered only once a branch has granted
+ *     `canReview`, and only while there is unread machine-written work for it
+ *     to find. A log from epoch 2 that reviewed on turn one no longer replays.
  */
-export const RULES_EPOCH = 2;
+export const RULES_EPOCH = 3;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

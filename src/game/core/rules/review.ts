@@ -1,9 +1,10 @@
+import type { Effects } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { repayDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
-import type { NodeId } from "@/game/core/types";
+import type { NodeId, RunState } from "@/game/core/types";
 
 /**
  * Reading back what the machine wrote.
@@ -69,7 +70,23 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
 }
 
 export function hasUnreviewedAi(context: RuleContext): boolean {
-  return context.state.player.aiHistory.some((entry) => !entry.reviewed);
+  return hasUnreviewedAiIn(context.state);
+}
+
+export function hasUnreviewedAiIn(state: RunState): boolean {
+  return state.player.aiHistory.some((entry) => !entry.reviewed);
+}
+
+/**
+ * Whether the review action is on the table at all.
+ *
+ * Both halves matter. `canReview` is learned — from the Code review branch, or
+ * from Pair programming, which is the same habit under another name. Having
+ * something unread is what stops the button being a way to donate a turn to
+ * the rivals.
+ */
+export function canReview(state: RunState, effects: Effects): boolean {
+  return effects.canReview && hasUnreviewedAiIn(state);
 }
 
 /**

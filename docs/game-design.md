@@ -74,8 +74,20 @@ sont gratuits en temps.
 
 ### La review
 
-À la place d'un commit, à n'importe quel nœud, le joueur peut faire une
-**review**.
+À la place d'un commit, le joueur peut faire une **review** — mais seulement
+s'il a appris à le faire, et seulement s'il reste quelque chose à relire.
+
+**La review s'apprend.** L'action n'existe pas tant qu'une branche mergée ne
+l'a pas accordée : Revue de code, ou Pair programming, qui est la même habitude
+sous un autre nom. Une run qui ne croise ni l'une ni l'autre n'a aucun moyen
+d'effacer la dette d'un commit IA, et doit s'en sortir avec des commits
+artisanaux, des détours de refacto et l'automatisation DevOps. C'est ce qui
+donne son prix à la première branche qui l'offre.
+
+**Et elle doit servir à quelque chose.** Le bouton n'apparaît pas s'il ne reste
+aucun commit IA non relu : une review sans rien à lire ne rembourse rien, coûte
+de l'énergie et laisse tous les rivaux avancer. Une action qui ne peut
+qu'empirer la situation n'est pas un choix, c'est un piège.
 
 - Elle coûte un peu d'énergie et un tour : vous n'avancez pas, les bots si.
 - Elle nettoie les derniers commits IA non relus et rembourse de la dette en
@@ -141,7 +153,9 @@ Chaque point rend une action automatique, donc gratuite ou passive :
 - **Linter auto** — la dette technique devient visible et décroît toute seule.
 - **Dependabot** — les événements « lib obsolète » sont annulés.
 - **Auto-rebase** — les rebases forcés par les bots ne coûtent plus de nœud.
-- **Bot de review** — une review gratuite tous les N commits.
+- **Bot de review** — une review gratuite tous les N commits. C'est la seconde
+  route vers la relecture : elle s'achète avec des points au lieu de s'obtenir
+  d'une branche, et elle tourne même sans la compétence.
 - **Monitoring** — prévenu un nœud à l'avance qu'un bug de production arrive, et
   branche de hotfix plus courte.
 

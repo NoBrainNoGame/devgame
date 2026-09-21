@@ -13,6 +13,8 @@ import { previewAll } from "@/game/core/rules/preview";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
+  Branch,
+  BranchId,
   MapNode,
   NodeId,
   Phase,
@@ -86,6 +88,19 @@ export interface RunSnapshot {
     NodeId,
     Pick<MapNode, "id" | "kind" | "status" | "lane" | "depth" | "skillId" | "commit" | "branchId">
   >;
+
+  /**
+   * What each branch is for, without its node list.
+   *
+   * The skill a branch grants sits on its *merge* node, at the far end, so
+   * until this existed the one decision the game asks most often — open this
+   * branch or stay on `main` — was the only one made blind. The design's own
+   * rule is that costs and effects are shown before the choice.
+   *
+   * The node ids are deliberately left out: they are the shape of a sprint
+   * nobody has walked yet, and the graph is not allowed to know it.
+   */
+  branches: Record<BranchId, Pick<Branch, "id" | "kind" | "skillId" | "open" | "merged">>;
 }
 
 export function toSnapshot(state: RunState): RunSnapshot {
@@ -105,6 +120,19 @@ export function toSnapshot(state: RunState): RunSnapshot {
       ...(node.skillId === undefined ? {} : { skillId: node.skillId }),
       ...(node.commit === undefined ? {} : { commit: { ...node.commit } }),
       ...(node.branchId === undefined ? {} : { branchId: node.branchId }),
+    };
+  }
+
+  const branches: RunSnapshot["branches"] = {};
+  for (const id of Object.keys(state.branches).sort()) {
+    const branch = state.branches[id];
+    if (branch === undefined) continue;
+    branches[id] = {
+      id: branch.id,
+      kind: branch.kind,
+      ...(branch.skillId === undefined ? {} : { skillId: branch.skillId }),
+      open: branch.open,
+      merged: branch.merged,
     };
   }
 
@@ -166,5 +194,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
     devopsPoints: state.devopsPoints,
 
     nodes,
+    branches,
   };
 }

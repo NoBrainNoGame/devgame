@@ -4,7 +4,7 @@ import { getAvailableActions, isActionAvailable } from "@/game/core/rules/action
 import { applyAction } from "@/game/core/rules/reducer";
 import { InvalidActionError } from "@/game/core/types";
 
-import { findSeed, isCommit, isType, newRun, play, prefer } from "./helpers";
+import { findSeed, isCommit, isType, makeReviewable, newRun, play, prefer } from "./helpers";
 
 describe("getAvailableActions", () => {
   test("a fresh run starts by choosing where to go", () => {
@@ -15,14 +15,21 @@ describe("getAvailableActions", () => {
     );
   });
 
-  test("standing on a node offers both commits and a review", () => {
+  test("standing on a node offers both commits, and no move", () => {
     const { state } = play(newRun("actions-2"), { limit: 1 });
     expect(state.phase.kind).toBe("choose_action");
 
     const types = getAvailableActions(state).map((a) => a.type);
     expect(types).toContain("commit");
-    expect(types).toContain("review");
     expect(types).not.toContain("move");
+  });
+
+  test("a run that has learned to review is offered it, once there is something to read", () => {
+    const { state } = play(newRun("actions-2"), { limit: 1 });
+    const ready = makeReviewable(state);
+
+    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+    expect(getAvailableActions(ready).some(isType("review"))).toBe(true);
   });
 
   test("a commit is legal even with no energy left to pay for it", () => {

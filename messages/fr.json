@@ -357,6 +357,10 @@
   },
   "game": {
     "skills": {
+      "code_review": {
+        "name": "Revue de code",
+        "desc": "Débloque l'action « Relire » : vous pouvez enfin relire ce que la machine a écrit."
+      },
       "unit_tests": {
         "name": "Tests unitaires",
         "desc": "Fiabilise les commits IA et encaisse une PR rejetée sans perdre de terrain."
@@ -653,7 +657,6 @@
       "overextended_cost": "Énergie doublée : deux features ouvertes",
       "pair_programming": "Review allégée par le pair programming",
       "fresh": "Relu à chaud : remboursement bonifié",
-      "nothing_to_review": "Rien à relire",
       "repays_debt": "Rembourse de la dette",
       "risky_node": "Nœud risqué : jet moins sûr, progression plus grande",
       "chore_node": "Corvée : déclenche un événement",

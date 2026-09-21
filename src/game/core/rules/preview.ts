@@ -65,7 +65,6 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
       const notes: I18nText[] = [...cost.notes];
       if (state.player.aiChain >= BALANCE.review.chainLength) notes.push(text("notes.fresh"));
-      if (unreviewed === 0) notes.push(text("notes.nothing_to_review"));
 
       return {
         action,

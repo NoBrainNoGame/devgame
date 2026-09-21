@@ -153,6 +153,12 @@ function MoveButton({
   const label = opensBranch ? t("openBranch") : game(`nodes.${kind}.name` as never);
   const hint = opensBranch ? t("openBranchHint") : game(`nodes.${kind}.desc` as never);
 
+  // What the branch is actually for. It is carried by the merge node at the far
+  // end, so without this the commonest decision in the game is the only one
+  // made blind.
+  const branch = node.branchId === undefined ? undefined : snapshot.branches[node.branchId];
+  const skillId = node.skillId ?? (opensBranch ? branch?.skillId : undefined);
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -164,13 +170,13 @@ function MoveButton({
         >
           <span className="flex min-w-0 flex-col items-start gap-0.5">
             <span>{label}</span>
-            {node.skillId === undefined ? (
+            {skillId === undefined ? (
               <span className="whitespace-normal text-left font-normal text-muted-foreground text-xs">
                 {hint}
               </span>
             ) : (
-              <span className="font-normal text-branch-feature text-xs">
-                {game(`skills.${node.skillId}.name` as never)}
+              <span className="whitespace-normal text-left font-normal text-branch-feature text-xs">
+                {game(`skills.${skillId}.name` as never)}
               </span>
             )}
           </span>
@@ -183,11 +189,12 @@ function MoveButton({
         </Button>
       </TooltipTrigger>
 
-      {preview === undefined ? null : (
-        <TooltipContent className="max-w-64" side="left">
-          <PreviewDetail preview={preview} />
-        </TooltipContent>
-      )}
+      <TooltipContent className="max-w-64" side="left">
+        {skillId === undefined ? null : (
+          <p className="text-muted-foreground">{game(`skills.${skillId}.desc` as never)}</p>
+        )}
+        {preview === undefined ? null : <PreviewDetail preview={preview} />}
+      </TooltipContent>
     </Tooltip>
   );
 }

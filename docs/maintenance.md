@@ -337,6 +337,8 @@ In practice:
 | A node kind, or anything in `map/generate.ts` | Yes |
 | A rule that changes an outcome, a cost or a draw | Yes |
 | A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |
+| A skill with `unlockCost: 0` | Yes — it joins the free pool, so it enters `rng.pick` on every map |
+| Gating an action in `getAvailableActions` | Yes — an old log that took it no longer replays |
 | A DevOps id or a profile id appended to its array | No — no randomness is drawn from either |
 | A fifth bot archetype, appended, with `bots.max` still 4 | No — it never spawns |
 | Renaming a message, a comment, a variable | No |

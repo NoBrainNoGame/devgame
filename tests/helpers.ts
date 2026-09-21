@@ -12,6 +12,25 @@ export function newRun(
   return createRun({ seed, mode: "classic", profileId, version: SAVE_VERSION });
 }
 
+/** A copy of `state` that has learned to review. */
+export function withReviewSkill(state: RunState): RunState {
+  const next = structuredClone(state);
+  if (!next.skills.includes("code_review")) next.skills.push("code_review");
+  return next;
+}
+
+/**
+ * A copy that can review *right now*: the skill learned, and one unread AI
+ * commit for it to find. Review is doubly gated — learned, and with something
+ * to read — so a test that wants to exercise it has to say so rather than
+ * assume it is always on the table.
+ */
+export function makeReviewable(state: RunState): RunState {
+  const next = withReviewSkill(state);
+  next.player.aiHistory = [{ nodeId: next.player.nodeId, reviewed: false }];
+  return next;
+}
+
 export interface PlayResult {
   state: RunState;
   actions: PlayerAction[];

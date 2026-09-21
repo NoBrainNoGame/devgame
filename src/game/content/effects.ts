@@ -55,6 +55,15 @@ export interface Effects {
   monitoring: boolean;
   /** A free review happens automatically every N turns. 0 disables it. */
   freeReviewEvery: number;
+  /**
+   * Unlocks the review action.
+   *
+   * Reading back what the machine wrote is a thing you learn to do, not a
+   * button the game hands you: without it, an AI commit's debt is permanent
+   * and the only answers are craft commits, refactor detours and automation.
+   * That is what makes the first branch offering it worth stopping for.
+   */
+  canReview: boolean;
 }
 
 export const NO_EFFECTS: Effects = {
@@ -82,6 +91,7 @@ export const NO_EFFECTS: Effects = {
   cancelObsoleteLib: false,
   monitoring: false,
   freeReviewEvery: 0,
+  canReview: false,
 };
 
 export const EFFECT_KEYS = Object.keys(NO_EFFECTS).sort() as (keyof Effects)[];
