@@ -142,3 +142,16 @@ export const SKILLS: Record<SkillId, SkillDef> = {
 export function isSkillId(value: string): value is SkillId {
   return Object.hasOwn(SKILLS, value);
 }
+
+/**
+ * What a brand-new account starts with, derived from the table rather than
+ * listed again beside it.
+ *
+ * It used to be written out in three places — here by `unlockCost`, in
+ * `createRun`, and in `emptyMeta` — with nothing keeping them in step. Letting
+ * them drift has no symptom: the skill simply never appears on a map, and the
+ * player never learns it existed.
+ */
+export function freeFeatureSkills(): FeatureSkillId[] {
+  return FEATURE_SKILL_IDS.filter((id) => SKILLS[id].unlockCost === 0).sort();
+}

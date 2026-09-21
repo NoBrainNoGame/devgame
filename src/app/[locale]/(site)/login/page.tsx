@@ -1,17 +1,24 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
 import { isGoogleEnabled } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { alternatesFor } from "@/lib/seo";
 import { getSession } from "@/lib/session";
 
 import { LoginForm } from "./LoginForm";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<{ title: string }> {
-  const t = await getTranslations("login");
-  return { title: t("title") };
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("login")]);
+
+  return {
+    title: t("title"),
+    alternates: alternatesFor(env.APP_URL, locale, "/login"),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function LoginPage(): Promise<React.JSX.Element> {

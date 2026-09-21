@@ -1,15 +1,31 @@
 {
   "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(sudo:*)",
+      "Bash(ssh:*)",
+      "Bash(chmod 777:*)",
+      "Bash(bun run db:reset)",
+      "Bash(bun x prisma migrate reset:*)",
+      "Bash(bun x prisma db push:*)",
+      "Bash(docker compose down -v:*)",
+      "Bash(docker volume rm:*)",
+      "Bash(rm -rf /:*)",
+      "Bash(rm -rf ~:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fdx:*)"
+    ],
     "allow": [
       "Bash(bun run check)",
       "Bash(bun run typecheck)",
       "Bash(bun run lint)",
       "Bash(bun run lint:fix)",
       "Bash(bun run format)",
-      "Bash(bun test)",
       "Bash(bun test:*)",
       "Bash(bun run build)",
-      "Bash(bun run sim)",
       "Bash(bun run sim:*)",
       "Bash(bun x tsc --noEmit)",
       "Bash(bun x biome check:*)",

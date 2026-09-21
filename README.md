@@ -126,6 +126,9 @@ docs/            game design, database, hosting
 `docs/game-design.md` is the consolidated spec — the engine implements it, and a
 rule contradicting the doc is a bug in one of the two. `CLAUDE.md` documents the
 invariants; read it before changing anything under `src/game/` or `src/lib/`.
+[docs/maintenance.md](docs/maintenance.md) is the maintainer's manual: how to
+add a game element, change a rule, version a save or move a DTO, and what
+silently breaks when a step is skipped.
 
 ## Deployment
 

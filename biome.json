@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!src/generated",
+      "!.claude",
       "!.next",
       "!node_modules",
       "!bun.lock",

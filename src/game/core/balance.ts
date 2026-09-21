@@ -9,8 +9,9 @@ import type { CommitMode, NodeKind } from "@/game/core/types";
  * hundred headless runs and prints the distributions they produce.
  *
  * Changing anything here changes what a recorded action log means, which is why
- * `SAVE_VERSION` in `src/game/dto/version.ts` is derived from a hash of this
- * module. An old save then loads read-only instead of scoring wrong.
+ * `RULES_FINGERPRINT` in `src/game/dto/version.ts` hashes this module. An old
+ * save then loads read-only instead of scoring wrong. (`SAVE_VERSION` is a
+ * different number, bumped by hand when the *shape* of a save changes.)
  */
 export const BALANCE = {
   /** Main-line nodes per sprint, inclusive. */

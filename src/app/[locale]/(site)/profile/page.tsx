@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +15,23 @@ import {
 import { emptyMeta, xpForLevel } from "@/game";
 import { redirect } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import { getMyProfile } from "@/lib/profile/actions";
+import { alternatesFor } from "@/lib/seo";
 import { getSession } from "@/lib/session";
 
 import { DisplayNameForm } from "./DisplayNameForm";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(): Promise<{ title: string }> {
-  const t = await getTranslations("profile");
-  return { title: t("title") };
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("profile")]);
+
+  return {
+    title: t("title"),
+    alternates: alternatesFor(env.APP_URL, locale, "/profile"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function ProfilePage(): Promise<React.JSX.Element> {

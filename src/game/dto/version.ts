@@ -41,16 +41,26 @@ export const SAVE_VERSION = 1;
  */
 export const RULES_EPOCH = 2;
 
-export const RULES_FINGERPRINT = fnv1aHex(
-  canonicalJson({
-    epoch: RULES_EPOCH,
-    balance: BALANCE,
-    skills: SKILL_IDS,
-    relics: RELIC_IDS,
-    devops: DEVOPS_IDS,
-    profiles: PROFILE_IDS,
-    bots: BOT_ARCHETYPE_IDS,
-    failures: FAILURE_EVENT_IDS,
-    ambient: AMBIENT_EVENT_IDS,
-  }),
-);
+/**
+ * Exported so a test can compute the fingerprint for a *different* epoch and
+ * prove the epoch actually feeds it. Comparing the real hash against an
+ * ad-hoc object would pass whether or not the epoch were included, because the
+ * two shapes differ anyway — which is a test that guards nothing.
+ */
+export function fingerprintFor(epoch: number): string {
+  return fnv1aHex(
+    canonicalJson({
+      epoch,
+      balance: BALANCE,
+      skills: SKILL_IDS,
+      relics: RELIC_IDS,
+      devops: DEVOPS_IDS,
+      profiles: PROFILE_IDS,
+      bots: BOT_ARCHETYPE_IDS,
+      failures: FAILURE_EVENT_IDS,
+      ambient: AMBIENT_EVENT_IDS,
+    }),
+  );
+}
+
+export const RULES_FINGERPRINT = fingerprintFor(RULES_EPOCH);

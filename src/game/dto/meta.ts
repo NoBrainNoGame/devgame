@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PROFILE_IDS, SKILL_IDS } from "@/game/content";
+import { freeFeatureSkills, PROFILE_IDS, SKILL_IDS } from "@/game/content";
 
 /**
  * Meta-progression: what survives a run. It lives in `localStorage` while
@@ -56,7 +56,7 @@ export function emptyMeta(now: string): MetaProgressDto {
     totalCommits: 0,
     botsFired: 0,
     unlockedProfiles: ["junior"],
-    unlockedSkills: ["ci_cd", "coffee", "copilot_v2", "linter", "pair_programming", "unit_tests"],
+    unlockedSkills: freeFeatureSkills(),
     settings: { sound: true, reducedMotion: false },
     metaVersion: 0,
     updatedAt: now,

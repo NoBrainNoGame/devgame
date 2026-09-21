@@ -1,9 +1,9 @@
 import {
   DEVOPS_IDS,
   type DevopsId,
+  freeFeatureSkills,
   PROFILES,
   type ProfileId,
-  SKILL_IDS,
   type SkillId,
 } from "@/game/content";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
@@ -32,17 +32,8 @@ export interface CreateRunOptions {
 
 /** Skills available to an account that has unlocked nothing yet. */
 export function defaultUnlockedSkills(): SkillId[] {
-  return SKILL_IDS.filter((id) => SKILLS_UNLOCK_FREE.has(id)).sort();
+  return freeFeatureSkills();
 }
-
-const SKILLS_UNLOCK_FREE = new Set<SkillId>([
-  "unit_tests",
-  "ci_cd",
-  "linter",
-  "pair_programming",
-  "copilot_v2",
-  "coffee",
-]);
 
 /**
  * A fresh run at turn 0, standing on the first sprint's anchor.

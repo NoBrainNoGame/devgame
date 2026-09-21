@@ -25,6 +25,7 @@ export type { BotSkillId, FeatureSkillId, SkillDef, SkillId } from "@/game/conte
 export {
   BOT_SKILL_IDS,
   FEATURE_SKILL_IDS,
+  freeFeatureSkills,
   isSkillId,
   SKILL_IDS,
   SKILLS,

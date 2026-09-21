@@ -45,6 +45,11 @@ export const DEPTH_HEIGHT = 58;
 export const NODE_RADIUS = 11;
 export const EDGE_WIDTH = 2.5;
 
+/**
+ * Colour is decided by the lane, not the kind — except for the two kinds that
+ * only ever appear spliced into a negative lane, which get their own so an
+ * emergency does not read as feature work.
+ */
 export function laneColour(lane: number, kind: NodeKind): number {
   if (kind === "hotfix") return THEME.lane.hotfix;
   if (kind === "refactor" && lane < 0) return THEME.lane.refactor;

@@ -166,7 +166,15 @@ export function arriveAt(context: RuleContext, nodeId: NodeId): AfterResolution 
       node.status = "done";
       return afterResolution(context);
 
-    default:
+    // Listed rather than defaulted: a new `NodeKind` should fail to compile
+    // here, not quietly behave like an ordinary commit node.
+    case "commit":
+    case "fork":
+    case "feature":
+    case "hotfix":
+    case "refactor":
+    case "risky":
+    case "chore":
       state.phase = { kind: "choose_action" };
       return "continue";
   }

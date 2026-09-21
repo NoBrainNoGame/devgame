@@ -32,6 +32,24 @@ export const auth = betterAuth({
 
   socialProviders: googleCredentials ? { google: googleCredentials } : {},
 
+  /**
+   * Google is the front door, and the magic link is the way in when somebody
+   * has no Google account or Google is down. Both routes prove the same thing —
+   * control of an address — so a player who used one and then the other should
+   * land in the same account rather than a duplicate, or worse, an error they
+   * cannot get past.
+   *
+   * Only Google is trusted for automatic linking, because it verifies the
+   * address itself. Linking on an unverified address would let anyone claim an
+   * account by asserting its email.
+   */
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+    },
+  },
+
   plugins: [
     magicLink({
       /**

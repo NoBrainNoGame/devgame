@@ -84,7 +84,7 @@ describe("the window", () => {
 });
 
 describe("who gets limited", () => {
-  const request = new Request("https://cardbox.test/api/tables", {
+  const request = new Request("https://devgame.test/api/tables", {
     headers: { "x-forwarded-for": "203.0.113.7, 70.41.3.18" },
   });
 
@@ -109,7 +109,7 @@ describe("who gets limited", () => {
   });
 
   test("still produces a key when nothing identifies the caller", () => {
-    const anonymous = new Request("https://cardbox.test/x");
+    const anonymous = new Request("https://devgame.test/x");
     expect(rateKey("x", {}, anonymous)).toBe("x:ip:unknown");
   });
 });

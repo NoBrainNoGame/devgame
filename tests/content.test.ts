@@ -23,7 +23,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1aHex } from "@/game/core/hash";
-import { RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
+import { fingerprintFor, RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 
 /**
  * Content is data, and data drifts. These are the checks that catch a typo in
@@ -146,11 +146,13 @@ describe("rules fingerprint", () => {
     expect(RULES_EPOCH).toBeGreaterThan(0);
   });
 
-  test("the epoch is part of the fingerprint, so bumping it is enough", () => {
-    // Guards the mechanism itself: if the epoch stopped feeding the hash, the
-    // only way to mark a rules change would silently do nothing.
-    expect(RULES_FINGERPRINT).not.toBe(
-      fnv1aHex(canonicalJson({ balance: BALANCE, epoch: RULES_EPOCH + 1 })),
-    );
+  test("the epoch feeds the fingerprint, so bumping it is enough", () => {
+    // Guards the mechanism itself. Computing the real fingerprint for a
+    // neighbouring epoch is the only comparison that proves the epoch is part
+    // of the hash: anything built from a different shape would differ whether
+    // or not the epoch were included.
+    expect(fingerprintFor(RULES_EPOCH)).toBe(RULES_FINGERPRINT);
+    expect(fingerprintFor(RULES_EPOCH + 1)).not.toBe(RULES_FINGERPRINT);
+    expect(fingerprintFor(RULES_EPOCH - 1)).not.toBe(RULES_FINGERPRINT);
   });
 });

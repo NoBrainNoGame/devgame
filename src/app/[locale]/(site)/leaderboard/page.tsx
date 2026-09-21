@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+import { getLocale, getTranslations } from "next-intl/server";
 
 import {
   Table,
@@ -12,12 +13,14 @@ import {
 import { Link } from "@/i18n/navigation";
 import { msUntilNextDaily } from "@/lib/daily/seed";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import {
   getLeaderboard,
   type LeaderboardEntry,
   type LeaderboardMode,
   type LeaderboardPeriod,
 } from "@/lib/leaderboard/queries";
+import { alternatesFor } from "@/lib/seo";
 import { getCurrentUserId } from "@/lib/session";
 import { cn } from "@/lib/utils";
 
@@ -31,9 +34,13 @@ const PERIODS = ["today", "yesterday", "all"] as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-export async function generateMetadata(): Promise<{ title: string }> {
-  const t = await getTranslations("leaderboard");
-  return { title: t("title") };
+export async function generateMetadata(): Promise<Metadata> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("leaderboard")]);
+
+  return {
+    title: t("title"),
+    alternates: alternatesFor(env.APP_URL, locale, "/leaderboard"),
+  };
 }
 
 export default async function LeaderboardPage({

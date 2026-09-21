@@ -1,0 +1,708 @@
+# Maintenance
+
+How to change this game without breaking the runs people already played.
+
+`docs/game-design.md` says what the game is, `CLAUDE.md` says what the code may
+not do, and this file says what to touch, in what order, and what goes wrong
+when you skip a step. Most of the traps here are silent: the typecheck passes,
+the tests pass, and the feature simply never appears.
+
+Two facts explain nearly everything below.
+
+- **A run is `seed + ordered actions`, and nothing else.** The server replays
+  that list to decide what a score was. Anything that changes what the list
+  replays to is not a tweak, it is a new game.
+- **The engine is pure.** `src/game/core/` and `src/game/content/` have no
+  clock, no `Math.random()`, no `@/lib`. Randomness is the cursor in
+  `state.rng`, and the order of draws is part of the save.
+
+## Adding a game element
+
+Every content table lives in `src/game/content/`, is a frozen id array plus a
+`Record` keyed by it, and is re-exported through `src/game/content/index.ts`.
+The shape is always the same: add the id, add the entry, name it twice in the
+message catalogues, then decide whether the epoch moves.
+
+Three checks in `tests/content.test.ts` cover the table itself: ids are unique
+within each list, every entry's `.id` matches its key, and **no entry mentions
+an effect field that does not exist** (it compares `Object.keys(effects)`
+against `EFFECT_KEYS`, which is derived from `NO_EFFECTS`). A fourth checks the
+value's type matches the field's declared type. `tests/messages.test.ts`
+derives the expected message keys from the same id arrays, so a missing
+translation fails there and names the id.
+
+### A skill
+
+1. Add the id to `FEATURE_SKILL_IDS` (a branch you merge) or `BOT_SKILL_IDS` (a
+   trophy for firing a rival) in `src/game/content/skills.ts`.
+2. Add the `SKILLS` entry: `source`, `effects`, `unlockCost`.
+3. If no field in `Effects` expresses what it does, see
+   [When no effect field fits](#when-no-effect-field-fits).
+4. Add `game.skills.<id>.name` and `game.skills.<id>.desc` to **both**
+   `messages/fr.json` and `messages/en.json`.
+5. A **bot** skill must be the `trophy` of exactly one archetype in
+   `src/game/content/bots.ts`, or it can never be awarded. Trophies must be
+   distinct — `tests/content.test.ts` enforces both.
+6. A **feature** skill reaches the map through `availableSkills()` in
+   `src/game/core/rules/sprint.ts`, which filters `state.unlockedSkills`. If
+   the skill is meant to be available from the very first run, it must be in
+   **three** places that do not know about each other:
+   - `unlockCost: 0` in `SKILLS`,
+   - `SKILLS_UNLOCK_FREE` in `src/game/core/run.ts` (the fallback pool for a
+     run with no meta),
+   - the `unlockedSkills` list in `emptyMeta()` in `src/game/dto/meta.ts` (what
+     a brand-new account starts with).
+
+   **Symptom of getting this wrong: the skill silently never appears on a
+   map.** Nothing fails. `rng.pick(pool)` simply never sees it, because the
+   pool is the account's unlocks, not the table.
+7. A skill with `unlockCost > 0` is unlocked by `applyRunToMeta` in
+   `src/lib/profile/progression.ts` once the player has banked that many
+   commits. No extra wiring.
+8. Map generation: none. `generateSprint` takes whatever pool it is handed.
+
+**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts`,
+then `bun run sim --runs 200` and confirm no policy's score distribution moved
+by more than noise. Then the epoch question below.
+
+### A relic
+
+1. Add the id to `RELIC_IDS` and the entry to `RELICS` in
+   `src/game/content/relics.ts`.
+2. `effects` is permanent and recomputed every turn; `grant` is applied once,
+   the moment the relic is picked, and only understands `devopsPoints`,
+   `energy` and `debt` (see `grantRelic` in `src/game/core/rules/grants.ts`).
+   Anything else needs a new `Effects` field.
+3. Two message entries, `game.relics.<id>.name` and `.desc`, in both files.
+4. Map generation: none. `drawRelicOffer` in `src/game/core/rules/sprint.ts`
+   offers three of everything not yet owned.
+5. **This always moves the epoch.** The offer is `rng.shuffle` over a filtered
+   `RELIC_IDS`; one more entry changes the shuffle, which changes the offer and
+   every draw after it, for every run ever recorded.
+
+**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
+tests/sprint.test.ts` — the sprint test asserts the offer is exactly three
+distinct relics drawn from `RELIC_IDS`.
+
+### A DevOps node
+
+1. Add the id to `DEVOPS_IDS` and the entry to `DEVOPS` in
+   `src/game/content/devops.ts`.
+2. `cost` is indexed from level 0 and **its length must equal `maxLevel`**;
+   every price must be positive. `tests/content.test.ts` checks both, and that
+   `devopsCost(id, maxLevel)` is `undefined`.
+3. `perLevel` is the effect of *one* level. Levels stack by summing, so a
+   boolean field cannot be levelled meaningfully — that is why `review_bot`
+   adds `freeReviewEvery: 1` per level and `freeReviewCadence()` in
+   `rules/modifiers.ts` turns the sum into a cadence.
+4. Two message entries under `game.devops.<id>`.
+5. No action wiring: `getAvailableActions` and `gatherEffects` both iterate
+   `DEVOPS_IDS`, and `PlayerActionSchema` validates against `z.enum(DEVOPS_IDS)`.
+6. Map generation: none.
+7. A DevOps id draws no randomness, so adding one at the **end** of the array
+   does not change what an old log replays to — but it does change
+   `RULES_FINGERPRINT` and the shape of `state.devops`, so the pinned hash in
+   `tests/content.test.ts` must be updated.
+
+**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
+tests/actions.test.ts tests/rules.test.ts`.
+
+### A bot archetype
+
+1. Add the id to `BOT_ARCHETYPE_IDS` and the entry to `BOT_ARCHETYPES` in
+   `src/game/content/bots.ts`. **The array order is the arrival order**:
+   `spawnBotsForSprint` takes the first unused archetype.
+2. It needs a `trophy`, and that trophy must be a `BOT_SKILL_IDS` entry no
+   other archetype claims — so a fifth archetype means a fifth bot skill.
+3. `pressure` only understands `prRejected`, `forcedRebase` and
+   `debtPerMistake`. The first two are read by `failurePressure` in
+   `src/game/core/rules/bots.ts` and fed into `drawFailure` in
+   `rules/events.ts`; a new pressure key does nothing until a rule reads it.
+4. Two message entries under `game.bots.<id>`.
+5. **`BALANCE.bots.max` is 4.** A fifth archetype appended to the array will
+   never spawn until that number moves, which is a balance change and moves the
+   fingerprint on its own. `docs/game-design.md` caps the count at four
+   deliberately — four cursors is the limit of what a player tracks.
+6. Map generation: none. Bots hold an index into the main line, not a node.
+
+**What to verify.** `bun test tests/content.test.ts tests/bots.test.ts
+tests/messages.test.ts`, then `bun run sim --runs 200` and look at `bots fired
+avg` per policy: a new archetype that nobody ever fires, or that everybody
+fires immediately, is a `firingTurns` problem.
+
+### An event
+
+The two tables in `src/game/content/events.ts` behave very differently.
+
+**A failure event** (drawn when a commit roll misses):
+
+1. Add the id to `FAILURE_EVENT_IDS` and the entry to `FAILURE_EVENTS`:
+   `weight`, `requiresUnreviewedAi`, `forbiddenOnHotfix`.
+2. Add a `case` to the switch in `resolveFailure` in
+   `src/game/core/rules/events.ts`. The switch is exhaustive over the id union,
+   so **this one is a typecheck error until you write it** — the only content
+   addition the compiler catches for you.
+3. Return the right `FailureOutcome`: `conflict` hands the player a second
+   decision, `resolve` lets the node through anyway, `retry` eats the turn and
+   leaves the node unresolved, `resolve_then_hotfix` ships it and splices a
+   hotfix branch in front.
+4. If the weight should move with the board, add it to `failurePressure` and
+   to the per-id weighting in `drawFailure`.
+5. Two message entries: `game.events.<id>.title` and `.log` (**not** `name`/
+   `desc` — events are the exception).
+
+**An ambient event** (drawn on `chore` nodes and rarely after a success):
+
+1. Add the id to `AMBIENT_EVENT_IDS` and the entry to `AMBIENT_EVENTS`.
+2. Its whole effect is the table: `effect.energy`, `effect.progress`,
+   `effect.debt`, applied by `drawAmbient`. A fourth kind of effect means
+   editing `drawAmbient`, which is a rule change.
+3. `cancelledByDependabot` removes it from the table entirely when the player
+   has the DevOps node.
+4. Same two message entries, `title` and `log`.
+
+Both tables feed `rng.weighted`, so **adding to either always moves the
+epoch**: the weights change, the draw changes, every recorded run replays
+differently.
+
+**What to verify.** `bun test tests/events.test.ts tests/content.test.ts
+tests/messages.test.ts`, then `bun run sim --runs 300` and read the `failures`
+line: an event that never appears in three hundred runs has a weight problem or
+an eligibility flag that is never satisfied.
+
+### A node kind
+
+This is the one with the most places to touch and the least help from the
+compiler.
+
+1. Add it to the `NodeKind` union in `src/game/core/types.ts`.
+2. Add an energy price to `BALANCE.energy.cost` in
+   `src/game/core/balance.ts`. That record is `satisfies Record<NodeKind,
+   number>`, so a missing entry is a typecheck error. It is also the list
+   `tests/messages.test.ts` enumerates node kinds from, so nothing will ask you
+   for the translation until this exists.
+3. Add a glyph to `nodeGlyph` in `src/game/render/theme.ts` — exhaustive
+   switch, so this is a typecheck error too. Check `laneColour` in the same
+   file; it is *not* exhaustive and will fall through to the feature colour.
+4. Place it. Either in `generateSprint` (`src/game/core/map/generate.ts`) or in
+   `injectBranch` (`src/game/core/rules/inject.ts`). A new **detour** kind also
+   needs a weight in `BALANCE.map.detourWeights` and an entry in the
+   `detourKinds` array, or the generator never draws it.
+5. Teach the rules what it does, in `src/game/core/rules/progress.ts`:
+   - `arriveAt` has a `default` branch. **A new kind falls into it silently**
+     and behaves like an ordinary commit node — no typecheck error, no test
+     failure, just a node that does nothing special.
+   - `isAutoWalkable` decides whether an AI burst may walk through it. Left
+     out, an AI commit stops dead at it.
+   - `resolveNode` special-cases `risky`, `refactor` and `chore`.
+6. Two message entries under `game.nodes.<kind>` — the log renders
+   `nodes.<kind>.name` as a parameter of `log.node_done`.
+7. It changes map generation, so **it moves the epoch**.
+
+**What to verify.** `bun test tests/map.test.ts` — it runs `checkInvariants`
+over 500 seeds and will catch a node with no successor, a back edge, an
+unreachable node or two branches colliding in the same lane. Then `bun run sim`
+and read the `generation` block: `invariant failures 0`, and `choice points`
+should not have dropped.
+
+### A starter profile
+
+1. Add the id to `PROFILE_IDS` and the entry to `PROFILES` in
+   `src/game/content/profiles.ts`.
+2. `unlockCost` **must be greater than zero** for anything but `junior` —
+   `tests/content.test.ts` asserts it.
+3. `startingSkills` are `FeatureSkillId`s granted at `createRun`;
+   `startingDevops` is a partial map of levels.
+4. Two message entries under `game.profiles.<id>`.
+5. No UI wiring: `RunSetup.tsx` renders `PROFILE_IDS`, `RunSaveSchema`
+   validates `z.enum(PROFILE_IDS)`, and `applyRunToMeta` unlocks by banked
+   commits.
+6. `overclaims` in `src/lib/run/claims.ts` already refuses a save naming a
+   profile the account has not unlocked — nothing to add there.
+7. A profile id draws no randomness, so old logs replay unchanged. The
+   fingerprint still moves.
+
+**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
+tests/claims.test.ts`, then `bun run sim --runs 200` — the simulator only plays
+`junior`, so a new starter needs a hand-played sanity check as well.
+
+### When no effect field fits
+
+`Effects` in `src/game/content/effects.ts` is a flat additive record on
+purpose: composition is a sum and a logical OR, which cannot be got wrong.
+
+1. Add the field to the `Effects` interface **and** to `NO_EFFECTS`.
+   `EFFECT_KEYS` is `Object.keys(NO_EFFECTS)`, and `addEffects` iterates
+   `EFFECT_KEYS` — a field in the interface but not in `NO_EFFECTS` is silently
+   ignored when summing. (`tests/content.test.ts` does catch this, because the
+   content entry then names a key `EFFECT_KEYS` lacks.)
+2. Read it somewhere. `rules/modifiers.ts` is the intended home for anything
+   that changes a number; `rules/events.ts` and `rules/progress.ts` read the
+   switch-like ones.
+3. **Nothing in the suite catches a field that is declared, summed and never
+   read.** The relic simply does nothing. Write the test that proves it works,
+   next to the others in `tests/rules.test.ts`.
+4. Positive is always better for the player, and point fields are added to a
+   chance expressed in percent. Keeping that convention is what lets
+   `gatherEffects` be a blind sum.
+
+## Changing a rule or a balance number
+
+They are not the same change and they do not have the same consequences.
+
+- A **balance number** is a value in `src/game/core/balance.ts`. Changing one
+  moves `RULES_FINGERPRINT` automatically, because the fingerprint hashes the
+  whole table.
+- A **rule** is code in `src/game/core/rules/` or `src/game/core/map/`.
+  Changing one moves nothing automatically. The fingerprint cannot see it.
+
+### Why every number lives in one file
+
+Not tidiness. Two reasons that matter operationally:
+
+- The fingerprint hashes `BALANCE`. A number that lives inside a rule is a
+  number that can change without any run being marked incomparable, which puts
+  two different games on the same leaderboard.
+- `bun run sim` is the only way to find out whether a number is wrong before a
+  human plays fifty runs, and it can only tell you that if the number is
+  reachable from one place.
+
+**A literal like `0.7` inside a rule is a bug**, even a correct one. If you
+need a new knob, add it to `BALANCE` under the section it belongs to, with a
+comment saying what it is in game terms.
+
+### Re-measuring with the simulator
+
+`bun run sim` plays headless runs with fixed policies (`scripts/sim.ts`):
+
+```bash
+bun run sim                        # 200 runs, all four policies
+bun run sim --runs 500             # more runs, tighter quantiles
+bun run sim --policy careful       # one policy: ai | craft | mixed | careful
+bun run sim --seed 42              # move the seed window
+bun run sim --seed 42 --verbose    # one run, printed turn by turn
+```
+
+`--verbose` prints a single run and ignores `--runs`; with `--policy all` it
+uses `mixed`. Without `--verbose` it first checks map generation over
+`min(500, runs * 2)` sprints, then reports each policy.
+
+**Reading the output honestly.**
+
+- `generation → invariant failures` must be `0`. Anything else is a broken
+  graph, not a balance problem, and `bun test tests/map.test.ts` will name it.
+- `generation → choice points` is the average number of nodes with more than
+  one exit. If it falls towards the `min`, the map has become a corridor and
+  the game has stopped asking questions.
+- `ends` should contain **no `stuck` and no `capped`**. `stuck` means the
+  engine reached a state with no legal action — always a bug. `capped` means a
+  run hit the 4000-iteration ceiling — a run that cannot end.
+- `turns med` with `p10` and `p90` tells you the spread. A `p90` an order of
+  magnitude above the median (the `mixed` policy does this today) means the
+  distribution is bimodal: most runs die early and a few go forever. The median
+  alone will lie to you about that.
+- `score med` against `max`: one enormous `max` is one lucky run, not a
+  balanced policy. Compare medians across policies.
+- **No policy should dominate.** If `craft` doubles everything else's median,
+  AI commits are not worth their debt. Today `careful` and `craft` lead on
+  median score while `ai` burns out in a dozen turns — that is the intended
+  shape, not a bug.
+- `failures` is a raw count across all runs. A failure id missing from the line
+  entirely is one that can never fire: check its `requiresUnreviewedAi` and
+  `forbiddenOnHotfix` flags.
+- The simulator plays `junior` only, with no relics chosen by preference and no
+  account unlocks. It cannot tell you anything about the other starters.
+
+Run the **same seed and run count** before and after a change, and quote both.
+A different `--seed` is a different sample.
+
+### The `RULES_EPOCH` decision
+
+`RULES_FINGERPRINT` in `src/game/dto/version.ts` hashes the balance table, the
+content id lists, and `RULES_EPOCH`. It moves on its own for a number or an id.
+**It cannot see a change to the rules code** — fixing how a branch merges
+alters every replay without touching a single number.
+
+So, by hand:
+
+> If the change makes an old action log replay to a **different game**, bump
+> `RULES_EPOCH`.
+
+In practice:
+
+| Change | Epoch |
+|---|---|
+| A balance number | Yes — the numbers are the game |
+| A relic, a failure event, an ambient event | Yes — they enter an RNG pool |
+| A node kind, or anything in `map/generate.ts` | Yes |
+| A rule that changes an outcome, a cost or a draw | Yes |
+| A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |
+| A DevOps id or a profile id appended to its array | No — no randomness is drawn from either |
+| A fifth bot archetype, appended, with `bots.max` still 4 | No — it never spawns |
+| Renaming a message, a comment, a variable | No |
+
+When in doubt, bump it. The cost of bumping is a leaderboard that starts again.
+The cost of not bumping is a leaderboard that compares two different games and
+looks perfectly healthy while doing it.
+
+Bumping the epoch changes the fingerprint, so the pinned value in
+`tests/content.test.ts` (`expect(RULES_FINGERPRINT).toBe("b7844377")`) has to
+be updated in the same commit. Add a numbered line to the `RULES_EPOCH` doc
+comment saying what changed — that list is the only record of why the boards
+were reset.
+
+**What to verify.**
+
+1. `bun run sim --runs 300` before the change, saved.
+2. Make the change. Numbers go in `balance.ts`; rules go in `rules/`.
+3. `bun run sim --runs 300` with the same seed, and compare the tables above.
+4. Decide on `RULES_EPOCH` and write down why.
+5. `bun run check`. `tests/content.test.ts` will fail on the pinned
+   fingerprint; update the literal.
+6. `bun test tests/rules.test.ts` — it derives most of its expectations from
+   `BALANCE`, but a few are hard-coded (a `ci` level being worth exactly `+10`,
+   for instance) and will need adjusting if you moved the underlying number.
+
+## Save versioning
+
+Three different numbers, all in `src/game/dto/version.ts` except the storage
+keys. They answer different questions.
+
+| | What it describes | Bumped | Old saves |
+|---|---|---|---|
+| `SAVE_VERSION` | The **shape** of a saved run | By hand | Must keep loading |
+| `RULES_FINGERPRINT` | What the rules **do** | Derived | Load, do not rank |
+| `RULES_EPOCH` | Rules **code** changes the hash cannot see | By hand | Load, do not rank |
+
+### `SAVE_VERSION`
+
+Bump it when the *shape* of `RunSaveDto` changes in a way an old save does not
+satisfy: a new required field, a renamed field, a changed `PlayerAction`.
+
+**Every bump gets a migration** in `src/game/dto/migrations.ts`. The map is
+keyed by the version being migrated *from*, and each entry turns `n` into
+`n + 1`:
+
+```ts
+const MIGRATIONS: Record<number, (save: LooseSave) => LooseSave> = {
+  1: (save) => ({ ...save, newField: defaultValue }),
+};
+```
+
+`migrate()` walks the chain and the caller re-validates the result with
+`RunSaveSchema`. A missing entry returns `No migration from save version n` and
+the save is refused — in the browser that is a run the player cannot resume; on
+the server it is a submission that is rejected.
+
+A save from the *future* is refused rather than guessed at, with a message
+telling the player to reload.
+
+A purely additive optional field does not need a bump. A field with a Zod
+default does not need a bump. Anything that would make an existing stored save
+fail `RunSaveSchema.safeParse` does.
+
+`STORAGE_KEYS` in `src/lib/storage/keys.ts` carries its own `:v1` suffix. That
+is the blunt instrument: bumping a suffix orphans every local save instead of
+migrating it. Use it only when a migration is genuinely impossible.
+
+### `RULES_FINGERPRINT` and `RULES_EPOCH`
+
+These do not stop a save loading. `submitRun` checks `isCurrentRules(save)` and
+returns `This run was played against older rules` — the player keeps their run
+and their local score, it just does not go on a board.
+
+### What happens to a run already in the database
+
+`Run.rulesEpoch` records the epoch a submission was played under, written from
+`RULES_EPOCH` at submit time. Every leaderboard query in
+`src/lib/leaderboard/queries.ts` filters `r."rulesEpoch" = ${RULES_EPOCH}`.
+
+So when you bump the epoch:
+
+- Every finished row keeps its old value and **disappears from the boards**.
+  Nothing is deleted; the rows are still there, still scored, still visible in
+  a player's own history.
+- Rows written before the column existed carry `0` and are already invisible.
+  That is correct: nobody knows what rules they were played under.
+- Runs still `in_progress` are unaffected at rest, but the client's
+  `resumeActions` loop in `src/game/bridge/session.ts` stops at the first
+  action that is no longer legal and keeps what replayed cleanly. A player
+  mid-run across a rules change may find their run truncated.
+
+There is no backfill and there should not be one. An epoch bump means the old
+scores describe a game that no longer exists.
+
+**What to verify.** `bun test tests/dto.test.ts` covers `migrate` in both
+directions and `isCurrentRules`. After a `SAVE_VERSION` bump, load a real old
+save: paste one into a test, run it through `replayRun`, confirm it still
+scores.
+
+## Changing a DTO after adding a feature
+
+The DTO is the trust boundary. Everything outside `src/game/dto/` treats what
+comes across it as hostile, and the order below is the order in which that
+stays true.
+
+Two rules that are not negotiable:
+
+- **No DTO may ever carry a score.** `submitRun` replays the log and writes
+  what the engine computed. `tests/dto.test.ts` asserts that a client-supplied
+  `score` is stripped by `RunSaveSchema`.
+- **Anything read back out of a JSON column is re-validated.** `Run.save` goes
+  through `RunSaveSchema`, `Profile.unlocks`/`settings` go through
+  `MetaProgressSchema` in `src/lib/profile/row.ts`. A row written by an older
+  build is untrusted input like any other.
+
+The order:
+
+1. **`src/game/dto/run.ts` or `meta.ts`** — add the field to the Zod schema.
+   Give it a bound: a string gets `.max()`, a number gets `.min().max()`. The
+   schema is the only thing standing between a hostile client and the engine.
+2. **`src/game/dto/version.ts`** — bump `SAVE_VERSION` if the field is
+   required.
+3. **`src/game/dto/migrations.ts`** — add the migration for that bump. Old
+   saves must keep loading.
+4. **`prisma/schema.prisma`** — only if the field needs its own column.
+   Anything that is only ever read as part of the whole save stays inside the
+   `save` JSON. Add a column when a query needs to filter or sort on it, and
+   remember the index (see [Database changes](#database-changes)).
+5. **`bun run db:migrate`** — needs the database up (`bun run db:up`). Review
+   the generated SQL before committing it; a new non-null column on a populated
+   table needs a default, and the default should usually be dropped
+   immediately afterwards, the way
+   `00000000000002_run_unique_fingerprint/migration.sql` does.
+6. **`src/lib/run/actions.ts`** — thread the field into `saveRun` and
+   `submitRun`. Server actions are public endpoints; re-do every check here,
+   never in the page that renders the button.
+7. **`src/lib/run/claims.ts`** — **if the field changes the map or the rolls,
+   it must be checked here.** `overclaims` exists because the replay is only as
+   trustworthy as the conditions it starts from: a save states its own
+   `profileId`, `unlockedSkills` and `statPoints`, and
+   `tests/anti-cheat.test.ts` demonstrates that a save claiming 999 in every
+   stat replays as perfectly valid and scores more than twice as high. The rule
+   is one-sided: a save may claim **less** than the account has (a run recorded
+   last week predates this week's unlocks), never more.
+8. **`src/game/dto/replay.ts`** — if the field feeds `createRun`, add it to the
+   `meta` object there, or the server replays a different game from the one the
+   player played. `tests/determinism.test.ts` compares `replayRun`'s hash
+   against the live session's and will catch it.
+9. **`src/lib/storage/sync.ts` and `local.ts`** — the client side. Everything
+   read out of `localStorage` goes through the same schema; a value that does
+   not parse is deleted rather than carried forward.
+10. **`src/game/index.ts`** — export the type if anything outside `src/game`
+    needs it. That barrel is the game's entire public surface.
+11. **Tests** — `tests/dto.test.ts` for the schema (accept the good shape,
+    reject the bad one), `tests/claims.test.ts` for the overclaim check
+    including the off-by-one, `tests/determinism.test.ts` if it affects replay.
+
+**What to verify.** `bun run check`, then specifically: a save missing the new
+field still loads through `migrate`, a save claiming more than the account has
+is refused by `overclaims`, and `replayRun` on a live session still produces
+the same `stats.hash`.
+
+## Seeds and the daily
+
+### How a seed becomes a game
+
+`createRun` in `src/game/core/run.ts` does one thing with the seed:
+
+```ts
+rng: { s: fnv1a(seed) | 0 }
+```
+
+That cursor lives **in the run state**. `createRng` in
+`src/game/core/rng.ts` returns a handle that advances it in place, so cloning
+the state clones the random stream with it, and the sequence is a pure function
+of the seed and the *order of the draws*.
+
+This is why `rng.chance()` consumes a draw even at 0 % and 100 %. Skipping the
+draw would make the stream depend on the odds, and the odds depend on the
+player's build — two players with the same seed would diverge.
+
+**Two things make a run reproducible, and only two: the seed, and the ordered
+list of actions.** That is the entire save. No board state, no snapshot, no
+score. It is also why `CLAUDE.md` boundary 8 bans `Date.now()` and
+`Math.random()` from `src/game/core/`: one clock read makes yesterday's runs
+unreplayable and silently breaks the leaderboard.
+
+### The daily seed
+
+`deriveDailySeed(dateIso, secret)` in `src/lib/daily/seed.ts` is an HMAC-SHA256
+of `devgame-daily:YYYY-MM-DD` under `DAILY_SEED_SECRET`, truncated to 16 hex
+characters. `utcDate()` puts the day boundary at midnight UTC.
+
+`getDailySeed()` in `src/lib/daily/store.ts` memoises it in the `DailySeed`
+table. The derivation is deterministic, so storing it looks redundant — until
+the secret is rotated, at which point every past board would silently describe
+a different game. The row is what keeps yesterday's scores meaning something.
+
+**It is never derived in the browser.** Deriving it client-side would mean
+shipping the secret, and anyone holding the secret can generate tomorrow's map
+and practise on it before the day starts. `CLAUDE.md` boundary 12. `submitRun`
+re-checks it: a daily submission whose seed is not today's server seed is
+rejected with `The daily changed at midnight UTC`, and `dailyDate` is taken
+from the server clock, never from the save's own `createdAt`.
+
+### Reproducing a player's run locally
+
+The save is everything you need, and `replayRun` is a pure function:
+
+1. Get the save. From Postgres, `Run.save` is the whole `RunSaveDto` verbatim:
+   ```sql
+   SELECT save FROM "Run" WHERE "clientRunId" = '<uuid>';
+   ```
+   From a browser, `localStorage` key `devgame:run:v1`.
+2. Write it to a JSON file and feed it to `replayRun`:
+   ```ts
+   import { replayRun } from "@/game";
+   const result = replayRun(JSON.parse(await Bun.file("run.json").text()));
+   ```
+3. `result.valid` tells you whether the log replays at all; `failedAt` is the
+   index of the action that was not legal. `result.stats.hash` is
+   `hashState(state)` — the fingerprint of everything that decides what happens
+   next, with the log excluded because a translated line must not change it.
+4. To watch it happen, step it by hand through `applyAction` from
+   `src/game/core/rules/reducer.ts` and print the events, the way
+   `scripts/sim.ts` does under `--verbose`.
+
+If the replay is invalid but the player's screenshot is real, the usual cause
+is a rules change: check whether the save's `rules` field matches today's
+`RULES_FINGERPRINT`.
+
+## Adding or changing translated text
+
+The engine never produces a display string. It produces `{ key, params }`, and
+React (`useGameText` in `src/components/hud/useGameText.ts`) or the Pixi scene
+looks the key up. This is what lets the server replay a run without pulling a
+translation layer in.
+
+1. Emit it from the engine with `text(key, params)` from
+   `src/game/core/i18n.ts`. The key is a dot path inside the `game` namespace.
+2. **A parameter that names something is a key reference, not a string.** The
+   engine knows a bot's archetype, not its name, so it passes a
+   `ref("bots.rapide.name")` and `renderText()` resolves it before
+   substituting. Marking those explicitly beats guessing from the shape of a
+   string:
+   ```ts
+   text("log.bot_fired", { bot: ref(`bots.${event.archetype}.name`) })
+   ```
+3. Add the key to **both** `messages/fr.json` and `messages/en.json`. FR is the
+   source of truth; EN is kept in step with it.
+4. ICU placeholder names must match between the two files.
+
+`tests/messages.test.ts` enforces three things: identical key sets between the
+catalogues, no empty message, and identical ICU placeholder names per key. It
+also derives the expected content keys from the id arrays — skills, relics,
+devops, bots and profiles need `name` and `desc`; failure and ambient events
+need `title` and `log`; node kinds need `name` and `desc`.
+
+**What it does not check**: keys the engine emits that are not derived from a
+content table — everything under `game.log.*` and `game.notes.*`. A new log
+line or a new preview note can be added to the engine, pass the whole suite,
+and render as a raw `log.node_done.ai` in a player's face. Those are found by
+reading `src/game/core/log.ts` and `src/game/core/rules/preview.ts` against the
+catalogues; `/i18n-check` does it mechanically.
+
+**What to verify.** `bun test tests/messages.test.ts`, then load `/play` in
+both locales and read the commit log.
+
+## Database changes
+
+Read `docs/database.md` first; it has the schema, the index rules and the
+reasoning. What follows is only the part that bites during maintenance.
+
+### The two hand-written partial unique indexes
+
+Prisma cannot express a `WHERE` clause on an index, so these two exist only in
+SQL files:
+
+| Index | Migration | What it guarantees |
+|---|---|---|
+| `Run_one_in_progress` | `00000000000001_run_one_in_progress` | At most one `in_progress` run per player per mode |
+| `Run_one_finished_per_fingerprint` | `00000000000002_run_unique_fingerprint` | One finished submission per player per run fingerprint |
+
+**Prisma does not know either of them exists.** It will not reproduce them in a
+`migrate diff`, it will not warn you that they are missing, and `migrate dev`
+will happily hand you a schema without them.
+
+The symptoms if they go missing are both silent:
+
+- Without `Run_one_in_progress`, a player can hold two in-progress runs per
+  mode. Resume breaks, because "the run still in progress" is no longer a
+  single row — and it breaks for that player only, days later.
+- Without `Run_one_finished_per_fingerprint`, the same good run can be
+  submitted repeatedly under fresh client-chosen `clientRunId`s and credited
+  every time. The application-level duplicate check in `submitRun` catches the
+  common case; the index is what catches the race.
+
+Both are deliberately *partial*: an abandoned run and the finished submission
+of the same game legitimately share a fingerprint.
+
+### The check
+
+```sql
+SELECT indexname, indexdef FROM pg_indexes
+WHERE indexname IN ('Run_one_in_progress', 'Run_one_finished_per_fingerprint');
+```
+
+Two rows, or the invariant is gone. Locally:
+
+```bash
+docker exec devgame-postgres psql -U devgame -d devgame \
+  -c "SELECT indexname FROM pg_indexes WHERE tablename = 'Run';"
+```
+
+### Squashing or regenerating migrations
+
+**Re-add both indexes by hand.** A squash regenerates from
+`prisma/schema.prisma`, and the schema does not contain them — only comments
+pointing at the migrations that do. Copy the `CREATE UNIQUE INDEX` statements
+out of the two migration files into the squashed one, keep the comments
+explaining why they are hand-written, and run the check above against a fresh
+database before trusting it.
+
+The same applies to anything else hand-written: the epoch backfill in
+`00000000000003_run_rules_epoch` drops and recreates two leaderboard indexes
+with `rulesEpoch` leading. Those *are* in the schema, so Prisma reproduces
+them; the partial ones are not.
+
+### Other rules worth repeating
+
+- Express every index you can in the schema. Prisma will `DROP` anything it
+  does not know about on the next `migrate dev` — which is exactly what makes
+  the two above a standing liability.
+- `prisma migrate reset` destroys data, asks for explicit human consent, and is
+  denied in `.claude/settings.json`. Ask the user; do not work around it.
+- Better Auth owns `user`, `session`, `account` and `verification`. After
+  enabling a plugin, regenerate with `bun x @better-auth/cli@latest generate`
+  and apply the diff as a migration. Do not hand-edit those four models.
+- The generated client goes to `src/generated/prisma` and is gitignored.
+  `bun x prisma generate` recreates it; `postinstall` runs it for you.
+
+## A routine release check
+
+In this order, because each step is cheaper than the one after it.
+
+1. **`bun run check`** — typecheck, then `biome check .`, then `bun test`. This
+   is the gate. Nothing ships red.
+2. **`bun test tests/content.test.ts`** on its own if you touched content or
+   balance, to read the fingerprint failure properly rather than as one line in
+   a wall of output.
+3. **`bun run sim --runs 300`** if anything under `src/game/` changed. Confirm
+   `invariant failures 0`, no `stuck` and no `capped` in any `ends` line, and
+   that no policy has started to dominate.
+4. **Decide on `RULES_EPOCH`**, using the table above, and say out loud why.
+   If it moved, update the pinned fingerprint and add a line to the doc comment
+   in `src/game/dto/version.ts`.
+5. **`bun x prisma migrate status`** against the target database if there are
+   migrations in the diff. Needs the database reachable.
+6. **The index check** from [Database changes](#database-changes) if migrations
+   were touched at all.
+7. **`bun run build`** — the production build, which is stricter than `dev` and
+   is where a client/server boundary mistake surfaces. Remember it runs inside
+   the image with placeholder env values, because `env.ts` validates at import
+   time.
+8. **Play one run in each locale.** The suite does not render anything. A raw
+   `log.something` in the commit log, a HUD note with an unresolved parameter,
+   or a graph that has grown taller than the window are all things only a human
+   sees.
