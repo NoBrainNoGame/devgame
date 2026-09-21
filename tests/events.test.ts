@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
+import { FIRST_FEATURE_LANE } from "@/game/core/map/layout";
 import { applyAction } from "@/game/core/rules/reducer";
 
 import { eventsOfType, findSeed, isCommit, newRun, play, prefer } from "./helpers";
@@ -29,7 +30,7 @@ describe("failures", () => {
     }
   });
 
-  test("hotfix nodes sit to the left of the main line", () => {
+  test("a hotfix is written on the branch you were on, not beside it", () => {
     const { state } = findSeed(
       (r) => r.events.some((e) => e.type === "nodes_injected" && e.kind === "hotfix"),
       { prefix: "hotfix-lane", pick: aiPolicy, limit: 120 },
@@ -37,7 +38,13 @@ describe("failures", () => {
 
     const hotfix = Object.values(state.nodes).filter((node) => node.kind === "hotfix");
     expect(hotfix.length).toBeGreaterThan(0);
-    for (const node of hotfix) expect(node.lane).toBeLessThan(0);
+
+    // A production bug is `fix:` commits you have to write before you can carry
+    // on — never `main`, never `dev`, and never a branch with no merge.
+    for (const node of hotfix) {
+      expect(node.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
+      expect(node.branchId).toBeDefined();
+    }
   });
 
   test("monitoring shortens the hotfix", () => {

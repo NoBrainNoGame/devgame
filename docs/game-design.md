@@ -38,11 +38,20 @@ réalisés, des bots virés et des sprints tenus.
 Le graphe est généré procéduralement, sprint par sprint, à partir de la graine
 de la run.
 
-**Rien ne s'écrit sur `main`.** C'est une colonne de merges : l'ancre du sprint,
-un merge par feature livrée, le merge de sprint, la release. Tout le travail se
-fait sur une branche qui en part et y revient. C'est ce qui donne son sens au
-merge — **un merge est la fin d'une feature, jamais un commit de plus** — et ce
-qui fait qu'une feature est toujours une bifurcation.
+**Deux branches au long cours, et rien ne s'écrit sur l'une ni sur l'autre.**
+
+- **`dev`** est la branche d'intégration. Elle s'ouvre sur un back-merge de
+  `main` et reçoit ensuite **un merge par feature livrée** — les vôtres et
+  celles des rivaux. C'est la colonne partagée de l'équipe, et c'est là que se
+  court la course.
+- **`main`** ne reçoit que deux nœuds par sprint : le merge `dev → main` qui le
+  livre, et la **release** qui le tague. La colonne la plus à gauche raconte
+  donc l'histoire des sprints, pas celle des commits.
+
+Tout le travail se fait sur une branche de feature qui part de `dev` et y
+revient. C'est ce qui donne son sens au merge — **un merge est la fin d'une
+feature, jamais un commit de plus** — et ce qui fait qu'une feature est toujours
+une bifurcation.
 
 Les commits à l'intérieur d'une branche sont **l'avancement de cette feature**,
 pas des features en soi.
@@ -56,10 +65,16 @@ graphe Git : le choix n'est pas « quel nœud » mais **quelle feature**.
 la franchit tout seul au lieu d'afficher une liste d'un élément. Tout ce que le
 panneau propose est donc un vrai choix — et s'il y en a plusieurs, ce sont des
 features, jamais « un autre commit ».
-Les détours proposent des nœuds typés. Trois sont des outils simples :
+**Un détour n'est pas une bifurcation.** Écrire un commit en refacto, en squash
+ou en rebase est une décision sur *ce commit-là* : il coûte un tour comme les
+autres et laisse le graphe en chaîne, qui est la forme qu'a vraiment une branche
+de feature. Le générateur pose une **offre** sur certains commits, et le panneau
+propose alors de l'écrire ainsi, à la main ou par l'IA.
+
+Trois sont des outils simples :
 
 - **Refacto** — rembourse de la dette.
-- **Nœud risqué** — avance plus vite contre un jet nettement moins sûr.
+- **Commit risqué** — avance plus loin contre un jet nettement moins sûr.
 - **Corvée** — déclenche un événement du quotidien, souvent favorable.
 
 Trois autres sont des gestes git, et chacun répond à une question que le reste
@@ -72,16 +87,22 @@ du jeu pose sans y répondre :
 - **Documentation** — les prochains commits IA n'ajoutent aucune dette. De quoi
   couvrir environ une rafale. Rend la route IA planifiable : on documente, puis
   on lâche la machine.
-- **Rebase** — rejoue votre travail sur `main` et emporte le nœud suivant
-  gratuitement. Le seul moyen de gagner plus d'un nœud par tour sans laisser la
-  machine écrire. **Ses chances ne dépendent pas de la chance mais de votre
+- **Rebase** — rejoue la branche par-dessus et emporte le commit suivant
+  gratuitement. Le seul moyen de gagner plus d'un commit par tour sans laisser
+  la machine écrire. **Ses chances ne dépendent pas de la chance mais de votre
   dette** : quasi gratuit sur un historique propre, pile ou face à soixante. Un
   rebase raté laisse un demi-replay derrière lui, et de la dette avec.
 
+Un **hotfix** suit la même règle : un bug en production n'ouvre pas une branche,
+il impose des commits `fix:` **sur la branche que vous aviez ouverte**, à écrire
+avant de reprendre. Si vous êtes entre deux features, sur `dev`, il n'y a rien
+sur quoi écrire : c'est alors une vraie branche `hotfix/`, fermée par son merge.
+
 Chaque rival travaille dans **sa propre colonne**, à gauche de `main` : il écrit
-des commits et livre des merges exactement comme vous, et il ne touche jamais à
-une de vos branches. Le graphe montre donc quatre dépôts qui s'écrivent côte à
-côte, et « le Rapide a deux features d'avance » est quelque chose qui se voit.
+des commits et **livre ses merges sur `dev`**, exactement comme vous. Il ne
+touche jamais à une de vos branches, et jamais à `main`. Le graphe montre donc
+quatre développeurs qui poussent sur le même dépôt, et « le Rapide a deux
+features d'avance » est quelque chose qui se voit.
 C'est la vague qui vous poursuit, et l'information qui décide de la plupart des
 choix. Les rivaux accélèrent à chaque sprint — sans quoi un joueur équipé de
 tout finit par ne plus pouvoir mourir.
@@ -163,8 +184,8 @@ point DevOps correspondant la rendent **exacte**.
 **pondéré par la qualité de votre code** (votre ratio de code reviewé, votre
 dette). C'est elle qui fait virer un rival.
 
-**La course se mesure sur `main`.** Votre position est un index dans la ligne
-principale du sprint — exactement ce que tient un bot, sinon les deux nombres ne
+**La course se mesure sur `dev`.** Votre position est un index dans la ligne
+d'intégration du sprint — exactement ce que tient un bot, sinon les deux nombres ne
 se soustraient pas. Une branche qui longe le tronc vous fait avancer comme lui :
 c'est du travail parallèle, pas un détour dans le temps. En revanche, **un nœud
 résolu n'est pas un nœud gagné** : une rafale IA qui balaie trois nœuds hors du
@@ -335,8 +356,10 @@ est fusionnée avec celle du serveur à la première connexion, jamais écrasée
 
 Rendu du graphe façon client git de bureau : nœuds ronds, lanes épaisses qui
 sortent de leur colonne, coudent une fois et arrivent verticales, et un sujet
-de commit (`feat: Fork`) à droite de chaque nœud. `main`, les features, les
-hotfixes et les bots ont chacun leur couleur, et elles ne servent qu'à ça.
+de commit (`feat: Commit`) à droite de chaque nœud. `main`, `dev`, les features,
+les hotfixes et les rivaux ont chacun leur couleur, et elles ne servent qu'à ça.
+Les refs `main`, `dev` et `HEAD` sont étiquetées au sommet de leur colonne, et
+s'empilent quand elles tombent sur le même commit.
 
 Interface de type terminal ou IDE sombre, en thème sombre uniquement, police à
 chasse fixe partout. Le journal d'événements est écrit en pseudo-messages de
@@ -348,33 +371,40 @@ la lecture, pas au rythme des effets.
 
 ### Ce que le graphe montre, et ce qu'il ne montre pas
 
-Cinq règles, et elles tiennent ensemble. Le moteur connaît tout le sprint
+Six règles, et elles tiennent ensemble. Le moteur connaît tout le sprint
 d'avance — il le faut, sinon une run ne se rejoue pas — mais l'afficher
 transformerait le jeu en plateau que l'on traverse, alors que la fiction est un
 dépôt que l'on écrit.
 
 1. **Le graphe s'écrit, il ne se dévoile pas.** Seuls les nœuds résolus sont
-   dessinés, plus celui sur lequel on se tient. Ce qui attend plus haut n'existe
-   pas encore à l'écran.
-2. **L'histoire se lit de bas en haut**, du premier commit vers le dernier,
+   dessinés. Ce qui attend plus haut n'existe pas encore à l'écran.
+2. **`HEAD` est sur le dernier commit écrit**, jamais sur le suivant. En git on
+   se tient sur l'histoire, pas sur un plan : le commit qu'on s'apprête à écrire
+   n'existe pas, il n'y a donc rien dessus sur quoi se tenir. Rien n'est dessiné
+   là où il ira.
+3. **L'histoire se lit de bas en haut**, du premier commit vers le dernier,
    comme dans tout client git. C'est le seul rôle du signe dans `nodeY`.
-3. **Le graphe ne se clique pas.** On n'agit pas sur le passé : toute décision
+4. **Le graphe ne se clique pas.** On n'agit pas sur le passé : toute décision
    se prend dans le panneau, qui a la place de dire ce que chaque option coûte.
-   Un nœud cliquable serait une seconde interface, moins bonne, et il devrait
-   exister avant qu'on s'y engage — précisément ce que la règle 1 interdit.
-4. **Rien n'est dessiné au-dessus de la tête.** Pas de nœud à venir, pas même
+5. **Rien n'est dessiné au-dessus de la tête.** Pas de nœud à venir, pas même
    un moignon de lane pour dire qu'un choix existe : le nombre de chemins se lit
-   dans le panneau, jamais sur le graphe. Un embranchement n'apparaît qu'une fois
-   la branche ouverte, et c'est la seule chose qui en fait un embranchement.
-5. **Les rivaux n'ont pas de commits.** L'avance d'un bot est un rythme, pas une
-   liste de choses écrites ; en inventer serait prétendre en savoir plus que le
-   moteur. Une ref dans la gouttière de gauche, posée sur un `main` pointillé,
-   dit exactement ce qui est su — et se lit comme une branche distante non
-   récupérée.
+   dans le panneau, jamais sur le graphe. Une bifurcation n'apparaît qu'une fois
+   la branche ouverte.
+6. **Les rivaux écrivent pour de vrai.** Chacun a sa colonne, y pose ses commits
+   et livre ses merges sur `dev` avec leurs deux parents. Ce qui est dessiné est
+   ce que le moteur sait : leurs commits n'ont pas de contenu, mais leur rythme
+   et leurs merges, eux, existent.
+
+**Limite assumée** : les profondeurs des merges du joueur sont pré-générées,
+alors qu'un rival livre au rythme qui est le sien. Son merge se pose donc à la
+première rangée libre de `dev` au niveau où il est arrivé, ce qui peut le placer
+au-dessus d'un merge du joueur révélé plus tard. Le DAG reste valide — les
+arêtes vont toujours vers le haut — mais l'ordre temporel exact entre les deux
+colonnes n'est pas garanti.
 
 Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
-nœud : entrer dans une branche est « Nouvelle branche », et un nœud de `main`
-d'où part une branche reste un commit ordinaire tant qu'on n'est pas dessus.
+nœud : ouvrir une branche est « Nouvelle feature », et écrire un commit en
+refacto est « Refacto · à la main ».
 
 Survoler un commit l'explique dans une infobulle **DOM**, pas dans le canvas :
 traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom.

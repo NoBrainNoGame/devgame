@@ -1,3 +1,4 @@
+import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { NodeKind } from "@/game/core/types";
 
 /**
@@ -16,8 +17,10 @@ export const THEME = {
   textMuted: 0x8b909c,
 
   lane: {
-    /** `main`. */
+    /** `main`: nothing but sprint merges and releases. */
     trunk: 0x62c073,
+    /** `dev`: where every feature is integrated, yours and the rivals'. */
+    dev: 0x4fb3a8,
     feature: 0x5aa9e6,
     hotfix: 0xe2645a,
     refactor: 0xe0a458,
@@ -63,13 +66,15 @@ export const ZOOM: { min: number; max: number; step: number; default: number } =
 };
 
 export function laneColour(lane: number, kind: NodeKind): number {
+  // A `fix:` commit keeps its own colour wherever it was written: an emergency
+  // has to read as one even though it lives on the feature you had open.
   if (kind === "hotfix") return THEME.lane.hotfix;
-  // The maintenance detours share one colour: they are all "stop and tidy up".
-  if ((kind === "refactor" || kind === "squash" || kind === "docs") && lane < 0) {
-    return THEME.lane.refactor;
-  }
-  if (lane === 0) return THEME.lane.trunk;
-  if (lane < 0) return THEME.lane.hotfix;
+  // The maintenance commits share one colour: they are all "stop and tidy up".
+  if (kind === "refactor" || kind === "squash" || kind === "docs") return THEME.lane.refactor;
+
+  if (lane === MAIN_LANE) return THEME.lane.trunk;
+  if (lane === DEV_LANE) return THEME.lane.dev;
+  if (lane < 0) return THEME.bot;
   return THEME.lane.feature;
 }
 

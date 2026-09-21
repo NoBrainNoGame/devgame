@@ -1,5 +1,5 @@
 import { BALANCE } from "@/game/core/balance";
-import { getNode, mainLineIndexOf, setCandidates, successors } from "@/game/core/map/graph";
+import { devLineIndexOf, getNode, setCandidates, successors } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt, shouldExplode } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -33,6 +33,8 @@ export function resolveNode(
   node.commit = { mode, reviewed: mode === "craft" };
 
   state.player.nodeId = node.id;
+  // `HEAD` only ever moves onto a commit that now exists.
+  state.player.headId = node.id;
   state.player.totalCommits += 1;
   advanceRacePosition(context, node);
 
@@ -79,7 +81,7 @@ export function resolveNode(
  */
 function advanceRacePosition(context: RuleContext, node: MapNode): void {
   const { player } = context.state;
-  const reached = mainLineIndexOf(context.state, node);
+  const reached = devLineIndexOf(context.state, node);
   if (reached <= player.mainReached) return;
 
   player.sprintProgress += reached - player.mainReached;
@@ -233,14 +235,20 @@ export function arriveAt(context: RuleContext, nodeId: NodeId, depth = 0): After
     case "sprint_merge":
       return beginMerge(context, node, depth);
 
+    // Both are written by arriving at them: the release tags what `dev` just
+    // shipped, and the anchor is `main` merged back into `dev` to open the
+    // sprint. `HEAD` follows, because both are real commits.
     case "release":
       node.status = "done";
       node.commit = { mode: "craft", reviewed: true };
+      state.player.headId = node.id;
       return "sprint_end";
 
     case "sprint_start":
       node.status = "done";
-      return afterResolution(context);
+      node.commit = { mode: "craft", reviewed: true };
+      state.player.headId = node.id;
+      return afterResolution(context, depth);
 
     // Listed rather than defaulted: a new `NodeKind` should fail to compile
     // here, not quietly behave like an ordinary commit node.

@@ -75,6 +75,7 @@ export function createRun(options: CreateRunOptions): RunState {
 
     player: {
       nodeId: "",
+      headId: "",
       energy: 0,
       energyMax: 0,
       sprintProgress: 0,

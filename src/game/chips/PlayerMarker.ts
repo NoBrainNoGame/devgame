@@ -7,11 +7,15 @@ import { cursorStyle } from "@/game/render/textStyles";
 import { NODE_RADIUS, THEME } from "@/game/render/theme";
 
 /**
- * Your own head, labelled the way a git client labels `HEAD`.
+ * `HEAD`, labelled the way a git client labels it.
  *
- * It eases to the node you are on rather than jumping, so a machine-written
- * burst that walks three commits reads as a movement along the branch instead
- * of a teleport to the end of it.
+ * It sits on the **last commit written**, never on the one about to be. In git
+ * you stand on history, not on a plan: the node you are about to write does not
+ * exist until you write it, so there is nothing there to stand on.
+ *
+ * It eases to its target rather than jumping, so a machine-written burst that
+ * walks three commits reads as a movement along the branch instead of a
+ * teleport to the end of it.
  */
 export class PlayerMarker extends booyah.ChipBase {
   private root!: Container;
@@ -45,7 +49,7 @@ export class PlayerMarker extends booyah.ChipBase {
   protected _onTick(): void {
     const { session, reducedMotion } = sceneContext(this.chipContext);
     const state = session.getState();
-    const node = state.nodes[state.player.nodeId];
+    const node = state.nodes[state.player.headId];
     if (node === undefined) return;
 
     const targetX = nodeX(node.lane);

@@ -131,7 +131,7 @@
     "overextendedHint": "Tout coûte le double et tous les jets sont pénalisés.",
     "chooseNode": "Quelle feature construire ? Chaque branche est un chemin différent jusqu'au prochain merge.",
     "openBranch": "Nouvelle feature",
-    "openBranchHint": "Ouvre une branche depuis main. Rien ne s'écrit ailleurs : c'est en la mergeant qu'on livre, et qu'on gagne sa compétence.",
+    "openBranchHint": "Ouvre une branche depuis dev. Rien ne s'écrit ailleurs : c'est en la mergeant qu'on livre, et qu'on gagne sa compétence.",
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
     "zoomFit": "Voir tout l'historique",
@@ -146,7 +146,10 @@
     "tooltipFeature": "feature",
     "tooltipHotfix": "hotfix",
     "tooltipGrants": "Débloque",
-    "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail."
+    "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail.",
+    "writeInstead": "Ou écrire ce commit autrement :",
+    "byHand": "à la main",
+    "byMachine": "par l'IA"
   },
   "leaderboard": {
     "title": "Classement",
@@ -537,11 +540,11 @@
       },
       "rebase": {
         "name": "Rebase",
-        "desc": "Rejoue votre travail sur main et emporte le nœud suivant. Rate d'autant plus que la dette est haute."
+        "desc": "Rejoue la branche par-dessus et emporte le commit suivant. Rate d'autant plus que la dette est haute."
       },
       "sprint_start": {
-        "name": "Début de sprint",
-        "desc": "Le point d'ancrage du sprint. On s'y tient, on n'y code pas."
+        "name": "Ouverture de sprint",
+        "desc": "main mergé dans dev : le sprint repart d'une base propre."
       },
       "commit": {
         "name": "Commit",
@@ -549,19 +552,19 @@
       },
       "refactor": {
         "name": "Refacto",
-        "desc": "Détour qui rembourse de la dette technique."
+        "desc": "Écrire ce commit en remboursant de la dette technique."
       },
       "risky": {
-        "name": "Nœud risqué",
+        "name": "Commit risqué",
         "desc": "Avance plus loin, contre un jet nettement moins sûr."
       },
       "chore": {
         "name": "Corvée",
-        "desc": "Détour qui déclenche un événement du quotidien."
+        "desc": "Un commit d'entretien : il déclenche un événement du quotidien."
       },
       "fork": {
-        "name": "Nouvelle feature",
-        "desc": "Une branche part de main : c'est là que tout le travail se fait."
+        "name": "Commit",
+        "desc": "Un pas de plus dans la feature en cours."
       },
       "feature": {
         "name": "Commit de feature",
@@ -569,19 +572,19 @@
       },
       "feature_merge": {
         "name": "Merge de feature",
-        "desc": "La fin de la feature : la brancher sur main livre ce qu'elle promettait."
+        "desc": "La fin de la feature : la brancher sur dev livre ce qu'elle promettait."
       },
       "hotfix": {
         "name": "Hotfix",
-        "desc": "Branche imposée par un bug en production, à parcourir avant de reprendre."
+        "desc": "Un commit fix: imposé par un bug en production, à écrire avant de reprendre."
       },
       "sprint_merge": {
-        "name": "Merge de sprint",
-        "desc": "Le retour dans main en fin de sprint. Le merge est le repos."
+        "name": "Livraison du sprint",
+        "desc": "dev mergé dans main : ce que l'équipe a intégré part en production."
       },
       "release": {
         "name": "Release",
-        "desc": "Le dernier nœud du sprint. Le résoudre clôt le sprint."
+        "desc": "Le tag posé sur main. Le sprint est clos."
       }
     },
     "events": {
@@ -621,14 +624,14 @@
     "log": {
       "squashed": "{count, plural, one {# commit écrasé} other {# commits écrasés}}, {lost, plural, one {# de moins au compteur} other {# de moins au compteur}}",
       "docs_written": "documentation écrite, {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
-      "rebased": "rebase sur main, {count, plural, one {# nœud emporté} other {# nœuds emportés}}",
+      "rebased": "rebase de la branche, {count, plural, one {# commit emporté} other {# commits emportés}}",
       "_comment": "Les paramètres node, skill, bot, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
       "node_done": {
         "craft": "{node} écrit à la main",
         "ai": "{node} généré par la machine, ça compile"
       },
-      "branch_merged": "branche intégrée à main",
-      "branch_merged_skill": "{skill} intégré à main",
+      "branch_merged": "branche intégrée à dev",
+      "branch_merged_skill": "{skill} intégré à dev",
       "skill_gained": "{skill} acquis pour le reste de la run",
       "conflict": "deux branches, un seul fichier",
       "conflict_resolved": {

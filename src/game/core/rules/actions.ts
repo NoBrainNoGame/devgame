@@ -27,6 +27,15 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         { type: "commit", mode: "craft" },
         { type: "commit", mode: "ai" },
       ];
+
+      // What this commit could be written as instead. Both hands, because
+      // letting the machine write a refactor is a real and bad idea.
+      const offers = state.nodes[state.player.nodeId]?.offers;
+      if (offers !== undefined) {
+        actions.push({ type: "commit", mode: "craft", kind: offers });
+        actions.push({ type: "commit", mode: "ai", kind: offers });
+      }
+
       if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
       for (const id of DEVOPS_IDS) {
         if (canPlaceDevops(state, id)) actions.push({ type: "devops", id });
@@ -65,7 +74,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
 
   switch (a.type) {
     case "commit":
-      return b.type === "commit" && a.mode === b.mode;
+      return b.type === "commit" && a.mode === b.mode && a.kind === b.kind;
     case "move":
       return b.type === "move" && a.nodeId === b.nodeId;
     case "devops":

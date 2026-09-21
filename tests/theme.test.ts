@@ -27,6 +27,7 @@ describe("theme", () => {
     ["panel", THEME.panel],
     ["line", THEME.line],
     ["branch-main", THEME.lane.trunk],
+    ["branch-dev", THEME.lane.dev],
     ["branch-feature", THEME.lane.feature],
     ["branch-hotfix", THEME.lane.hotfix],
     ["branch-bot", THEME.bot],

@@ -18,30 +18,40 @@ export type BranchId = string;
 
 export type RunMode = "classic" | "daily";
 
+/**
+ * The ways a commit on a branch may be written, beyond an ordinary one.
+ *
+ * None of these is a fork. Choosing to write a commit as a refactor is a
+ * decision about *this* commit, so it costs a turn like any other and leaves
+ * the graph a chain — the shape a feature branch actually has.
+ */
+export type DetourKind = "refactor" | "risky" | "chore" | "squash" | "docs" | "rebase";
+
 export type NodeKind =
-  /** Anchor the player stands on when a sprint opens; never played. */
+  /** Opens a sprint on `dev`: `main` merged back in. Never played. */
   | "sprint_start"
   | "commit"
-  /** Detour that repays debt. */
+  /** Repays debt. */
   | "refactor"
-  /** Detour that jumps further for a worse roll. */
+  /** Jumps further for a worse roll. */
   | "risky"
-  /** Detour that draws an ambient event. */
+  /** Draws an ambient event. */
   | "chore"
-  /** Detour that erases machine-written history: debt repaid, commits lost. */
+  /** Erases machine-written history: debt repaid, commits lost. */
   | "squash"
-  /** Detour that buys the next few machine-written commits out of their debt. */
+  /** Buys the next few machine-written commits out of their debt. */
   | "docs"
-  /** Detour that replays the trunk on top of you. Cheap when clean, brutal when not. */
+  /** Replays the branch on top of you. Cheap when clean, brutal when not. */
   | "rebase"
-  /** A main-line node a feature branch leaves from. */
+  /** A node a feature branch leaves from. */
   | "fork"
   | "feature"
-  /** Last node of a feature branch; merging it grants the skill. */
+  /** A feature landing: on `dev`, or in its parent's column for a sub-feature. */
   | "feature_merge"
   | "hotfix"
+  /** `dev` merged into `main`: the sprint is shipped. */
   | "sprint_merge"
-  /** Last node of a sprint. Resolving it closes the sprint. */
+  /** Last node of a sprint, on `main`. Resolving it closes the sprint. */
   | "release";
 
 export type NodeStatus = "locked" | "candidate" | "current" | "done";
@@ -57,7 +67,7 @@ export interface MapNode {
   id: NodeId;
   sprint: number;
   kind: NodeKind;
-  /** 0 is `main`, positive lanes are features, negative lanes are hotfixes. */
+  /** 0 is `main`, 1 is `dev`, 2 and up are features, negative lanes are rivals. */
   lane: number;
   /** Row in the graph. Strictly increases along every edge. */
   depth: number;
@@ -67,6 +77,8 @@ export interface MapNode {
   /** Present on `feature_merge`: the skill merging the branch grants. */
   skillId?: SkillId;
   status: NodeStatus;
+  /** A way this commit may be written instead of plainly. Offered in the panel. */
+  offers?: DetourKind;
   commit?: NodeCommit;
 }
 
@@ -97,6 +109,15 @@ export interface BotNode {
   kind: "commit" | "feature_merge";
   lane: number;
   depth: number;
+  /**
+   * What this commit was built on. One parent for ordinary work; a merge has
+   * two — the rival's last commit and the state of `dev` it landed on — which
+   * is what makes it a merge rather than a node that happens to be a diamond.
+   *
+   * Ids may name a node in `state.nodes` (a point on `dev`) or another
+   * `botNode`. A pruned parent simply stops being drawn.
+   */
+  parents: NodeId[];
 }
 
 export interface Bot {
@@ -134,7 +155,20 @@ export interface AiCommitRecord {
 }
 
 export interface Player {
+  /**
+   * The node being written: where the next commit lands.
+   *
+   * Not where you *are*. In git you stand on the last commit you made, and the
+   * one you are about to write does not exist yet — see `headId`.
+   */
   nodeId: NodeId;
+  /**
+   * `HEAD`: the last node actually resolved.
+   *
+   * This is what the graph draws you on, and it is always a node that has been
+   * written. It lags `nodeId` by exactly one commit, which is the whole point.
+   */
+  headId: NodeId;
   energy: number;
   energyMax: number;
   /**
@@ -250,7 +284,8 @@ export interface RunState {
 }
 
 export type PlayerAction =
-  | { type: "commit"; mode: CommitMode }
+  /** `kind` writes the node as the detour it offers, instead of a plain commit. */
+  | { type: "commit"; mode: CommitMode; kind?: DetourKind }
   | { type: "review" }
   | { type: "move"; nodeId: NodeId }
   | { type: "devops"; id: DevopsId }

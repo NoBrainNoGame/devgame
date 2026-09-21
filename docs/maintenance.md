@@ -170,10 +170,37 @@ tests/messages.test.ts`, then `bun run sim --runs 300` and read the `failures`
 line: an event that never appears in three hundred runs has a weight problem or
 an eligibility flag that is never satisfied.
 
+### A way of writing a commit (a "detour")
+
+Refactor, risky, chore, squash, docs and rebase are not nodes. They are kinds a
+commit *becomes* when the player chooses to write it that way, so adding one is
+a weight and a rule, not a place on the map.
+
+1. Add it to `DetourKind` in `src/game/core/types.ts`. It is a subset of
+   `NodeKind`, so add it there too.
+2. Add a weight to `BALANCE.map.detourWeights` and an entry to `DETOURS` at the
+   foot of `src/game/core/map/generate.ts`. That is the whole of map
+   generation: a node carries `offers`, nothing is placed.
+3. Add an energy price to `BALANCE.energy.cost` — a typecheck error until you
+   do — and a glyph to `nodeGlyph` in `src/game/render/theme.ts`, likewise.
+4. Teach the rules what it does, in `src/game/core/rules/progress.ts`
+   (`resolveNode`) or in `rules/commit.ts` (`succeed`, for something that
+   happens on a landed roll). Both read `node.kind`, which `performCommit` has
+   already set from the action.
+5. `arriveAt` has an exhaustive switch over `NodeKind`: add the case beside the
+   other commits, or it will not compile.
+6. Two message entries under `game.nodes.<kind>`. The panel labels the card
+   `<name> · à la main` / `· par l'IA` from them.
+7. It changes the draw in `generateSprint`, so **it moves the epoch**.
+
+**What to verify.** `bun test tests/map.test.ts tests/rules.test.ts`, then
+`bun run sim --runs 200` and confirm the policies still take it — a detour
+nobody writes is a weight that does nothing.
+
 ### A node kind
 
-This is the one with the most places to touch and the least help from the
-compiler.
+Rare now: almost everything is either a commit on a branch or a merge. This is
+the one with the most places to touch and the least help from the compiler.
 
 1. Add it to the `NodeKind` union in `src/game/core/types.ts`.
 2. Add an energy price to `BALANCE.energy.cost` in
@@ -339,6 +366,8 @@ In practice:
 | A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |
 | A skill with `unlockCost: 0` | Yes — it joins the free pool, so it enters `rng.pick` on every map |
 | Gating an action in `getAvailableActions` | Yes — an old log that took it no longer replays |
+| A new `DetourKind` | Yes — it enters the `offers` draw on every branch |
+| A field added to `PlayerAction` | No on its own, but the rule reading it almost always is |
 | A DevOps id or a profile id appended to its array | No — no randomness is drawn from either |
 | A fifth bot archetype, appended, with `bots.max` still 4 | No — it never spawns |
 | Renaming a message, a comment, a variable | No |

@@ -232,7 +232,7 @@ export class Camera extends booyah.ChipBase {
 
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
-    const head = state.nodes[state.player.nodeId];
+    const head = state.nodes[state.player.headId];
     return head === undefined ? 0 : nodeY(head.depth);
   }
 

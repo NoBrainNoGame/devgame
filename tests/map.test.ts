@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
-import { nodeSerial } from "@/game/core/map/layout";
+import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
+import { getAvailableActions } from "@/game/core/rules/actions";
+import { applyAction } from "@/game/core/rules/reducer";
 import type { MapNode } from "@/game/core/types";
 
 import { isCommit, newRun, play, prefer } from "./helpers";
@@ -21,31 +23,43 @@ describe("sprint generation", () => {
     expect(broken).toEqual([]);
   });
 
-  test("main is the anchor, one merge per feature, and the tail", () => {
+  test("main ships sprints, dev integrates features", () => {
     const { featuresPerSprint } = BALANCE.map;
 
     for (let i = 0; i < 200; i++) {
       const state = newRun(`len-${i}`);
-      const main = Object.values(state.nodes).filter((node) => node.lane === 0);
+      const main = Object.values(state.nodes).filter((node) => node.lane === MAIN_LANE);
+      const dev = Object.values(state.nodes).filter((node) => node.lane === DEV_LANE);
 
-      expect(main.length).toBe(state.sprintLength);
-      expect(state.sprintLength).toBeGreaterThanOrEqual(featuresPerSprint.min + 3);
-      expect(state.sprintLength).toBeLessThanOrEqual(featuresPerSprint.max + 3);
+      // `main` takes exactly two nodes a sprint: the merge that ships it and
+      // the release that tags it. Nothing is ever written there.
+      expect(main.map((node) => node.kind).sort()).toEqual(["release", "sprint_merge"]);
 
-      // Nothing is written on the trunk. Every node there is a merge or an end.
-      for (const node of main) {
-        expect(["sprint_start", "feature_merge", "sprint_merge", "release"]).toContain(node.kind);
+      // `dev` is the anchor plus one merge per feature — and that is the race.
+      expect(dev.length).toBe(state.sprintLength);
+      expect(state.sprintLength).toBeGreaterThanOrEqual(featuresPerSprint.min + 1);
+      expect(state.sprintLength).toBeLessThanOrEqual(featuresPerSprint.max + 1);
+      for (const node of dev) {
+        expect(["sprint_start", "feature_merge"]).toContain(node.kind);
+        expect(node.branchId).toBeUndefined();
       }
     }
   });
 
-  test("no commit is ever made on main", () => {
+  test("no commit is ever made on a long-lived branch", () => {
     for (let i = 0; i < 200; i++) {
-      const commits = sprintNodes(`trunk-${i}`).filter((node) => node.kind === "commit");
+      const nodes = sprintNodes(`trunk-${i}`);
+      const commits = nodes.filter((node) => node.kind === "commit");
       expect(commits.length).toBeGreaterThan(0);
+
       for (const node of commits) {
-        expect(node.lane).not.toBe(0);
+        expect(node.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
         expect(node.branchId).toBeDefined();
+      }
+
+      // A detour is a way of writing a commit, never a node of its own.
+      for (const node of nodes) {
+        expect(["refactor", "risky", "chore", "squash", "docs", "rebase"]).not.toContain(node.kind);
       }
     }
   });
@@ -184,5 +198,75 @@ describe("paths through a sprint", () => {
     }
 
     expect(checked).toBeGreaterThan(20);
+  });
+});
+
+describe("what the graph can express", () => {
+  test("HEAD is always on a commit that exists", () => {
+    for (let i = 0; i < 40; i += 1) {
+      const played = play(newRun(`head-${i}`), {
+        pick: prefer(isCommit("ai"), isCommit("craft")),
+        limit: 80,
+      });
+
+      const head = played.state.nodes[played.state.player.headId];
+      expect(head).toBeDefined();
+      // In git you stand on history. The node you are about to write does not
+      // exist yet, so there is nothing there to stand on.
+      expect(head?.status).toBe("done");
+    }
+  });
+
+  test("a choice is always a choice between features", () => {
+    for (let i = 0; i < 60; i += 1) {
+      let state = newRun(`choice-shape-${i}`);
+
+      for (let step = 0; step < 120 && state.phase.kind !== "game_over"; step += 1) {
+        if (state.phase.kind === "choose_node") {
+          const { candidates } = state.phase;
+
+          // Never a list of one: a forced step is walked, not offered.
+          expect(candidates.length).toBeGreaterThanOrEqual(2);
+
+          // And every option opens a branch of its own.
+          for (const id of candidates) {
+            const node = state.nodes[id];
+            expect(node?.branchId).toBeDefined();
+            expect(node?.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
+          }
+        }
+
+        const legal = getAvailableActions(state);
+        const action = legal.find(isCommit("ai")) ?? legal[0];
+        if (action === undefined) break;
+        state = applyAction(state, action).state;
+      }
+    }
+  });
+
+  test("a rival lands its features on dev, never on main", () => {
+    const played = play(newRun("rival-dev"), {
+      pick: prefer(isCommit("craft")),
+      limit: 200,
+    });
+
+    const merges = Object.values(played.state.botNodes).filter(
+      (node) => node.kind === "feature_merge",
+    );
+    expect(merges.length).toBeGreaterThan(0);
+
+    const devDepths = new Set<number>();
+    for (const node of Object.values(played.state.nodes)) {
+      if (node.lane === DEV_LANE) devDepths.add(node.depth);
+    }
+
+    for (const merge of merges) {
+      expect(merge.lane).toBe(DEV_LANE);
+      // `dev` is shared, so a rival's merge must not land on a row the player's
+      // own merges already occupy.
+      expect(devDepths.has(merge.depth)).toBe(false);
+      // A merge has two parents: what the rival wrote, and the dev it landed on.
+      expect(merge.parents.length).toBeGreaterThan(0);
+    }
   });
 });

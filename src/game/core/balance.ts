@@ -15,7 +15,7 @@ import type { CommitMode, NodeKind } from "@/game/core/types";
  */
 export const BALANCE = {
   energy: {
-    base: 16,
+    base: 22,
     /** Energy spent to resolve a node, by kind. */
     cost: {
       sprint_start: 0,
@@ -43,7 +43,7 @@ export const BALANCE = {
      * to give back less than that or the trunk-based shape turns energy into a
      * resource that only ever goes up.
      */
-    featureMergeRegen: 3,
+    featureMergeRegen: 2,
     sprintMergeRegen: 6,
     /**
      * Fraction of the maximum handed back when a sprint closes.
@@ -52,7 +52,7 @@ export const BALANCE = {
      * guaranteed rather than earned by choosing to branch — and a full refill
      * on top of that made a run that never ends.
      */
-    sprintEndRegenRatio: 0.7,
+    sprintEndRegenRatio: 0.5,
     /** At or below this, every roll takes the crunch malus. */
     crunchThreshold: 4,
     crunchMalusPoints: 15,
@@ -64,7 +64,7 @@ export const BALANCE = {
 
   commit: {
     /** Base success chance in percent, before any modifier. */
-    base: { craft: 92, ai: 70 } satisfies Record<CommitMode, number>,
+    base: { craft: 92, ai: 74 } satisfies Record<CommitMode, number>,
     /** Replaces the base chance on a `risky` node. */
     riskyBase: 78,
     /**
@@ -97,7 +97,7 @@ export const BALANCE = {
     /** Debt added by resolving a node, on success. */
     perAiCommit: 9,
     /** Debt for each extra node an AI burst walked through. */
-    perAiJumpNode: 3,
+    perAiJumpNode: 2,
     perCraftCommit: 0,
     perRiskyNode: 5,
     perAiConflictFix: 10,
@@ -189,7 +189,7 @@ export const BALANCE = {
     perSprint: 1,
     max: 4,
     /** Added to a newcomer's pace for every sprint already survived. */
-    speedPerSprint: 12,
+    speedPerSprint: 18,
     /** Commits a rival writes before it merges the feature they belong to. */
     featureLength: 4,
     /**

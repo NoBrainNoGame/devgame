@@ -66,10 +66,8 @@ function prefer(actions: PlayerAction[], ...matchers: ((a: PlayerAction) => bool
 }
 
 /**
- * Where to step. A real player takes feature branches — they carry the skills
- * and, because merging is the game's only rest, most of the energy. A policy
- * that always walks `main` starves, which says more about the policy than
- * about the balance.
+ * Which feature to build. Every choice is one now — the graph walks a forced
+ * step by itself — so this is purely "which branch".
  *
  * A branch that teaches something the run cannot otherwise do outranks the
  * rest. Review is the case that matters: it does not exist until a branch
@@ -94,30 +92,24 @@ function chooseMove(state: RunState, actions: PlayerAction[]): PlayerAction | un
     const node = state.nodes[nodeId];
     if (node === undefined) return 0;
     if (wantsReview && branchTeaches(nodeId)) return 9;
-    switch (node.kind) {
-      case "feature_merge":
-        return 5;
-      case "feature":
-        return 4;
-      case "refactor":
-        return state.debt >= 40 ? 6 : 1;
-      case "chore":
-        return state.player.energy <= 6 ? 3 : 1;
-      case "risky":
-        return 2;
-      default:
-        return 3;
-    }
+    // Otherwise: a branch that grants anything beats one that grants nothing,
+    // and the shorter of two plain branches beats the longer.
+    const branchId = node.branchId;
+    const branch = branchId === undefined ? undefined : state.branches[branchId];
+    return branch?.skillId !== undefined ? 5 : 3;
   };
 
   return moves.reduce((best, move) => (score(move.nodeId) > score(best.nodeId) ? move : best));
 }
 
 function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): PlayerAction {
-  const isAi = (a: PlayerAction) => a.type === "commit" && a.mode === "ai";
-  const isCraft = (a: PlayerAction) => a.type === "commit" && a.mode === "craft";
+  const isAi = (a: PlayerAction) => a.type === "commit" && a.mode === "ai" && a.kind === undefined;
+  const isCraft = (a: PlayerAction) =>
+    a.type === "commit" && a.mode === "craft" && a.kind === undefined;
   const isReview = (a: PlayerAction) => a.type === "review";
   const isDevops = (a: PlayerAction) => a.type === "devops";
+  const writtenAs = (kind: string) => (a: PlayerAction) =>
+    a.type === "commit" && a.kind === kind && a.mode === "craft";
   const unreviewed = state.player.aiHistory.filter((e) => !e.reviewed).length;
   const lowEnergy = state.player.energy <= 3;
 
@@ -128,6 +120,26 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
 
   const move = chooseMove(state, actions);
   if (move !== undefined) return move;
+
+  // What this commit could be written as instead. The two committed policies
+  // never take one — that is what makes them the extremes — but a player who
+  // reads their options does, and the numbers are meant to describe a player.
+  if (policy === "mixed" || policy === "careful") {
+    if (state.debt >= 40) {
+      const refactor = actions.find(writtenAs("refactor"));
+      if (refactor !== undefined) return refactor;
+    }
+    if (unreviewed >= 3) {
+      const squash = actions.find(writtenAs("squash"));
+      if (squash !== undefined) return squash;
+    }
+    if (state.debt < 20) {
+      const rebase = actions.find(writtenAs("rebase"));
+      if (rebase !== undefined) return rebase;
+    }
+    const docs = actions.find(writtenAs("docs"));
+    if (docs !== undefined) return docs;
+  }
 
   switch (policy) {
     case "ai":

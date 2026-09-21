@@ -6,7 +6,7 @@ import { Flash } from "@/game/chips/fx/Flash";
 import { Look } from "@/game/chips/fx/Look";
 import { Pop } from "@/game/chips/fx/Pop";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
-import { mainLineNodes } from "@/game/core/map/graph";
+import { devLineNodes } from "@/game/core/map/graph";
 import type { GameEvent, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { THEME } from "@/game/render/theme";
@@ -184,7 +184,7 @@ export class FxQueue extends booyah.Queue {
   private mainLineY(index: number): number | null {
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
-    const main = mainLineNodes(state, state.sprint);
+    const main = devLineNodes(state, state.sprint);
     const node = main[Math.min(Math.max(index, 0), main.length - 1)];
     return node === undefined ? null : nodeY(node.depth);
   }
@@ -196,6 +196,6 @@ export class FxQueue extends booyah.Queue {
   private playerPosition(): { x: number; y: number } {
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
-    return this.positionOf(state.player.nodeId) ?? { x: 0, y: 0 };
+    return this.positionOf(state.player.headId) ?? { x: 0, y: 0 };
   }
 }

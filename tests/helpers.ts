@@ -1,7 +1,7 @@
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
-import type { GameEvent, NodeKind, PlayerAction, RunState } from "@/game/core/types";
+import type { DetourKind, GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 /** A run at turn one, with the default unlocks, for a named seed. */
@@ -32,36 +32,36 @@ export function makeReviewable(state: RunState): RunState {
 }
 
 /**
- * Drives a run until the player is standing on a node of `kind`, ready to
- * commit on it. Detours are rare by design, so this walks several seeds rather
- * than stubbing the map: a real seed proves the node is reachable in a game
- * that could actually happen.
+ * Drives a run until the player is standing on a node that offers `kind`,
+ * ready to write it that way. Offers are sprinkled by the generator, so this
+ * walks several seeds rather than stubbing the map: a real seed proves the
+ * choice is reachable in a game that could actually happen.
  */
-export function standingOn(kind: NodeKind, options: { prefix?: string } = {}): RunState {
-  return onKind(kind, options).state;
+export function standingOn(kind: DetourKind, options: { prefix?: string } = {}): RunState {
+  return offering(kind, options).state;
 }
 
 /**
- * The same, but the craft commit on that node is known to have landed — a
- * detour that failed its roll resolves nothing, and a test about what the node
- * *does* has nothing to assert against.
+ * The same, but the craft commit that writes it as `kind` is known to have
+ * landed — a roll that missed resolves nothing, and a test about what the
+ * commit *does* has nothing to assert against.
  */
 export function committedOn(
-  kind: NodeKind,
+  kind: DetourKind,
   options: { prefix?: string; where?: (state: RunState) => boolean } = {},
 ): { before: RunState; after: RunState; events: GameEvent[] } {
-  const { state } = onKind(kind, { ...options, mustResolve: true });
-  const result = applyAction(state, { type: "commit", mode: "craft" });
+  const { state } = offering(kind, { ...options, mustResolve: true });
+  const result = applyAction(state, { type: "commit", mode: "craft", kind });
   return { before: state, after: result.state, events: result.events };
 }
 
-function onKind(
-  kind: NodeKind,
+function offering(
+  kind: DetourKind,
   options: { prefix?: string; mustResolve?: boolean; where?: (state: RunState) => boolean } = {},
 ): { state: RunState } {
   const prefix = options.prefix ?? kind;
 
-  for (let attempt = 0; attempt < 800; attempt += 1) {
+  for (let attempt = 0; attempt < 400; attempt += 1) {
     let state = newRun(`${prefix}-${attempt}`);
 
     for (let step = 0; step < 300; step += 1) {
@@ -69,7 +69,7 @@ function onKind(
 
       if (
         state.phase.kind === "choose_action" &&
-        state.nodes[state.player.nodeId]?.kind === kind &&
+        state.nodes[state.player.nodeId]?.offers === kind &&
         (options.where?.(state) ?? true)
       ) {
         if (options.mustResolve !== true) return { state };
@@ -77,7 +77,7 @@ function onKind(
         // The roll has to have *succeeded*, not merely let the node through:
         // the failure table can resolve a node anyway, and a node that only
         // survived is not a node that did what it promised.
-        const probe = applyAction(state, { type: "commit", mode: "craft" });
+        const probe = applyAction(state, { type: "commit", mode: "craft", kind });
         const roll = probe.events.find((event) => event.type === "roll");
         const landed =
           (roll === undefined || (roll.type === "roll" && roll.success)) &&
@@ -89,18 +89,46 @@ function onKind(
       }
 
       const legal = getAvailableActions(state);
-      const wanted = legal.find(
-        (action) => action.type === "move" && state.nodes[action.nodeId]?.kind === kind,
-      );
-      const action =
-        wanted ?? legal.find((a) => a.type === "commit" && a.mode === "ai") ?? legal[0];
+      const action = legal.find((a) => a.type === "commit" && a.mode === "ai") ?? legal[0];
       if (action === undefined) break;
 
       state = applyAction(state, action).state;
     }
   }
 
-  throw new Error(`No seed out of 800 put the player on a ${kind} node`);
+  throw new Error(`No seed out of 400 offered a ${kind} commit`);
+}
+
+/**
+ * A run stopped on an ordinary commit it has to write: `choose_action`, on a
+ * plain node with nothing on offer. Most rules about "a commit" mean this one,
+ * and letting the first action of a seed decide made the test depend on the
+ * map rather than on the rule.
+ */
+export function writingACommit(prefix: string): RunState {
+  for (let attempt = 0; attempt < 400; attempt += 1) {
+    let state = newRun(`${prefix}-${attempt}`);
+
+    for (let step = 0; step < 60; step += 1) {
+      if (state.phase.kind === "game_over") break;
+
+      const node = state.nodes[state.player.nodeId];
+      if (
+        state.phase.kind === "choose_action" &&
+        node?.kind === "commit" &&
+        node.offers === undefined
+      ) {
+        return state;
+      }
+
+      const legal = getAvailableActions(state);
+      const action = legal.find((a) => a.type === "commit" && a.mode === "craft") ?? legal[0];
+      if (action === undefined) break;
+      state = applyAction(state, action).state;
+    }
+  }
+
+  throw new Error(`No seed out of 400 reached a plain commit for ${prefix}`);
 }
 
 export interface PlayResult {

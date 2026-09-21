@@ -29,23 +29,3 @@ export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean):
     graphics.circle(0, 0, NODE_RADIUS + 8).stroke({ width: 2, color: THEME.player, alpha: 0.7 });
   }
 }
-
-/**
- * The node you are standing on and have not committed yet — a working copy.
- *
- * Hollow and dashed-looking rather than filled, because nothing has happened
- * here: the graph shows what you did, and this is the one place showing what
- * you are about to do.
- */
-export function drawPending(graphics: Graphics, pulse: number): void {
-  graphics.clear();
-
-  graphics
-    .circle(0, 0, NODE_RADIUS)
-    .fill({ color: THEME.node.pending })
-    .stroke({ width: 2.5, color: THEME.player, alpha: 0.5 + 0.3 * pulse });
-
-  graphics
-    .circle(0, 0, NODE_RADIUS + 7)
-    .stroke({ width: 1.5, color: THEME.player, alpha: 0.18 + 0.22 * pulse });
-}

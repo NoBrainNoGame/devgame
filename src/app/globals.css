@@ -176,6 +176,7 @@
   --color-line: #2f343f;
 
   --color-branch-main: #62c073;
+  --color-branch-dev: #4fb3a8;
   --color-branch-feature: #5aa9e6;
   --color-branch-hotfix: #e2645a;
   --color-branch-bot: #d06dc4;

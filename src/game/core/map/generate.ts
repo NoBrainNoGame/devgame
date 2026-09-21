@@ -1,22 +1,28 @@
 import type { SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { assignLanes } from "@/game/core/map/layout";
+import { assignLanes, DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { Rng } from "@/game/core/rng";
-import type { Branch, BranchId, MapNode, NodeId, NodeKind } from "@/game/core/types";
+import type { Branch, BranchId, DetourKind, MapNode, NodeId, NodeKind } from "@/game/core/types";
 
 /**
- * One sprint of git graph.
+ * One sprint of git graph, in the shape a team actually works in.
  *
- * `main` carries no work. It is a spine of merge commits — the sprint anchor,
- * one merge per feature delivered, the sprint merge, the release — and every
- * line of work happens on a branch that leaves it and comes back. That is what
- * a trunk-based repository looks like, and it is what makes a merge mean
- * something: a merge is the end of a feature, never "one more commit".
+ * Two long-lived branches carry no work at all. **`dev`** is where features are
+ * integrated: it opens on a back-merge from `main` and then takes one merge per
+ * feature delivered, yours and the rivals'. **`main`** receives exactly two
+ * nodes per sprint — the `dev → main` merge that ships it, and the release —
+ * so the leftmost column reads as a history of sprints rather than of commits.
+ *
+ * Everything else happens on a feature branch that leaves `dev` and comes back.
+ * That is what makes a merge mean something: a merge is the end of a feature,
+ * never "one more commit".
  *
  * So the decision at every merge is *which feature to build next*. Two or three
- * branches are offered, each with its own length, its own detours and possibly
+ * branches are offered, each with its own length, its own offers and possibly
  * its own skill; you walk one and the others are never written. The commits
- * inside a branch are progress within that feature, not features of their own.
+ * inside a branch are progress within that feature, not features of their own —
+ * and a commit that offers a detour is still a commit on that branch, written
+ * differently, not a fork.
  *
  * Everything is drawn from the run's PRNG, so the same seed always produces the
  * same sprint. That is what makes a run replayable on the server.
@@ -25,7 +31,7 @@ import type { Branch, BranchId, MapNode, NodeId, NodeKind } from "@/game/core/ty
 export interface SprintPlan {
   nodes: MapNode[];
   branches: Branch[];
-  /** Number of main-line nodes: the anchor, the merges, and the tail. */
+  /** Nodes on `dev`: the anchor plus one merge per feature. The race runs here. */
   length: number;
   startId: NodeId;
   releaseId: NodeId;
@@ -88,10 +94,12 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
   const offeredSkills: SkillId[] = [];
   const pool = [...options.skillPool];
 
-  const start = makeNode(serial, sprint, "sprint_start", offset);
+  // The sprint opens with `main` merged back into `dev`, which is what a team
+  // does the morning a sprint starts.
+  const start = makeNode(serial, sprint, "sprint_start", offset, { lane: DEV_LANE });
   nodes.push(start);
 
-  const main: MapNode[] = [start];
+  const devLine: MapNode[] = [start];
   let from = start;
   let depth = offset;
 
@@ -107,11 +115,11 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
       span = Math.max(span, branch.tail.depth - depth);
     }
 
-    // Every option merges into the same node: the feature lands on `main`
+    // Every option merges into the same node: the feature lands on `dev`
     // whichever one you picked, and the ones you did not pick are never
     // written. The merge sits one clear step past the longest of them.
     const mergeDepth = depth + span + 1;
-    const merge = makeNode(serial, sprint, "feature_merge", mergeDepth);
+    const merge = makeNode(serial, sprint, "feature_merge", mergeDepth, { lane: DEV_LANE });
 
     for (const option of built) {
       option.tail.next = [merge.id];
@@ -126,29 +134,41 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
 
     from.next = built.map((branch) => branch.head.id).sort();
     nodes.push(merge);
-    main.push(merge);
+    devLine.push(merge);
 
     from = merge;
     depth = mergeDepth;
   }
 
-  // The tail is plumbing rather than a decision: the last merge leads to the
-  // sprint merge, which leads to the release.
-  const sprintMerge = makeNode(serial, sprint, "sprint_merge", depth + 1);
-  const release = makeNode(serial, sprint, "release", depth + 2);
+  // Shipping the sprint. This is the only thing that ever touches `main`: `dev`
+  // merged into it, and the release that tags what was merged. It is plumbing
+  // rather than a decision, so both are walked automatically.
+  const sprintMerge = makeNode(serial, sprint, "sprint_merge", depth + 1, { lane: MAIN_LANE });
+  const release = makeNode(serial, sprint, "release", depth + 2, { lane: MAIN_LANE });
 
   from.next = [sprintMerge.id];
   sprintMerge.next = [release.id];
 
   nodes.push(sprintMerge, release);
-  main.push(sprintMerge, release);
+
+  // A sprint that offers no skill at all is a sprint with nothing to build
+  // towards. Rare — six or more branches would all have to miss a 60 % draw —
+  // but rare is not never, so the first branch gets one.
+  if (offeredSkills.length === 0 && pool.length > 0) {
+    const first = branches.find((branch) => branch.kind === "feature");
+    const skillId = pool[0];
+    if (first !== undefined && skillId !== undefined) {
+      first.skillId = skillId;
+      offeredSkills.push(skillId);
+    }
+  }
 
   assignLanes(nodes);
 
   return {
     nodes,
     branches,
-    length: main.length,
+    length: devLine.length,
     startId: start.id,
     releaseId: release.id,
     offeredSkills,
@@ -197,21 +217,14 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
     const built: Branch[] = [branch];
     const extra: MapNode[] = [];
 
-    // ---- detours inside the feature ---------------------------------------
-    // A one-node alternative that rejoins two commits later: same distance
-    // through the feature, very different cost.
-    for (let i = 0; i + 2 < length; i += 1) {
-      const branchFrom = chain[i];
-      const branchTo = chain[i + 2];
-      if (branchFrom === undefined || branchTo === undefined) continue;
-      if (branchFrom.next.length > 1) continue;
+    // ---- what a commit may be written as ----------------------------------
+    // Not a fork. A refactor, a squash, a rebase is a commit on this branch
+    // written differently, so it is an *offer* carried by a node rather than a
+    // node of its own: the graph stays a chain, and the choice lives in the
+    // panel where its price can be read.
+    for (const node of chain) {
       if (!rng.chance(map.detourPct)) continue;
-
-      const kind = rng.weighted(DETOURS);
-      const detour = makeNode(serial, sprint, kind, branchFrom.depth + 1);
-      detour.next = [branchTo.id];
-      branchFrom.next = [...branchFrom.next, detour.id].sort();
-      extra.push(detour);
+      node.offers = rng.weighted(DETOURS);
     }
 
     // ---- a feature off a feature ------------------------------------------
@@ -260,11 +273,11 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
   }
 }
 
-const DETOURS = [
-  { value: "refactor" as const, weight: BALANCE.map.detourWeights.refactor },
-  { value: "risky" as const, weight: BALANCE.map.detourWeights.risky },
-  { value: "chore" as const, weight: BALANCE.map.detourWeights.chore },
-  { value: "squash" as const, weight: BALANCE.map.detourWeights.squash },
-  { value: "docs" as const, weight: BALANCE.map.detourWeights.docs },
-  { value: "rebase" as const, weight: BALANCE.map.detourWeights.rebase },
+const DETOURS: { value: DetourKind; weight: number }[] = [
+  { value: "refactor", weight: BALANCE.map.detourWeights.refactor },
+  { value: "risky", weight: BALANCE.map.detourWeights.risky },
+  { value: "chore", weight: BALANCE.map.detourWeights.chore },
+  { value: "squash", weight: BALANCE.map.detourWeights.squash },
+  { value: "docs", weight: BALANCE.map.detourWeights.docs },
+  { value: "rebase", weight: BALANCE.map.detourWeights.rebase },
 ];

@@ -1,10 +1,11 @@
 import { BOT_ARCHETYPE_IDS, BOT_ARCHETYPES, type BotArchetypeId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { DEV_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { grantSkill } from "@/game/core/rules/grants";
 import { reviewedRatio } from "@/game/core/rules/modifiers";
-import type { Bot, RunState } from "@/game/core/types";
+import type { Bot, BotNode, NodeId, RunState } from "@/game/core/types";
 
 /**
  * The rivals.
@@ -134,9 +135,12 @@ export function resetBotsForSprint(state: RunState): void {
 export function advanceBots(context: RuleContext): void {
   const { state } = context;
   forgetOldBotNodes(state);
-  // `main` is the anchor, one merge per feature, then the sprint merge and the
-  // release: the features on offer are what is left.
-  const ceiling = Math.max(0, state.sprintLength - 3);
+  // `dev` is the sprint anchor plus one merge per feature, so the features a
+  // rival may deliver is everything but the anchor. It used to subtract three,
+  // left over from when the tail sat on this line: rivals stopped two features
+  // short and could never pull ahead, which is most of why a well-played run
+  // never ended.
+  const ceiling = Math.max(0, state.sprintLength - 1);
 
   for (const bot of aliveBots(state)) {
     if (bot.stalled > 0) {
@@ -194,11 +198,13 @@ function forgetOldBotNodes(state: RunState): void {
 }
 
 /**
- * One commit of rival work, and the merge that closes its feature.
+ * One commit of rival work, and the merge that lands it on `dev`.
  *
  * A rival's progress in the race is features delivered, exactly as the
  * player's is — so it has to actually write the commits and land the merge,
- * rather than have a number go up.
+ * rather than have a number go up. Its commits sit in its own column; its
+ * merge sits on `dev`, because `dev` is where the team integrates and `main`
+ * only ever receives the sprint.
  */
 function writeBotCommit(context: RuleContext, bot: Bot): void {
   const { state } = context;
@@ -210,21 +216,92 @@ function writeBotCommit(context: RuleContext, bot: Bot): void {
   const id = `bot:${state.nextBotNodeSerial}`;
   state.nextBotNodeSerial += 1;
 
-  state.botNodes[id] = {
-    id,
-    botId: bot.id,
-    kind: merged ? "feature_merge" : "commit",
-    lane: bot.lane,
-    depth: bot.depth,
-  };
+  const previous = lastNodeOf(state, bot.id);
 
   if (merged) {
+    // Two parents: what the rival wrote, and the `dev` it lands on.
+    const landing = freeDevDepth(state, bot.depth);
+    bot.depth = landing;
+
+    const onto = devTipBelow(state, landing);
+    state.botNodes[id] = {
+      id,
+      botId: bot.id,
+      kind: "feature_merge",
+      lane: DEV_LANE,
+      depth: landing,
+      parents: [...(previous === undefined ? [] : [previous.id]), ...(onto === null ? [] : [onto])],
+    };
+
     bot.featureCommits = 0;
     bot.sprintProgress += 1;
     bot.totalProgress += 1;
+  } else {
+    // The first commit of a feature forks off `dev`; the rest follow on.
+    const onto = previous === undefined ? devTipBelow(state, bot.depth) : previous.id;
+    state.botNodes[id] = {
+      id,
+      botId: bot.id,
+      kind: "commit",
+      lane: bot.lane,
+      depth: bot.depth,
+      parents: onto === null ? [] : [onto],
+    };
   }
 
   emit(context, { type: "bot_committed", botId: bot.id, nodeId: id, merged });
+}
+
+/** The rival's newest node, whatever column it is in. */
+function lastNodeOf(state: RunState, botId: string): BotNode | undefined {
+  let best: BotNode | undefined;
+  for (const id of Object.keys(state.botNodes).sort()) {
+    const node = state.botNodes[id];
+    if (node === undefined || node.botId !== botId) continue;
+    if (best === undefined || node.depth >= best.depth) best = node;
+  }
+  return best;
+}
+
+/**
+ * The first row at or below `wanted` where nothing already sits on `dev`.
+ *
+ * `dev` is shared, so two rivals landing on the same turn — or a rival landing
+ * where one of the player's merges was generated — would draw on top of each
+ * other. Sliding down is the honest fix: the merge happened, just a little
+ * later than the rival's own pace suggested.
+ */
+function freeDevDepth(state: RunState, wanted: number): number {
+  const taken = new Set<number>();
+  for (const node of Object.values(state.nodes)) {
+    if (node.lane === DEV_LANE) taken.add(node.depth);
+  }
+  for (const node of Object.values(state.botNodes)) {
+    if (node.lane === DEV_LANE) taken.add(node.depth);
+  }
+
+  let depth = wanted;
+  while (taken.has(depth)) depth += 1;
+  return depth;
+}
+
+/** The newest thing on `dev` strictly below `depth`, player or rival. */
+function devTipBelow(state: RunState, depth: number): NodeId | null {
+  let best: { id: NodeId; depth: number } | null = null;
+
+  const consider = (id: NodeId, at: number): void => {
+    if (at >= depth) return;
+    if (best === null || at > best.depth) best = { id, depth: at };
+  };
+
+  for (const node of Object.values(state.nodes)) {
+    if (node.lane === DEV_LANE && node.status === "done") consider(node.id, node.depth);
+  }
+  for (const node of Object.values(state.botNodes)) {
+    if (node.lane === DEV_LANE) consider(node.id, node.depth);
+  }
+
+  return best === null ? null : (best as { id: NodeId; depth: number }).id;
 }
 
 /**

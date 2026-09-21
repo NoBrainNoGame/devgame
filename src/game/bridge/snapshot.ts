@@ -46,7 +46,10 @@ export interface BotView {
 }
 
 export interface PlayerView {
+  /** The node being written: where the next commit will land. */
   nodeId: NodeId;
+  /** `HEAD`: the last node actually written. This is where the graph draws you. */
+  headId: NodeId;
   energy: number;
   energyMax: number;
   sprintProgress: number;
@@ -164,6 +167,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     player: {
       nodeId: state.player.nodeId,
+      headId: state.player.headId,
       energy: state.player.energy,
       energyMax: energyMax(state, effects),
       sprintProgress: state.player.sprintProgress,

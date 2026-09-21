@@ -3,16 +3,23 @@ import type { MapNode, NodeId } from "@/game/core/types";
 /**
  * Which column each node is drawn in.
  *
- * This is `git log --graph` logic: `main` holds lane 0, every branch takes the
- * leftmost free column to its right, and a column is free again once the branch
- * occupying it has merged. Hotfixes go the other way, into negative lanes, so
- * an emergency reads as an interruption rather than as more feature work, and
- * the rivals go further left still — see `botLane`.
+ * This is `git log --graph` logic, with the two long-lived branches pinned:
+ * `main` holds lane 0 and `dev` holds lane 1. Every feature takes the leftmost
+ * free column to the right of `dev`, and a column is free again once the branch
+ * occupying it has merged. The rivals work in negative lanes — see `botLane` in
+ * `rules/bots.ts` — so their work reads as somebody else's, not as yours.
  *
  * It lives in `core` rather than in the renderer because the tests assert on it
  * and because two branches sharing a column is a generation bug, not a drawing
  * one.
  */
+
+/** `main`: nothing but the sprint merge and the release it ships. */
+export const MAIN_LANE = 0;
+/** `dev`: where every feature is integrated, yours and the rivals'. */
+export const DEV_LANE = 1;
+/** The first column a feature branch may take. */
+export const FIRST_FEATURE_LANE = 2;
 
 /** Numeric part of `${sprint}:${serial}`. Serials are globally increasing. */
 export function nodeSerial(id: NodeId): number {
@@ -35,8 +42,7 @@ function toSpans(nodes: MapNode[]): Span[] {
   const byBranch = new Map<string, MapNode[]>();
 
   for (const node of nodes) {
-    if (node.lane === 0 && node.branchId === undefined && isMainKind(node)) continue;
-    // A detour has no branch of its own, so it is its own one-node span.
+    if (isTrunkNode(node)) continue;
     const key = node.branchId ?? `node:${node.id}`;
     const bucket = byBranch.get(key);
     if (bucket === undefined) byBranch.set(key, [node]);
@@ -65,15 +71,14 @@ function toSpans(nodes: MapNode[]): Span[] {
 }
 
 /**
- * The kinds that live on `main`.
+ * True for a node the generator has already placed on a long-lived branch.
  *
- * No `commit`: nothing is written on the trunk any more. What sits there is
- * the anchor, one merge per feature delivered, and the tail of the sprint —
- * `main` is the base every feature leaves from, not a place you work.
+ * Nothing is ever *written* on either of them: `main` receives the sprint merge
+ * and the release, `dev` receives the anchor and one merge per feature. A merge
+ * carrying a `branchId` is the end of a feature that left another feature, so it
+ * belongs in its parent's column and is laid out like any other branch node.
  */
-function isMainKind(node: MapNode): boolean {
-  // A merge that belongs to a branch is the end of a sub-feature, drawn in its
-  // parent's column — not on the trunk.
+export function isTrunkNode(node: MapNode): boolean {
   if (node.branchId !== undefined) return false;
 
   return (
@@ -85,14 +90,14 @@ function isMainKind(node: MapNode): boolean {
 }
 
 /**
- * Assigns positive lanes to every off-main node in `nodes`. Main-line nodes are
- * left at lane 0. Called once per generated sprint.
+ * Assigns a column to every feature node in `nodes`. Trunk nodes keep the lane
+ * the generator gave them. Called once per generated sprint.
  */
 export function assignLanes(nodes: MapNode[]): void {
   const busyUntil: number[] = [];
 
   for (const span of toSpans(nodes)) {
-    let lane = 1;
+    let lane = FIRST_FEATURE_LANE;
     // `- 1` leaves room for the edge that forks into the span: without it a
     // merge arriving at depth d and a fork leaving at depth d would cross.
     while ((busyUntil[lane] ?? Number.NEGATIVE_INFINITY) >= span.start - 1) lane += 1;
@@ -103,20 +108,22 @@ export function assignLanes(nodes: MapNode[]): void {
 }
 
 /**
- * The leftmost free negative lane over `[start, end]`, for a branch injected
- * mid-run. Injected branches are short and walked immediately, so in practice
- * this almost always returns -1.
+ * The leftmost free feature column over `[start, end]`, for a branch spliced in
+ * mid-run.
+ *
+ * Injected branches are short and walked immediately, so in practice this
+ * almost always returns the first feature lane.
  */
-export function pickNegativeLane(nodes: Iterable<MapNode>, start: number, end: number): number {
+export function pickFeatureLane(nodes: Iterable<MapNode>, start: number, end: number): number {
   const occupied = new Set<number>();
 
   for (const node of nodes) {
-    if (node.lane >= 0) continue;
+    if (node.lane < FIRST_FEATURE_LANE) continue;
     if (node.depth < start - 1 || node.depth > end + 1) continue;
     occupied.add(node.lane);
   }
 
-  let lane = -1;
-  while (occupied.has(lane)) lane -= 1;
+  let lane = FIRST_FEATURE_LANE;
+  while (occupied.has(lane)) lane += 1;
   return lane;
 }

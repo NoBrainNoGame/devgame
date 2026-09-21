@@ -14,7 +14,7 @@ import {
   replayOntoTrunk,
   resolveNode,
 } from "@/game/core/rules/progress";
-import type { CommitMode } from "@/game/core/types";
+import type { CommitMode, DetourKind } from "@/game/core/types";
 
 /**
  * The action the whole game is about: write it yourself, or let the machine
@@ -26,9 +26,21 @@ import type { CommitMode } from "@/game/core/types";
  * only partly.
  */
 
-export function performCommit(context: RuleContext, mode: CommitMode): AfterResolution {
+export function performCommit(
+  context: RuleContext,
+  mode: CommitMode,
+  kind?: DetourKind,
+): AfterResolution {
   const { state } = context;
   const node = getNode(state, state.player.nodeId);
+
+  // Writing it as the thing it offered. The node *becomes* a refactor, so every
+  // rule downstream — the odds, the price, what it does on resolution — reads
+  // `node.kind` exactly as it always has.
+  if (kind !== undefined && node.offers === kind) {
+    node.kind = kind;
+    node.offers = undefined;
+  }
 
   const cost = nodeEnergyCost(state, node, mode, context.effects);
   spendEnergy(context, cost.value, "commit");

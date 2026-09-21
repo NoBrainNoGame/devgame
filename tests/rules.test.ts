@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
-import { mainLineIndexOf } from "@/game/core/map/graph";
+import { devLineIndexOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import {
   commitChance,
@@ -26,6 +26,7 @@ import {
   prefer,
   standingOn,
   withReviewSkill,
+  writingACommit,
 } from "./helpers";
 
 describe("commit", () => {
@@ -43,12 +44,19 @@ describe("commit", () => {
   });
 
   test("the preview's energy cost is what gets spent", () => {
-    const { state } = play(newRun("cost"), { limit: 1 });
+    // Topped up: energy clamps at zero, and a clamped spend is a different
+    // rule from the one under test.
+    const state = structuredClone(writingACommit("cost"));
+    state.player.energy = state.player.energyMax;
+
     const action = { type: "commit", mode: "craft" } as const;
     const preview = getActionPreview(state, action);
 
-    const after = applyAction(state, action).state;
-    expect(state.player.energy - after.player.energy).toBe(preview.energyCost);
+    // Asserted on what the commit charged, not on the net: a success can also
+    // draw an ambient event that hands energy back in the same action.
+    const result = applyAction(state, action);
+    const charged = eventsOfType(result.events, "energy").find((e) => e.reason === "commit");
+    expect(charged?.delta).toBe(-preview.energyCost);
   });
 
   test("a craft commit adds no debt, an AI commit does", () => {
@@ -165,13 +173,15 @@ describe("energy and crunch", () => {
   });
 
   test("burnout needs a second turn at zero, not just the first", () => {
-    const { state } = play(newRun("burnout"), { limit: 1 });
-    const spent = structuredClone(state);
+    const spent = structuredClone(writingACommit("burnout"));
     spent.player.energy = 0;
     spent.player.zeroEnergyStreak = 0;
+    // Nothing that could hand energy back mid-turn.
+    spent.player.aiHistory = [];
 
     const once = applyAction(spent, { type: "commit", mode: "craft" }).state;
     expect(once.phase.kind === "game_over" && once.phase.reason === "burnout").toBe(false);
+    expect(once.player.energy).toBe(0);
     expect(once.player.zeroEnergyStreak).toBe(1);
   });
 
@@ -427,16 +437,20 @@ describe("free actions", () => {
 });
 
 describe("the race", () => {
-  test("the race position never runs ahead of the trunk", () => {
+  test("the race position is measured in features, like a rival's", () => {
     for (let i = 0; i < 40; i += 1) {
       const { state } = play(newRun(`race-${i}`), { pick: prefer(isCommit("ai")), limit: 60 });
       const node = state.nodes[state.player.nodeId];
       if (node === undefined || state.phase.kind === "game_over") continue;
 
-      // The player holds the same number a rival holds: an index into this
-      // sprint's main line. It may be lower — a rejected PR docks it — but it
-      // can never claim ground further up the trunk than the player stands on.
-      expect(state.player.sprintProgress).toBeLessThanOrEqual(mainLineIndexOf(state, node));
+      // The player holds the same number a rival holds: how far along `dev`
+      // this sprint has got. It cannot exceed the features the sprint has.
+      expect(state.player.sprintProgress).toBeGreaterThanOrEqual(0);
+      expect(state.player.sprintProgress).toBeLessThanOrEqual(state.sprintLength - 1);
+
+      // And it tracks the trunk, give or take the ground an ambient event
+      // hands over for free.
+      expect(state.player.mainReached).toBeLessThanOrEqual(devLineIndexOf(state, node));
     }
   });
 
@@ -519,8 +533,10 @@ describe("documentation", () => {
       (event) => event.mode === "ai",
     );
     expect(machineWritten.length).toBeGreaterThan(0);
-    expect(eventsOfType(after.events, "docs_used").length).toBe(machineWritten.length);
-    expect(after.state.player.docsCharges).toBe(BALANCE.docs.charges - machineWritten.length);
+
+    const covered = Math.min(BALANCE.docs.charges, machineWritten.length);
+    expect(eventsOfType(after.events, "docs_used").length).toBe(covered);
+    expect(after.state.player.docsCharges).toBe(BALANCE.docs.charges - covered);
   });
 
   test("the preview stops advertising a debt it will not charge", () => {
@@ -538,13 +554,16 @@ describe("rebase", () => {
     const node = state.nodes[state.player.nodeId];
     if (node === undefined) throw new Error("expected a node");
 
+    // Priced as the thing it would become, exactly as the preview does it.
+    const written = { ...node, kind: "rebase" as const };
+
     const clean = structuredClone(state);
     clean.debt = 0;
     const dirty = structuredClone(state);
     dirty.debt = 60;
 
-    const cleanChance = commitChance(clean, "craft", node).value;
-    const dirtyChance = commitChance(dirty, "craft", node).value;
+    const cleanChance = commitChance(clean, "craft", written).value;
+    const dirtyChance = commitChance(dirty, "craft", written).value;
 
     expect(cleanChance).toBeGreaterThan(dirtyChance + 20);
   });

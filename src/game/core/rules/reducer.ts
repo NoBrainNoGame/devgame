@@ -64,7 +64,7 @@ function dispatch(
 
   switch (action.type) {
     case "commit": {
-      const after = performCommit(context, action.mode);
+      const after = performCommit(context, action.mode, action.kind);
       // A conflict pauses mid-turn; the turn ends when the player resolves it.
       return { after, consumesTurn: state.phase.kind !== "resolve_conflict" };
     }

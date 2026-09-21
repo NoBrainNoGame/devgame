@@ -1,4 +1,4 @@
-import { nodeSerial } from "@/game/core/map/layout";
+import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
 import type { MapNode, NodeId, RunState } from "@/game/core/types";
 
 /**
@@ -22,11 +22,11 @@ export function successors(state: RunState, id: NodeId): MapNode[] {
  * a depth: injecting a hotfix shifts every depth after it, and a bot should not
  * appear to leap because the player broke production.
  */
-export function mainLineNodes(state: RunState, sprint: number): MapNode[] {
+export function devLineNodes(state: RunState, sprint: number): MapNode[] {
   return Object.keys(state.nodes)
     .sort((a, b) => nodeSerial(a) - nodeSerial(b))
     .map((id) => getNode(state, id))
-    .filter((node) => node.sprint === sprint && node.lane === 0)
+    .filter((node) => node.sprint === sprint && node.lane === DEV_LANE)
     .sort((a, b) => a.depth - b.depth);
 }
 
@@ -39,13 +39,13 @@ export function mainLineNodes(state: RunState, sprint: number): MapNode[] {
  * a node on a branch or a detour sits *between* two trunk nodes rather than
  * adding to the count.
  */
-export function mainLineIndexOf(state: RunState, node: MapNode): number {
+export function devLineIndexOf(state: RunState, node: MapNode): number {
   // Counted rather than sorted. This runs on every node the player resolves,
   // and the node map grows for the whole run: sorting it here made a long run
   // measurably slower with every turn.
   let seen = 0;
   for (const candidate of Object.values(state.nodes)) {
-    if (candidate.sprint !== node.sprint || candidate.lane !== 0) continue;
+    if (candidate.sprint !== node.sprint || candidate.lane !== DEV_LANE) continue;
     if (candidate.depth <= node.depth) seen += 1;
   }
   return Math.max(0, seen - 1);
@@ -75,9 +75,9 @@ export function setCandidates(state: RunState, ids: readonly NodeId[]): void {
   }
 }
 
-/** True while the player stands somewhere that is not the main line. */
+/** True while the player stands on a feature branch rather than on `main` or `dev`. */
 export function isOnBranch(state: RunState): boolean {
-  return getNode(state, state.player.nodeId).lane !== 0;
+  return getNode(state, state.player.nodeId).lane >= FIRST_FEATURE_LANE;
 }
 
 export function isOnHotfix(state: RunState): boolean {
@@ -162,16 +162,94 @@ export function checkInvariants(nodes: readonly MapNode[]): InvariantFailure[] {
   }
 
   // Two branches sharing a column at the same depth would draw on top of each
-  // other. Lane 0 is exempt: the main line is a single chain.
+  // other. `main` and `dev` are exempt: each is a single chain.
   const occupied = new Map<string, NodeId>();
   for (const node of nodes) {
-    if (node.lane === 0) continue;
+    if (node.lane === MAIN_LANE || node.lane === DEV_LANE) continue;
     const key = `${node.lane}@${node.depth}`;
     const previous = occupied.get(key);
     if (previous !== undefined) {
       failures.push({ rule: "lane-collision", detail: `${previous} and ${node.id} at ${key}` });
     }
     occupied.set(key, node.id);
+  }
+
+  // What may sit on each long-lived branch. Nothing is ever *written* on
+  // either: `main` ships sprints, `dev` integrates features, and everything
+  // else happens on a branch that leaves `dev` and comes back.
+  for (const node of nodes) {
+    if (node.lane === MAIN_LANE) {
+      if (node.kind !== "sprint_merge" && node.kind !== "release") {
+        failures.push({ rule: "main-ships-only", detail: `${node.id} is a ${node.kind}` });
+      }
+    } else if (node.lane === DEV_LANE) {
+      if (node.kind !== "sprint_start" && node.kind !== "feature_merge") {
+        failures.push({ rule: "dev-integrates-only", detail: `${node.id} is a ${node.kind}` });
+      }
+      if (node.branchId !== undefined) {
+        failures.push({ rule: "dev-is-not-a-branch", detail: node.id });
+      }
+    } else if (node.branchId === undefined) {
+      failures.push({ rule: "work-belongs-to-a-branch", detail: node.id });
+    }
+  }
+
+  // A branch is a branch: exactly one edge leads into it, and it ends in a
+  // merge. Anything else is a fork that never comes home, which is not a shape
+  // git can express.
+  const branchHeads = new Map<string, MapNode[]>();
+  for (const node of nodes) {
+    if (node.branchId === undefined) continue;
+    const bucket = branchHeads.get(node.branchId);
+    if (bucket === undefined) branchHeads.set(node.branchId, [node]);
+    else bucket.push(node);
+  }
+
+  const headOfBranch = new Map<string, NodeId>();
+  for (const [branchId, group] of branchHeads) {
+    const lowest = group.reduce((best, node) => (node.depth < best.depth ? node : best));
+    headOfBranch.set(branchId, lowest.id);
+  }
+
+  for (const [branchId, group] of branchHeads) {
+    const ids = new Set(group.map((node) => node.id));
+    const head = group.reduce((lowest, node) => (node.depth < lowest.depth ? node : lowest));
+
+    // Exactly one edge forks into the branch. Anything else arriving from
+    // outside has to be landing on a merge — a branch that left this one and
+    // is coming home, which is a merge commit's second parent.
+    let forks = 0;
+    for (const node of nodes) {
+      if (ids.has(node.id)) continue;
+      for (const id of node.next) {
+        if (!ids.has(id)) continue;
+        if (id === head.id) forks += 1;
+        else if (byId.get(id)?.kind !== "feature_merge") {
+          failures.push({ rule: "branch-entered-mid-way", detail: `${node.id} -> ${id}` });
+        }
+      }
+    }
+    if (forks !== 1) {
+      failures.push({ rule: "branch-has-one-fork", detail: `${branchId} forks ${forks} times` });
+    }
+
+    // Leaving the branch is either coming home — onto a merge — or forking
+    // into a branch of your own, which lands on that branch's first commit.
+    for (const node of group) {
+      for (const id of node.next) {
+        if (ids.has(id)) continue;
+        const landing = byId.get(id);
+        if (landing === undefined) continue;
+
+        const isMerge = landing.kind === "feature_merge" || landing.kind === "sprint_merge";
+        if (isMerge || headOfBranch.get(landing.branchId ?? "") === landing.id) continue;
+
+        failures.push({
+          rule: "branch-ends-in-a-merge",
+          detail: `${branchId} leaves to ${id}, a ${landing.kind}`,
+        });
+      }
+    }
   }
 
   return failures;

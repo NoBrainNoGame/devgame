@@ -26,7 +26,14 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
   switch (action.type) {
     case "commit": {
-      const node = getNode(state, state.player.nodeId);
+      const standing = getNode(state, state.player.nodeId);
+      // Priced as the thing it would become: a refactor's odds and its price
+      // are the refactor's, not the plain commit's it is offered beside.
+      const node =
+        action.kind !== undefined && standing.offers === action.kind
+          ? { ...standing, kind: action.kind }
+          : standing;
+
       const cost = nodeEnergyCost(state, node, action.mode, effects);
       const chance = commitChance(state, action.mode, node, effects);
       const notes: I18nText[] = [...cost.notes, ...chance.notes];
@@ -176,7 +183,9 @@ export function previewAll(
 export function actionKey(action: PlayerAction): string {
   switch (action.type) {
     case "commit":
-      return `commit:${action.mode}`;
+      return action.kind === undefined
+        ? `commit:${action.mode}`
+        : `commit:${action.mode}:${action.kind}`;
     case "move":
       return `move:${action.nodeId}`;
     case "devops":

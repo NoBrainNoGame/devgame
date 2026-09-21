@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BOT_ARCHETYPES } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { getAvailableActions } from "@/game/core/rules/actions";
 import { aliveBots, botCountForSprint } from "@/game/core/rules/bots";
 import { reviewedRatio } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -75,8 +76,13 @@ describe("rivals", () => {
     );
 
     const ready = withReviewSkill(withAi.state);
+    // Reviewing is only on the table while writing a commit, so the fallback
+    // `prefer` reaches for would have been a move — and a move can walk a
+    // forced step, which does buy ground.
+    if (!getAvailableActions(ready).some(isType("review"))) return;
+
     const before = reviewedRatio(ready);
-    const after = play(ready, { pick: prefer(isType("review")), limit: 1 }).state;
+    const after = applyAction(ready, { type: "review" }).state;
 
     expect(reviewedRatio(after)).toBeGreaterThanOrEqual(before);
     // The whole point: a review buys no ground in the race.

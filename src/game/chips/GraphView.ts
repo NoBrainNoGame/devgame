@@ -3,13 +3,12 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import type { BotNode, MapNode, NodeId } from "@/game/core/types";
+import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { drawCommit, drawPending } from "@/game/render/drawNode";
+import { drawCommit } from "@/game/render/drawNode";
 import { drawEdge } from "@/game/render/lanes";
 import { glyphStyle, labelStyle } from "@/game/render/textStyles";
 import {
-  EDGE_WIDTH,
   labelledKind,
   laneColour,
   NODE_RADIUS,
@@ -32,6 +31,10 @@ import {
  * A new commit is never inserted silently: `reveal` animates it in, which is
  * what lets a machine-written burst of three read as three separate things
  * happening rather than as the graph suddenly being longer.
+ *
+ * Nothing is drawn for the commit you are *about* to write. It does not exist
+ * yet, and a hollow circle where it will go is the graph claiming to know the
+ * future.
  */
 
 export interface GraphViewEvents extends booyah.BaseCompositeEvents {
@@ -52,12 +55,10 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   private botLane!: Graphics;
   private nodeLayer!: Container;
   private labelLayer!: Container;
-  private pending!: Graphics;
 
   private sprites!: Map<NodeId, CommitSprite>;
   private labels!: Map<NodeId, Text>;
   private hovered: NodeId | null = null;
-  private pulse = 0;
   /** Labels are noise when the graph is zoomed out to find your way. */
   private showLabels = true;
 
@@ -66,17 +67,10 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     this.botLane = new Graphics();
     this.nodeLayer = new Container();
     this.labelLayer = new Container();
-    this.pending = new Graphics();
     this.sprites = new Map();
     this.labels = new Map();
 
-    this._container.addChild(
-      this.botLane,
-      this.edges,
-      this.pending,
-      this.nodeLayer,
-      this.labelLayer,
-    );
+    this._container.addChild(this.botLane, this.edges, this.nodeLayer, this.labelLayer);
 
     const { session } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", () => this.rebuild());
@@ -93,9 +87,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const delta = this._lastTickInfo.timeSinceLastTick;
     const { reducedMotion } = sceneContext(this.chipContext);
 
-    this.pulse = (this.pulse + delta / 900) % 1;
-    const wave = 0.5 + 0.5 * Math.sin(this.pulse * Math.PI * 2);
-
     for (const [id, sprite] of this.sprites) {
       if (sprite.reveal >= 1) continue;
 
@@ -109,8 +100,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       const label = this.labels.get(id);
       if (label !== undefined) label.alpha = eased * 0.75;
     }
-
-    this.drawPendingNode(wave);
   }
 
   // --- what is visible ------------------------------------------------------
@@ -182,62 +171,41 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
 
-    const byLane = new Map<number, BotNode[]>();
+    const at = (id: NodeId): { lane: number; depth: number } | undefined =>
+      state.botNodes[id] ?? state.nodes[id];
+
+    // Edges first, in the same shape as yours: a rival's history is a history,
+    // not a dotted hint. Then the nodes on top of them.
     for (const id of Object.keys(state.botNodes).sort()) {
       const node = state.botNodes[id];
       if (node === undefined) continue;
-      const column = byLane.get(node.lane);
-      if (column === undefined) byLane.set(node.lane, [node]);
-      else column.push(node);
+
+      for (const parentId of node.parents) {
+        const parent = at(parentId);
+        if (parent === undefined) continue;
+        drawEdge(this.botLane, parent, node, THEME.bot, 0.45);
+      }
     }
 
-    for (const column of byLane.values()) {
-      column.sort((a, b) => a.depth - b.depth);
+    for (const id of Object.keys(state.botNodes).sort()) {
+      const node = state.botNodes[id];
+      if (node === undefined) continue;
 
-      for (let i = 0; i < column.length - 1; i += 1) {
-        const below = column[i];
-        const above = column[i + 1];
-        if (below === undefined || above === undefined) continue;
+      const x = nodeX(node.lane);
+      const y = nodeY(node.depth);
+
+      if (node.kind === "feature_merge") {
         this.botLane
-          .moveTo(nodeX(below.lane), nodeY(below.depth))
-          .lineTo(nodeX(above.lane), nodeY(above.depth));
+          .circle(x, y, NODE_RADIUS - 3)
+          .fill({ color: THEME.bot, alpha: 0.85 })
+          .stroke({ width: 2, color: THEME.background });
+      } else {
+        this.botLane
+          .circle(x, y, NODE_RADIUS - 6)
+          .fill({ color: THEME.background })
+          .stroke({ width: 2, color: THEME.bot, alpha: 0.7 });
       }
     }
-
-    this.botLane.stroke({ width: EDGE_WIDTH - 1, color: THEME.bot, alpha: 0.45, cap: "round" });
-
-    for (const column of byLane.values()) {
-      for (const node of column) {
-        const x = nodeX(node.lane);
-        const y = nodeY(node.depth);
-
-        if (node.kind === "feature_merge") {
-          this.botLane
-            .circle(x, y, NODE_RADIUS - 3)
-            .fill({ color: THEME.bot, alpha: 0.85 })
-            .stroke({ width: 2, color: THEME.background });
-        } else {
-          this.botLane
-            .circle(x, y, NODE_RADIUS - 6)
-            .fill({ color: THEME.background })
-            .stroke({ width: 2, color: THEME.bot, alpha: 0.7 });
-        }
-      }
-    }
-  }
-
-  private drawPendingNode(wave: number): void {
-    const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-
-    this.pending.clear();
-    if (state.phase.kind === "game_over") return;
-
-    const head = state.nodes[state.player.nodeId];
-    if (head === undefined || head.status === "done") return;
-
-    this.pending.position.set(nodeX(head.lane), nodeY(head.depth));
-    drawPending(this.pending, wave);
   }
 
   // --- commits --------------------------------------------------------------
@@ -333,7 +301,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     if (this.sprites === undefined) return null;
 
     const nodes = this.revealed();
-    const head = this.node(sceneContext(this.chipContext).session.getState().player.nodeId);
+    const head = this.node(sceneContext(this.chipContext).session.getState().player.headId);
     const all = head === undefined ? nodes : [...nodes, head];
     if (all.length === 0) return null;
 

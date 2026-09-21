@@ -58,8 +58,15 @@ export const SAVE_VERSION = 1;
  *     from. A step with one way forward is walked automatically rather than
  *     offered as a list of one, so every choice the panel shows is a choice
  *     between features.
+ * 7 — `main` and `dev`. Nothing is written on either: `dev` takes the sprint
+ *     anchor and one merge per feature, `main` takes the sprint merge and the
+ *     release. Detours stopped being nodes and became ways of *writing* a
+ *     commit, carried by `PlayerAction.kind`. A hotfix is spliced onto the
+ *     branch you were on. Rivals land their merges on `dev` and their ceiling
+ *     was two features short. `HEAD` follows the last commit written. Energy
+ *     and rival pace retuned around all of it.
  */
-export const RULES_EPOCH = 6;
+export const RULES_EPOCH = 7;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

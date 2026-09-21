@@ -42,6 +42,9 @@ export function ActionPanel({
   const commits = snapshot.actions.filter(
     (action): action is Extract<PlayerAction, { type: "commit" }> => action.type === "commit",
   );
+  // Writing this commit plainly, and writing it as the thing it offers.
+  const plain = commits.filter((action) => action.kind === undefined);
+  const written = commits.filter((action) => action.kind !== undefined);
   const review = snapshot.actions.find((action) => action.type === "review");
   const devops = snapshot.actions.filter(
     (action): action is Extract<PlayerAction, { type: "devops" }> => action.type === "devops",
@@ -71,7 +74,7 @@ export function ActionPanel({
       ) : null}
 
       <div className="grid gap-2">
-        {commits.map((action) => (
+        {plain.map((action) => (
           <ActionButton
             key={actionKey(action)}
             label={action.mode === "craft" ? t("craftCommit") : t("aiCommit")}
@@ -81,6 +84,21 @@ export function ActionPanel({
             onAct={() => onAct(action)}
           />
         ))}
+
+        {written.length === 0 ? null : (
+          <>
+            <p className="pt-1 text-muted-foreground text-xs">{t("writeInstead")}</p>
+            {written.map((action) => (
+              <WrittenAsButton
+                key={actionKey(action)}
+                action={action}
+                snapshot={snapshot}
+                busy={busy}
+                onAct={onAct}
+              />
+            ))}
+          </>
+        )}
 
         {review === undefined ? null : (
           <ActionButton
@@ -146,8 +164,10 @@ function MoveButton({
 
   if (node === undefined) return null;
 
-  const opensBranch =
-    node.kind === "feature" && node.branchId !== undefined && node.branchId !== head?.branchId;
+  // Every candidate is the first commit of a branch now, so the question is
+  // only ever "which feature" — and the answer is named after the feature, not
+  // after the kind of node its first commit happens to be.
+  const opensBranch = node.branchId !== undefined && node.branchId !== head?.branchId;
   const kind = labelledKind(node.kind);
 
   const label = opensBranch ? t("openBranch") : game(`nodes.${kind}.name` as never);
@@ -196,6 +216,41 @@ function MoveButton({
         {preview === undefined ? null : <PreviewDetail preview={preview} />}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+/**
+ * Writing this commit as a refactor, a squash, a rebase.
+ *
+ * It is not a fork and never was: the choice is *how to write this commit*, so
+ * it sits with the other two ways of writing it and costs the same turn.
+ */
+function WrittenAsButton({
+  action,
+  snapshot,
+  busy,
+  onAct,
+}: {
+  action: Extract<PlayerAction, { type: "commit" }>;
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+
+  if (action.kind === undefined) return null;
+
+  return (
+    <ActionButton
+      label={`${game(`nodes.${action.kind}.name` as never)} · ${
+        action.mode === "craft" ? t("byHand") : t("byMachine")
+      }`}
+      hint={game(`nodes.${action.kind}.desc` as never)}
+      preview={snapshot.previews[actionKey(action)]}
+      busy={busy}
+      onAct={() => onAct(action)}
+    />
   );
 }
 
