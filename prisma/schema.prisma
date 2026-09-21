@@ -45,9 +45,9 @@ model Profile {
   commitsBank  Int      @default(0)
   totalCommits Int      @default(0)
   botsFired    Int      @default(0)
-  /// string[] of unlock ids, validated by the shared meta DTO.
-  unlocks      Json     @default("[]")
-  /// { sound, reducedMotion, statPoints } — see src/game/dto/meta.ts.
+  /// { unlockedProfiles, unlockedSkills } — validated by the shared meta DTO.
+  unlocks      Json     @default("{}")
+  /// { settings, statPoints, unspentStatPoints, version } — same DTO.
   settings     Json     @default("{}")
   metaVersion  Int      @default(1)
   createdAt    DateTime @default(now())

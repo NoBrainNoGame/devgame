@@ -17,7 +17,7 @@ CREATE TABLE "Profile" (
     "commitsBank" INTEGER NOT NULL DEFAULT 0,
     "totalCommits" INTEGER NOT NULL DEFAULT 0,
     "botsFired" INTEGER NOT NULL DEFAULT 0,
-    "unlocks" JSONB NOT NULL DEFAULT '[]',
+    "unlocks" JSONB NOT NULL DEFAULT '{}',
     "settings" JSONB NOT NULL DEFAULT '{}',
     "metaVersion" INTEGER NOT NULL DEFAULT 1,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
