@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
+import { mainLineIndexOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import {
   commitChance,
@@ -23,6 +24,7 @@ import {
   newRun,
   play,
   prefer,
+  standingOn,
   withReviewSkill,
 } from "./helpers";
 
@@ -416,5 +418,146 @@ describe("free actions", () => {
     const automated = structuredClone(state);
     automated.devops.cd = 1;
     expect(nodeEnergyCost(automated, merge, undefined, gatherEffects(automated)).value).toBe(0);
+  });
+});
+
+describe("the race", () => {
+  test("the race position never runs ahead of the trunk", () => {
+    for (let i = 0; i < 40; i += 1) {
+      const { state } = play(newRun(`race-${i}`), { pick: prefer(isCommit("ai")), limit: 60 });
+      const node = state.nodes[state.player.nodeId];
+      if (node === undefined || state.phase.kind === "game_over") continue;
+
+      // The player holds the same number a rival holds: an index into this
+      // sprint's main line. It may be lower — a rejected PR docks it — but it
+      // can never claim ground further up the trunk than the player stands on.
+      expect(state.player.sprintProgress).toBeLessThanOrEqual(mainLineIndexOf(state, node));
+    }
+  });
+
+  test("a machine-written burst banks the nodes, not the ground", () => {
+    const start = newRun("burst");
+    let state = start;
+
+    for (let i = 0; i < 200; i += 1) {
+      if (state.phase.kind === "game_over") break;
+      const legal = getAvailableActions(state);
+      const action = legal.find(isCommit("ai")) ?? legal[0];
+      if (action === undefined) break;
+
+      const beforePosition = state.player.sprintProgress;
+      const beforeCommits = state.player.totalCommits;
+      const result = applyAction(state, action);
+      state = result.state;
+
+      const jumped = eventsOfType(result.events, "ai_jumped")[0];
+      if (jumped === undefined || jumped.nodeIds.length === 0) continue;
+
+      const nodes = state.player.totalCommits - beforeCommits;
+      const ground = state.player.sprintProgress - beforePosition;
+
+      // Every node resolved is a commit; only the ones that moved the trunk
+      // are ground taken off a rival.
+      expect(nodes).toBeGreaterThan(0);
+      expect(ground).toBeLessThanOrEqual(nodes);
+      return;
+    }
+
+    throw new Error("no machine-written burst happened in 200 actions");
+  });
+});
+
+describe("squash", () => {
+  test("erases machine-written commits, their debt and their score", () => {
+    const state = standingOn("squash");
+    const unread = state.player.aiHistory.filter((entry) => !entry.reviewed).length;
+    expect(unread).toBeGreaterThan(0);
+
+    const result = applyAction(state, { type: "commit", mode: "craft" });
+    const squashed = eventsOfType(result.events, "squashed")[0];
+    expect(squashed).toBeDefined();
+    if (squashed === undefined) return;
+
+    expect(squashed.nodeIds.length).toBeGreaterThan(0);
+    expect(squashed.debtDelta).toBeLessThan(0);
+    expect(result.state.debt).toBeLessThan(state.debt);
+    // The commits are gone from the history, so they are gone from the count.
+    expect(result.state.player.totalCommits).toBeLessThan(state.player.totalCommits + 1);
+  });
+
+  test("works without ever having learned to review", () => {
+    const state = standingOn("squash");
+    expect(state.skills).not.toContain("code_review");
+    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+
+    const result = applyAction(state, { type: "commit", mode: "craft" });
+    expect(eventsOfType(result.events, "squashed").length).toBe(1);
+  });
+});
+
+describe("documentation", () => {
+  test("buys the next machine-written commits out of their debt", () => {
+    const state = standingOn("docs");
+    const written = applyAction(state, { type: "commit", mode: "craft" }).state;
+    expect(written.player.docsCharges).toBe(BALANCE.docs.charges);
+
+    // Two actions: the free step off the detour, then the commit itself.
+    const after = play(written, { pick: prefer(isCommit("ai")), limit: 2 });
+
+    // Every machine-written node in that window was covered. Total debt is not
+    // the assertion — a failure event can move it for reasons of its own.
+    const machineWritten = eventsOfType(after.events, "node_done").filter(
+      (event) => event.mode === "ai",
+    );
+    expect(machineWritten.length).toBeGreaterThan(0);
+    expect(eventsOfType(after.events, "docs_used").length).toBe(machineWritten.length);
+    expect(after.state.player.docsCharges).toBe(BALANCE.docs.charges - machineWritten.length);
+  });
+
+  test("the preview stops advertising a debt it will not charge", () => {
+    const state = standingOn("docs");
+    const written = applyAction(state, { type: "commit", mode: "craft" }).state;
+
+    const moved = play(written, { limit: 1 }).state;
+    const preview = getActionPreview(moved, { type: "commit", mode: "ai" });
+    expect(preview.debtDelta).toEqual([0, 0]);
+  });
+});
+
+describe("rebase", () => {
+  test("a clean history rebases far better than a dirty one", () => {
+    const state = standingOn("rebase");
+    const node = state.nodes[state.player.nodeId];
+    if (node === undefined) throw new Error("expected a node");
+
+    const clean = structuredClone(state);
+    clean.debt = 0;
+    const dirty = structuredClone(state);
+    dirty.debt = 60;
+
+    const cleanChance = commitChance(clean, "craft", node).value;
+    const dirtyChance = commitChance(dirty, "craft", node).value;
+
+    expect(cleanChance).toBeGreaterThan(dirtyChance + 20);
+  });
+
+  test("landing it carries the next node of the trunk for free", () => {
+    const state = standingOn("rebase");
+    const clean = structuredClone(state);
+    clean.debt = 0;
+
+    const result = applyAction(clean, { type: "commit", mode: "craft" });
+    const roll = eventsOfType(result.events, "roll")[0];
+    if (roll?.success !== true) return;
+
+    const carried = eventsOfType(result.events, "rebased")[0];
+    expect(carried).toBeDefined();
+    if (carried === undefined) return;
+
+    expect(carried.nodeIds.length).toBe(BALANCE.rebase.carry);
+    // Carried by hand, not by the machine: a replay adds no debt of its own.
+    for (const id of carried.nodeIds) {
+      expect(result.state.nodes[id]?.commit?.mode).toBe("craft");
+    }
   });
 });

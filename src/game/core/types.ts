@@ -28,6 +28,12 @@ export type NodeKind =
   | "risky"
   /** Detour that draws an ambient event. */
   | "chore"
+  /** Detour that erases machine-written history: debt repaid, commits lost. */
+  | "squash"
+  /** Detour that buys the next few machine-written commits out of their debt. */
+  | "docs"
+  /** Detour that replays the trunk on top of you. Cheap when clean, brutal when not. */
+  | "rebase"
   /** A main-line node a feature branch leaves from. */
   | "fork"
   | "feature"
@@ -107,8 +113,17 @@ export interface Player {
   nodeId: NodeId;
   energy: number;
   energyMax: number;
-  /** Nodes resolved in the current sprint. Compared against the bots'. */
+  /**
+   * Position in the race, as an index into this sprint's main line — the same
+   * unit the rivals hold, so the two can be subtracted.
+   *
+   * It is not a count of nodes resolved. Branch and detour work costs turns and
+   * earns commits, but it is not ground a rival could have taken, and counting
+   * it advanced the player in a race the bots could not enter.
+   */
   sprintProgress: number;
+  /** Furthest main-line index reached, so a penalty is not undone by the next node. */
+  mainReached: number;
   totalCommits: number;
   /** Turns finished with no energy left. Two in a row is burnout. */
   zeroEnergyStreak: number;
@@ -124,6 +139,8 @@ export interface Player {
   turnsSinceFreeReview: number;
   /** A craft success sometimes makes the next refactor node free. */
   freeRefactor: boolean;
+  /** Machine-written commits still covered by a documentation node. */
+  docsCharges: number;
 }
 
 export type GameOverReason = "burnout" | "fired";
@@ -251,6 +268,10 @@ export type GameEvent =
   | { type: "monitoring_warning" }
   | { type: "ambient_event"; eventId: AmbientEventId }
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
+  | { type: "squashed"; nodeIds: NodeId[]; debtDelta: number; commitsLost: number }
+  | { type: "docs_written"; charges: number }
+  | { type: "docs_used"; nodeId: NodeId; remaining: number }
+  | { type: "rebased"; nodeIds: NodeId[] }
   | { type: "bot_advanced"; botId: BotId; from: number; to: number }
   | { type: "bot_mistake"; botId: BotId; archetype: BotArchetypeId }
   | { type: "reputation"; botId: BotId; value: number; firingProgress: number }

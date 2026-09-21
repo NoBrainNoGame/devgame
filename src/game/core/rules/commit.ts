@@ -1,6 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { getNode } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { addDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { drawAmbient, injectHotfix, resolveFailure } from "@/game/core/rules/events";
 import { commitChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
@@ -8,6 +9,7 @@ import {
   type AfterResolution,
   afterResolution,
   autoWalk,
+  replayOntoTrunk,
   resolveNode,
 } from "@/game/core/rules/progress";
 import type { CommitMode } from "@/game/core/types";
@@ -52,6 +54,10 @@ export function performCommit(context: RuleContext, mode: CommitMode): AfterReso
 
   if (outcome.success) return succeed(context, mode);
 
+  // A rebase that misses leaves half a replay behind, whatever the failure
+  // table then decides to do about it.
+  if (node.kind === "rebase") addDebt(context, BALANCE.rebase.failureDebt);
+
   const failure = resolveFailure(context);
 
   switch (failure.kind) {
@@ -80,7 +86,12 @@ function succeed(context: RuleContext, mode: CommitMode): AfterResolution {
   const { state } = context;
   const node = getNode(state, state.player.nodeId);
 
+  const kind = node.kind;
   resolveNode(context, node, mode);
+
+  // The trunk moves under you: the rebase node lands, and the next main-line
+  // node lands with it, free.
+  if (kind === "rebase") replayOntoTrunk(context);
 
   if (mode === "ai") {
     const jumps = context.rng.int(BALANCE.commit.aiJump.min, BALANCE.commit.aiJump.max);

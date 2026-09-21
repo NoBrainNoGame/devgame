@@ -1,7 +1,7 @@
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
-import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
+import type { GameEvent, NodeKind, PlayerAction, RunState } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 /** A run at turn one, with the default unlocks, for a named seed. */
@@ -29,6 +29,39 @@ export function makeReviewable(state: RunState): RunState {
   const next = withReviewSkill(state);
   next.player.aiHistory = [{ nodeId: next.player.nodeId, reviewed: false }];
   return next;
+}
+
+/**
+ * Drives a run until the player is standing on a node of `kind`, ready to
+ * commit on it. Detours are rare by design, so this walks several seeds rather
+ * than stubbing the map: a real seed proves the node is reachable in a game
+ * that could actually happen.
+ */
+export function standingOn(kind: NodeKind, options: { prefix?: string } = {}): RunState {
+  const prefix = options.prefix ?? kind;
+
+  for (let attempt = 0; attempt < 600; attempt += 1) {
+    let state = newRun(`${prefix}-${attempt}`);
+
+    for (let step = 0; step < 300; step += 1) {
+      if (state.phase.kind === "game_over") break;
+      if (state.phase.kind === "choose_action" && state.nodes[state.player.nodeId]?.kind === kind) {
+        return state;
+      }
+
+      const legal = getAvailableActions(state);
+      const wanted = legal.find(
+        (action) => action.type === "move" && state.nodes[action.nodeId]?.kind === kind,
+      );
+      const action =
+        wanted ?? legal.find((a) => a.type === "commit" && a.mode === "ai") ?? legal[0];
+      if (action === undefined) break;
+
+      state = applyAction(state, action).state;
+    }
+  }
+
+  throw new Error(`No seed out of 600 put the player on a ${kind} node`);
 }
 
 export interface PlayResult {

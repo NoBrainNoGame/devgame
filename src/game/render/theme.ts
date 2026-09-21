@@ -64,7 +64,10 @@ export const ZOOM: { min: number; max: number; step: number; default: number } =
 
 export function laneColour(lane: number, kind: NodeKind): number {
   if (kind === "hotfix") return THEME.lane.hotfix;
-  if (kind === "refactor" && lane < 0) return THEME.lane.refactor;
+  // The maintenance detours share one colour: they are all "stop and tidy up".
+  if ((kind === "refactor" || kind === "squash" || kind === "docs") && lane < 0) {
+    return THEME.lane.refactor;
+  }
   if (lane === 0) return THEME.lane.trunk;
   if (lane < 0) return THEME.lane.hotfix;
   return THEME.lane.feature;
@@ -100,6 +103,12 @@ export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): st
       return "release";
     case "chore":
       return "chore";
+    case "squash":
+      return "squash";
+    case "docs":
+      return "docs";
+    case "rebase":
+      return "rebase";
     case "risky":
       return "perf";
     case "sprint_start":
@@ -133,6 +142,12 @@ export function nodeGlyph(kind: NodeKind): string {
       return "⚡";
     case "chore":
       return "~";
+    case "squash":
+      return "\u229f";
+    case "docs":
+      return "\u00b6";
+    case "rebase":
+      return "\u2934";
     case "commit":
       return "";
   }

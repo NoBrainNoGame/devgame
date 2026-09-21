@@ -1,5 +1,5 @@
 import { BALANCE } from "@/game/core/balance";
-import { getNode, setCandidates, successors } from "@/game/core/map/graph";
+import { getNode, mainLineIndexOf, setCandidates, successors } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt, shouldExplode } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -34,10 +34,20 @@ export function resolveNode(
 
   state.player.nodeId = node.id;
   state.player.totalCommits += 1;
-  state.player.sprintProgress += 1;
+  advanceRacePosition(context, node);
 
   if (mode === "ai") {
-    addDebt(context, options.primary ? debt.perAiCommit : debt.perAiJumpNode);
+    // Documentation pays the debt for you, one machine-written node at a time.
+    if (state.player.docsCharges > 0) {
+      state.player.docsCharges -= 1;
+      emit(context, {
+        type: "docs_used",
+        nodeId: node.id,
+        remaining: state.player.docsCharges,
+      });
+    } else {
+      addDebt(context, options.primary ? debt.perAiCommit : debt.perAiJumpNode);
+    }
     recordAiCommit(context, node.id);
   } else {
     state.player.aiChain = 0;
@@ -51,10 +61,71 @@ export function resolveNode(
   }
 
   if (node.kind === "chore") drawAmbient(context);
+  if (node.kind === "squash") performSquash(context);
+  if (node.kind === "docs") writeDocs(context);
 
   emit(context, { type: "node_done", nodeId: node.id, mode, kind: node.kind });
 
   if (node.branchId !== undefined) closeBranchIfDone(context, node);
+}
+
+/**
+ * Moves the player up the main line, if this node was further up it.
+ *
+ * Monotonic on purpose. A rejected pull request docks `sprintProgress`, and if
+ * the next node simply recomputed the position from the graph that penalty
+ * would vanish the moment you moved — so the furthest index reached is tracked
+ * separately and only the *gain* is added.
+ */
+function advanceRacePosition(context: RuleContext, node: MapNode): void {
+  const { player } = context.state;
+  const reached = mainLineIndexOf(context.state, node);
+  if (reached <= player.mainReached) return;
+
+  player.sprintProgress += reached - player.mainReached;
+  player.mainReached = reached;
+}
+
+/**
+ * Squash: the machine's last few commits become one, and the mess goes with
+ * them.
+ *
+ * It repays more debt per commit than a review does, needs no skill, and is
+ * the only answer to debt a run that never learned to review will find. What
+ * it costs is the score: those commits are gone from the history, so they are
+ * gone from the count.
+ */
+function performSquash(context: RuleContext): void {
+  const { state } = context;
+  const { squash } = BALANCE;
+
+  const swallowed = state.player.aiHistory.slice(-squash.maxCommits);
+  if (swallowed.length === 0) return;
+
+  state.player.aiHistory = state.player.aiHistory.slice(0, -swallowed.length);
+  state.player.aiChain = 0;
+
+  // They do not become reviewed, they cease to exist — which is also why a
+  // production bug can no longer be traced back to them.
+  const unread = swallowed.filter((entry) => !entry.reviewed);
+  const repaid = unread.length * squash.repayPerCommit;
+  if (repaid > 0) repayDebt(context, repaid);
+
+  const lost = Math.max(0, swallowed.length - squash.keptCommits);
+  state.player.totalCommits = Math.max(0, state.player.totalCommits - lost);
+
+  emit(context, {
+    type: "squashed",
+    nodeIds: swallowed.map((entry) => entry.nodeId),
+    debtDelta: -repaid,
+    commitsLost: lost,
+  });
+}
+
+/** Documentation: the next few machine-written commits carry no debt. */
+function writeDocs(context: RuleContext): void {
+  context.state.player.docsCharges += BALANCE.docs.charges;
+  emit(context, { type: "docs_written", charges: context.state.player.docsCharges });
 }
 
 /**
@@ -94,6 +165,16 @@ function closeBranchIfDone(context: RuleContext, node: MapNode): void {
  * ones you would want a say in.
  */
 export function autoWalk(context: RuleContext, jumps: number): NodeId[] {
+  return walkAhead(context, jumps, "ai");
+}
+
+/**
+ * Walks forward without a roll, in the given hand.
+ *
+ * A rebase replays work that already exists, so it walks as `craft`: the nodes
+ * it carries are yours, already written, and they add no debt of their own.
+ */
+function walkAhead(context: RuleContext, jumps: number, mode: CommitMode): NodeId[] {
   const walked: NodeId[] = [];
 
   for (let i = 0; i < jumps; i++) {
@@ -105,11 +186,24 @@ export function autoWalk(context: RuleContext, jumps: number): NodeId[] {
     if (next === undefined || next.status === "done") break;
     if (!isAutoWalkable(next)) break;
 
-    resolveNode(context, next, "ai", { primary: false });
+    resolveNode(context, next, mode, { primary: false });
     walked.push(next.id);
   }
 
-  if (walked.length > 0) emit(context, { type: "ai_jumped", nodeIds: walked });
+  if (walked.length > 0 && mode === "ai") emit(context, { type: "ai_jumped", nodeIds: walked });
+  return walked;
+}
+
+/**
+ * Rebase: the trunk moves under you and your work lands on top of it.
+ *
+ * The node it carries costs no roll and no energy, which is the whole appeal —
+ * it is the only way in the game to gain ground on the rivals faster than one
+ * node per turn without letting the machine write anything.
+ */
+export function replayOntoTrunk(context: RuleContext): NodeId[] {
+  const walked = walkAhead(context, BALANCE.rebase.carry, "craft");
+  if (walked.length > 0) emit(context, { type: "rebased", nodeIds: walked });
   return walked;
 }
 
@@ -175,6 +269,9 @@ export function arriveAt(context: RuleContext, nodeId: NodeId): AfterResolution 
     case "refactor":
     case "risky":
     case "chore":
+    case "squash":
+    case "docs":
+    case "rebase":
       state.phase = { kind: "choose_action" };
       return "continue";
   }

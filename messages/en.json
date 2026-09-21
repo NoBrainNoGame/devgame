@@ -527,6 +527,18 @@
       }
     },
     "nodes": {
+      "squash": {
+        "name": "Squash",
+        "desc": "Folds the last machine-written commits into one: the debt goes with them, and so does the score."
+      },
+      "docs": {
+        "name": "Documentation",
+        "desc": "The next machine-written commits add no debt at all."
+      },
+      "rebase": {
+        "name": "Rebase",
+        "desc": "Replays your work onto main and carries the next node with it. The more debt, the more it misses."
+      },
       "sprint_start": {
         "name": "Sprint start",
         "desc": "The anchor the sprint opens on. You stand there, you do not code there."
@@ -607,6 +619,9 @@
       }
     },
     "log": {
+      "squashed": "{count, plural, one {# commit squashed} other {# commits squashed}}, {lost, plural, one {# off the count} other {# off the count}}",
+      "docs_written": "docs written, {count, plural, one {# AI commit covered} other {# AI commits covered}}",
+      "rebased": "rebased onto main, {count, plural, one {# node carried} other {# nodes carried}}",
       "_comment": "The node, skill, bot, relic and devops parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
       "node_done": {
         "craft": "{node} written by hand",
@@ -647,6 +662,8 @@
       "monitoring_warning": "monitoring caught the bug before production did"
     },
     "notes": {
+      "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
+      "rebase_risk": "If it misses: +{debt} debt",
       "build": "Build {points}",
       "automation": "Automation {points}",
       "debt": "Debt {points}",

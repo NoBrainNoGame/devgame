@@ -29,27 +29,43 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const node = getNode(state, state.player.nodeId);
       const cost = nodeEnergyCost(state, node, action.mode, effects);
       const chance = commitChance(state, action.mode, node, effects);
-      const notes = [...cost.notes, ...chance.notes];
+      const notes: I18nText[] = [...cost.notes, ...chance.notes];
 
       const { aiJump } = BALANCE.commit;
       const jumpMin = action.mode === "ai" ? aiJump.min + effects.aiJumpBonus : 0;
       const jumpMax = action.mode === "ai" ? aiJump.max + effects.aiJumpBonus : 0;
 
-      const baseDebt =
-        action.mode === "ai" ? BALANCE.debt.perAiCommit : BALANCE.debt.perCraftCommit;
+      // Documentation pays the debt of the next few machine-written nodes, so
+      // the preview has to count the charges rather than the rate. Showing the
+      // full price on a covered commit would hide the whole point of the node.
+      const charges = action.mode === "ai" ? state.player.docsCharges : 0;
+      if (charges > 0) notes.push(text("notes.documented", { count: charges }));
+
+      const aiDebt = (nodes: number): number => {
+        if (action.mode !== "ai") return BALANCE.debt.perCraftCommit;
+        const covered = Math.min(charges, 1 + nodes);
+        const paid = 1 + nodes - covered;
+        // The primary node costs more than a jumped one, and charges are spent
+        // in order, so the first uncovered node is the expensive one.
+        if (paid === 0) return 0;
+        const primaryPaid = covered === 0 ? BALANCE.debt.perAiCommit : 0;
+        const jumpsPaid = paid - (covered === 0 ? 1 : 0);
+        return primaryPaid + jumpsPaid * BALANCE.debt.perAiJumpNode;
+      };
+
       const nodeDebt = node.kind === "risky" ? BALANCE.debt.perRiskyNode : 0;
-      const jumpDebt = BALANCE.debt.perAiJumpNode;
+      const rebaseDebt = node.kind === "rebase" ? BALANCE.rebase.failureDebt : 0;
+      if (rebaseDebt > 0) notes.push(text("notes.rebase_risk", { debt: rebaseDebt }));
+
+      const carried = node.kind === "rebase" ? BALANCE.rebase.carry : 0;
 
       return {
         action,
         energyCost: cost.value,
         successPct: chance.value,
         // The jump is a maximum, not a promise: it stops at the next decision.
-        progress: [1, 1 + jumpMax],
-        debtDelta: [
-          baseDebt + nodeDebt + jumpMin * jumpDebt,
-          baseDebt + nodeDebt + jumpMax * jumpDebt,
-        ],
+        progress: [1 + carried, 1 + carried + jumpMax],
+        debtDelta: [nodeDebt + aiDebt(jumpMin), nodeDebt + aiDebt(jumpMax)],
         botsAdvance: true,
         notes,
       };

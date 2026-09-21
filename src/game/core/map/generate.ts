@@ -215,6 +215,9 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
     { value: "refactor" as const, weight: map.detourWeights.refactor },
     { value: "risky" as const, weight: map.detourWeights.risky },
     { value: "chore" as const, weight: map.detourWeights.chore },
+    { value: "squash" as const, weight: map.detourWeights.squash },
+    { value: "docs" as const, weight: map.detourWeights.docs },
+    { value: "rebase" as const, weight: map.detourWeights.rebase },
   ];
 
   // `length - 4` rather than `length - 3`: landing on `main[length - 1]` would

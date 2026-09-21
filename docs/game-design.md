@@ -41,9 +41,27 @@ et y reviennent ; des branches de hotfix sont imposées par les événements.
 
 À chaque nœud franchi, le joueur choisit son prochain nœud parmi deux ou trois
 options — le principe des cartes de Slay the Spire, transposé à un graphe Git.
-Les détours proposent des nœuds typés : un nœud de refacto qui rembourse de la
-dette, un nœud risqué qui fait avancer plus vite en échange de risque, une
-corvée qui déclenche un événement favorable.
+Les détours proposent des nœuds typés. Trois sont des outils simples :
+
+- **Refacto** — rembourse de la dette.
+- **Nœud risqué** — avance plus vite contre un jet nettement moins sûr.
+- **Corvée** — déclenche un événement du quotidien, souvent favorable.
+
+Trois autres sont des gestes git, et chacun répond à une question que le reste
+du jeu pose sans y répondre :
+
+- **Squash** — fusionne les derniers commits IA : leur dette part avec eux, et
+  eux partent du score. C'est la seule façon d'effacer de la dette **sans savoir
+  reviewer**, et elle se paie en commits perdus. Les commits écrasés n'existent
+  plus : ils ne peuvent donc plus déclencher de bug en production.
+- **Documentation** — les prochains commits IA n'ajoutent aucune dette. De quoi
+  couvrir environ une rafale. Rend la route IA planifiable : on documente, puis
+  on lâche la machine.
+- **Rebase** — rejoue votre travail sur `main` et emporte le nœud suivant
+  gratuitement. Le seul moyen de gagner plus d'un nœud par tour sans laisser la
+  machine écrire. **Ses chances ne dépendent pas de la chance mais de votre
+  dette** : quasi gratuit sur un historique propre, pile ou face à soixante. Un
+  rebase raté laisse un demi-replay derrière lui, et de la dette avec.
 
 La position de chaque bot est visible sur `main` : c'est la vague qui vous
 poursuit, et c'est l'information qui décide de la plupart des choix.
@@ -124,6 +142,20 @@ point DevOps correspondant la rendent **exacte**.
 **Réputation.** Calculée par bot : l'écart de rythme entre vous et lui,
 **pondéré par la qualité de votre code** (votre ratio de code reviewé, votre
 dette). C'est elle qui fait virer un rival.
+
+**La course se mesure sur `main`.** Votre position est un index dans la ligne
+principale du sprint — exactement ce que tient un bot, sinon les deux nombres ne
+se soustraient pas. Une branche qui longe le tronc vous fait avancer comme lui :
+c'est du travail parallèle, pas un détour dans le temps. En revanche, **un nœud
+résolu n'est pas un nœud gagné** : une rafale IA qui balaie trois nœuds hors du
+tronc, ou une sous-branche qui saute des nœuds de `main`, ne vous rapproche de
+la release que d'autant que le tronc a bougé.
+
+C'est la différence qui rendait les rivaux inoffensifs. Le compteur du joueur
+comptait les nœuds résolus, celui du bot des positions sur `main` : jouer IA
+gonflait la course de terrain que le bot ne pouvait pas couvrir. Mesuré sur
+120 runs, une politique IA avançait de 1,04 nœud par tour contre 0,58 pour le
+Rapide ; elle avance maintenant de 0,65, et le Force-pusher la dépasse.
 
 ## Features et compétences
 

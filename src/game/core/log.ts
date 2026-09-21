@@ -82,6 +82,28 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         }),
       };
 
+    case "squashed":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.squashed", {
+          count: event.nodeIds.length,
+          lost: event.commitsLost,
+        }),
+      };
+
+    case "docs_written":
+      return { seq, turn, kind: "chore", text: text("log.docs_written", { count: event.charges }) };
+
+    case "rebased":
+      return {
+        seq,
+        turn,
+        kind: "chore",
+        text: text("log.rebased", { count: event.nodeIds.length }),
+      };
+
     case "nodes_injected":
       return {
         seq,

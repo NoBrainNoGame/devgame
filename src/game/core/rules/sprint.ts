@@ -74,6 +74,7 @@ export function startNextSprint(context: RuleContext): void {
   previousRelease.next = [plan.startId];
 
   state.player.sprintProgress = 0;
+  state.player.mainReached = 0;
   state.player.rerollUsed = false;
 
   resetBotsForSprint(state);

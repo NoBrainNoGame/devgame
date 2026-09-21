@@ -41,8 +41,12 @@ export const SAVE_VERSION = 1;
  * 3 — review has to be learned. It is offered only once a branch has granted
  *     `canReview`, and only while there is unread machine-written work for it
  *     to find. A log from epoch 2 that reviewed on turn one no longer replays.
+ * 4 — the race is run in one unit. `player.sprintProgress` is an index into the
+ *     main line, as a rival's always was, instead of a count of every node
+ *     resolved; branch and detour work no longer advances it. Three detour
+ *     kinds added — squash, docs, rebase — which changes every map.
  */
-export const RULES_EPOCH = 3;
+export const RULES_EPOCH = 4;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

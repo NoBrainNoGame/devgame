@@ -105,7 +105,12 @@ export function commitChance(
   const notes: I18nText[] = [];
   const { commit } = BALANCE;
 
-  let value: number = node.kind === "risky" ? commit.riskyBase : commit.base[mode];
+  let value: number =
+    node.kind === "risky"
+      ? commit.riskyBase
+      : node.kind === "rebase"
+        ? commit.rebaseBase
+        : commit.base[mode];
 
   const perMode =
     node.kind === "risky"
@@ -124,7 +129,10 @@ export function commitChance(
     notes.push(text("notes.automation", { points: signed(effects.allSuccessPoints) }));
   }
 
-  const debtMalus = Math.floor(state.debt / commit.debtRiskDivisor);
+  // A rebase replays your commits on top of the trunk, so it is priced by how
+  // clean they are rather than by luck: same malus, far steeper divisor.
+  const divisor = node.kind === "rebase" ? commit.rebaseDebtDivisor : commit.debtRiskDivisor;
+  const debtMalus = Math.floor(state.debt / divisor);
   if (debtMalus > 0) {
     value -= debtMalus;
     notes.push(text("notes.debt", { points: signed(-debtMalus) }));

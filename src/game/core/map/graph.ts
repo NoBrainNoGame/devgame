@@ -30,6 +30,27 @@ export function mainLineNodes(state: RunState, sprint: number): MapNode[] {
     .sort((a, b) => a.depth - b.depth);
 }
 
+/**
+ * How far along `main` a node sits: the index of the last trunk node at or
+ * before it.
+ *
+ * This is the unit the race is run in. A rival holds an index into the main
+ * line, so the player needs the same number for the two to be subtracted — and
+ * a node on a branch or a detour sits *between* two trunk nodes rather than
+ * adding to the count.
+ */
+export function mainLineIndexOf(state: RunState, node: MapNode): number {
+  const main = mainLineNodes(state, node.sprint);
+
+  let index = 0;
+  for (let i = 0; i < main.length; i += 1) {
+    const trunk = main[i];
+    if (trunk === undefined || trunk.depth > node.depth) break;
+    index = i;
+  }
+  return index;
+}
+
 /** Every node in the run, in a stable order. Iteration order must never vary. */
 export function allNodes(state: RunState): MapNode[] {
   return Object.keys(state.nodes)

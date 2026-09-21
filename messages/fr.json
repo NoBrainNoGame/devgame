@@ -527,6 +527,18 @@
       }
     },
     "nodes": {
+      "squash": {
+        "name": "Squash",
+        "desc": "Fusionne les derniers commits IA : la dette part avec eux, le score aussi."
+      },
+      "docs": {
+        "name": "Documentation",
+        "desc": "Les prochains commits IA n'ajoutent aucune dette."
+      },
+      "rebase": {
+        "name": "Rebase",
+        "desc": "Rejoue votre travail sur main et emporte le nœud suivant. Rate d'autant plus que la dette est haute."
+      },
       "sprint_start": {
         "name": "Début de sprint",
         "desc": "Le point d'ancrage du sprint. On s'y tient, on n'y code pas."
@@ -607,6 +619,9 @@
       }
     },
     "log": {
+      "squashed": "{count, plural, one {# commit écrasé} other {# commits écrasés}}, {lost, plural, one {# de moins au compteur} other {# de moins au compteur}}",
+      "docs_written": "documentation écrite, {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
+      "rebased": "rebase sur main, {count, plural, one {# nœud emporté} other {# nœuds emportés}}",
       "_comment": "Les paramètres node, skill, bot, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
       "node_done": {
         "craft": "{node} écrit à la main",
@@ -647,6 +662,8 @@
       "monitoring_warning": "le monitoring a vu le bug avant la prod"
     },
     "notes": {
+      "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
+      "rebase_risk": "En cas d'échec : +{debt} de dette",
       "build": "Build {points}",
       "automation": "Automatisation {points}",
       "debt": "Dette {points}",

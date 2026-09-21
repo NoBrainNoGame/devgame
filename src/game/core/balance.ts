@@ -26,6 +26,9 @@ export const BALANCE = {
       refactor: 2,
       risky: 1,
       chore: 1,
+      squash: 2,
+      docs: 2,
+      rebase: 1,
       fork: 0,
       feature: 0,
       feature_merge: 2,
@@ -55,8 +58,19 @@ export const BALANCE = {
     base: { craft: 92, ai: 70 } satisfies Record<CommitMode, number>,
     /** Replaces the base chance on a `risky` node. */
     riskyBase: 78,
+    /**
+     * Replaces the base chance on a `rebase` node, which is generous — the
+     * whole risk lives in `rebaseDebtDivisor` below.
+     */
+    rebaseBase: 95,
     /** Success chance is reduced by `debt / debtRiskDivisor` points. */
     debtRiskDivisor: 4,
+    /**
+     * A rebase is priced by how clean the history is, not by luck: debt bites
+     * roughly three times harder here than on an ordinary commit. At zero debt
+     * it is nearly free tempo; at sixty it is a coin flip.
+     */
+    rebaseDebtDivisor: 1.4,
     /** A second open feature branch costs this many points on every roll. */
     secondBranchMalusPoints: 15,
     /** Success is never certain and never hopeless. */
@@ -105,6 +119,33 @@ export const BALANCE = {
     window: 10,
     /** DevOps review bot cadence at one point; each further point removes one. */
     botCadence: 4,
+  },
+
+  squash: {
+    /**
+     * Debt erased per machine-written commit the squash swallows. Higher than a
+     * review's, because a squash is paid for in score and a review is not.
+     */
+    repayPerCommit: 7,
+    /** Commits the history keeps: the rest are gone, and so is their score. */
+    keptCommits: 1,
+    /** Never erases more than this, whatever the window holds. */
+    maxCommits: 5,
+  },
+
+  docs: {
+    /**
+     * Machine-written commits that carry no debt after a documentation node.
+     * A burst is three or four nodes, so this covers about one burst.
+     */
+    charges: 4,
+  },
+
+  rebase: {
+    /** Main-line nodes replayed on top of you when the rebase lands. */
+    carry: 1,
+    /** Debt added when it does not, from the mess of a half-applied replay. */
+    failureDebt: 6,
   },
 
   failure: {
@@ -178,7 +219,7 @@ export const BALANCE = {
     subBranchPct: 30,
     /** Chance in percent of a one-node detour beside a main-line node. */
     detourPct: 45,
-    detourWeights: { refactor: 35, risky: 30, chore: 35 },
+    detourWeights: { refactor: 22, risky: 18, chore: 18, squash: 14, docs: 14, rebase: 14 },
     /** Depth from which forks may start, and how much room a fork needs. */
     firstForkDepth: 1,
     tailReserve: 6,
