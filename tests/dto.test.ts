@@ -129,6 +129,28 @@ describe("replayRun", () => {
     expect(result.valid).toBe(false);
   });
 
+  test("reports the XP the run earned, which is what the server awards", () => {
+    const live = play(newRun("dto-xp"), {
+      pick: prefer(isCommit("ai"), isCommit("craft")),
+      limit: 400,
+    });
+    if (live.state.xpEarned === 0) return;
+
+    const result = replayRun(
+      saveFor("dto-xp", {
+        seed: "dto-xp",
+        actions: live.actions,
+        unlockedSkills: live.state.unlockedSkills,
+        statPoints: live.state.statPoints,
+      }),
+    );
+
+    expect(result.valid).toBe(true);
+    if (!result.valid) return;
+    expect(result.stats.xp).toBe(live.state.xpEarned);
+    expect(result.stats.xp).toBeGreaterThan(0);
+  });
+
   test("reports whether the run finished", () => {
     const result = replayRun(saveFor("dto-unfinished"));
     expect(result.valid).toBe(true);

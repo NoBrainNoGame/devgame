@@ -23,6 +23,8 @@ export interface ReplayStats {
   sprints: number;
   botsFired: number;
   commits: number;
+  /** XP the run earned, from firing rivals. */
+  xp: number;
   /** Fingerprint of the final state, for comparing a replay against a session. */
   hash: string;
 }
@@ -79,6 +81,7 @@ export function replayRun(input: unknown): ReplayResult {
       sprints: Math.max(0, state.sprint - 1),
       botsFired: state.botsFired,
       commits: state.player.totalCommits,
+      xp: state.xpEarned,
       hash: hashState(state),
     },
     state,

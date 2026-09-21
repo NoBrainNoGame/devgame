@@ -15,6 +15,8 @@ import { type ActionResult, fail, guard, ok } from "@/lib/actions/result";
 import { utcDate } from "@/lib/daily/seed";
 import { getDailySeed } from "@/lib/daily/store";
 import { prisma } from "@/lib/db";
+import { applyRunToMeta } from "@/lib/profile/progression";
+import { toColumns, toMeta } from "@/lib/profile/row";
 import { hit, LIMITS } from "@/lib/rate-limit";
 import { getCurrentUserId } from "@/lib/session";
 
@@ -188,16 +190,27 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       update: data,
     });
 
-    // Incrementing is safe here and nowhere else: a run that is already
-    // finished returns early above, so this line runs exactly once per run.
-    // The figures come from the replay, never from the client.
+    // Progression is awarded from the replay, through the same pure function
+    // the client used to show the result. Awarding it here rather than trusting
+    // a later `syncMeta` is what makes XP and unlocks survive a player who
+    // closes the tab on the score screen.
+    //
+    // Running exactly once per run is guaranteed by the early return above: a
+    // run already marked finished never reaches this point.
+    const reward = applyRunToMeta(
+      toMeta(profile),
+      {
+        xp: outcome.stats.xp,
+        commits: outcome.stats.commits,
+        botsFired: outcome.stats.botsFired,
+        sprints: outcome.stats.sprints,
+      },
+      new Date().toISOString(),
+    );
+
     await prisma.profile.update({
       where: { id: profile.id },
-      data: {
-        totalCommits: { increment: outcome.stats.commits },
-        botsFired: { increment: outcome.stats.botsFired },
-        commitsBank: { increment: outcome.stats.commits },
-      },
+      data: { ...toColumns(reward.meta), metaVersion: { increment: 1 } },
     });
 
     revalidatePath("/[locale]/leaderboard", "page");

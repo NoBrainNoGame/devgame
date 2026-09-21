@@ -6,6 +6,7 @@ import { emptyMeta, type MetaProgressDto, MetaProgressSchema } from "@/game";
 import { type ActionResult, fail, guard, ok } from "@/lib/actions/result";
 import { prisma } from "@/lib/db";
 import { mergeMeta } from "@/lib/profile/merge";
+import { toColumns, toMeta } from "@/lib/profile/row";
 import { hit, LIMITS } from "@/lib/rate-limit";
 import { getCurrentUserId } from "@/lib/session";
 
@@ -115,72 +116,19 @@ export async function setDisplayName(name: unknown): Promise<ActionResult<string
   });
 }
 
-// --- mapping between the row and the shared DTO ----------------------------
-
-type ProfileRow = {
-  level: number;
-  xp: number;
-  commitsBank: number;
-  totalCommits: number;
-  botsFired: number;
-  unlocks: unknown;
-  settings: unknown;
-  metaVersion: number;
-  updatedAt: Date;
-};
-
 /**
- * The row stores the parts that need indexing as columns and the rest as JSON.
- * Anything JSON-shaped is re-validated on the way out: a column written by an
- * older build is untrusted input like any other.
+ * A name to start from. The player can change it on their profile page.
+ *
+ * Blank is not the same as absent: a magic-link signup leaves `name` as an
+ * empty string, which `??` happily accepts and which made every player "dev".
  */
-function toMeta(row: ProfileRow): MetaProgressDto {
-  const fallback = emptyMeta(row.updatedAt.toISOString());
-
-  const candidate = {
-    ...fallback,
-    level: row.level,
-    xp: row.xp,
-    commitsBank: row.commitsBank,
-    totalCommits: row.totalCommits,
-    botsFired: row.botsFired,
-    metaVersion: row.metaVersion,
-    updatedAt: row.updatedAt.toISOString(),
-    ...(isRecord(row.settings) ? row.settings : {}),
-    ...(isRecord(row.unlocks) ? row.unlocks : {}),
-  };
-
-  const parsed = MetaProgressSchema.safeParse(candidate);
-  return parsed.success ? parsed.data : fallback;
-}
-
-function toColumns(meta: MetaProgressDto) {
-  return {
-    level: meta.level,
-    xp: meta.xp,
-    commitsBank: meta.commitsBank,
-    totalCommits: meta.totalCommits,
-    botsFired: meta.botsFired,
-    unlocks: {
-      unlockedProfiles: meta.unlockedProfiles,
-      unlockedSkills: meta.unlockedSkills,
-    },
-    settings: {
-      settings: meta.settings,
-      statPoints: meta.statPoints,
-      unspentStatPoints: meta.unspentStatPoints,
-      version: meta.version,
-    },
-  };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** A name to start from. The player can change it on their profile page. */
 async function defaultDisplayName(userId: string): Promise<string> {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  const base = (user?.name ?? user?.email?.split("@")[0] ?? "dev").trim();
-  return base.slice(0, 24) || "dev";
+
+  for (const candidate of [user?.name, user?.email?.split("@")[0]]) {
+    const trimmed = candidate?.trim() ?? "";
+    if (trimmed.length >= 2) return trimmed.slice(0, 24);
+  }
+
+  return "dev";
 }
