@@ -52,7 +52,9 @@
     "runOver": "Run over",
     "burnout": "Burnout: there is no energy left.",
     "fired": "Fired: the bots left you behind.",
-    "playAgain": "Play again"
+    "playAgain": "Play again",
+    "levelUp": "Reached level {level}",
+    "unlocked": "Unlocked: {name}"
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -122,7 +124,10 @@
     "columnDate": "Date",
     "empty": "No scores yet.",
     "yourRank": "Your rank: {rank}",
-    "dailyResetsIn": "New seed in {time}"
+    "dailyResetsIn": "New seed in {time}",
+    "periodToday": "Today",
+    "periodYesterday": "Yesterday",
+    "periodAll": "All time"
   },
   "profile": {
     "title": "Profile",
@@ -137,6 +142,13 @@
     "columnScore": "Score",
     "columnSprints": "Sprints",
     "columnBots": "Bots fired",
+    "columnStatus": "Status",
+    "status": {
+      "in_progress": "In progress",
+      "finished": "Finished",
+      "abandoned": "Abandoned",
+      "rejected": "Rejected"
+    },
     "empty": "No runs recorded.",
     "displayName": "Display name"
   },

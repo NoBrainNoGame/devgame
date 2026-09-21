@@ -35,7 +35,7 @@ CREATE TABLE "Run" (
     "dailyDate" DATE,
     "status" "RunStatus" NOT NULL DEFAULT 'in_progress',
     "version" INTEGER NOT NULL,
-    "actions" JSONB NOT NULL,
+    "save" JSONB NOT NULL,
     "score" INTEGER NOT NULL DEFAULT 0,
     "sprintsCompleted" INTEGER NOT NULL DEFAULT 0,
     "botsFired" INTEGER NOT NULL DEFAULT 0,

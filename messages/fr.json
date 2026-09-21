@@ -52,7 +52,9 @@
     "runOver": "Run terminée",
     "burnout": "Burnout : il ne reste plus d'énergie.",
     "fired": "Licenciement : les bots vous ont distancé.",
-    "playAgain": "Rejouer"
+    "playAgain": "Rejouer",
+    "levelUp": "Niveau {level} atteint",
+    "unlocked": "Débloqué : {name}"
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -122,7 +124,10 @@
     "columnDate": "Date",
     "empty": "Aucun score pour l'instant.",
     "yourRank": "Votre rang : {rank}",
-    "dailyResetsIn": "Nouvelle graine dans {time}"
+    "dailyResetsIn": "Nouvelle graine dans {time}",
+    "periodToday": "Aujourd'hui",
+    "periodYesterday": "Hier",
+    "periodAll": "Tout"
   },
   "profile": {
     "title": "Profil",
@@ -137,6 +142,13 @@
     "columnScore": "Score",
     "columnSprints": "Sprints",
     "columnBots": "Bots virés",
+    "columnStatus": "État",
+    "status": {
+      "in_progress": "En cours",
+      "finished": "Terminée",
+      "abandoned": "Abandonnée",
+      "rejected": "Rejetée"
+    },
     "empty": "Aucune run enregistrée.",
     "displayName": "Nom affiché"
   },

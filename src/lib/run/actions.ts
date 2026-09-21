@@ -76,7 +76,7 @@ export async function saveRun(input: unknown): Promise<ActionResult<{ runId: str
 
       const updated = await prisma.run.update({
         where: { id: existing.id },
-        data: { actions: save.actions, commits: save.actions.length },
+        data: { save, commits: save.actions.length },
       });
       return ok({ runId: updated.id });
     }
@@ -95,7 +95,7 @@ export async function saveRun(input: unknown): Promise<ActionResult<{ runId: str
         seed: save.seed,
         ...(save.mode === "daily" ? { dailyDate: dayOf(save.createdAt) } : {}),
         version: save.version,
-        actions: save.actions,
+        save,
         commits: save.actions.length,
         clientRunId: save.clientRunId,
       },
@@ -173,7 +173,7 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       ...(save.mode === "daily" ? { dailyDate: dayOf(save.createdAt) } : {}),
       status: "finished" as const,
       version: save.version,
-      actions: save.actions,
+      save,
       score: outcome.score,
       sprintsCompleted: outcome.stats.sprints,
       botsFired: outcome.stats.botsFired,
@@ -226,7 +226,7 @@ async function markRejected(save: RunSaveDto, profileId: string): Promise<void> 
       seed: save.seed,
       status: "rejected",
       version: save.version,
-      actions: save.actions,
+      save,
       clientRunId: save.clientRunId,
     },
     update: { status: "rejected" },

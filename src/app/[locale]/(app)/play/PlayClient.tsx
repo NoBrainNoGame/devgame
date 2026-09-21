@@ -1,0 +1,311 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
+import { gameStore, useGameStore } from "@/game";
+import { Link } from "@/i18n/navigation";
+import { applyRunToMeta } from "@/lib/profile/progression";
+import { submitRun } from "@/lib/run/actions";
+import {
+  clearLocalRun,
+  clearPendingSubmit,
+  pickLongerRun,
+  pushRun,
+  readLocalRun,
+  readPendingSubmit,
+  syncProgress,
+  writeLocalRun,
+  writePendingSubmit,
+} from "@/lib/storage/sync";
+import { useMetaStore } from "@/lib/storage/useMetaStore";
+
+import { RunSetup } from "./RunSetup";
+import { RunStage } from "./RunStage";
+
+/**
+ * Everything around a run that is not the run itself: which one is being
+ * played, where it is saved, and what it leaves behind.
+ *
+ * Offline-first. A signed-out player gets the whole game against
+ * `localStorage`; signing in adds a mirror and a place on the board, and takes
+ * nothing away.
+ */
+
+const LOCAL_SAVE_DEBOUNCE_MS = 500;
+const CLOUD_SAVE_INTERVAL_MS = 10_000;
+
+export interface PlayClientProps {
+  signedIn: boolean;
+  /** Progress already on the server, if any. Merged with the local copy. */
+  serverMeta: MetaProgressDto | null;
+  /** Today's shared seed. Absent when the database is unreachable. */
+  dailySeed: string | null;
+  /** A run the server had in progress, to compare against the local one. */
+  serverRun: RunSaveDto | null;
+}
+
+type Stage =
+  | { kind: "setup" }
+  | {
+      kind: "running";
+      runKey: string;
+      seed: string;
+      mode: RunMode;
+      profileId: MetaProgressDto["unlockedProfiles"][number];
+      clientRunId: string;
+      createdAt: string;
+      resume?: RunSaveDto;
+    };
+
+export function PlayClient(props: PlayClientProps) {
+  const t = useTranslations("play");
+  const errors = useTranslations("errors");
+
+  const meta = useMetaStore((state) => state.meta);
+  const hydrated = useMetaStore((state) => state.hydrated);
+  const setMeta = useMetaStore((state) => state.setMeta);
+  const setSyncState = useMetaStore((state) => state.setSyncState);
+  const hydrate = useMetaStore((state) => state.hydrate);
+
+  const [stage, setStage] = useState<Stage>({ kind: "setup" });
+  const [resumable, setResumable] = useState<RunSaveDto | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleRef = useRef<GameHandle | null>(null);
+  const awardedRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
+  // Merge the two copies of progress once, on arrival. Everything after that
+  // is written locally first and pushed when a run ends.
+  //
+  // The local copy is read from the store rather than taken from the render, so
+  // this does not re-run on every write it causes.
+  useEffect(() => {
+    if (!hydrated || !props.signedIn) return;
+
+    let cancelled = false;
+    setSyncState("syncing");
+
+    void syncProgress(useMetaStore.getState().meta).then((outcome) => {
+      if (cancelled) return;
+      setMeta(outcome.meta);
+      setSyncState(outcome.state);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, props.signedIn, setMeta, setSyncState]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    setResumable(pickLongerRun(readLocalRun(), props.serverRun));
+  }, [hydrated, props.serverRun]);
+
+  const start = useCallback(
+    (choice: { profileId: MetaProgressDto["unlockedProfiles"][number]; mode: RunMode }) => {
+      const seed =
+        choice.mode === "daily" && props.dailySeed !== null
+          ? props.dailySeed
+          : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
+
+      clearLocalRun();
+      setSubmitted(false);
+      awardedRef.current = null;
+
+      setStage({
+        kind: "running",
+        runKey: crypto.randomUUID(),
+        seed,
+        mode: choice.mode,
+        profileId: choice.profileId,
+        clientRunId: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
+      });
+    },
+    [props.dailySeed],
+  );
+
+  const resume = useCallback(() => {
+    if (resumable === null) return;
+
+    setSubmitted(false);
+    awardedRef.current = null;
+
+    setStage({
+      kind: "running",
+      runKey: crypto.randomUUID(),
+      seed: resumable.seed,
+      mode: resumable.mode,
+      profileId: resumable.profileId,
+      clientRunId: resumable.clientRunId,
+      createdAt: resumable.createdAt,
+      resume: resumable,
+    });
+  }, [resumable]);
+
+  const act = useCallback((action: PlayerAction) => {
+    handleRef.current?.dispatch(action);
+  }, []);
+
+  const onReady = useCallback((handle: GameHandle | null) => {
+    handleRef.current = handle;
+  }, []);
+
+  // --- persistence -------------------------------------------------------
+  useEffect(() => {
+    if (stage.kind !== "running") return;
+
+    let localTimer: ReturnType<typeof setTimeout> | undefined;
+    let lastCloudPush = 0;
+
+    const unsubscribe = gameStore.subscribe((state, previous) => {
+      if (state.snapshot === previous.snapshot) return;
+
+      clearTimeout(localTimer);
+      localTimer = setTimeout(() => {
+        const save = handleRef.current?.save();
+        if (save === undefined) return;
+
+        writeLocalRun(save);
+
+        // The cloud copy is a convenience, not the record: throttled hard, and
+        // silent when it fails.
+        const now = Date.now();
+        if (props.signedIn && now - lastCloudPush > CLOUD_SAVE_INTERVAL_MS) {
+          lastCloudPush = now;
+          void pushRun(save);
+        }
+      }, LOCAL_SAVE_DEBOUNCE_MS);
+    });
+
+    return () => {
+      clearTimeout(localTimer);
+      unsubscribe();
+    };
+  }, [stage.kind, props.signedIn]);
+
+  // --- the end of a run --------------------------------------------------
+  const status = useGameStore((state) => state.status);
+
+  useEffect(() => {
+    const unsubscribe = gameStore.subscribe((state) => {
+      if (state.status !== "game_over" || state.snapshot === null) return;
+
+      const save = handleRef.current?.save();
+      if (save === undefined || awardedRef.current === save.clientRunId) return;
+      awardedRef.current = save.clientRunId;
+
+      const snapshot = state.snapshot;
+      const reward = applyRunToMeta(
+        useMetaStore.getState().meta,
+        {
+          xp: snapshot.xpEarned,
+          commits: snapshot.player.totalCommits,
+          botsFired: snapshot.botsFired,
+          sprints: Math.max(0, snapshot.sprint - 1),
+        },
+        new Date().toISOString(),
+      );
+
+      setMeta(reward.meta);
+      clearLocalRun();
+
+      if (reward.levelsGained > 0) toast.success(t("levelUp", { level: reward.meta.level }));
+      for (const id of reward.unlocked) toast.success(t("unlocked", { name: id }));
+
+      // Held so the offer to submit survives a trip through sign-in.
+      if (!props.signedIn) writePendingSubmit(save);
+    });
+
+    return unsubscribe;
+  }, [props.signedIn, setMeta, t]);
+
+  const submit = useCallback(async () => {
+    const save = handleRef.current?.save() ?? readPendingSubmit();
+    if (save === undefined || save === null) return;
+
+    const result = await submitRun(save);
+    if (result.ok) {
+      setSubmitted(true);
+      clearPendingSubmit();
+      toast.success(t("submitted"));
+      return;
+    }
+
+    toast.error(errors(result.error.code as never));
+  }, [errors, t]);
+
+  if (!hydrated) {
+    return <p className="p-8 text-muted-foreground text-sm">{t("loading")}</p>;
+  }
+
+  if (stage.kind === "setup") {
+    return (
+      <RunSetup
+        meta={meta}
+        dailyAvailable={props.dailySeed !== null}
+        resumable={resumable !== null}
+        onStart={start}
+        onResume={resume}
+      />
+    );
+  }
+
+  return (
+    <RunStage
+      runKey={stage.runKey}
+      options={{
+        seed: stage.seed,
+        mode: stage.mode,
+        profileId: stage.profileId,
+        meta,
+        clientRunId: stage.clientRunId,
+        createdAt: stage.createdAt,
+        ...(stage.resume === undefined ? {} : { resume: stage.resume }),
+        reducedMotion: meta.settings.reducedMotion,
+      }}
+      onReady={onReady}
+      onAct={act}
+      onPlayAgain={() => setStage({ kind: "setup" })}
+      runOverFooter={
+        status === "game_over" ? (
+          <SubmitFooter signedIn={props.signedIn} submitted={submitted} onSubmit={submit} />
+        ) : null
+      }
+    />
+  );
+}
+
+function SubmitFooter({
+  signedIn,
+  submitted,
+  onSubmit,
+}: {
+  signedIn: boolean;
+  submitted: boolean;
+  onSubmit: () => void;
+}) {
+  const t = useTranslations("play");
+
+  if (!signedIn) {
+    return (
+      <Button variant="outline" asChild>
+        <Link href="/login">{t("signInToSubmit")}</Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Button variant="outline" disabled={submitted} onClick={onSubmit}>
+      {submitted ? t("submitted") : t("submitScore")}
+    </Button>
+  );
+}

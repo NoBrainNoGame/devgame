@@ -70,7 +70,11 @@ model Run {
   status           RunStatus @default(in_progress)
   /// Engine save version the actions were recorded with.
   version          Int
-  actions          Json
+  /// The whole `RunSaveDto`, verbatim. The columns around it are for querying;
+  /// this is the record, and it is what gets replayed. Storing only the action
+  /// list would lose the starter profile and the unlocks that shaped the map,
+  /// and a replay without those is a different game.
+  save             Json
   score            Int       @default(0)
   sprintsCompleted Int       @default(0)
   botsFired        Int       @default(0)

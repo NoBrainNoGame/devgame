@@ -3,6 +3,7 @@ import { JetBrains_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 
+import { Header } from "@/components/shell/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
@@ -52,7 +53,17 @@ export default async function LocaleLayout({
           whole app sideways. */}
       <body className="overflow-x-clip bg-background font-mono text-foreground antialiased">
         <NextIntlClientProvider>
-          <TooltipProvider delayDuration={150}>{children}</TooltipProvider>
+          <TooltipProvider delayDuration={150}>
+            {/* Exactly the viewport and no more. Each route group decides what
+                to do with what the header leaves: the site group scrolls and
+                ends in a footer, the play group fills it and does not scroll.
+                `min-h-dvh` here instead would let a flex child size to its
+                content and push the page taller than the window. */}
+            <div className="flex h-dvh flex-col">
+              <Header />
+              <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+            </div>
+          </TooltipProvider>
         </NextIntlClientProvider>
         <Toaster position="bottom-right" />
       </body>
