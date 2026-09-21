@@ -3,8 +3,10 @@ import { gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import { Flash } from "@/game/chips/fx/Flash";
+import { Look } from "@/game/chips/fx/Look";
 import { Pop } from "@/game/chips/fx/Pop";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
+import { mainLineNodes } from "@/game/core/map/graph";
 import type { GameEvent, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { THEME } from "@/game/render/theme";
@@ -47,6 +49,9 @@ export class FxQueue extends booyah.Queue {
 
   private enqueue(events: readonly GameEvent[]): void {
     this.skipFlag.value = false;
+    // A turn opens on the player: whatever the camera went to look at last, the
+    // action that started this batch is theirs.
+    this.focus(null);
     let queued = 0;
 
     for (const event of events) {
@@ -62,6 +67,7 @@ export class FxQueue extends booyah.Queue {
 
     this.add(
       new booyah.Lambda(() => {
+        this.focus(null);
         gameStore.setState({ pendingAnimation: false });
       }),
     );
@@ -146,6 +152,11 @@ export class FxQueue extends booyah.Queue {
           this.skipFlag,
         );
 
+      case "bot_advanced": {
+        const y = this.mainLineY(event.to);
+        return y === null ? null : new Look(y, 320, this.skipFlag);
+      }
+
       case "sprint_started":
         return new Beat(200, this.skipFlag);
 
@@ -163,6 +174,23 @@ export class FxQueue extends booyah.Queue {
     const node = session.getState().nodes[id];
     if (node === undefined) return null;
     return { x: nodeX(node.lane), y: nodeY(node.depth) };
+  }
+
+  /**
+   * Where a rival sits, in world space. Its progress is an index into the main
+   * line rather than a depth, because splicing in a hotfix shifts every depth
+   * below it and a rival must not appear to leap because production broke.
+   */
+  private mainLineY(index: number): number | null {
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
+    const main = mainLineNodes(state, state.sprint);
+    const node = main[Math.min(Math.max(index, 0), main.length - 1)];
+    return node === undefined ? null : nodeY(node.depth);
+  }
+
+  private focus(y: number | null): void {
+    sceneContext(this.chipContext).controls.camera?.focusOn(y);
   }
 
   private playerPosition(): { x: number; y: number } {

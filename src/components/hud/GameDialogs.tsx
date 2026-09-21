@@ -42,7 +42,7 @@ export function ConflictDialog({
         <div className="grid gap-2">
           <Button
             variant="outline"
-            className="h-auto flex-col items-start gap-1 px-3 py-2 text-left"
+            className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
             disabled={busy}
             onClick={() => onAct({ type: "resolve_conflict", how: "manual" })}
           >
@@ -50,19 +50,21 @@ export function ConflictDialog({
               {t("conflictManual")}
               {manual?.successPct === undefined ? "" : ` — ${manual.successPct} %`}
             </span>
-            <span className="font-normal text-muted-foreground text-xs">
+            <span className="whitespace-normal font-normal text-muted-foreground text-xs">
               {t("conflictManualHint")}
             </span>
           </Button>
 
           <Button
             variant="outline"
-            className="h-auto flex-col items-start gap-1 px-3 py-2 text-left"
+            className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
             disabled={busy}
             onClick={() => onAct({ type: "resolve_conflict", how: "ai" })}
           >
             <span>{t("conflictAi")}</span>
-            <span className="font-normal text-muted-foreground text-xs">{t("conflictAiHint")}</span>
+            <span className="whitespace-normal font-normal text-muted-foreground text-xs">
+              {t("conflictAiHint")}
+            </span>
           </Button>
         </div>
       </DialogContent>
@@ -98,12 +100,12 @@ export function RelicDialog({
             <Button
               key={relicId}
               variant="outline"
-              className="h-auto flex-col items-start gap-1 px-3 py-2 text-left"
+              className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
               disabled={busy}
               onClick={() => onAct({ type: "choose_relic", relicId })}
             >
               <span>{game(`relics.${relicId}.name` as never)}</span>
-              <span className="font-normal text-muted-foreground text-xs">
+              <span className="whitespace-normal font-normal text-muted-foreground text-xs">
                 {game(`relics.${relicId}.desc` as never)}
               </span>
             </Button>

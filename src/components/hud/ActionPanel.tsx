@@ -5,7 +5,13 @@ import { useTranslations } from "next-intl";
 import { useGameText } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { type ActionPreview, actionKey, type PlayerAction, type RunSnapshot } from "@/game";
+import {
+  type ActionPreview,
+  actionKey,
+  labelledKind,
+  type PlayerAction,
+  type RunSnapshot,
+} from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -112,9 +118,14 @@ export function ActionPanel({
 }
 
 /**
- * A candidate node, offered as a card rather than only as a circle on the
- * canvas. The graph is the map; this is the choice — and a choice you have to
- * hunt for with a mouse is a worse choice.
+ * A candidate node, offered as a card. This is the only place a decision is
+ * made: the graph is a record of what happened, and it draws nothing above your
+ * head, so there is no circle to hunt for with a mouse.
+ *
+ * The label says what taking the option *does*, not which node kind the engine
+ * calls it. Stepping onto a branch is "new branch" — that is the act being
+ * chosen — while a node on `main` that a branch happens to leave is just a
+ * commit until you stand on it.
  */
 function MoveButton({
   action,
@@ -127,11 +138,20 @@ function MoveButton({
   busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
+  const t = useTranslations("hud");
   const game = useTranslations("game");
   const node = snapshot.nodes[action.nodeId];
+  const head = snapshot.nodes[snapshot.player.nodeId];
   const preview = snapshot.previews[actionKey(action)];
 
   if (node === undefined) return null;
+
+  const opensBranch =
+    node.kind === "feature" && node.branchId !== undefined && node.branchId !== head?.branchId;
+  const kind = labelledKind(node.kind);
+
+  const label = opensBranch ? t("openBranch") : game(`nodes.${kind}.name` as never);
+  const hint = opensBranch ? t("openBranchHint") : game(`nodes.${kind}.desc` as never);
 
   return (
     <Tooltip>
@@ -143,10 +163,10 @@ function MoveButton({
           onClick={() => onAct(action)}
         >
           <span className="flex min-w-0 flex-col items-start gap-0.5">
-            <span>{game(`nodes.${node.kind}.name` as never)}</span>
+            <span>{label}</span>
             {node.skillId === undefined ? (
               <span className="whitespace-normal text-left font-normal text-muted-foreground text-xs">
-                {game(`nodes.${node.kind}.desc` as never)}
+                {hint}
               </span>
             ) : (
               <span className="font-normal text-branch-feature text-xs">
@@ -163,9 +183,11 @@ function MoveButton({
         </Button>
       </TooltipTrigger>
 
-      <TooltipContent className="max-w-64">
-        {game(`nodes.${node.kind}.desc` as never)}
-      </TooltipContent>
+      {preview === undefined ? null : (
+        <TooltipContent className="max-w-64" side="left">
+          <PreviewDetail preview={preview} />
+        </TooltipContent>
+      )}
     </Tooltip>
   );
 }
@@ -232,7 +254,7 @@ function ActionButton({
       </TooltipTrigger>
 
       {preview === undefined ? null : (
-        <TooltipContent className="max-w-64 space-y-1">
+        <TooltipContent className="max-w-64" side="left">
           <PreviewDetail preview={preview} />
           {preview.notes.length === 0 ? null : (
             <>

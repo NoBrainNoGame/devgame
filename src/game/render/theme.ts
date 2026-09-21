@@ -71,6 +71,19 @@ export function laneColour(lane: number, kind: NodeKind): number {
 }
 
 /**
+ * The kind a node is *called*, which is not always the kind it is.
+ *
+ * A `fork` is an ordinary commit on `main` that happens to have a branch
+ * leaving it. Naming it as a fork — on its button, in its tooltip, beside it on
+ * the graph — would tell the player the repository was written before they got
+ * there, which is the one thing the graph is not allowed to say. If they open
+ * the branch, the lane leaving the node says it better than a word could.
+ */
+export function labelledKind(kind: NodeKind): NodeKind {
+  return kind === "fork" ? "commit" : kind;
+}
+
+/**
  * The conventional-commit prefix a node would carry, so the graph reads like a
  * history rather than a diagram.
  */

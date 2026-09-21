@@ -288,20 +288,30 @@ dépôt que l'on écrit.
    se prend dans le panneau, qui a la place de dire ce que chaque option coûte.
    Un nœud cliquable serait une seconde interface, moins bonne, et il devrait
    exister avant qu'on s'y engage — précisément ce que la règle 1 interdit.
-4. **Les choix ouverts sont des formes, pas des nœuds** : un moignon de lane par
-   candidat, terminé par un anneau vide. Un anneau au-dessus de soi est un
-   couloir, trois sont un embranchement. Ils ne disent rien de leur contenu.
+4. **Rien n'est dessiné au-dessus de la tête.** Pas de nœud à venir, pas même
+   un moignon de lane pour dire qu'un choix existe : le nombre de chemins se lit
+   dans le panneau, jamais sur le graphe. Un embranchement n'apparaît qu'une fois
+   la branche ouverte, et c'est la seule chose qui en fait un embranchement.
 5. **Les rivaux n'ont pas de commits.** L'avance d'un bot est un rythme, pas une
    liste de choses écrites ; en inventer serait prétendre en savoir plus que le
    moteur. Une ref dans la gouttière de gauche, posée sur un `main` pointillé,
    dit exactement ce qui est su — et se lit comme une branche distante non
    récupérée.
 
+Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
+nœud : entrer dans une branche est « Nouvelle branche », et un nœud de `main`
+d'où part une branche reste un commit ordinaire tant qu'on n'est pas dessus.
+
 Survoler un commit l'explique dans une infobulle **DOM**, pas dans le canvas :
-traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom. Le
-graphe se déplace, se zoome de 40 % à 240 %, se recadre et se cale sur le
-contenu ; la caméra suit `HEAD` tant que le joueur n'a rien touché, et lui rend
-la main dès qu'il déplace ou zoome.
+traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom.
+
+La caméra ne se déplace que sur l'axe vertical. L'arbre est centré
+horizontalement à toutes les échelles — un graphe git est une colonne étroite,
+et rien ne se trouve sur les côtés. Le zoom va de 40 % à 240 % et n'est jamais
+remis à zéro, y compris par le bouton de recentrage. Verticalement, la caméra
+glisse vers ce qui agit : votre commit, puis la ref du rival qui vient de
+pousser. Faire glisser le graphe la libère le temps de lire son historique ; la
+prochaine action la reprend.
 
 ## Écarts avec le document initial
 

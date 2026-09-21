@@ -166,6 +166,10 @@
 @theme {
   --font-mono: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
   --font-sans: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  /* shadcn's card, dialog and sheet titles all carry `font-heading`. Without a
+     value here that class is not a utility at all and the titles silently lose
+     their weight — one face for everything, but it has to be declared. */
+  --font-heading: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   --color-bg: #14161b;
   --color-panel: #1b1e25;

@@ -302,9 +302,14 @@ function SubmitFooter({
 
   if (!signedIn) {
     return (
-      <Button variant="outline" asChild>
-        <Link href="/login">{t("signInToSubmit")}</Link>
-      </Button>
+      <>
+        <p className="text-muted-foreground text-xs sm:mr-auto sm:self-center">
+          {t("signInToSubmitHint")}
+        </p>
+        <Button variant="outline" asChild>
+          <Link href="/login">{t("signInToSubmit")}</Link>
+        </Button>
+      </>
     );
   }
 

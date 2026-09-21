@@ -4,22 +4,32 @@ import { gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import type { GraphView } from "@/game/chips/GraphView";
-import { nodeX, nodeY } from "@/game/render/coords";
+import { nodeY } from "@/game/render/coords";
 import { ZOOM } from "@/game/render/theme";
 
 /**
  * Where the graph sits and how big it is.
  *
- * Two modes, and only two. **Following**: the camera eases towards the head
- * commit every frame, which is what lets a machine-written burst of three read
- * as three things happening rather than as the graph suddenly being longer.
- * **Free**: the player has dragged or zoomed, and the camera does exactly what
- * they left it doing.
+ * **Horizontally the camera is not a camera at all.** The tree is always
+ * centred: its x comes from the lanes that exist, never from the player. A git
+ * graph is one narrow column, and letting it be dragged sideways only ever ends
+ * with the history parked off screen for no reason. There is nothing out there
+ * to find.
  *
- * Free stays free. Someone who scrolled down to read their history did not want
- * to be yanked back by the next commit. It is only taken back automatically
- * when a sprint starts, where the old view means nothing, and by the recentre
- * button.
+ * Vertically there are two modes. **Following**: the camera eases towards
+ * whatever is acting — your head commit, or the rival that just pushed — which
+ * is what lets a machine-written burst of three read as three things happening
+ * rather than as the graph suddenly being longer. **Free**: the player has
+ * dragged, and the camera stays where they left it.
+ *
+ * Free lasts until something happens. Dragging is for reading your history
+ * between turns, so it survives exactly that long: the next action, yours or a
+ * rival's, takes the camera back to whoever is acting. Watching the graph move
+ * is how the turn is read, and a player parked elsewhere would see none of it.
+ *
+ * Zoom is never touched by any of this. The recentre button returns to
+ * following and leaves the scale alone, because how close you like to sit is a
+ * preference, not a thing that needs correcting.
  */
 export class Camera extends booyah.ChipBase {
   private world!: Container;
@@ -28,9 +38,15 @@ export class Camera extends booyah.ChipBase {
   private zoom = ZOOM.default;
   private following = true;
 
+  /**
+   * What the camera is looking at, in world units, or null for "the player".
+   * A rival's push borrows it for the length of its animation.
+   */
+  private focusY: number | null = null;
+
   private dragging = false;
   private dragMoved = 0;
-  private last = { x: 0, y: 0 };
+  private lastY = 0;
 
   constructor(graph?: GraphView) {
     super();
@@ -54,18 +70,14 @@ export class Camera extends booyah.ChipBase {
         this.world.position.y -= wheel.deltaY;
         this.release();
       } else {
-        this.zoomBy(wheel.deltaY < 0 ? ZOOM.step : 1 / ZOOM.step, {
-          x: wheel.offsetX,
-          y: wheel.offsetY,
-        });
+        this.zoomBy(wheel.deltaY < 0 ? ZOOM.step : 1 / ZOOM.step, wheel.offsetY);
       }
     });
 
     this._subscribe(canvas, "pointerdown", (event) => {
       this.dragging = true;
       this.dragMoved = 0;
-      const pointer = event as unknown as PointerEvent;
-      this.last = { x: pointer.clientX, y: pointer.clientY };
+      this.lastY = (event as unknown as PointerEvent).clientY;
     });
     this._subscribe(canvas, "pointerup", () => {
       this.dragging = false;
@@ -75,18 +87,17 @@ export class Camera extends booyah.ChipBase {
     });
     this._subscribe(canvas, "pointermove", (event) => {
       if (!this.dragging) return;
-      const pointer = event as unknown as PointerEvent;
 
-      const dx = pointer.clientX - this.last.x;
-      const dy = pointer.clientY - this.last.y;
-      this.last = { x: pointer.clientX, y: pointer.clientY };
+      const y = (event as unknown as PointerEvent).clientY;
+      const dy = y - this.lastY;
+      this.lastY = y;
 
       // A few pixels is a shaky click, not a drag. Only a real drag takes the
-      // camera off the leash.
-      this.dragMoved += Math.abs(dx) + Math.abs(dy);
+      // camera off the leash. Sideways movement is ignored outright.
+      this.dragMoved += Math.abs(dy);
       if (this.dragMoved < 6) return;
 
-      this.world.position.set(this.world.position.x + dx, this.world.position.y + dy);
+      this.world.position.y += dy;
       this.release();
     });
 
@@ -97,28 +108,48 @@ export class Camera extends booyah.ChipBase {
       }
     });
 
-    this.snapToHead();
+    this.snap();
     this.publish();
   }
 
   protected _onTick(): void {
-    if (!this.following) return;
+    const { app, reducedMotion } = sceneContext(this.chipContext);
 
-    const { reducedMotion } = sceneContext(this.chipContext);
-    const ease = reducedMotion ? 1 : Math.min(1, this._lastTickInfo.timeSinceLastTick / 120);
-
-    const target = this.headPosition();
-    if (target === null) return;
+    // Exponential rather than a fraction of a fixed budget, so the glide takes
+    // the same time whatever the frame rate.
+    const ease = reducedMotion ? 1 : 1 - Math.exp(-this._lastTickInfo.timeSinceLastTick / GLIDE_MS);
 
     this.world.scale.set(this.world.scale.x + (this.zoom - this.world.scale.x) * ease);
-    this.world.position.set(
-      this.world.position.x + (target.x - this.world.position.x) * ease,
-      this.world.position.y + (target.y - this.world.position.y) * ease,
-    );
+
+    // x is never dragged and never follows the player: it holds the tree in the
+    // middle, and only moves because a new lane widened the tree.
+    this.world.position.x += (this.centredX() - this.world.position.x) * ease;
+
+    if (!this.following) return;
+
+    const target = app.screen.height * FOCUS_Y - this.targetY() * this.zoom;
+    this.world.position.y += (target - this.world.position.y) * ease;
   }
 
   protected _onResize(): void {
-    if (this.following) this.snapToHead();
+    this.snap(!this.following);
+  }
+
+  // --- what the scene calls -------------------------------------------------
+
+  /**
+   * Look at a point in world space until told otherwise — a rival's ref while
+   * it moves, say. Passing null hands the camera back to the player.
+   *
+   * This also ends a free camera. Something is happening and the player asked
+   * for it, directly or by taking a turn; showing them somewhere else would be
+   * answering a different question.
+   */
+  focusOn(y: number | null): void {
+    this.focusY = y;
+    if (this.following) return;
+    this.following = true;
+    this.publish();
   }
 
   // --- what the HUD calls ---------------------------------------------------
@@ -131,12 +162,10 @@ export class Camera extends booyah.ChipBase {
     this.zoomBy(1 / ZOOM.step);
   }
 
-  /** Back to following the head commit, at the default zoom. */
+  /** Back to following, at whatever zoom the player had chosen. */
   recentre(): void {
-    this.zoom = ZOOM.default;
     this.following = true;
-    this.world.scale.set(this.zoom);
-    this.snapToHead();
+    this.focusY = null;
     this.publish();
   }
 
@@ -155,60 +184,64 @@ export class Camera extends booyah.ChipBase {
     const height = Math.max(1, bounds.maxY - bounds.minY) + 180;
 
     this.zoom = clampZoom(Math.min(app.screen.width / width, app.screen.height / height));
-    this.world.scale.set(this.zoom);
 
-    const centreX = (bounds.minX + bounds.maxX) / 2;
     const centreY = (bounds.minY + bounds.maxY) / 2;
-    this.world.position.set(
-      app.screen.width / 2 - centreX * this.zoom,
-      app.screen.height / 2 - centreY * this.zoom,
-    );
+    this.world.scale.set(this.zoom);
+    this.world.position.set(this.centredX(), app.screen.height / 2 - centreY * this.zoom);
 
     this.release();
   }
 
   // --- the maths ------------------------------------------------------------
 
-  /** Zooms about a screen point, so whatever is under the cursor stays there. */
-  private zoomBy(factor: number, at?: { x: number; y: number }): void {
+  /**
+   * Zooms about a point on the vertical axis, so whatever is under the cursor
+   * stays under it. Horizontally there is nothing to preserve — the tree is
+   * centred at every scale.
+   */
+  private zoomBy(factor: number, atY?: number): void {
     const { app } = sceneContext(this.chipContext);
-    const anchor = at ?? { x: app.screen.width / 2, y: app.screen.height / 2 };
 
-    const before = this.world.scale.x;
+    const before = this.zoom;
     this.zoom = clampZoom(this.zoom * factor);
     if (this.zoom === before) return;
 
-    const worldX = (anchor.x - this.world.position.x) / before;
-    const worldY = (anchor.y - this.world.position.y) / before;
+    // Following means the camera is already driving y; recomputing it here
+    // would fight the tick and make the head drift as you zoom.
+    if (!this.following) {
+      const anchor = atY ?? app.screen.height / 2;
+      const worldY = (anchor - this.world.position.y) / before;
+      this.world.scale.set(this.zoom);
+      this.world.position.y = anchor - worldY * this.zoom;
+    }
 
-    this.world.scale.set(this.zoom);
-    this.world.position.set(anchor.x - worldX * this.zoom, anchor.y - worldY * this.zoom);
-
-    this.release();
+    this.publish();
   }
 
-  private headPosition(): { x: number; y: number } | null {
-    const { app, session } = sceneContext(this.chipContext);
+  /** Where the world has to sit for the tree's lanes to straddle the middle. */
+  private centredX(): number {
+    const { app } = sceneContext(this.chipContext);
+    const bounds = this.graph?.bounds();
+    const middle = bounds === null || bounds === undefined ? 0 : (bounds.minX + bounds.maxX) / 2;
+    return app.screen.width / 2 - middle * this.zoom;
+  }
+
+  /** The world y the camera wants in the middle of the canvas. */
+  private targetY(): number {
+    if (this.focusY !== null) return this.focusY;
+
+    const { session } = sceneContext(this.chipContext);
     const state = session.getState();
     const head = state.nodes[state.player.nodeId];
-    if (head === undefined) return null;
-
-    // The head sits a third of the way down: history is below it and there is
-    // nothing above it yet, so the room belongs underneath.
-    //
-    // Horizontally the trunk sits about a third in, not centred. A git graph is
-    // a narrow vertical column with a wide list of subjects beside it — every
-    // desktop client is laid out this way — and centring the column would leave
-    // the labels crammed against one edge and half the canvas empty.
-    return {
-      x: app.screen.width * TRUNK_X - nodeX(head.lane) * this.zoom,
-      y: app.screen.height * 0.34 - nodeY(head.depth) * this.zoom,
-    };
+    return head === undefined ? 0 : nodeY(head.depth);
   }
 
-  private snapToHead(): void {
-    const target = this.headPosition();
-    if (target !== null) this.world.position.set(target.x, target.y);
+  private snap(keepY = false): void {
+    const { app } = sceneContext(this.chipContext);
+    const y = keepY
+      ? this.world.position.y
+      : app.screen.height * FOCUS_Y - this.targetY() * this.zoom;
+    this.world.position.set(this.centredX(), y);
   }
 
   private release(): void {
@@ -224,8 +257,17 @@ export class Camera extends booyah.ChipBase {
   }
 }
 
-/** Where the trunk sits across the canvas, as a fraction of its width. */
-const TRUNK_X = 0.34;
+/**
+ * Where the focused node sits down the canvas.
+ *
+ * Not the exact middle: history runs downwards and there is nothing at all
+ * above the head commit, so a little past centre spends the empty half on the
+ * part of the graph that has something in it.
+ */
+const FOCUS_Y = 0.45;
+
+/** Time constant of the glide, in milliseconds. */
+const GLIDE_MS = 150;
 
 function clampZoom(value: number): number {
   return Math.max(ZOOM.min, Math.min(ZOOM.max, value));

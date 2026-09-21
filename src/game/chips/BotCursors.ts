@@ -20,8 +20,14 @@ import { NODE_RADIUS, THEME } from "@/game/render/theme";
  * splicing in a hotfix shifts every depth below it and a rival should not
  * appear to leap forward because you broke production.
  */
-/** How far left of the trunk a rival's ref sits. */
-const GUTTER = 120;
+/**
+ * Where a rival's ref ends, measured left from the trunk.
+ *
+ * The pill is placed by its right edge rather than its left, so refs of
+ * different name lengths line up and none of them can creep back towards the
+ * commits. It has to clear the `HEAD` pill, which hangs off the same side.
+ */
+const GUTTER = 110;
 
 export class BotCursors extends ContainerChip {
   private cursors!: Map<string, { root: Container; label: Text; target: number }>;
@@ -88,20 +94,20 @@ export class BotCursors extends ContainerChip {
         style: cursorStyle,
       });
       label.anchor.set(1, 0.5);
-      label.x = -GUTTER + label.width;
+      label.x = -GUTTER - 8;
 
       // A left gutter, well clear of the trunk and of the commit labels that
       // run down the right. A ref that lands on a commit reads as that commit's
       // author, which is the one thing it is not.
       const chip = new Graphics();
       chip
-        .roundRect(-GUTTER - 8, -11, label.width + 16, 22, 11)
+        .roundRect(-GUTTER - label.width - 16, -11, label.width + 16, 22, 11)
         .fill({ color: THEME.background, alpha: 0.92 })
         .stroke({ width: 1.5, color: THEME.bot, alpha: 0.8 });
 
       const arrow = new Graphics();
       arrow
-        .moveTo(-GUTTER + label.width + 12, 0)
+        .moveTo(-GUTTER + 4, 0)
         .lineTo(-NODE_RADIUS - 8, 0)
         .stroke({ width: 1.5, color: THEME.bot, alpha: 0.45 });
       arrow

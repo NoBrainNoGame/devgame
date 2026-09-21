@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { useGameStore } from "@/game";
+import { labelledKind, useGameStore } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -27,6 +27,7 @@ export function GraphTooltip(): React.JSX.Element | null {
   const node = snapshot.nodes[nodeId];
   if (node === undefined) return null;
 
+  const kind = labelledKind(node.kind);
   const mode = node.commit?.mode;
   const unread = node.commit?.mode === "ai" && node.commit.reviewed === false;
 
@@ -39,9 +40,9 @@ export function GraphTooltip(): React.JSX.Element | null {
       className="pointer-events-none absolute z-20 -translate-y-1/2 translate-x-6"
     >
       <div className="w-60 rounded-md border border-line bg-panel/95 p-3 shadow-lg backdrop-blur-sm">
-        <p className="font-medium text-sm">{game(`nodes.${node.kind}.name` as never)}</p>
+        <p className="font-medium text-sm">{game(`nodes.${kind}.name` as never)}</p>
         <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-          {game(`nodes.${node.kind}.desc` as never)}
+          {game(`nodes.${kind}.desc` as never)}
         </p>
 
         <dl className="mt-3 space-y-1 border-line border-t pt-2 text-xs">

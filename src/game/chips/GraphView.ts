@@ -7,9 +7,16 @@ import { mainLineNodes } from "@/game/core/map/graph";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit, drawPending } from "@/game/render/drawNode";
-import { dashedLine, drawEdge, drawStub } from "@/game/render/lanes";
+import { dashedLine, drawEdge } from "@/game/render/lanes";
 import { glyphStyle, labelStyle } from "@/game/render/textStyles";
-import { laneColour, NODE_RADIUS, nodeGlyph, nodePrefix, THEME } from "@/game/render/theme";
+import {
+  labelledKind,
+  laneColour,
+  NODE_RADIUS,
+  nodeGlyph,
+  nodePrefix,
+  THEME,
+} from "@/game/render/theme";
 
 /**
  * The history, as it is written.
@@ -17,9 +24,10 @@ import { laneColour, NODE_RADIUS, nodeGlyph, nodePrefix, THEME } from "@/game/re
  * The graph shows **what has happened and nothing else**. The engine knows the
  * whole sprint in advance — it has to, or a run could not be replayed — but
  * showing it would turn the game into a board you walk across, when the fiction
- * is a repository you are building commit by commit. So only resolved nodes are
- * drawn, plus the one you are standing on and short stubs for the branches
- * still open to you.
+ * is a repository you are building commit by commit. So the graph stops at the
+ * node you are standing on: nothing above it, not even a hint of a branch. The
+ * next commit is drawn when you have chosen it, and a fork appears only once
+ * you have opened the branch that makes it one.
  *
  * A new commit is never inserted silently: `reveal` animates it in, which is
  * what lets a machine-written burst of three read as three separate things
@@ -41,7 +49,6 @@ const REVEAL_MS = 260;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
   private edges!: Graphics;
-  private stubs!: Graphics;
   private botLane!: Graphics;
   private nodeLayer!: Container;
   private labelLayer!: Container;
@@ -56,7 +63,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   protected _onActivate(): void {
     this.edges = new Graphics();
-    this.stubs = new Graphics();
     this.botLane = new Graphics();
     this.nodeLayer = new Container();
     this.labelLayer = new Container();
@@ -67,7 +73,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     this._container.addChild(
       this.botLane,
       this.edges,
-      this.stubs,
       this.pending,
       this.nodeLayer,
       this.labelLayer,
@@ -128,7 +133,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const nodes = this.revealed();
 
     this.drawEdges(nodes);
-    this.drawStubs();
     this.drawBotLane();
 
     const live = new Set<NodeId>();
@@ -161,30 +165,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
         drawEdge(this.edges, node, next, laneColour(next.lane, next.kind), 0.95);
       }
-    }
-  }
-
-  /**
-   * The branches still open from where you stand, as short unlabelled stubs.
-   *
-   * They are not nodes and cannot be clicked — the choice is made in the panel,
-   * which can say what each one costs. They exist so the shape of the decision
-   * is visible: one stub is a corridor, three is a fork.
-   */
-  private drawStubs(): void {
-    this.stubs.clear();
-
-    const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-    if (state.phase.kind !== "choose_node") return;
-
-    const head = state.nodes[state.player.nodeId];
-    if (head === undefined) return;
-
-    for (const id of state.phase.candidates) {
-      const candidate = state.nodes[id];
-      if (candidate === undefined) continue;
-      drawStub(this.stubs, head, candidate.lane, laneColour(candidate.lane, candidate.kind));
     }
   }
 
@@ -278,7 +258,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
       const label = new Text({
         text: `${nodePrefix(node.kind, node.commit?.mode)}: ${translate({
-          key: `nodes.${node.kind}.name`,
+          key: `nodes.${labelledKind(node.kind)}.name`,
         })}`,
         style: labelStyle,
       });
@@ -332,8 +312,12 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     for (const label of this.labels.values()) label.visible = visible;
   }
 
-  /** Every revealed node's position, for the camera's fit-to-content. */
+  /** Every revealed node's position, for the camera's framing. */
   bounds(): { minX: number; maxX: number; minY: number; maxY: number } | null {
+    // The camera is a sibling in the same `Parallel` and may be activated
+    // first, so it can ask before there is anything to answer with.
+    if (this.sprites === undefined) return null;
+
     const nodes = this.revealed();
     const head = this.node(sceneContext(this.chipContext).session.getState().player.nodeId);
     const all = head === undefined ? nodes : [...nodes, head];

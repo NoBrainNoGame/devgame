@@ -1,7 +1,7 @@
 import type { Graphics } from "pixi.js";
 
 import { nodeX, nodeY } from "@/game/render/coords";
-import { BEND, EDGE_WIDTH, NODE_RADIUS } from "@/game/render/theme";
+import { BEND, EDGE_WIDTH } from "@/game/render/theme";
 
 /**
  * How an edge between two commits is drawn.
@@ -43,44 +43,6 @@ export function drawEdge(
   }
 
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
-}
-
-/**
- * A branch still open from where you stand: one row of lane, ending in a hollow
- * ring where the commit would land.
- *
- * The ring matters. A stub that just stops is read as an edge that failed to
- * draw; a ring is read as an empty slot, which is what it is. It says how wide
- * the decision is — one ring above you is a corridor, three is a fork — and
- * nothing at all about what the commit would contain. That belongs in the
- * panel, where there is room to price it.
- */
-export function drawStub(
-  graphics: Graphics,
-  from: { lane: number; depth: number },
-  toLane: number,
-  colour: number,
-): void {
-  const x1 = nodeX(from.lane);
-  const y1 = nodeY(from.depth);
-  const x2 = nodeX(toLane);
-  const y2 = nodeY(from.depth + 1);
-
-  const towards = Math.sign(y2 - y1);
-  const start = y1 + towards * (NODE_RADIUS + 3);
-  const stop = y2 - towards * (NODE_RADIUS + 1);
-
-  if (x1 === x2) {
-    graphics.moveTo(x1, start).lineTo(x2, stop);
-  } else {
-    graphics
-      .moveTo(x1, start)
-      .lineTo(x1, start + towards * BEND * 0.4)
-      .bezierCurveTo(x1, stop, x2, start, x2, stop);
-  }
-
-  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha: 0.38, cap: "round" });
-  graphics.circle(x2, y2, NODE_RADIUS - 4).stroke({ width: 2, color: colour, alpha: 0.55 });
 }
 
 /**
