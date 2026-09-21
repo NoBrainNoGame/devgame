@@ -131,3 +131,20 @@ bun run db:migrate
 ```
 
 Do not hand-edit those four models to match; regenerate them.
+
+## The run row keeps the save whole
+
+`Run.save` is the entire `RunSaveDto` as it was sent, and the columns beside it
+— `seed`, `mode`, `version`, `score`, `commits` — exist so the boards can be
+queried without opening the JSON.
+
+The temptation is to store only the action list and rebuild the rest from the
+columns. That is wrong: a save also carries the starter profile and the account
+unlocks that were in force, and both shape the generated map. Replaying an
+action list without them produces a different game, scores it differently, and
+looks for all the world like a working feature.
+
+Anything read back out of `save` is re-validated with `RunSaveSchema` before it
+is used. A row written by an older build is untrusted input like any other, and
+a save the current build cannot parse is one the player should not be handed —
+resuming it would drop them into a run that never happened.

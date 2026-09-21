@@ -52,8 +52,23 @@ that belonged to subsystems this project deleted.
    and throws in a plain Bun process, which would break scripts and tests.)
 7. **Server Components by default.** `"use client"` belongs on leaves that need
    interactivity, never on a page or layout. The one exception is
-   `src/app/[locale]/play/PlayClient.tsx`: `next/dynamic` with `ssr: false` is
-   only legal inside a Client Component, and Pixi touches `window` at import.
+   `src/app/[locale]/(app)/play/PlayClient.tsx`: `next/dynamic` with
+   `ssr: false` is only legal inside a Client Component, and Pixi touches
+   `window` at import.
+
+## Layout
+
+`src/app/[locale]/layout.tsx` is one `h-dvh` column: the header, then whatever
+the route group puts in `main`. There are two groups, and which one a route
+belongs to is a real decision:
+
+- `(site)` — landing, leaderboard, profile, login. Scrolls, ends in a footer.
+- `(app)` — the run. Fills exactly what the header leaves and never scrolls. A
+  scrollbar there means the graph is taller than the window and the HUD is off
+  screen.
+
+Route groups do not appear in URLs, so moving a page between them changes only
+its chrome.
 
 ## Devgame invariants
 

@@ -27,7 +27,7 @@ openssl rand -hex 32        # -> BETTER_AUTH_SECRET
 openssl rand -hex 32        # -> CRON_SECRET
 openssl rand -hex 32        # -> DAILY_SEED_SECRET
 
-bun run db:up               # Postgres 17 on port 5433
+bun run db:up               # Postgres 17 on port 5443
 bun run db:migrate          # create and apply migrations
 bun run dev                 # http://localhost:3000
 ```
@@ -52,7 +52,7 @@ bun run check       # typecheck + lint + tests — run this before you are done
 bun run dev         # dev server
 bun run build       # production build
 bun run sim         # headless balance simulator (scripts/sim.ts)
-bun run db:up       # start Postgres (POSTGRES_PORT=5434 to move the port)
+bun run db:up       # start Postgres (POSTGRES_PORT=5500 to move the port)
 bun run db:migrate  # create and apply a migration
 bun run db:deploy   # apply committed migrations
 bun run db:studio   # browse the data
@@ -101,13 +101,15 @@ messages/        fr.json (source of truth) and en.json
 prisma/          schema and migrations
 scripts/         sim.ts — headless balance simulator
 src/
-  app/[locale]/  pages — landing, play, leaderboard, profile, login
+  app/[locale]/
+    (site)/      landing, leaderboard, profile, login — scrolls, has a footer
+    (app)/play/  the run — fills the window, never scrolls
   app/api/       auth, health, cron — outside the locale segment
   components/
     ui/          shadcn primitives
     shell/       header, footer, locale switch, auth menu
     game/        the canvas mount point
-    game-hud/    resource bar, action panel, bots panel, commit log
+    hud/         resource bar, action panel, rival panel, commit log, dialogs
   game/
     core/        pure deterministic rules — no Pixi, no React, no clock
     content/     data tables: skills, relics, bots, DevOps, events, profiles
