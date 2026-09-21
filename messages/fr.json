@@ -457,7 +457,8 @@
       "game_over": {
         "burnout": "plus d'énergie, la run s'arrête à {score}",
         "fired": "licencié, la run s'arrête à {score}"
-      }
+      },
+      "monitoring_warning": "le monitoring a vu le bug avant la prod"
     },
     "notes": {
       "build": "Build {points}",

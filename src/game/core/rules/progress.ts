@@ -57,6 +57,15 @@ export function resolveNode(
   if (node.branchId !== undefined) closeBranchIfDone(context, node);
 }
 
+/**
+ * A branch is merged the moment its last node resolves — not when every node in
+ * it has been walked.
+ *
+ * The difference matters because a sub-branch is an alternative route through
+ * its parent: taking it deliberately skips some of the parent's nodes. Requiring
+ * all of them left the branch open for the rest of the run, silently swallowed
+ * the skill it promised, and kept `isOverextended` true forever.
+ */
 function closeBranchIfDone(context: RuleContext, node: MapNode): void {
   const branchId = node.branchId;
   if (branchId === undefined) return;
@@ -64,8 +73,8 @@ function closeBranchIfDone(context: RuleContext, node: MapNode): void {
   const branch = context.state.branches[branchId];
   if (branch === undefined || branch.merged) return;
 
-  const allDone = branch.nodeIds.every((id) => context.state.nodes[id]?.status === "done");
-  if (!allDone) return;
+  const last = branch.nodeIds[branch.nodeIds.length - 1];
+  if (last !== node.id) return;
 
   branch.merged = true;
   branch.open = false;

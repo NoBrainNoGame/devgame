@@ -191,7 +191,11 @@ export interface RunState {
   /** Redrawn whenever debt moves, so the displayed range is stable in between. */
   debtNoise: number;
 
-  /** Set when monitoring warns of a production bug one node early. */
+  /**
+   * Set when monitoring caught a production bug before it shipped. The next
+   * one gets through, which is what makes the warning a reprieve rather than
+   * immunity.
+   */
   monitoringWarning: boolean;
   botsFired: number;
   xpEarned: number;
@@ -244,6 +248,7 @@ export type GameEvent =
   | { type: "pr_rejected"; botId: BotId | null; countered: boolean }
   | { type: "debt_explosion"; branchId: BranchId }
   | { type: "failure_event"; eventId: FailureEventId }
+  | { type: "monitoring_warning" }
   | { type: "ambient_event"; eventId: AmbientEventId }
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
   | { type: "bot_advanced"; botId: BotId; from: number; to: number }

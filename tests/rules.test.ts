@@ -286,6 +286,57 @@ describe("review", () => {
     const after = applyAction(state, { type: "review" }).state;
     expect(after.turn).toBe(state.turn + 1);
   });
+
+  test("a review costs the energy the preview advertised", () => {
+    const { state } = play(newRun("review-energy"), { limit: 1 });
+    const cost = getActionPreview(state, { type: "review" }).energyCost;
+    expect(cost).toBeGreaterThan(0);
+
+    const after = applyAction(state, { type: "review" }).state;
+    expect(state.player.energy - after.player.energy).toBe(cost);
+  });
+
+  test("pair programming makes a review cheaper, in the rules and not only in the preview", () => {
+    const { state } = play(newRun("review-cheap"), { limit: 1 });
+    const cheap = structuredClone(state);
+    cheap.skills = ["pair_programming"];
+
+    const plain = applyAction(state, { type: "review" }).state;
+    const discounted = applyAction(cheap, { type: "review" }).state;
+
+    expect(state.player.energy - plain.player.energy).toBeGreaterThan(
+      cheap.player.energy - discounted.player.energy,
+    );
+  });
+
+  test("the automatic review a DevOps bot performs is free", () => {
+    const withAi = findSeed(
+      (r) =>
+        r.state.phase.kind === "choose_action" &&
+        r.state.player.aiHistory.filter((e) => !e.reviewed).length >= 2,
+      {
+        prefix: "free-review",
+        pick: prefer(isCommit("ai")),
+        limit: 20,
+        stop: (state) =>
+          state.phase.kind === "choose_action" &&
+          state.player.aiHistory.filter((e) => !e.reviewed).length >= 2,
+      },
+    );
+
+    const automated = structuredClone(withAi.state);
+    automated.devops.review_bot = 1;
+    automated.player.turnsSinceFreeReview = BALANCE.review.botCadence - 1;
+
+    const result = applyAction(automated, { type: "commit", mode: "ai" });
+    const free = eventsOfType(result.events, "reviewed").filter((event) => event.free);
+    if (free.length === 0) return;
+
+    const spentOnReview = eventsOfType(result.events, "energy").filter(
+      (event) => event.reason === "review",
+    );
+    expect(spentOnReview).toEqual([]);
+  });
 });
 
 describe("free actions", () => {

@@ -38,13 +38,28 @@ export interface GameHandle {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
   var __devgameHandle: GameHandle | undefined;
 }
+
+/**
+ * Which mount is the live one.
+ *
+ * React's double-invoked effects start two mounts, and `app.init()` is not
+ * guaranteed to settle in the order it was called. Claiming ownership *before*
+ * the await is what lets a mount that has since been superseded recognise
+ * itself and stay quiet: without it, a slow first mount resolving after a fast
+ * second one would publish its own empty board over a run already on screen,
+ * and then reset the store when its cleanup ran.
+ */
+let mountSerial = 0;
 
 export async function mountGame(element: HTMLElement, options: MountOptions): Promise<GameHandle> {
   // A hot reload re-runs this module with the old canvas still on screen.
   globalThis.__devgameHandle?.dispose();
+
+  mountSerial += 1;
+  const serial = mountSerial;
+  const isCurrent = (): boolean => serial === mountSerial;
 
   const app = new Application();
   await app.init({
@@ -116,9 +131,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       session.destroy();
       app.destroy(true, { children: true });
 
-      // Only the mount that currently owns the store may clear it. React's
-      // double-invoked effects start two mounts, and the loser resolving after
-      // the winner has published would otherwise wipe a live run's HUD.
+      // Only the mount that currently owns the store may clear it.
       if (globalThis.__devgameHandle === handle) {
         globalThis.__devgameHandle = undefined;
         resetGameStore();
@@ -126,10 +139,14 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     },
   };
 
-  globalThis.__devgameHandle = handle;
-  // Publishing after registering the handle means the store always describes
-  // the run that is actually on screen.
-  session.publish();
+  // A superseded mount keeps its handle — the caller still has to be able to
+  // dispose of it — but it neither claims the store nor writes to it.
+  if (isCurrent()) {
+    globalThis.__devgameHandle = handle;
+    // Publishing after claiming ownership means the store always describes the
+    // run that is actually on screen.
+    session.publish();
+  }
 
   return handle;
 }

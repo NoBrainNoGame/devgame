@@ -33,7 +33,7 @@ export type {
 export type { MetaProgressDto, SettingsDto, StatPointsDto } from "@/game/dto/meta";
 export { emptyMeta, META_VERSION, MetaProgressSchema } from "@/game/dto/meta";
 export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
-export { isCurrentRules, replayRun } from "@/game/dto/replay";
+export { isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";
 export type { PlayerActionDto, RunSaveDto } from "@/game/dto/run";
 export { MAX_ACTIONS, PlayerActionSchema, RunSaveSchema } from "@/game/dto/run";
-export { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
+export { RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";

@@ -21,6 +21,17 @@ export function fnv1aHex(input: string): string {
 }
 
 /**
+ * Sixty-four bits, as two independent FNV passes over the same input.
+ *
+ * Thirty-two is not enough where the value is used to tell two things apart:
+ * a few tens of thousands of items give an even chance of a collision, and a
+ * collision here would mean refusing somebody's score as a duplicate.
+ */
+export function fingerprint(input: string): string {
+  return fnv1aHex(input) + fnv1aHex(`\u0001${input}\u0001`);
+}
+
+/**
  * JSON with every object key sorted, so two states that differ only in
  * insertion order hash the same. Undefined values are dropped exactly the way
  * `JSON.stringify` drops them, which keeps optional fields from mattering.

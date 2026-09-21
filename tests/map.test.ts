@@ -102,3 +102,63 @@ describe("sprint generation", () => {
     }
   });
 });
+
+describe("paths through a sprint", () => {
+  test("every route crosses the sprint merge", () => {
+    // A detour that lands on the release would skip the design's end-of-sprint
+    // merge, and with it the energy the sprint boundary is supposed to give
+    // back — while leaving the merge node stranded in the graph forever.
+    for (let i = 0; i < 300; i++) {
+      const state = newRun(`merge-path-${i}`);
+      const merge = Object.values(state.nodes).find((node) => node.kind === "sprint_merge");
+      const release = Object.values(state.nodes).find((node) => node.kind === "release");
+
+      expect(merge).toBeDefined();
+      expect(release).toBeDefined();
+      if (merge === undefined || release === undefined) continue;
+
+      const intoRelease = Object.values(state.nodes).filter((node) =>
+        node.next.includes(release.id),
+      );
+      expect(intoRelease.map((node) => node.id)).toEqual([merge.id]);
+    }
+  });
+
+  test("resolving a branch's last node merges it, even when nodes were skipped", () => {
+    // Taking a sub-branch skips some of its parent's nodes by design. Requiring
+    // every node to have been walked left the parent open for the rest of the
+    // run: the skill it promised was swallowed, and `isOverextended` stayed
+    // true forever, costing −15 on every roll with no way to clear it.
+    //
+    // Played across many seeds, always stepping onto a branch when offered, so
+    // sub-branches are actually entered.
+    let checked = 0;
+
+    for (let i = 0; i < 60; i++) {
+      const played = play(newRun(`sub-merge-${i}`), {
+        pick: (state, actions) => {
+          const onto = actions.find(
+            (action) =>
+              action.type === "move" && state.nodes[action.nodeId]?.branchId !== undefined,
+          );
+          return onto ?? actions.find(isCommit("ai")) ?? actions[0];
+        },
+        limit: 400,
+      });
+
+      for (const branch of Object.values(played.state.branches)) {
+        if (branch.kind !== "feature" && branch.kind !== "subfeature") continue;
+
+        const last = branch.nodeIds[branch.nodeIds.length - 1];
+        if (last === undefined) continue;
+        if (played.state.nodes[last]?.status !== "done") continue;
+
+        checked += 1;
+        expect(branch.merged).toBe(true);
+        expect(branch.open).toBe(false);
+      }
+    }
+
+    expect(checked).toBeGreaterThan(20);
+  });
+});

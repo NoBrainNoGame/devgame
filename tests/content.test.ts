@@ -22,7 +22,8 @@ import {
   SKILLS,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
+import { canonicalJson, fnv1aHex } from "@/game/core/hash";
+import { RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 
 /**
  * Content is data, and data drifts. These are the checks that catch a typo in
@@ -125,17 +126,31 @@ describe("content tables", () => {
 
 describe("rules fingerprint", () => {
   /**
-   * This test failing is not a bug. It means the balance table or the content
-   * ids changed, which makes every recorded run incomparable with the new ones.
-   * Update the expected value here and bump nothing else — `RULES_FINGERPRINT`
-   * is what the leaderboard checks, and old runs correctly stop matching.
+   * This test failing is not a bug. It means the rules changed, which makes
+   * every recorded run incomparable with the new ones — the leaderboard checks
+   * `RULES_FINGERPRINT` and will correctly turn the old ones away.
+   *
+   * If a *number* or an id changed, update the expected value below and stop
+   * there. If the rules *code* changed in a way that alters what an old action
+   * log replays to, bump `RULES_EPOCH` as well: the hash cannot see that on its
+   * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("2b94c524");
+    expect(RULES_FINGERPRINT).toBe("b7844377");
   });
 
-  test("the save version is a positive integer", () => {
+  test("the save version and the epoch are positive integers", () => {
     expect(Number.isInteger(SAVE_VERSION)).toBe(true);
     expect(SAVE_VERSION).toBeGreaterThan(0);
+    expect(Number.isInteger(RULES_EPOCH)).toBe(true);
+    expect(RULES_EPOCH).toBeGreaterThan(0);
+  });
+
+  test("the epoch is part of the fingerprint, so bumping it is enough", () => {
+    // Guards the mechanism itself: if the epoch stopped feeding the hash, the
+    // only way to mark a rules change would silently do nothing.
+    expect(RULES_FINGERPRINT).not.toBe(
+      fnv1aHex(canonicalJson({ balance: BALANCE, epoch: RULES_EPOCH + 1 })),
+    );
   });
 });

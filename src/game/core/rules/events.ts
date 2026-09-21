@@ -37,6 +37,17 @@ export type FailureOutcome =
 
 export function resolveFailure(context: RuleContext): FailureOutcome {
   const eventId = drawFailure(context);
+
+  // Monitoring's first half: the bug is spotted before it ships. It costs the
+  // turn anyway — you still have to go and fix it — and it only works once,
+  // because a permanent immunity to the design's nastiest failure would make
+  // one DevOps point worth more than the rest of the tree.
+  if (eventId === "prod_bug" && context.effects.monitoring && !context.state.monitoringWarning) {
+    context.state.monitoringWarning = true;
+    emit(context, { type: "monitoring_warning" });
+    return { kind: "retry" };
+  }
+
   emit(context, { type: "failure_event", eventId });
 
   switch (eventId) {

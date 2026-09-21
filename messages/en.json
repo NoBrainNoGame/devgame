@@ -457,7 +457,8 @@
       "game_over": {
         "burnout": "out of energy, the run stops at {score}",
         "fired": "fired, the run stops at {score}"
-      }
+      },
+      "monitoring_warning": "monitoring caught the bug before production did"
     },
     "notes": {
       "build": "Build {points}",

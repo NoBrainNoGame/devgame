@@ -1,7 +1,8 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { repayDebt } from "@/game/core/rules/debt";
-import { reviewCleanCount } from "@/game/core/rules/modifiers";
+import { spendEnergy } from "@/game/core/rules/energy";
+import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
 import type { NodeId } from "@/game/core/types";
 
 /**
@@ -25,6 +26,12 @@ export interface ReviewOutcome {
 export function performReview(context: RuleContext, free: boolean): ReviewOutcome {
   const { state } = context;
   const { review } = BALANCE;
+
+  // The automatic review a DevOps bot performs is the thing the player paid
+  // points for; a deliberate one costs what the preview advertised.
+  if (!free) {
+    spendEnergy(context, reviewEnergyCost(state, context.effects).value, "review");
+  }
 
   const chain = state.player.aiChain >= review.chainLength;
   const budget = reviewCleanCount(state, context.effects);

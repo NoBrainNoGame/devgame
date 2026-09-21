@@ -148,3 +148,18 @@ Anything read back out of `save` is re-validated with `RunSaveSchema` before it
 is used. A row written by an older build is untrusted input like any other, and
 a save the current build cannot parse is one the player should not be handed —
 resuming it would drop them into a run that never happened.
+
+## Runs belong to a rules epoch
+
+`Run.rulesEpoch` records which version of the rules a submission was played
+under, and every leaderboard query filters on the current one.
+
+Without it the board would rank a run from before a rules change against one
+from after, which is a comparison of two different games dressed up as a
+ranking. Rows written before the column existed carry epoch 0 and are therefore
+invisible to today's boards — which is the correct answer for them.
+
+`RULES_EPOCH` lives in `src/game/dto/version.ts` and is bumped by hand whenever
+a change makes an old action log replay to a different game. The hash beside it
+catches changes to the balance table and the content ids on its own; it cannot
+see a change to the rules code, which is what the epoch is for.

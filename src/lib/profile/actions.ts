@@ -2,7 +2,7 @@
 
 import "@/lib/server-only";
 
-import { emptyMeta, type MetaProgressDto, MetaProgressSchema } from "@/game";
+import { type MetaProgressDto, MetaProgressSchema } from "@/game";
 import { type ActionResult, fail, guard, ok } from "@/lib/actions/result";
 import { prisma } from "@/lib/db";
 import { mergeMeta } from "@/lib/profile/merge";

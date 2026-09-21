@@ -1,3 +1,4 @@
+import { canonicalJson, fingerprint } from "@/game/core/hash";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun, hashState } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
@@ -32,6 +33,27 @@ export interface ReplayStats {
 export type ReplayResult =
   | { valid: true; finished: boolean; score: number; stats: ReplayStats; state: RunState }
   | { valid: false; error: string; failedAt?: number };
+
+/**
+ * What makes two submissions the same run.
+ *
+ * The idempotency key is chosen by the client, so it cannot be the only thing
+ * standing between one good run and unlimited progression. This is derived from
+ * the run itself: the same seed and the same decisions are the same game,
+ * however many times it is sent.
+ */
+export function runFingerprint(
+  save: Pick<RunSaveDto, "seed" | "mode" | "profileId" | "actions">,
+): string {
+  return fingerprint(
+    canonicalJson({
+      seed: save.seed,
+      mode: save.mode,
+      profileId: save.profileId,
+      actions: save.actions,
+    }),
+  );
+}
 
 export function replayRun(input: unknown): ReplayResult {
   const parsed = RunSaveSchema.safeParse(input);

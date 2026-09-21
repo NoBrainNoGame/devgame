@@ -217,7 +217,10 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
     { value: "chore" as const, weight: map.detourWeights.chore },
   ];
 
-  for (let i = 1; i <= length - 3; i++) {
+  // `length - 4` rather than `length - 3`: landing on `main[length - 1]` would
+  // hop straight over the sprint merge, which is the same mistake the feature
+  // branches guard against above.
+  for (let i = 1; i <= length - 4; i++) {
     const from = main[i];
     const to = main[i + 2];
     if (from === undefined || to === undefined) continue;

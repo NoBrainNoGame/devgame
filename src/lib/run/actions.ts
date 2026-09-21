@@ -6,18 +6,20 @@ import { revalidatePath } from "next/cache";
 
 import {
   isCurrentRules,
+  RULES_EPOCH,
   RULES_FINGERPRINT,
   type RunSaveDto,
   RunSaveSchema,
   replayRun,
+  runFingerprint,
 } from "@/game";
 import { type ActionResult, fail, guard, ok } from "@/lib/actions/result";
-import { utcDate } from "@/lib/daily/seed";
 import { getDailySeed } from "@/lib/daily/store";
 import { prisma } from "@/lib/db";
 import { applyRunToMeta } from "@/lib/profile/progression";
 import { toColumns, toMeta } from "@/lib/profile/row";
 import { hit, LIMITS } from "@/lib/rate-limit";
+import { overclaims } from "@/lib/run/claims";
 import { getCurrentUserId } from "@/lib/session";
 
 /**
@@ -95,9 +97,10 @@ export async function saveRun(input: unknown): Promise<ActionResult<{ runId: str
         profileId: profile.id,
         mode: save.mode,
         seed: save.seed,
-        ...(save.mode === "daily" ? { dailyDate: dayOf(save.createdAt) } : {}),
+        ...(save.mode === "daily" ? { dailyDate: await serverDailyDate() } : {}),
         version: save.version,
         save,
+        fingerprint: runFingerprint(save),
         commits: save.actions.length,
         clientRunId: save.clientRunId,
       },
@@ -145,23 +148,32 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
     const profile = await prisma.profile.findUnique({ where: { userId } });
     if (profile === null) return fail("rejected", "Sync your progress first");
 
+    const stored = toMeta(profile);
+
+    // The replay is only as trustworthy as what it starts from, and the save
+    // states its own starting conditions. See `overclaims`.
+    const overreach = overclaims(save, stored);
+    if (overreach !== null) return fail("rejected", overreach);
+
     const existing = await prisma.run.findUnique({ where: { clientRunId: save.clientRunId } });
-    if (existing !== null && existing.status === "finished") {
-      return ok({
-        runId: existing.id,
-        score: existing.score,
-        sprints: existing.sprintsCompleted,
-        botsFired: existing.botsFired,
-        commits: existing.commits,
-      });
-    }
+    // Ownership before anything else: this row is only ours to talk about.
     if (existing !== null && existing.profileId !== profile.id) {
       return fail("rejected", "That run belongs elsewhere");
     }
+    if (existing !== null && existing.status === "finished") {
+      return ok(describe(existing));
+    }
+
+    // The same game under a fresh idempotency key is still the same game.
+    const fingerprint = runFingerprint(save);
+    const duplicate = await prisma.run.findFirst({
+      where: { profileId: profile.id, fingerprint, status: "finished" },
+    });
+    if (duplicate !== null) return ok(describe(duplicate));
 
     const outcome = replayRun(save);
     if (!outcome.valid) {
-      await markRejected(save, profile.id);
+      await markRejected(save, profile.id, fingerprint);
       return fail("rejected", `The run does not replay: ${outcome.error}`);
     }
     if (!outcome.finished) {
@@ -172,10 +184,15 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       profileId: profile.id,
       mode: save.mode,
       seed: save.seed,
-      ...(save.mode === "daily" ? { dailyDate: dayOf(save.createdAt) } : {}),
+      // Which day a daily belongs to is the server's to decide. Taking it from
+      // the save's own `createdAt` would let a client post today's run onto
+      // tomorrow's board.
+      ...(save.mode === "daily" ? { dailyDate: await serverDailyDate() } : {}),
       status: "finished" as const,
       version: save.version,
+      rulesEpoch: RULES_EPOCH,
       save,
+      fingerprint,
       score: outcome.score,
       sprintsCompleted: outcome.stats.sprints,
       botsFired: outcome.stats.botsFired,
@@ -198,7 +215,7 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
     // Running exactly once per run is guaranteed by the early return above: a
     // run already marked finished never reaches this point.
     const reward = applyRunToMeta(
-      toMeta(profile),
+      stored,
       {
         xp: outcome.stats.xp,
         commits: outcome.stats.commits,
@@ -208,29 +225,52 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       new Date().toISOString(),
     );
 
-    await prisma.profile.update({
-      where: { id: profile.id },
+    // Guarded on the version we read, so a `syncMeta` from another tab landing
+    // in between loses the race rather than being silently overwritten. Failing
+    // to award is not worth failing the submission over: the run is stored and
+    // scored, and the next sync merges the progress back in.
+    const awarded = await prisma.profile.updateMany({
+      where: { id: profile.id, metaVersion: stored.metaVersion },
       data: { ...toColumns(reward.meta), metaVersion: { increment: 1 } },
     });
+    if (awarded.count === 0) {
+      console.warn(`Profile ${profile.id} changed during a submission; progress will re-merge.`);
+    }
 
     revalidatePath("/[locale]/leaderboard", "page");
     revalidatePath("/[locale]/profile", "page");
 
-    return ok({
-      runId: run.id,
-      score: run.score,
-      sprints: run.sprintsCompleted,
-      botsFired: run.botsFired,
-      commits: run.commits,
-    });
+    return ok(describe(run));
   });
+}
+
+interface RunRow {
+  id: string;
+  score: number;
+  sprintsCompleted: number;
+  botsFired: number;
+  commits: number;
+}
+
+function describe(run: RunRow): SubmitResult {
+  return {
+    runId: run.id,
+    score: run.score,
+    sprints: run.sprintsCompleted,
+    botsFired: run.botsFired,
+    commits: run.commits,
+  };
 }
 
 /**
  * A log that does not replay is kept, marked. It is the only evidence of what
  * was sent, and the row is small.
  */
-async function markRejected(save: RunSaveDto, profileId: string): Promise<void> {
+async function markRejected(
+  save: RunSaveDto,
+  profileId: string,
+  fingerprint: string,
+): Promise<void> {
   await prisma.run.upsert({
     where: { clientRunId: save.clientRunId },
     create: {
@@ -240,12 +280,15 @@ async function markRejected(save: RunSaveDto, profileId: string): Promise<void> 
       status: "rejected",
       version: save.version,
       save,
+      fingerprint,
       clientRunId: save.clientRunId,
     },
     update: { status: "rejected" },
   });
 }
 
-function dayOf(iso: string): Date {
-  return new Date(`${utcDate(new Date(iso))}T00:00:00.000Z`);
+/** Which day a daily run belongs to. Server clock only. */
+async function serverDailyDate(): Promise<Date> {
+  const { date } = await getDailySeed();
+  return new Date(`${date}T00:00:00.000Z`);
 }
