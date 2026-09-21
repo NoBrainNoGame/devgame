@@ -7,6 +7,8 @@ import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BotPanel } from "@/components/hud/BotPanel";
 import { CommitLog } from "@/components/hud/CommitLog";
 import { ConflictDialog, RelicDialog, RunOverDialog } from "@/components/hud/GameDialogs";
+import { GraphControls } from "@/components/hud/GraphControls";
+import { GraphTooltip } from "@/components/hud/GraphTooltip";
 import { ResourceBar } from "@/components/hud/ResourceBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
@@ -37,6 +39,8 @@ export interface RunStageProps {
     resume?: RunSaveDto;
     reducedMotion?: boolean;
   };
+  /** The live handle, for the controls that drive the camera directly. */
+  handle: GameHandle | null;
   onReady: (handle: GameHandle | null) => void;
   onAct: (action: PlayerAction) => void;
   onPlayAgain: () => void;
@@ -46,6 +50,7 @@ export interface RunStageProps {
 export function RunStage({
   runKey,
   options,
+  handle,
   onReady,
   onAct,
   onPlayAgain,
@@ -62,13 +67,19 @@ export function RunStage({
       {snapshot === null ? null : <ResourceBar snapshot={snapshot} />}
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <div className="relative min-h-64 min-w-0 flex-1 bg-bg">
+        <div className="relative min-h-72 min-w-0 flex-1 bg-bg">
           <GameCanvas key={runKey} options={options} onReady={onReady} />
+
           {snapshot === null ? (
             <p className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
               {t("loading")}
             </p>
-          ) : null}
+          ) : (
+            <>
+              <GraphTooltip />
+              <GraphControls handle={handle} />
+            </>
+          )}
         </div>
 
         <aside className="flex w-full shrink-0 flex-col gap-5 overflow-hidden border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">

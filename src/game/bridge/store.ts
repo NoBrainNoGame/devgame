@@ -20,6 +20,12 @@ export interface GameStore {
   /** True while the canvas is still playing out the last action. */
   pendingAnimation: boolean;
   hoveredNodeId: NodeId | null;
+  /** Where the hovered commit sits on screen, so the HUD can point at it. */
+  hoveredAt: { x: number; y: number } | null;
+  /** Current scale, for the zoom readout. */
+  zoom: number;
+  /** False once the player has dragged or zoomed away from their head commit. */
+  cameraFollowing: boolean;
   log: LogLine[];
   /** The most recent batch, for anything that reacts to a single event. */
   lastEvents: GameEvent[];
@@ -32,6 +38,9 @@ export const INITIAL_STORE: GameStore = {
   snapshot: null,
   pendingAnimation: false,
   hoveredNodeId: null,
+  hoveredAt: null,
+  zoom: 1,
+  cameraFollowing: true,
   log: [],
   lastEvents: [],
   lastError: null,

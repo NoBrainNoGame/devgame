@@ -259,8 +259,9 @@ est fusionnée avec celle du serveur à la première connexion, jamais écrasée
 
 ## Direction artistique
 
-Rendu du graphe façon `git log --graph` stylisé : nœuds ronds, branches
-colorées, un curseur adverse par bot sur `main`. `main`, les features, les
+Rendu du graphe façon client git de bureau : nœuds ronds, lanes épaisses qui
+sortent de leur colonne, coudent une fois et arrivent verticales, et un sujet
+de commit (`feat: Fork`) à droite de chaque nœud. `main`, les features, les
 hotfixes et les bots ont chacun leur couleur, et elles ne servent qu'à ça.
 
 Interface de type terminal ou IDE sombre, en thème sombre uniquement, police à
@@ -270,6 +271,37 @@ commit (`fix: oups`, `feat: added tests`) : c'est le log qui raconte la partie.
 Les animations sont séquentielles et interruptibles — un clic pendant une
 animation la termine immédiatement. Une partie doit rester jouable au rythme de
 la lecture, pas au rythme des effets.
+
+### Ce que le graphe montre, et ce qu'il ne montre pas
+
+Cinq règles, et elles tiennent ensemble. Le moteur connaît tout le sprint
+d'avance — il le faut, sinon une run ne se rejoue pas — mais l'afficher
+transformerait le jeu en plateau que l'on traverse, alors que la fiction est un
+dépôt que l'on écrit.
+
+1. **Le graphe s'écrit, il ne se dévoile pas.** Seuls les nœuds résolus sont
+   dessinés, plus celui sur lequel on se tient. Ce qui attend plus haut n'existe
+   pas encore à l'écran.
+2. **L'histoire se lit de bas en haut**, du premier commit vers le dernier,
+   comme dans tout client git. C'est le seul rôle du signe dans `nodeY`.
+3. **Le graphe ne se clique pas.** On n'agit pas sur le passé : toute décision
+   se prend dans le panneau, qui a la place de dire ce que chaque option coûte.
+   Un nœud cliquable serait une seconde interface, moins bonne, et il devrait
+   exister avant qu'on s'y engage — précisément ce que la règle 1 interdit.
+4. **Les choix ouverts sont des formes, pas des nœuds** : un moignon de lane par
+   candidat, terminé par un anneau vide. Un anneau au-dessus de soi est un
+   couloir, trois sont un embranchement. Ils ne disent rien de leur contenu.
+5. **Les rivaux n'ont pas de commits.** L'avance d'un bot est un rythme, pas une
+   liste de choses écrites ; en inventer serait prétendre en savoir plus que le
+   moteur. Une ref dans la gouttière de gauche, posée sur un `main` pointillé,
+   dit exactement ce qui est su — et se lit comme une branche distante non
+   récupérée.
+
+Survoler un commit l'explique dans une infobulle **DOM**, pas dans le canvas :
+traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom. Le
+graphe se déplace, se zoome de 40 % à 240 %, se recadre et se cale sur le
+contenu ; la caméra suit `HEAD` tant que le joueur n'a rien touché, et lui rend
+la main dès qu'il déplace ou zoome.
 
 ## Écarts avec le document initial
 

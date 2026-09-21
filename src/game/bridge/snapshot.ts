@@ -82,7 +82,10 @@ export interface RunSnapshot {
   devopsPoints: number;
 
   /** Enough of each node for a tooltip, without exposing the board itself. */
-  nodes: Record<NodeId, Pick<MapNode, "id" | "kind" | "status" | "lane" | "skillId">>;
+  nodes: Record<
+    NodeId,
+    Pick<MapNode, "id" | "kind" | "status" | "lane" | "depth" | "skillId" | "commit" | "branchId">
+  >;
 }
 
 export function toSnapshot(state: RunState): RunSnapshot {
@@ -98,7 +101,10 @@ export function toSnapshot(state: RunState): RunSnapshot {
       kind: node.kind,
       status: node.status,
       lane: node.lane,
+      depth: node.depth,
       ...(node.skillId === undefined ? {} : { skillId: node.skillId }),
+      ...(node.commit === undefined ? {} : { commit: { ...node.commit } }),
+      ...(node.branchId === undefined ? {} : { branchId: node.branchId }),
     };
   }
 

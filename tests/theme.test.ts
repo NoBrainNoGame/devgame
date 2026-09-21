@@ -32,7 +32,7 @@ describe("theme", () => {
     ["branch-bot", THEME.bot],
     ["debt", THEME.debt],
     ["energy", THEME.energy],
-    ["ai", THEME.node.doneAi],
+    ["ai", THEME.node.ai],
   ])("%s matches the canvas palette", (name, value) => {
     expect(cssColour(name)).toBe(hex(value));
   });

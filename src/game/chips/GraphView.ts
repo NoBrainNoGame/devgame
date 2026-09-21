@@ -3,39 +3,75 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
+import { mainLineNodes } from "@/game/core/map/graph";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { drawNode } from "@/game/render/drawNode";
-import { glyphStyle } from "@/game/render/textStyles";
-import { EDGE_WIDTH, laneColour, NODE_RADIUS, nodeGlyph, THEME } from "@/game/render/theme";
+import { drawCommit, drawPending } from "@/game/render/drawNode";
+import { dashedLine, drawEdge, drawStub } from "@/game/render/lanes";
+import { glyphStyle, labelStyle } from "@/game/render/textStyles";
+import { laneColour, NODE_RADIUS, nodeGlyph, nodePrefix, THEME } from "@/game/render/theme";
 
 /**
- * Draws the git graph and turns pointer events on it into intentions.
+ * The history, as it is written.
  *
- * It rebuilds from the run state whenever an action lands. A graph of a few
- * hundred nodes redraws in well under a frame, and an incremental diff would
- * buy nothing except a class of bugs where the picture and the state disagree.
+ * The graph shows **what has happened and nothing else**. The engine knows the
+ * whole sprint in advance — it has to, or a run could not be replayed — but
+ * showing it would turn the game into a board you walk across, when the fiction
+ * is a repository you are building commit by commit. So only resolved nodes are
+ * drawn, plus the one you are standing on and short stubs for the branches
+ * still open to you.
+ *
+ * A new commit is never inserted silently: `reveal` animates it in, which is
+ * what lets a machine-written burst of three read as three separate things
+ * happening rather than as the graph suddenly being longer.
  */
 
 export interface GraphViewEvents extends booyah.BaseCompositeEvents {
   nodeHover: [nodeId: NodeId | null];
-  nodeTap: [nodeId: NodeId];
 }
+
+interface CommitSprite {
+  root: Container;
+  graphics: Graphics;
+  /** 0 to 1. Drives the grow-and-fade the node arrives with. */
+  reveal: number;
+}
+
+const REVEAL_MS = 260;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
   private edges!: Graphics;
+  private stubs!: Graphics;
+  private botLane!: Graphics;
   private nodeLayer!: Container;
-  private sprites!: Map<NodeId, { root: Container; graphics: Graphics }>;
+  private labelLayer!: Container;
+  private pending!: Graphics;
+
+  private sprites!: Map<NodeId, CommitSprite>;
+  private labels!: Map<NodeId, Text>;
   private hovered: NodeId | null = null;
-  /** Drives the pulse on the nodes the player may step to. */
   private pulse = 0;
+  /** Labels are noise when the graph is zoomed out to find your way. */
+  private showLabels = true;
 
   protected _onActivate(): void {
     this.edges = new Graphics();
+    this.stubs = new Graphics();
+    this.botLane = new Graphics();
     this.nodeLayer = new Container();
+    this.labelLayer = new Container();
+    this.pending = new Graphics();
     this.sprites = new Map();
+    this.labels = new Map();
 
-    this._container.addChild(this.edges, this.nodeLayer);
+    this._container.addChild(
+      this.botLane,
+      this.edges,
+      this.stubs,
+      this.pending,
+      this.nodeLayer,
+      this.labelLayer,
+    );
 
     const { session } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", () => this.rebuild());
@@ -45,36 +81,55 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   protected _onTerminate(): void {
     this.sprites.clear();
+    this.labels.clear();
   }
 
   protected _onTick(): void {
+    const delta = this._lastTickInfo.timeSinceLastTick;
     const { reducedMotion } = sceneContext(this.chipContext);
-    if (reducedMotion) return;
 
-    this.pulse += this._lastTickInfo.timeSinceLastTick / 1000;
+    this.pulse = (this.pulse + delta / 900) % 1;
+    const wave = 0.5 + 0.5 * Math.sin(this.pulse * Math.PI * 2);
 
-    const alpha = 0.55 + 0.45 * Math.sin(this.pulse * 3);
     for (const [id, sprite] of this.sprites) {
-      const node = this.node(id);
-      sprite.root.alpha = node?.status === "candidate" ? alpha : 1;
+      if (sprite.reveal >= 1) continue;
+
+      sprite.reveal = reducedMotion ? 1 : Math.min(1, sprite.reveal + delta / REVEAL_MS);
+      const eased = 1 - (1 - sprite.reveal) ** 3;
+
+      // Overshoot slightly on the way in: a commit lands, it does not fade up.
+      sprite.root.scale.set(eased * (1 + 0.18 * (1 - eased)));
+      sprite.root.alpha = eased;
+
+      const label = this.labels.get(id);
+      if (label !== undefined) label.alpha = eased * 0.75;
     }
+
+    this.drawPendingNode(wave);
   }
 
-  private node(id: NodeId): MapNode | undefined {
-    return sceneContext(this.chipContext).session.getState().nodes[id];
+  // --- what is visible ------------------------------------------------------
+
+  /**
+   * Nodes the player has actually resolved. A node the engine generated but
+   * nobody has reached does not exist as far as the graph is concerned.
+   */
+  private revealed(): MapNode[] {
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
+
+    return Object.keys(state.nodes)
+      .sort()
+      .map((id) => state.nodes[id])
+      .filter((node): node is MapNode => node !== undefined && node.status === "done");
   }
 
   private rebuild(): void {
-    const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-    const nodes = Object.keys(state.nodes)
-      .sort()
-      .flatMap((id) => {
-        const node = state.nodes[id];
-        return node === undefined ? [] : [node];
-      });
+    const nodes = this.revealed();
 
     this.drawEdges(nodes);
+    this.drawStubs();
+    this.drawBotLane();
 
     const live = new Set<NodeId>();
     for (const node of nodes) {
@@ -82,51 +137,119 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       this.upsert(node);
     }
 
-    // A node can only disappear if the run restarted under us.
     for (const [id, sprite] of this.sprites) {
       if (live.has(id)) continue;
       sprite.root.destroy({ children: true });
       this.sprites.delete(id);
+      this.labels.get(id)?.destroy();
+      this.labels.delete(id);
     }
   }
 
   private drawEdges(nodes: readonly MapNode[]): void {
     this.edges.clear();
 
-    const byId = new Map(nodes.map((node) => [node.id, node]));
+    const shown = new Set(nodes.map((node) => node.id));
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
 
     for (const node of nodes) {
       for (const nextId of node.next) {
-        const next = byId.get(nextId);
+        if (!shown.has(nextId)) continue;
+        const next = state.nodes[nextId];
         if (next === undefined) continue;
 
-        const from = { x: nodeX(node.lane), y: nodeY(node.depth) };
-        const to = { x: nodeX(next.lane), y: nodeY(next.depth) };
-        const colour = laneColour(next.lane === 0 ? node.lane : next.lane, next.kind);
-        const walked = node.status === "done" && next.status === "done";
-
-        if (from.x === to.x) {
-          this.edges.moveTo(from.x, from.y).lineTo(to.x, to.y);
-        } else {
-          // A fork or a merge bends once, the way `git log --graph` draws it:
-          // straight down the old column, then across into the new one.
-          const bend = to.y - NODE_RADIUS * 2;
-          this.edges
-            .moveTo(from.x, from.y)
-            .lineTo(from.x, bend)
-            .quadraticCurveTo(from.x, to.y, to.x, to.y);
-        }
-
-        this.edges.stroke({
-          width: EDGE_WIDTH,
-          color: colour,
-          alpha: walked ? 0.9 : 0.35,
-        });
+        drawEdge(this.edges, node, next, laneColour(next.lane, next.kind), 0.95);
       }
     }
   }
 
+  /**
+   * The branches still open from where you stand, as short unlabelled stubs.
+   *
+   * They are not nodes and cannot be clicked — the choice is made in the panel,
+   * which can say what each one costs. They exist so the shape of the decision
+   * is visible: one stub is a corridor, three is a fork.
+   */
+  private drawStubs(): void {
+    this.stubs.clear();
+
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
+    if (state.phase.kind !== "choose_node") return;
+
+    const head = state.nodes[state.player.nodeId];
+    if (head === undefined) return;
+
+    for (const id of state.phase.candidates) {
+      const candidate = state.nodes[id];
+      if (candidate === undefined) continue;
+      drawStub(this.stubs, head, candidate.lane, laneColour(candidate.lane, candidate.kind));
+    }
+  }
+
+  /**
+   * `main` as the rivals are pushing it, drawn as a dashed continuation.
+   *
+   * They do not create commits here: a bot's progress is a pace, not a list of
+   * things it wrote, and drawing nodes for it would claim more than the engine
+   * knows. A dashed lane is the honest version, and it reads the way an
+   * unfetched remote does.
+   *
+   * It is drawn wherever `main` is not already solid — behind you as well as
+   * ahead. A rival that is behind, while you are off on a branch, would
+   * otherwise have its ref floating against an empty column.
+   */
+  private drawBotLane(): void {
+    this.botLane.clear();
+
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
+
+    const main = mainLineNodes(state, state.sprint);
+    if (main.length === 0) return;
+
+    const lead = Math.max(
+      0,
+      ...Object.values(state.bots)
+        .filter((bot) => !bot.fired)
+        .map((bot) => bot.sprintProgress),
+    );
+
+    // One row past the leader, because a ref sits between two nodes while its
+    // accumulator fills.
+    const upTo = Math.min(lead + 1, main.length - 1);
+
+    for (let index = 0; index < upTo; index += 1) {
+      const below = main[index];
+      const above = main[index + 1];
+      if (below === undefined || above === undefined) continue;
+      if (below.status === "done" && above.status === "done") continue;
+
+      dashedLine(this.botLane, nodeX(0), nodeY(below.depth), nodeY(above.depth));
+    }
+
+    this.botLane.stroke({ width: 3, color: THEME.bot, alpha: 0.32, cap: "round" });
+  }
+
+  private drawPendingNode(wave: number): void {
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
+
+    this.pending.clear();
+    if (state.phase.kind === "game_over") return;
+
+    const head = state.nodes[state.player.nodeId];
+    if (head === undefined || head.status === "done") return;
+
+    this.pending.position.set(nodeX(head.lane), nodeY(head.depth));
+    drawPending(this.pending, wave);
+  }
+
+  // --- commits --------------------------------------------------------------
+
   private upsert(node: MapNode): void {
+    const { translate } = sceneContext(this.chipContext);
     let sprite = this.sprites.get(node.id);
 
     if (sprite === undefined) {
@@ -134,7 +257,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       const graphics = new Graphics();
       root.addChild(graphics);
 
-      const glyph = nodeGlyph(node.kind);
+      const glyph = glyphFor(node);
       if (glyph !== "") {
         const text = new Text({ text: glyph, style: glyphStyle });
         text.anchor.set(0.5);
@@ -142,49 +265,94 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       }
 
       root.eventMode = "static";
-      root.cursor = "pointer";
-      root.hitArea = { contains: (x, y) => x * x + y * y <= (NODE_RADIUS + 8) ** 2 };
-
-      root.on("pointerover", () => {
-        this.hovered = node.id;
-        this.emit("nodeHover", node.id);
-        this.refresh(node.id);
-      });
+      root.cursor = "help";
+      root.hitArea = { contains: (x, y) => x * x + y * y <= (NODE_RADIUS + 10) ** 2 };
+      root.on("pointerover", () => this.setHovered(node.id));
       root.on("pointerout", () => {
-        if (this.hovered !== node.id) return;
-        this.hovered = null;
-        this.emit("nodeHover", null);
-        this.refresh(node.id);
+        if (this.hovered === node.id) this.setHovered(null);
       });
-      root.on("pointertap", () => this.emit("nodeTap", node.id));
 
       this.nodeLayer.addChild(root);
-      sprite = { root, graphics };
+      sprite = { root, graphics, reveal: 0 };
       this.sprites.set(node.id, sprite);
+
+      const label = new Text({
+        text: `${nodePrefix(node.kind, node.commit?.mode)}: ${translate({
+          key: `nodes.${node.kind}.name`,
+        })}`,
+        style: labelStyle,
+      });
+      label.anchor.set(0, 0.5);
+      label.alpha = 0;
+      this.labelLayer.addChild(label);
+      this.labels.set(node.id, label);
     }
 
-    sprite.root.position.set(nodeX(node.lane), nodeY(node.depth));
-    drawNode(sprite.graphics, node, this.hovered === node.id);
+    const x = nodeX(node.lane);
+    const y = nodeY(node.depth);
+
+    sprite.root.position.set(x, y);
+    drawCommit(sprite.graphics, node, this.hovered === node.id);
+
+    const label = this.labels.get(node.id);
+    if (label !== undefined) {
+      label.position.set(x + NODE_RADIUS + 12, y);
+      label.visible = this.showLabels;
+    }
   }
 
-  private refresh(id: NodeId): void {
-    const node = this.node(id);
+  private setHovered(id: NodeId | null): void {
+    this.hovered = id;
+    this.emit("nodeHover", id);
+
+    for (const [nodeId, sprite] of this.sprites) {
+      const node = this.node(nodeId);
+      if (node !== undefined) drawCommit(sprite.graphics, node, this.hovered === nodeId);
+    }
+  }
+
+  private node(id: NodeId): MapNode | undefined {
+    const { session } = sceneContext(this.chipContext);
+    return session.getState().nodes[id];
+  }
+
+  /** Screen position of a commit, so the HUD can put a tooltip beside it. */
+  screenPositionOf(id: NodeId): { x: number; y: number } | null {
     const sprite = this.sprites.get(id);
-    if (node === undefined || sprite === undefined) return;
-    drawNode(sprite.graphics, node, this.hovered === id);
+    if (sprite === undefined) return null;
+
+    const global = sprite.root.getGlobalPosition();
+    return { x: global.x, y: global.y };
   }
 
-  /** World position of a node, for the camera and the cursors. */
-  positionOf(id: NodeId): { x: number; y: number } | null {
-    const node = this.node(id);
-    if (node === undefined) return null;
-    return { x: nodeX(node.lane), y: nodeY(node.depth) };
+  /** Labels are hidden when zoomed out, where they would overlap into noise. */
+  setLabelsVisible(visible: boolean): void {
+    if (this.showLabels === visible) return;
+    this.showLabels = visible;
+    for (const label of this.labels.values()) label.visible = visible;
   }
 
-  /** Flashes a node, for a conflict or a failure. */
-  flash(id: NodeId, colour = THEME.lane.hotfix): void {
-    const sprite = this.sprites.get(id);
-    if (sprite === undefined) return;
-    sprite.graphics.circle(0, 0, NODE_RADIUS + 7).stroke({ width: 3, color: colour });
+  /** Every revealed node's position, for the camera's fit-to-content. */
+  bounds(): { minX: number; maxX: number; minY: number; maxY: number } | null {
+    const nodes = this.revealed();
+    const head = this.node(sceneContext(this.chipContext).session.getState().player.nodeId);
+    const all = head === undefined ? nodes : [...nodes, head];
+    if (all.length === 0) return null;
+
+    const xs = all.map((node) => nodeX(node.lane));
+    const ys = all.map((node) => nodeY(node.depth));
+
+    return {
+      minX: Math.min(...xs),
+      maxX: Math.max(...xs),
+      minY: Math.min(...ys),
+      maxY: Math.max(...ys),
+    };
   }
+}
+
+/** A glyph on every node is a glyph on none, so ordinary commits stay plain. */
+function glyphFor(node: MapNode): string {
+  if (node.kind === "commit" || node.kind === "feature") return "";
+  return nodeGlyph(node.kind);
 }

@@ -22,7 +22,6 @@ import {
   SKILLS,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { canonicalJson, fnv1aHex } from "@/game/core/hash";
 import { fingerprintFor, RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 
 /**

@@ -128,7 +128,22 @@
     "unreviewed": "{count, plural, one {# unread commit} other {# unread commits}}",
     "overextended": "Two features open",
     "overextendedHint": "Everything costs double and every roll is penalised.",
-    "chooseNode": "Pick the next commit on the graph."
+    "chooseNode": "Where next? Each option opens a different commit.",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "zoomFit": "Fit the whole history",
+    "recentre": "Back to HEAD",
+    "tooltipAuthor": "Written",
+    "tooltipByHand": "by hand",
+    "tooltipByMachine": "by the machine",
+    "tooltipReview": "Review",
+    "tooltipRead": "read",
+    "tooltipUnread": "unread",
+    "tooltipBranch": "Branch",
+    "tooltipFeature": "feature",
+    "tooltipHotfix": "hotfix",
+    "tooltipGrants": "Grants",
+    "graphHint": "Wheel to zoom, drag to pan. Hover a commit for the detail."
   },
   "leaderboard": {
     "title": "Leaderboard",

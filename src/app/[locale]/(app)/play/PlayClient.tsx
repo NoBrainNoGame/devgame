@@ -76,6 +76,9 @@ export function PlayClient(props: PlayClientProps) {
   const [submitted, setSubmitted] = useState(false);
 
   const handleRef = useRef<GameHandle | null>(null);
+  // Mirrored into state as well as a ref: the camera controls are a component
+  // and need a render when the handle arrives.
+  const [handle, setHandle] = useState<GameHandle | null>(null);
   const awardedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -155,8 +158,9 @@ export function PlayClient(props: PlayClientProps) {
     handleRef.current?.dispatch(action);
   }, []);
 
-  const onReady = useCallback((handle: GameHandle | null) => {
-    handleRef.current = handle;
+  const onReady = useCallback((created: GameHandle | null) => {
+    handleRef.current = created;
+    setHandle(created);
   }, []);
 
   // --- persistence -------------------------------------------------------
@@ -262,6 +266,7 @@ export function PlayClient(props: PlayClientProps) {
   return (
     <RunStage
       runKey={stage.runKey}
+      handle={handle}
       options={{
         seed: stage.seed,
         mode: stage.mode,

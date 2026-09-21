@@ -5,11 +5,17 @@ import type { FxQueue } from "@/game/chips/FxQueue";
 import type { GraphView } from "@/game/chips/GraphView";
 
 /**
- * Turns pointer events on the graph into intentions.
+ * What the graph does when you point at it.
  *
- * Clicking a node the player may step to moves there. Clicking anything else
- * while the canvas is busy skips the animation — the most common reason to
- * click during a sequence is impatience, so that is what a stray click does.
+ * Hovering a commit explains it; clicking one does nothing. The graph is a
+ * record of what happened, and you cannot act on the past — every decision is
+ * made in the panel, where there is room to say what each option costs and what
+ * it is likely to do. A node you could click would be a second, worse copy of
+ * that interface, and it would have to exist before you committed to it, which
+ * is precisely what the graph is not allowed to show.
+ *
+ * A click anywhere still skips the animation: the commonest reason to click
+ * during a sequence is impatience.
  */
 export class InputController extends booyah.ChipBase {
   constructor(
@@ -20,23 +26,14 @@ export class InputController extends booyah.ChipBase {
   }
 
   protected _onActivate(): void {
-    const { session, app } = sceneContext(this.chipContext);
+    const { app } = sceneContext(this.chipContext);
 
     this._subscribe(this.graph, "nodeHover", (...args: unknown[]) => {
-      gameStore.setState({ hoveredNodeId: (args[0] as string | null) ?? null });
-    });
-
-    this._subscribe(this.graph, "nodeTap", (...args: unknown[]) => {
-      const nodeId = args[0] as string | undefined;
-      if (nodeId === undefined) return;
-
-      if (gameStore.getState().pendingAnimation) {
-        this.fx.skip();
-        return;
-      }
-
-      const result = session.dispatch({ type: "move", nodeId });
-      if (!result.ok) gameStore.setState({ lastError: result.reason });
+      const nodeId = (args[0] as string | null) ?? null;
+      gameStore.setState({
+        hoveredNodeId: nodeId,
+        hoveredAt: nodeId === null ? null : this.graph.screenPositionOf(nodeId),
+      });
     });
 
     this._subscribe(app.canvas, "pointerdown", () => {
@@ -45,6 +42,6 @@ export class InputController extends booyah.ChipBase {
   }
 
   protected _onTerminate(): void {
-    gameStore.setState({ hoveredNodeId: null });
+    gameStore.setState({ hoveredNodeId: null, hoveredAt: null });
   }
 }

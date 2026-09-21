@@ -4,6 +4,7 @@ import { BotCursors } from "@/game/chips/BotCursors";
 import * as booyah from "@/game/chips/booyah";
 import { Camera } from "@/game/chips/Camera";
 import { ContainerChip } from "@/game/chips/ContainerChip";
+import { sceneContext } from "@/game/chips/context";
 import { FxQueue } from "@/game/chips/FxQueue";
 import { GraphView } from "@/game/chips/GraphView";
 import { InputController } from "@/game/chips/InputController";
@@ -29,17 +30,12 @@ export class RunScene extends ContainerChip {
 
     const graph = new GraphView();
     const fx = new FxQueue();
+    const camera = new Camera(graph);
+    sceneContext(this.chipContext).controls.camera = camera;
 
     this._activateChildChip(
       new booyah.Parallel(
-        [
-          new Camera(),
-          graph,
-          new BotCursors(),
-          new PlayerMarker(),
-          fx,
-          new InputController(graph, fx),
-        ],
+        [camera, graph, new BotCursors(), new PlayerMarker(), fx, new InputController(graph, fx)],
         { terminateOnCompletion: false },
       ),
     );

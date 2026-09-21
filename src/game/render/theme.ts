@@ -24,13 +24,14 @@ export const THEME = {
   },
 
   node: {
-    locked: 0x3a4050,
-    candidate: 0xf5d76e,
-    current: 0xffffff,
-    doneCraft: 0x62c073,
-    doneAi: 0x9b7fd4,
-    /** Ring drawn around an AI commit nobody has read yet. */
+    /** Fill of a commit you wrote by hand. */
+    craft: 0x62c073,
+    /** Fill of a commit the machine wrote. */
+    ai: 0x9b7fd4,
+    /** Ring around an AI commit nobody has read yet. */
     unreviewed: 0xe0a458,
+    /** The uncommitted node you are standing on. */
+    pending: 0x3a4050,
   },
 
   player: 0xffffff,
@@ -39,17 +40,28 @@ export const THEME = {
   energy: 0xf5d76e,
 } as const;
 
-/** Column width and row height, in world pixels. */
-export const LANE_WIDTH = 52;
-export const DEPTH_HEIGHT = 58;
-export const NODE_RADIUS = 11;
-export const EDGE_WIDTH = 2.5;
-
 /**
- * Colour is decided by the lane, not the kind — except for the two kinds that
- * only ever appear spliced into a negative lane, which get their own so an
- * emergency does not read as feature work.
+ * Column width and row height, in world pixels.
+ *
+ * Generous compared with a real git client: there are far fewer commits here,
+ * and every one of them is a decision somebody made rather than a line in a
+ * history nobody reads.
  */
+export const LANE_WIDTH = 64;
+export const DEPTH_HEIGHT = 70;
+export const NODE_RADIUS = 13;
+/** Thick and rounded, the way a desktop git client draws a lane. */
+export const EDGE_WIDTH = 4;
+/** How far a merge or a fork bends out of its column. */
+export const BEND = 26;
+
+export const ZOOM: { min: number; max: number; step: number; default: number } = {
+  min: 0.4,
+  max: 2.4,
+  step: 1.15,
+  default: 1,
+};
+
 export function laneColour(lane: number, kind: NodeKind): number {
   if (kind === "hotfix") return THEME.lane.hotfix;
   if (kind === "refactor" && lane < 0) return THEME.lane.refactor;
@@ -58,15 +70,43 @@ export function laneColour(lane: number, kind: NodeKind): number {
   return THEME.lane.feature;
 }
 
+/**
+ * The conventional-commit prefix a node would carry, so the graph reads like a
+ * history rather than a diagram.
+ */
+export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): string {
+  switch (kind) {
+    case "feature_merge":
+    case "sprint_merge":
+      return "merge";
+    case "hotfix":
+      return "fix";
+    case "refactor":
+      return "refactor";
+    case "release":
+      return "release";
+    case "chore":
+      return "chore";
+    case "risky":
+      return "perf";
+    case "sprint_start":
+      return "init";
+    case "commit":
+    case "fork":
+    case "feature":
+      return mode === "ai" ? "chore" : "feat";
+  }
+}
+
 /** The glyph drawn inside a node, so kinds read at a glance. */
 export function nodeGlyph(kind: NodeKind): string {
   switch (kind) {
     case "sprint_start":
-      return "▸";
+      return "◆";
     case "fork":
       return "⑂";
     case "feature":
-      return "·";
+      return "";
     case "feature_merge":
     case "sprint_merge":
       return "⑃";

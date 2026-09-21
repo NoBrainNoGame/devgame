@@ -128,7 +128,22 @@
     "unreviewed": "{count, plural, one {# commit non relu} other {# commits non relus}}",
     "overextended": "Deux features ouvertes",
     "overextendedHint": "Tout coûte le double et tous les jets sont pénalisés.",
-    "chooseNode": "Choisissez le prochain commit sur le graphe."
+    "chooseNode": "Où continuer ? Chaque option ouvre un commit différent.",
+    "zoomIn": "Zoomer",
+    "zoomOut": "Dézoomer",
+    "zoomFit": "Voir tout l'historique",
+    "recentre": "Revenir à HEAD",
+    "tooltipAuthor": "Écrit",
+    "tooltipByHand": "à la main",
+    "tooltipByMachine": "par la machine",
+    "tooltipReview": "Relecture",
+    "tooltipRead": "relu",
+    "tooltipUnread": "non relu",
+    "tooltipBranch": "Branche",
+    "tooltipFeature": "feature",
+    "tooltipHotfix": "hotfix",
+    "tooltipGrants": "Débloque",
+    "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail."
   },
   "leaderboard": {
     "title": "Classement",

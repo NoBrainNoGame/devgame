@@ -77,7 +77,7 @@ export class FxQueue extends booyah.Queue {
         return new Pop(
           at,
           event.mode === "ai" ? "ai" : "+1",
-          event.mode === "ai" ? THEME.node.doneAi : THEME.node.doneCraft,
+          event.mode === "ai" ? THEME.node.ai : THEME.node.craft,
           380,
           this.skipFlag,
         );

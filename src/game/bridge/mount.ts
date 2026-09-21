@@ -5,6 +5,7 @@ import { Application } from "pixi.js";
 import { GameSession, type SessionOptions } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
+import type { SceneControls } from "@/game/chips/context";
 import { GameRoot } from "@/game/chips/GameRoot";
 import type { I18nText } from "@/game/core/i18n";
 import type { PlayerAction } from "@/game/core/types";
@@ -28,6 +29,15 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
 
 export interface GameHandle {
   dispatch(action: PlayerAction): { ok: true } | { ok: false; reason: string };
+  /** The graph's view controls, for the buttons beside the canvas. */
+  camera: {
+    zoomIn(): void;
+    zoomOut(): void;
+    /** Back to following the head commit at the default scale. */
+    recentre(): void;
+    /** Zoom out until the whole revealed history fits. */
+    fit(): void;
+  };
   /** The run so far, ready to persist. */
   save(): RunSaveDto;
   getActions(): PlayerAction[];
@@ -87,12 +97,15 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     ...(options.resume === undefined ? {} : { resumeActions: options.resume.actions }),
   });
 
+  const controls: SceneControls = { camera: null };
+
   const runner = new booyah.Runner(() => new GameRoot(), {
     rootContext: {
       app,
       session,
       translate: options.translate,
       reducedMotion: options.reducedMotion ?? false,
+      controls,
     },
     minFps: 10,
   });
@@ -108,6 +121,12 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   const handle: GameHandle = {
     dispatch(action) {
       return session.dispatch(action);
+    },
+    camera: {
+      zoomIn: () => controls.camera?.zoomIn(),
+      zoomOut: () => controls.camera?.zoomOut(),
+      recentre: () => controls.camera?.recentre(),
+      fit: () => controls.camera?.fit(),
     },
     save() {
       return session.save();
