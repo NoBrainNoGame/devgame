@@ -20,7 +20,7 @@ const PREFIX_COLOUR: Record<LogLine["kind"], string> = {
  * The run so far, written as a commit history. It is the game's memory: the
  * canvas shows where you are, this shows how you got there.
  */
-export function CommitLog({ log }: { log: LogLine[] }) {
+export function CommitLog({ log, compact = false }: { log: LogLine[]; compact?: boolean }) {
   const gameText = useGameText();
   const heading = useTranslations("hud");
   const endRef = useRef<HTMLDivElement>(null);
@@ -33,9 +33,11 @@ export function CommitLog({ log }: { log: LogLine[] }) {
 
   return (
     <section className="flex min-h-0 flex-1 flex-col">
-      <h2 className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {heading("logTitle")}
-      </h2>
+      {compact ? null : (
+        <h2 className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {heading("logTitle")}
+        </h2>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1 text-xs leading-relaxed">
         {log.map((line) => (

@@ -12,10 +12,9 @@
 
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
 export { mountGame } from "@/game/bridge/mount";
-export type { CriterionView, PlayerView, RunSnapshot, TicketView } from "@/game/bridge/snapshot";
-export type { GameStore } from "@/game/bridge/store";
+export type { PlayerView, RunSnapshot, TicketView } from "@/game/bridge/snapshot";
+export type { GameStore, ReviewEvent } from "@/game/bridge/store";
 export { gameStore, resetGameStore, useGameStore } from "@/game/bridge/store";
-export type { CriterionKind } from "@/game/content";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";

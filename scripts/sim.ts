@@ -13,10 +13,9 @@
 import { SKILLS } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { unreadAiOn } from "@/game/core/rules/criteria";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
-import { currentTicket, getTicket, openTickets } from "@/game/core/rules/tickets";
+import { currentTicket, getTicket, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
 import { createRun, hashState } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
@@ -109,7 +108,7 @@ function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction 
   if (current === null || open.length < 2) return undefined;
 
   const remaining = (ticket: Ticket): number =>
-    ticket.points - ticket.filled + ticket.criteria.length * 2 + (ticket.mustWrite ? -5 : 0);
+    ticket.points - ticket.filled + (ticket.mustWrite ? -5 : 0);
   const best = open.reduce((a, b) => (remaining(b) < remaining(a) ? b : a));
   if (best.id === current.id) return undefined;
 
@@ -121,7 +120,7 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const isCraft = (a: PlayerAction) =>
     a.type === "commit" && a.mode === "craft" && a.kind === undefined;
   const isReview = (a: PlayerAction) => a.type === "review";
-  const isMerge = (a: PlayerAction) => a.type === "merge";
+  const isSubmit = (a: PlayerAction) => a.type === "submit";
   const isDevops = (a: PlayerAction) => a.type === "devops";
   const writtenAs = (kind: string) => (a: PlayerAction) =>
     a.type === "commit" && a.kind === kind && a.mode === "craft";
@@ -139,39 +138,27 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const start = chooseStart(state, actions);
   if (start !== undefined) return start;
 
-  const merge = actions.find(isMerge);
-  if (merge !== undefined) return merge;
+  // A rejection: start over when the fixes would cost more than the work
+  // already done, carry on otherwise.
+  if (state.phase.kind === "ticket_rejected") {
+    return state.phase.bugs * 2 > (currentTicket(state)?.filled ?? 0)
+      ? { type: "restart" }
+      : { type: "resume" };
+  }
 
-  const checkout = chooseCheckout(state, actions);
-  if (checkout !== undefined) return checkout;
-
-  // What the ticket asks for. A criterion left unmet is a ticket that never
-  // merges, so every policy answers them; the two committed policies still
-  // never take a detour for its own sake.
-  if (ticket !== null) {
-    const missing = new Set(
-      ticket.criteria.filter((kind) => {
-        if (kind === "documented")
-          return !ticket.nodeIds.some((id) => state.nodes[id]?.kind === "docs");
-        if (kind === "refactored")
-          return !ticket.nodeIds.some((id) => state.nodes[id]?.kind === "refactor");
-        if (kind === "reviewed") return unreviewed > 0;
-        return false;
-      }),
-    );
-    if (missing.has("documented")) {
-      const docs = actions.find(writtenAs("docs"));
-      if (docs !== undefined) return docs;
-    }
-    if (missing.has("refactored") || ticket.criteria.includes("clean")) {
-      const refactor = actions.find(writtenAs("refactor"));
-      if (refactor !== undefined && (missing.has("refactored") || state.debt > 30)) return refactor;
-    }
-    if (missing.has("reviewed") && ticket.filled >= ticket.points) {
+  // Ready to submit. The reviewer catches unread machine work, so a policy
+  // that can read does so first; the naive `ai` policy submits blind.
+  const submit = actions.find(isSubmit);
+  if (submit !== undefined) {
+    if (policy !== "ai" && unreviewed > 0) {
       const review = actions.find(isReview);
       if (review !== undefined) return review;
     }
+    return submit;
   }
+
+  const checkout = chooseCheckout(state, actions);
+  if (checkout !== undefined) return checkout;
 
   if (policy === "mixed" || policy === "careful") {
     if (state.debt >= 40) {

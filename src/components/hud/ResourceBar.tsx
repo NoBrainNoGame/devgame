@@ -75,25 +75,39 @@ export function ResourceBar({ snapshot }: { snapshot: RunSnapshot }) {
         <TooltipContent>{t("qualityHint")}</TooltipContent>
       </Tooltip>
 
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="w-52 shrink-0">
+            <div className="mb-1 flex items-baseline justify-between">
+              <span className="text-muted-foreground">
+                {common("sprint")}{" "}
+                <span className="text-foreground tabular-nums">{snapshot.sprint}</span>
+              </span>
+              <span className="tabular-nums text-xs">
+                {t("sprintTurn", { turn: snapshot.sprintTurn, max: snapshot.sprintTurns })}
+              </span>
+            </div>
+            <Progress
+              value={(snapshot.sprintTurn / snapshot.sprintTurns) * 100}
+              className="[&>*]:bg-branch-dev"
+            />
+            <p className="mt-1 text-muted-foreground text-xs">
+              {t("releaseIn", { count: Math.max(0, snapshot.sprintTurns - snapshot.sprintTurn) })}
+            </p>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>{t("sprintHint")}</TooltipContent>
+      </Tooltip>
+
       <div className="flex flex-1 flex-wrap items-center justify-end gap-3 text-muted-foreground">
-        <span>
-          {common("sprint")} <span className="text-foreground tabular-nums">{snapshot.sprint}</span>
-        </span>
-        <span>
-          {common("turn")}{" "}
-          <span className="text-foreground tabular-nums">
-            {snapshot.sprintTurn}/{snapshot.sprintTurns}
-          </span>
-        </span>
         <span>
           {common("commits")}{" "}
           <span className="text-foreground tabular-nums">{player.totalCommits}</span>
         </span>
-        {player.unreviewed > 0 ? (
-          <Badge variant="outline" className="border-debt text-debt">
-            {t("unreviewed", { count: player.unreviewed })}
-          </Badge>
-        ) : null}
+        <span>
+          {t("delivered")}{" "}
+          <span className="text-foreground tabular-nums">{snapshot.ticketsDelivered}</span>
+        </span>
         {player.wip > 0 ? (
           <Badge variant="outline" className="border-branch-hotfix text-branch-hotfix">
             {t("wip", { count: player.wip })}

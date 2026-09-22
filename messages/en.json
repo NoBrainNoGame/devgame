@@ -135,25 +135,59 @@
     "writeInstead": "Or write this commit as:",
     "byHand": "by hand",
     "byMachine": "with the AI",
-    "noTicket": "Nothing in hand: start a ticket from the backlog.",
+    "noTicket": "Nothing in hand: open the project and start a ticket.",
+    "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
+    "previewPoints": "Points: {min} to {max}",
+    "quality": "Prod",
+    "qualityHint": "Every bug in production fills this gauge. Full means you are fired. A sprint without an incident lowers it.",
+    "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}",
+    "board": "Project",
+    "boardTitle": "Project board",
+    "boardSubtitle": "Sprint {sprint} · {open, plural, one {# open ticket} other {# open tickets}}",
+    "column": {
+      "backlog": "Backlog",
+      "open": "In progress",
+      "merged": "Delivered"
+    },
+    "columnEmpty": "Nothing here.",
+    "startTicket": "Start",
+    "checkout": "Switch to it",
+    "grants": "Delivers:",
+    "storyPointsShort": "{count, plural, one {# story point} other {# story points}}",
+    "storyPointsOf": "{filled}/{max} story points",
+    "storyPointsHint": "Every commit that lands fills points: one by hand, two by the machine. Points full, the ticket goes to review.",
+    "unreadOn": "{count, plural, one {# unread AI commit} other {# unread AI commits}}",
+    "reworkOf": "{count, plural, one {# fix point} other {# fix points}}",
+    "readyToSubmit": "Ready: open the PR.",
+    "inHand": "The ticket in hand.",
+    "clickToSwitch": "Click to switch to it (free).",
     "mustWrite": {
       "hotfix": "Production is down: only fix commits count here.",
       "refactor": "The debt exploded: only refactor commits count here."
     },
-    "merge": "Merge into dev",
-    "mergeHint": "The ticket is ready: every criterion holds.",
-    "switchTo": "Other open tickets",
-    "checkout": "Switch to",
-    "backlog": "Backlog",
-    "startTicket": "Start",
-    "ticketPoints": "{filled}/{max} pts",
-    "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
-    "noCriteria": "No criteria: the points are enough.",
-    "criteriaTitle": "Acceptance criteria",
-    "previewPoints": "Points: {min} to {max}",
-    "quality": "Prod",
-    "qualityHint": "Every bug in production fills this gauge. Full means you are fired. A sprint without an incident lowers it.",
-    "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}"
+    "submit": "Open the PR",
+    "submitHint": "Points full: the review reads the ticket and decides.",
+    "sprintTurn": "turn {turn}/{max}",
+    "releaseIn": "{count, plural, =0 {release at the end of this turn} one {release in # turn} other {release in # turns}}",
+    "sprintHint": "A sprint is a box of turns. When it is empty, dev ships to production with whatever was merged, and the bugs come back.",
+    "delivered": "Delivered",
+    "reviewTitle": "Reviewing PR #{id}",
+    "reviewReading": "Reading {count, plural, one {# commit} other {# commits}}…",
+    "reviewAllRead": "Everything was read, no bug.",
+    "reviewDebt": "Technical debt: {debt} (ceiling {max})",
+    "reviewAccepted": "Accepted. The ticket merges into dev.",
+    "reviewRejected": "Rejected.",
+    "reviewMerge": "Merge",
+    "reviewRework": "{count, plural, one {# fix point added} other {# fix points added}}.",
+    "reviewParallel": "A new ticket arrived alongside: the sprint does not wait.",
+    "reviewRestart": "Start over",
+    "reviewRestartHint": "The commits are thrown away, the branch restarts from dev.",
+    "reviewResume": "Carry on",
+    "reviewResumeHint": "Keep the commits, fix what was found.",
+    "skip": "Skip",
+    "reviewUnread": "{count, plural, one {# unread AI commit} other {# unread AI commits}}",
+    "reviewBugs": "{bugs, plural, one {# bug found} other {# bugs found}}",
+    "reviewNoBugs": "no bug found"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -648,7 +682,11 @@
       "incident": {
         "commit": "bug in production, hotfix open",
         "release": "the release broke production, hotfix open"
-      }
+      },
+      "pr_accepted": "PR accepted, ticket merged into dev",
+      "ticket_restarted": "branch thrown away, {count, plural, one {# commit} other {# commits}} fewer, starting again from dev",
+      "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
+      "pr_rejected_debt": "PR rejected, the debt is too high"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -671,25 +709,9 @@
       "rebase_why": "{count, plural, one {# merge landed on dev} other {# merges landed on dev}} since it was opened",
       "behind_dev": "{count, plural, one {# merge} other {# merges}} behind dev",
       "merge_regen": "Gives back {energy} ⚡",
-      "merge_risk": "{percent} % risk of something at the merge"
-    },
-    "criteria": {
-      "reviewed": {
-        "name": "Reviewed",
-        "desc": "No AI commit on the ticket is left unread."
-      },
-      "documented": {
-        "name": "Documented",
-        "desc": "The ticket carries a documentation commit."
-      },
-      "refactored": {
-        "name": "Refactored",
-        "desc": "The ticket carries a refactor commit."
-      },
-      "clean": {
-        "name": "Debt under control",
-        "desc": "Technical debt is low when it merges."
-      }
+      "merge_risk": "{percent} % risk of something at the merge",
+      "unread_risk": "{count, plural, one {# unread AI commit} other {# unread AI commits}}: the review may find bugs",
+      "debt_refusal": "Debt above the ceiling ({max}): the review will refuse"
     },
     "tickets": {
       "feature": {

@@ -230,13 +230,21 @@ export const BALANCE = {
      * one is strictly better than the one beside it and there is no decision.
      */
     skillExtraPoints: { min: 2, max: 3 },
-    criteriaCount: { min: 0, max: 2 },
-    criteriaWeights: { reviewed: 30, documented: 30, refactored: 25, clean: 15 },
   },
 
-  criteria: {
-    /** `clean`: the debt the ticket may merge under. */
-    cleanDebtMax: 30,
+  /**
+   * The pull request review. A ticket with its points full is submitted; the
+   * reviewer reads it and either lands it or sends it back with what they
+   * found. What they find is what the design punishes: machine-written work
+   * nobody read, and a codebase too indebted to take more.
+   */
+  acceptance: {
+    /** Chance in percent that each unread machine-written commit is caught as a bug. */
+    bugDetectPct: 55,
+    /** Debt above which a review refuses, whatever the code. */
+    maxDebt: 45,
+    /** Story points added per bug found, for the fixes. */
+    pointsPerBug: 1,
   },
 
   /**

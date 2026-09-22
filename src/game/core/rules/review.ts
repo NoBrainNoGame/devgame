@@ -1,11 +1,10 @@
 import type { Effects } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { unreadAiOn } from "@/game/core/rules/criteria";
 import { repayDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
-import { currentTicket } from "@/game/core/rules/tickets";
+import { currentTicket, unreadAiOn } from "@/game/core/rules/tickets";
 import type { NodeId, RunState } from "@/game/core/types";
 
 /**

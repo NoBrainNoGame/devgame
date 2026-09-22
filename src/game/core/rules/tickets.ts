@@ -1,8 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { unreadAiOn } from "@/game/core/rules/criteria";
-import type { DetourKind, RunState, Ticket, TicketId } from "@/game/core/types";
+import type { DetourKind, NodeId, RunState, Ticket, TicketId } from "@/game/core/types";
 
 /**
  * The board: what is waiting, what is open, and which one is being written.
@@ -40,6 +39,19 @@ export function getTicket(state: RunState, id: TicketId): Ticket {
   const ticket = state.tickets[id];
   if (ticket === undefined) throw new Error(`Unknown ticket ${id}`);
   return ticket;
+}
+
+/** Machine-written commits on the ticket nobody has read, oldest first. */
+export function unreadAiOn(state: RunState, ticket: Ticket): NodeId[] {
+  return ticket.nodeIds.filter((id) => {
+    const commit = state.nodes[id]?.commit;
+    return commit !== undefined && commit.mode === "ai" && !commit.reviewed;
+  });
+}
+
+/** Points full: the ticket may be submitted for review. */
+export function isReady(ticket: Ticket): boolean {
+  return ticket.filled >= ticket.points;
 }
 
 export function isOnHotfix(state: RunState): boolean {
@@ -97,7 +109,9 @@ export function forceTicket(
     status: "backlog",
     points,
     filled: 0,
-    criteria: [],
+    rework: 0,
+    debtAdded: 0,
+    rejections: 0,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
     nodeIds: [],
@@ -119,7 +133,7 @@ export function assignStaleTickets(context: RuleContext): void {
   }
 }
 
-function openTicket(context: RuleContext, ticket: Ticket, forced: boolean): void {
+export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean): void {
   const { state } = context;
   if (ticket.status !== "backlog") return;
 

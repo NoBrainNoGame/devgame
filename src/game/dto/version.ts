@@ -1,6 +1,5 @@
 import {
   AMBIENT_EVENT_IDS,
-  CRITERION_KINDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
@@ -61,7 +60,6 @@ export function fingerprintFor(epoch: number): string {
       relics: RELIC_IDS,
       devops: DEVOPS_IDS,
       profiles: PROFILE_IDS,
-      criteria: CRITERION_KINDS,
       failures: FAILURE_EVENT_IDS,
       merges: MERGE_EVENT_IDS,
       ambient: AMBIENT_EVENT_IDS,

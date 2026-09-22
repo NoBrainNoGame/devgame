@@ -1,4 +1,4 @@
-import { CRITERION_KINDS, type CriterionKind, SKILLS, type SkillId } from "@/game/content";
+import type { SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import type { Ticket, TicketId } from "@/game/core/types";
@@ -28,11 +28,15 @@ export function arriveTickets(context: RuleContext, skillPool: readonly SkillId[
   const pool = [...skillPool];
   const count = ticketsFor(context.state.sprint);
 
-  for (let i = 0; i < count; i += 1) {
-    const ticket = drawTicket(context, pool, i === 0);
-    context.state.tickets[ticket.id] = ticket;
-    emit(context, { type: "ticket_arrived", ticketId: ticket.id });
-  }
+  for (let i = 0; i < count; i += 1) arriveTicket(context, pool, i === 0);
+}
+
+/** One more ticket, now. Returns it so the caller may open it on the spot. */
+export function arriveTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean): Ticket {
+  const ticket = drawTicket(context, pool, guaranteed);
+  context.state.tickets[ticket.id] = ticket;
+  emit(context, { type: "ticket_arrived", ticketId: ticket.id });
+  return ticket;
 }
 
 /**
@@ -58,8 +62,6 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     points += rng.int(tickets.skillExtraPoints.min, tickets.skillExtraPoints.max);
   }
 
-  const criteria = drawCriteria(context, canLearnReview(context));
-
   const id: TicketId = `t${state.nextTicketSerial}`;
   state.nextTicketSerial += 1;
 
@@ -69,40 +71,12 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     status: "backlog",
     points,
     filled: 0,
-    criteria,
+    rework: 0,
+    debtAdded: 0,
+    rejections: 0,
     ...(skillId === undefined ? {} : { skillId }),
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
     nodeIds: [],
   };
-}
-
-function drawCriteria(context: RuleContext, reviewable: boolean): CriterionKind[] {
-  const { rng } = context;
-  const { criteriaCount, criteriaWeights } = BALANCE.tickets;
-
-  const count = rng.int(criteriaCount.min, criteriaCount.max);
-  const chosen: CriterionKind[] = [];
-
-  for (let i = 0; i < count; i += 1) {
-    // `reviewed` on a ticket the run can never review is a ticket that can
-    // never merge, which is not difficulty, it is a dead end.
-    const entries = CRITERION_KINDS.filter((kind) => !chosen.includes(kind))
-      .filter((kind) => kind !== "reviewed" || reviewable)
-      .map((kind) => ({ value: kind, weight: criteriaWeights[kind] }));
-    if (entries.length === 0) break;
-
-    chosen.push(rng.weighted(entries));
-  }
-
-  return chosen.sort();
-}
-
-/**
- * Whether this run can ever review: it already knows how, or a skill that
- * teaches it is among the account's unlocks and may still turn up.
- */
-function canLearnReview(context: RuleContext): boolean {
-  if (context.effects.canReview) return true;
-  return context.state.unlockedSkills.some((id) => SKILLS[id].effects.canReview === true);
 }

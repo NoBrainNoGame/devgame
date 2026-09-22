@@ -247,11 +247,12 @@ describe("energy and crunch", () => {
     expect(state.phase.kind === "game_over" && state.phase.reason).toBe("burnout");
   });
 
-  test("a merge hands energy back, costs a turn, and lands on dev with two parents", () => {
+  test("an accepted ticket hands energy back, costs a turn, and lands on dev with two parents", () => {
     const state = makeReady(inHand("regen"));
     const ticket = ticketInHand(state);
-    const result = applyAction(state, { type: "merge" });
+    const result = applyAction(state, { type: "submit" });
 
+    expect(eventsOfType(result.events, "pr_reviewed")[0]?.accepted).toBe(true);
     if (result.state.phase.kind === "resolve_conflict") return;
 
     const regen = eventsOfType(result.events, "energy").filter((e) => e.reason === "merge_regen");

@@ -15,12 +15,12 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * The turn's decisions, each labelled with what it will cost and what it might
- * do. Showing the odds is the single biggest departure from the original
+ * The turn's decision, each option labelled with what it will cost and what it
+ * might do. Showing the odds is the single biggest departure from the original
  * design: a hidden roll reads as unfairness, a visible one reads as a gamble.
  *
- * Two halves. The board — tickets to start, tickets to switch to — costs no
- * turn. The work — commit, review, merge — costs one.
+ * Only what costs a turn lives here: commit, review, submit. Starting and
+ * switching tickets are free and sit with the board and the ticket bar.
  */
 export function ActionPanel({
   snapshot,
@@ -35,12 +35,6 @@ export function ActionPanel({
 
   if (snapshot.phase.kind !== "choose_action") return null;
 
-  const starts = snapshot.actions.filter(
-    (action): action is Extract<PlayerAction, { type: "start" }> => action.type === "start",
-  );
-  const checkouts = snapshot.actions.filter(
-    (action): action is Extract<PlayerAction, { type: "checkout" }> => action.type === "checkout",
-  );
   const commits = snapshot.actions.filter(
     (action): action is Extract<PlayerAction, { type: "commit" }> => action.type === "commit",
   );
@@ -48,7 +42,7 @@ export function ActionPanel({
   const plain = commits.filter((action) => action.kind === undefined);
   const written = commits.filter((action) => action.kind !== undefined);
   const review = snapshot.actions.find((action) => action.type === "review");
-  const merge = snapshot.actions.find((action) => action.type === "merge");
+  const submit = snapshot.actions.find((action) => action.type === "submit");
   const devops = snapshot.actions.filter(
     (action): action is Extract<PlayerAction, { type: "devops" }> => action.type === "devops",
   );
@@ -72,6 +66,17 @@ export function ActionPanel({
           <p className="text-branch-hotfix text-xs">{t(`mustWrite.${current.mustWrite}`)}</p>
         )}
 
+        {submit === undefined ? null : (
+          <ActionButton
+            label={t("submit")}
+            hint={t("submitHint")}
+            preview={snapshot.previews[actionKey(submit)]}
+            busy={busy}
+            emphasis
+            onAct={() => onAct(submit)}
+          />
+        )}
+
         {plain.map((action) => (
           <ActionButton
             key={actionKey(action)}
@@ -82,6 +87,16 @@ export function ActionPanel({
             onAct={() => onAct(action)}
           />
         ))}
+
+        {review === undefined ? null : (
+          <ActionButton
+            label={t("review")}
+            hint={t("reviewHint")}
+            preview={snapshot.previews[actionKey(review)]}
+            busy={busy}
+            onAct={() => onAct(review)}
+          />
+        )}
 
         {written.length === 0 ? null : (
           <>
@@ -97,68 +112,7 @@ export function ActionPanel({
             ))}
           </>
         )}
-
-        {review === undefined ? null : (
-          <ActionButton
-            label={t("review")}
-            hint={t("reviewHint")}
-            preview={snapshot.previews[actionKey(review)]}
-            busy={busy}
-            onAct={() => onAct(review)}
-          />
-        )}
-
-        {merge === undefined ? null : (
-          <ActionButton
-            label={t("merge")}
-            hint={t("mergeHint")}
-            preview={snapshot.previews[actionKey(merge)]}
-            busy={busy}
-            emphasis
-            onAct={() => onAct(merge)}
-          />
-        )}
       </div>
-
-      {checkouts.length === 0 ? null : (
-        <div className="space-y-2 border-line border-t pt-3">
-          <p className="text-muted-foreground text-xs">{t("switchTo")}</p>
-          <div className="grid gap-2">
-            {checkouts.map((action) => {
-              const ticket = snapshot.tickets.find((item) => item.id === action.ticketId);
-              return ticket === undefined ? null : (
-                <TicketButton
-                  key={actionKey(action)}
-                  ticket={ticket}
-                  label={t("checkout")}
-                  busy={busy}
-                  onAct={() => onAct(action)}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {starts.length === 0 ? null : (
-        <div className="space-y-2 border-line border-t pt-3">
-          <p className="text-muted-foreground text-xs">{t("backlog")}</p>
-          <div className="grid gap-2">
-            {starts.map((action) => {
-              const ticket = snapshot.tickets.find((item) => item.id === action.ticketId);
-              return ticket === undefined ? null : (
-                <TicketButton
-                  key={actionKey(action)}
-                  ticket={ticket}
-                  label={t("startTicket")}
-                  busy={busy}
-                  onAct={() => onAct(action)}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {devops.length === 0 ? null : (
         <div className="space-y-2 border-line border-t pt-3">
@@ -193,119 +147,28 @@ function TicketHeader({ ticket }: { ticket: TicketView }) {
   return (
     <div className="space-y-1 rounded-md border border-line bg-panel/60 px-3 py-2 text-sm">
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn(ticket.kind === "hotfix" && "text-branch-hotfix")}>
-          {game(`tickets.${ticket.kind}.name` as never)}
+        <span className={cn("truncate", ticket.kind === "hotfix" && "text-branch-hotfix")}>
+          #{ticket.id.slice(1)}
           {" "}
-          <span className="text-muted-foreground">#{ticket.id.slice(1)}</span>
+          {ticket.skillId === undefined
+            ? game(`tickets.${ticket.kind}.name` as never)
+            : game(`skills.${ticket.skillId}.name` as never)}
         </span>
-        <span className="tabular-nums text-xs">
-          {t("ticketPoints", { filled: ticket.filled, max: ticket.points })}
+        <span className="shrink-0 text-xs tabular-nums">
+          {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
         </span>
       </div>
-      <CriteriaList ticket={ticket} />
-      {ticket.skillId === undefined ? null : (
-        <p className="text-branch-feature text-xs">
-          {game(`skills.${ticket.skillId}.name` as never)}
-        </p>
-      )}
+      <p className="text-muted-foreground text-xs">{t("storyPointsHint")}</p>
+      {ticket.unread > 0 ? (
+        <p className="text-debt text-xs">{t("unreadOn", { count: ticket.unread })}</p>
+      ) : null}
+      {ticket.rework > 0 ? (
+        <p className="text-branch-hotfix text-xs">{t("reworkOf", { count: ticket.rework })}</p>
+      ) : null}
       {ticket.behind > 0 ? (
-        <p className="text-debt text-xs">{t("behindDev", { count: ticket.behind })}</p>
+        <p className="text-muted-foreground text-xs">{t("behindDev", { count: ticket.behind })}</p>
       ) : null}
     </div>
-  );
-}
-
-function CriteriaList({ ticket }: { ticket: TicketView }) {
-  const game = useTranslations("game");
-  if (ticket.criteria.length === 0) return null;
-
-  return (
-    <ul className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
-      {ticket.criteria.map((criterion) => (
-        <li
-          key={criterion.kind}
-          className={cn(criterion.met ? "text-branch-main" : "text-muted-foreground")}
-        >
-          {criterion.met ? "✓" : "○"} {game(`criteria.${criterion.kind}.name` as never)}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
- * A ticket offered as a card: to start, or to switch to. Both are free, so the
- * right-hand figure is what the ticket asks for rather than an energy cost.
- */
-function TicketButton({
-  ticket,
-  label,
-  busy,
-  onAct,
-}: {
-  ticket: TicketView;
-  label: string;
-  busy: boolean;
-  onAct: () => void;
-}) {
-  const t = useTranslations("hud");
-  const game = useTranslations("game");
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="outline"
-          className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
-          disabled={busy}
-          onClick={onAct}
-        >
-          <span className="flex min-w-0 flex-col items-start gap-0.5">
-            <span>
-              {label}
-              {" "}
-              <span className="text-muted-foreground">#{ticket.id.slice(1)}</span>
-            </span>
-            <span
-              className={cn(
-                "whitespace-normal text-left font-normal text-xs",
-                ticket.skillId === undefined ? "text-muted-foreground" : "text-branch-feature",
-              )}
-            >
-              {ticket.skillId === undefined
-                ? game(`tickets.${ticket.kind}.name` as never)
-                : game(`skills.${ticket.skillId}.name` as never)}
-            </span>
-          </span>
-
-          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-            {t("ticketPoints", { filled: ticket.filled, max: ticket.points })}
-          </span>
-        </Button>
-      </TooltipTrigger>
-
-      <TooltipContent className="max-w-64" side="left">
-        {ticket.skillId === undefined ? null : (
-          <p className="text-muted-foreground">{game(`skills.${ticket.skillId}.desc` as never)}</p>
-        )}
-        {ticket.criteria.length === 0 ? (
-          <p className="text-muted-foreground">{t("noCriteria")}</p>
-        ) : (
-          <>
-            <p>{t("criteriaTitle")}</p>
-            <ul className="text-muted-foreground">
-              {ticket.criteria.map((criterion) => (
-                <li key={criterion.kind}>
-                  {game(`criteria.${criterion.kind}.name` as never)}
-                  {" "}— {game(`criteria.${criterion.kind}.desc` as never)}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-        <p className="text-muted-foreground">{t("previewFreeMove")}</p>
-      </TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -380,7 +243,7 @@ function ActionButton({
   preview: ActionPreview | undefined;
   busy: boolean;
   emphasis?: boolean;
-  /** Hint in the tooltip only, numbers on one line: for the long lists. */
+  /** Hint in the tooltip only, numbers on two short lines: for the long lists. */
   compact?: boolean;
   onAct: () => void;
 }) {

@@ -1,9 +1,14 @@
 import { DEVOPS_IDS } from "@/game/content";
-import { isReady } from "@/game/core/rules/criteria";
 import { canPlaceDevops } from "@/game/core/rules/devops";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { canReview } from "@/game/core/rules/review";
-import { backlogTickets, currentTicket, offersOf, openTickets } from "@/game/core/rules/tickets";
+import {
+  backlogTickets,
+  currentTicket,
+  isReady,
+  offersOf,
+  openTickets,
+} from "@/game/core/rules/tickets";
 import type { PlayerAction, RunState } from "@/game/core/types";
 
 /**
@@ -20,8 +25,9 @@ import type { PlayerAction, RunState } from "@/game/core/types";
  * Review is gated, on two counts. It has to have been learned, and it has to
  * have something to read: a review with no unread machine-written commit
  * repays nothing, costs energy and spends a turn. An action that can only
- * ever make things worse is not a decision, it is a trap. A merge is gated the
- * same way: it exists once the ticket is ready, and not before.
+ * ever make things worse is not a decision, it is a trap. Submitting the
+ * ticket for review is gated the same way: it exists once the points are
+ * full, and not before.
  */
 export function getAvailableActions(state: RunState): PlayerAction[] {
   switch (state.phase.kind) {
@@ -47,7 +53,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         }
 
         if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
-        if (isReady(state, ticket)) actions.push({ type: "merge" });
+        if (isReady(ticket)) actions.push({ type: "submit" });
       }
 
       for (const id of DEVOPS_IDS) {
@@ -61,6 +67,9 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         { type: "resolve_conflict", how: "manual" },
         { type: "resolve_conflict", how: "ai" },
       ];
+
+    case "ticket_rejected":
+      return [{ type: "restart" }, { type: "resume" }];
 
     case "choose_relic":
       return state.phase.offer.map((relicId) => ({ type: "choose_relic", relicId }) as const);
@@ -88,7 +97,9 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "choose_relic":
       return b.type === "choose_relic" && a.relicId === b.relicId;
     case "review":
-    case "merge":
+    case "submit":
+    case "restart":
+    case "resume":
       return true;
   }
 }

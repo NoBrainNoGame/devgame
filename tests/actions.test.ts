@@ -15,17 +15,17 @@ describe("getAvailableActions", () => {
     const types = getAvailableActions(state).map((a) => a.type);
     expect(types).toContain("start");
     expect(types).not.toContain("commit");
-    expect(types).not.toContain("merge");
+    expect(types).not.toContain("submit");
   });
 
-  test("a ticket in hand offers both commits and the detours, never a merge yet", () => {
+  test("a ticket in hand offers both commits and the detours, never a submit yet", () => {
     const state = inHand("actions-2");
     const actions = getAvailableActions(state);
 
     expect(actions.some((a) => a.type === "commit" && a.mode === "craft")).toBe(true);
     expect(actions.some((a) => a.type === "commit" && a.mode === "ai")).toBe(true);
     expect(actions.some((a) => a.type === "commit" && a.kind === "docs")).toBe(true);
-    expect(actions.some(isType("merge"))).toBe(false);
+    expect(actions.some(isType("submit"))).toBe(false);
     // Nothing has landed on `dev` since it was opened: nothing to rebase onto.
     expect(actions.some((a) => a.type === "commit" && a.kind === "rebase")).toBe(false);
   });
@@ -38,10 +38,10 @@ describe("getAvailableActions", () => {
     expect(getAvailableActions(ready).some(isType("review"))).toBe(true);
   });
 
-  test("a merge is offered exactly when the ticket is ready", () => {
+  test("submitting is offered exactly when the points are full", () => {
     const state = inHand("actions-merge");
-    expect(getAvailableActions(state).some(isType("merge"))).toBe(false);
-    expect(getAvailableActions(makeReady(state)).some(isType("merge"))).toBe(true);
+    expect(getAvailableActions(state).some(isType("submit"))).toBe(false);
+    expect(getAvailableActions(makeReady(state)).some(isType("submit"))).toBe(true);
   });
 
   test("a commit is legal even with no energy left to pay for it", () => {

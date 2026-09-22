@@ -6,6 +6,8 @@ import { createStore } from "zustand/vanilla";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
 import type { GameEvent, LogLine, NodeId } from "@/game/core/types";
 
+export type ReviewEvent = Extract<GameEvent, { type: "pr_reviewed" }>;
+
 /**
  * The seam between the game loop and React.
  *
@@ -29,6 +31,11 @@ export interface GameStore {
   log: LogLine[];
   /** The most recent batch, for anything that reacts to a single event. */
   lastEvents: GameEvent[];
+  /**
+   * A pull request just read, until the player has seen the verdict. The
+   * review dialog owns it: it opens on it and clears it when dismissed.
+   */
+  pendingReview: ReviewEvent | null;
   /** Why the last dispatch was refused, if it was. */
   lastError: string | null;
 }
@@ -43,6 +50,7 @@ export const INITIAL_STORE: GameStore = {
   cameraFollowing: true,
   log: [],
   lastEvents: [],
+  pendingReview: null,
   lastError: null,
 };
 

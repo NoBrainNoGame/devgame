@@ -117,9 +117,12 @@ export class GameSession extends Emitter {
   publish(events: GameEvent[] = []): void {
     const isOver = this.state.phase.kind === "game_over";
 
+    const review = events.find((event) => event.type === "pr_reviewed");
+
     gameStore.setState({
       status: isOver ? "game_over" : "running",
       snapshot: toSnapshot(this.state),
+      ...(review === undefined ? {} : { pendingReview: review }),
       // Nothing to watch means nothing to wait for; the scene clears this once
       // it has played whatever it was given.
       pendingAnimation: events.length > 0,

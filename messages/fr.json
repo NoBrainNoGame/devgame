@@ -135,25 +135,59 @@
     "writeInstead": "Ou écrire ce commit autrement :",
     "byHand": "à la main",
     "byMachine": "par l'IA",
-    "noTicket": "Aucun ticket en main : démarrez-en un dans le backlog.",
+    "noTicket": "Aucun ticket en main : ouvrez le projet et démarrez-en un.",
+    "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
+    "previewPoints": "Points : {min} à {max}",
+    "quality": "Prod",
+    "qualityHint": "Chaque bug en production remplit cette jauge. Pleine, c'est le licenciement. Un sprint sans incident la fait baisser.",
+    "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}",
+    "board": "Projet",
+    "boardTitle": "Tableau du projet",
+    "boardSubtitle": "Sprint {sprint} · {open, plural, one {# ticket ouvert} other {# tickets ouverts}}",
+    "column": {
+      "backlog": "Backlog",
+      "open": "En cours",
+      "merged": "Livrés"
+    },
+    "columnEmpty": "Rien ici.",
+    "startTicket": "Démarrer",
+    "checkout": "Basculer dessus",
+    "grants": "Livre :",
+    "storyPointsShort": "{count, plural, one {# point de story} other {# points de story}}",
+    "storyPointsOf": "{filled}/{max} points de story",
+    "storyPointsHint": "Chaque commit qui atterrit remplit des points : un à la main, deux par l'IA. Points pleins, le ticket part en review.",
+    "unreadOn": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
+    "reworkOf": "{count, plural, one {# point de correctif} other {# points de correctifs}}",
+    "readyToSubmit": "Prêt : ouvrez la PR.",
+    "inHand": "Le ticket en main.",
+    "clickToSwitch": "Cliquer pour basculer dessus (gratuit).",
     "mustWrite": {
       "hotfix": "La prod est cassée : seuls des commits de correctif comptent ici.",
       "refactor": "La dette a explosé : seuls des commits de refacto comptent ici."
     },
-    "merge": "Merger sur dev",
-    "mergeHint": "Le ticket est prêt : tous ses critères tiennent.",
-    "switchTo": "Autres tickets ouverts",
-    "checkout": "Basculer sur",
-    "backlog": "Backlog",
-    "startTicket": "Démarrer",
-    "ticketPoints": "{filled}/{max} pts",
-    "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
-    "noCriteria": "Aucun critère : les points suffisent.",
-    "criteriaTitle": "Critères d'acceptation",
-    "previewPoints": "Points : {min} à {max}",
-    "quality": "Prod",
-    "qualityHint": "Chaque bug en production remplit cette jauge. Pleine, c'est le licenciement. Un sprint sans incident la fait baisser.",
-    "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}"
+    "submit": "Ouvrir la PR",
+    "submitHint": "Points pleins : la review lit le ticket et décide.",
+    "sprintTurn": "tour {turn}/{max}",
+    "releaseIn": "{count, plural, =0 {release à la fin de ce tour} one {release dans # tour} other {release dans # tours}}",
+    "sprintHint": "Le sprint est une boîte de tours. Quand elle est vide, dev part en production avec ce qui a été mergé, et les bugs remontent.",
+    "delivered": "Livrés",
+    "reviewTitle": "Review de la PR #{id}",
+    "reviewReading": "Lecture de {count, plural, one {# commit} other {# commits}}…",
+    "reviewAllRead": "Tout a été relu, aucun bug.",
+    "reviewDebt": "Dette technique : {debt} (plafond {max})",
+    "reviewAccepted": "Acceptée. Le ticket merge sur dev.",
+    "reviewRejected": "Refusée.",
+    "reviewMerge": "Merger",
+    "reviewRework": "{count, plural, one {# point de correctif ajouté} other {# points de correctifs ajoutés}}.",
+    "reviewParallel": "Un nouveau ticket est arrivé en parallèle : le sprint n'attend pas.",
+    "reviewRestart": "Recommencer",
+    "reviewRestartHint": "Les commits sont jetés, la branche repart de dev.",
+    "reviewResume": "Continuer",
+    "reviewResumeHint": "Garder les commits, corriger ce qui a été trouvé.",
+    "skip": "Passer",
+    "reviewUnread": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
+    "reviewBugs": "{bugs, plural, one {# bug trouvé} other {# bugs trouvés}}",
+    "reviewNoBugs": "aucun bug trouvé"
   },
   "leaderboard": {
     "title": "Classement",
@@ -648,7 +682,11 @@
       "incident": {
         "commit": "bug en production, hotfix ouvert",
         "release": "la release a cassé la prod, hotfix ouvert"
-      }
+      },
+      "pr_accepted": "PR acceptée, ticket mergé sur dev",
+      "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
+      "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
+      "pr_rejected_debt": "PR refusée, la dette est trop haute"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -671,25 +709,9 @@
       "rebase_why": "{count, plural, one {# merge a atterri sur dev} other {# merges ont atterri sur dev}} depuis l'ouverture",
       "behind_dev": "En retard de {count, plural, one {# merge} other {# merges}} sur dev",
       "merge_regen": "Rend {energy} ⚡",
-      "merge_risk": "{percent} % de risque d'incident au merge"
-    },
-    "criteria": {
-      "reviewed": {
-        "name": "Relu",
-        "desc": "Aucun commit IA du ticket ne reste sans relecture."
-      },
-      "documented": {
-        "name": "Documenté",
-        "desc": "Le ticket contient un commit de documentation."
-      },
-      "refactored": {
-        "name": "Refactoré",
-        "desc": "Le ticket contient un commit de refacto."
-      },
-      "clean": {
-        "name": "Dette maîtrisée",
-        "desc": "La dette technique est basse au moment du merge."
-      }
+      "merge_risk": "{percent} % de risque d'incident au merge",
+      "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",
+      "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera"
     },
     "tickets": {
       "feature": {

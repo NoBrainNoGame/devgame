@@ -1,6 +1,5 @@
 import type {
   AmbientEventId,
-  CriterionKind,
   DevopsId,
   EventId,
   FailureEventId,
@@ -96,11 +95,14 @@ export interface Ticket {
   id: TicketId;
   kind: TicketKind;
   status: TicketStatus;
-  /** Story points to fill before it can merge. */
+  /** Story points to fill before it can be submitted. */
   points: number;
   filled: number;
-  /** What else it demands. Empty on a hotfix or a forced refactor. */
-  criteria: CriterionKind[];
+  /** Points added by rejected reviews: the bugs to fix before resubmitting. */
+  rework: number;
+  /** Debt its commits added, which the review counts against it. */
+  debtAdded: number;
+  rejections: number;
   /** The reward, paid for with extra points. */
   skillId?: SkillId;
   /** The sprint it arrived in, so a ticket left in the backlog can be assigned. */
@@ -162,6 +164,8 @@ export type Phase =
     }
   /** A merge tangled. Resolving it lands the ticket. */
   | { kind: "resolve_conflict"; source: "merge"; ticketId: TicketId }
+  /** The review said no. Start the ticket over, or fix it and carry on. */
+  | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number; overDebt: boolean }
   | { kind: "choose_relic"; offer: RelicId[] }
   | { kind: "game_over"; reason: GameOverReason };
 
@@ -244,8 +248,12 @@ export type PlayerAction =
   /** `kind` writes the commit as a detour instead of plainly. */
   | { type: "commit"; mode: CommitMode; kind?: DetourKind }
   | { type: "review" }
-  /** Land the current ticket on `dev`. Only offered once it is ready. */
-  | { type: "merge" }
+  /** Open the pull request: the review decides whether the ticket lands. */
+  | { type: "submit" }
+  /** After a rejection: throw the ticket's commits away and start again. */
+  | { type: "restart" }
+  /** After a rejection: keep the commits and fix what was found. */
+  | { type: "resume" }
   | { type: "devops"; id: DevopsId }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
@@ -273,6 +281,19 @@ export type GameEvent =
   /** `forced` when the board assigned it rather than the player. */
   | { type: "ticket_started"; ticketId: TicketId; kind: TicketKind; forced: boolean }
   | { type: "checkout"; ticketId: TicketId }
+  /** The pull request was read. Accepted, it merges in the same turn. */
+  | {
+      type: "pr_reviewed";
+      ticketId: TicketId;
+      accepted: boolean;
+      bugs: number;
+      unread: number;
+      debt: number;
+      maxDebt: number;
+      /** Rework points added, when rejected. */
+      rework: number;
+    }
+  | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
   | { type: "ticket_merged"; ticketId: TicketId; nodeId: NodeId; skillId?: SkillId }
   | { type: "skill_gained"; skillId: SkillId }
   | { type: "conflict"; ticketId: TicketId }
@@ -330,12 +351,4 @@ export class InvalidActionError extends Error {
   }
 }
 
-export type {
-  AmbientEventId,
-  CriterionKind,
-  EventId,
-  FailureEventId,
-  I18nText,
-  MergeEventId,
-  RngState,
-};
+export type { AmbientEventId, EventId, FailureEventId, I18nText, MergeEventId, RngState };

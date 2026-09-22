@@ -85,8 +85,11 @@ describe("the storyboard", () => {
 
         // After the reveals, the screen is the engine's state — including
         // where `HEAD` ends up once the final look hands it back.
+        // A restarted ticket's commits leave the state; the end of the batch
+        // prunes them from the screen, so only what still exists is compared.
         const shown = playSteps(batch.before, steps);
-        expect([...shown.nodes].sort()).toEqual(Object.keys(batch.after.nodes).sort());
+        const kept = [...shown.nodes].filter((id) => id in batch.after.nodes);
+        expect(kept.sort()).toEqual(Object.keys(batch.after.nodes).sort());
       }
     }
   });

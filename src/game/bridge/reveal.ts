@@ -39,12 +39,22 @@ export class RevealSet extends Emitter {
     return fresh;
   }
 
-  /** Everything the engine has written, with `HEAD` where the engine puts it. */
+  /**
+   * Everything the engine has written, with `HEAD` where the engine puts it —
+   * and nothing it has since thrown away: a restarted ticket's commits are
+   * gone from the state, so they go from the screen too.
+   */
   showAll(state: RunState): void {
     let changed = false;
     for (const id of Object.keys(state.nodes)) {
       if (!this.nodes.has(id)) {
         this.nodes.add(id);
+        changed = true;
+      }
+    }
+    for (const id of [...this.nodes]) {
+      if (!(id in state.nodes)) {
+        this.nodes.delete(id);
         changed = true;
       }
     }

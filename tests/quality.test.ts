@@ -29,7 +29,7 @@ function shippingUnread(seed: string, count: number) {
 function closeSprint(state: ReturnType<typeof inHand>) {
   const forced = structuredClone(state);
   forced.sprintTurn = BALANCE.sprint.turns - 1;
-  return applyAction(forced, { type: "merge" });
+  return applyAction(forced, { type: "submit" });
 }
 
 describe("production", () => {
@@ -139,7 +139,7 @@ describe("production", () => {
     const ready = structuredClone(current);
     ready.sprintTurn = BALANCE.sprint.turns - 1;
     ready.quality = 0;
-    const result = applyAction(ready, { type: "merge" });
+    const result = applyAction(ready, { type: "submit" });
     if (result.state.phase.kind === "resolve_conflict") return;
 
     expect(eventsOfType(result.events, "incident").filter((e) => e.source === "release")).toEqual(
@@ -153,7 +153,7 @@ describe("production", () => {
       if (ticket.id !== state.player.ticketId) ticket.status = "merged";
     }
 
-    const result = applyAction(state, { type: "merge" });
+    const result = applyAction(state, { type: "submit" });
     if (result.state.phase.kind === "resolve_conflict") return;
     expect(eventsOfType(result.events, "sprint_ended").length).toBe(1);
     expect(result.state.sprintTurn).toBeLessThan(BALANCE.sprint.turns);
@@ -172,10 +172,10 @@ describe("production", () => {
     expect(result.state.phase.kind).not.toBe("game_over");
   });
 
-  test("merge and start are what a policy needs to keep a run moving", () => {
+  test("submit and start are what a policy needs to keep a run moving", () => {
     const { state } = findSeed((r) => r.state.sprint >= 2, {
       prefix: "moving",
-      pick: prefer(isType("merge"), isCommit("ai"), isType("start")),
+      pick: prefer(isType("submit"), isCommit("ai"), isType("start")),
       limit: 300,
     });
     expect(state.sprint).toBeGreaterThanOrEqual(2);

@@ -1,8 +1,7 @@
-import type { CriterionKind, DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
+import type { DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { criteriaStatus, isReady, unreadAiOn } from "@/game/core/rules/criteria";
 import {
   type DebtView,
   debtView,
@@ -13,7 +12,13 @@ import {
   wipExtra,
 } from "@/game/core/rules/modifiers";
 import { previewAll } from "@/game/core/rules/preview";
-import { behindOf, currentTicket, sortedTickets } from "@/game/core/rules/tickets";
+import {
+  behindOf,
+  currentTicket,
+  isReady,
+  sortedTickets,
+  unreadAiOn,
+} from "@/game/core/rules/tickets";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
@@ -52,11 +57,6 @@ export interface PlayerView {
   unreviewed: number;
 }
 
-export interface CriterionView {
-  kind: CriterionKind;
-  met: boolean;
-}
-
 /**
  * A ticket as the panel shows it: what it asks for, how far it is, and
  * whether it can land. The node ids are left out — the board knows the ticket,
@@ -68,7 +68,11 @@ export interface TicketView {
   status: Ticket["status"];
   points: number;
   filled: number;
-  criteria: CriterionView[];
+  /** Points added by rejected reviews, part of `points`. */
+  rework: number;
+  rejections: number;
+  /** Machine-written commits on it nobody has read: what a review may catch. */
+  unread: number;
   skillId?: SkillId;
   lane?: number;
   /** Merges landed on `dev` since it was opened. Its merge pays for each. */
@@ -146,11 +150,13 @@ export function toSnapshot(state: RunState): RunSnapshot {
     status: ticket.status,
     points: ticket.points,
     filled: ticket.filled,
-    criteria: criteriaStatus(state, ticket),
+    rework: ticket.rework,
+    rejections: ticket.rejections,
+    unread: unreadAiOn(state, ticket).length,
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     behind: behindOf(state, ticket),
-    ready: ticket.status === "open" && isReady(state, ticket),
+    ready: ticket.status === "open" && isReady(ticket),
     commits: ticket.nodeIds.length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
   }));

@@ -1,3 +1,4 @@
+import { BALANCE } from "@/game/core/balance";
 import { DEV_LANE } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -93,13 +94,16 @@ export function plantCommit(state: RunState, mode: CommitMode): string {
   return id;
 }
 
-/** A copy whose ticket in hand can merge right now: points full, no criteria. */
+/**
+ * A copy whose ticket in hand can be submitted right now and will be
+ * accepted: points full, nothing unread, debt under the ceiling.
+ */
 export function makeReady(state: RunState): RunState {
   const next = structuredClone(state);
   const ticket = ticketInHand(next);
   if (ticket.nodeIds.length === 0) plantCommit(next, "craft");
   ticket.filled = ticket.points;
-  ticket.criteria = [];
+  next.debt = Math.min(next.debt, BALANCE.acceptance.maxDebt);
   return next;
 }
 
@@ -165,7 +169,7 @@ function offering(
       // happens within a sprint or two rather than never.
       const legal = getAvailableActions(state);
       const action = prefer(
-        isType("merge"),
+        isType("submit"),
         isType("start"),
         isCommit("ai"),
         isCommit("craft"),
@@ -270,7 +274,7 @@ export function policy(
   mode: CommitMode,
 ): (state: RunState, actions: PlayerAction[]) => PlayerAction | undefined {
   const other: CommitMode = mode === "ai" ? "craft" : "ai";
-  return prefer(isType("merge"), isCommit(mode), isCommit(other), isType("start"));
+  return prefer(isType("submit"), isCommit(mode), isCommit(other), isType("start"));
 }
 
 /**

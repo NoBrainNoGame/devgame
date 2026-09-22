@@ -1,7 +1,8 @@
 import { BALANCE } from "@/game/core/balance";
 import { appendLog } from "@/game/core/log";
+import { performSubmit, restartTicket, resumeTicket } from "@/game/core/rules/acceptance";
 import { isActionAvailable } from "@/game/core/rules/actions";
-import { performCommit, performMerge, resolveConflictPhase } from "@/game/core/rules/commit";
+import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { placeDevops } from "@/game/core/rules/devops";
@@ -29,10 +30,10 @@ import { InvalidActionError } from "@/game/core/types";
  * a submitted action log and get the byte-identical game the player played.
  *
  * Which actions cost a turn is a design decision, not an implementation one:
- * committing, reviewing and merging end the turn; starting a ticket, switching
- * to one and spending DevOps points do not. A commit interrupted by a merge
- * conflict defers its turn to the choice that resolves it, so one mistake
- * never costs two turns.
+ * committing, reviewing and submitting end the turn; starting a ticket,
+ * switching to one, answering a rejection and spending DevOps points do not.
+ * A commit interrupted by a merge conflict defers its turn to the choice that
+ * resolves it, so one mistake never costs two turns.
  */
 export function applyAction(state: RunState, action: PlayerAction): ApplyResult {
   if (state.phase.kind === "game_over") {
@@ -91,9 +92,17 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       performReview(context, false);
       return true;
 
-    case "merge":
-      performMerge(context);
+    case "submit":
+      performSubmit(context);
       return state.phase.kind !== "resolve_conflict";
+
+    case "restart":
+      restartTicket(context);
+      return false;
+
+    case "resume":
+      resumeTicket(context);
+      return false;
 
     case "devops":
       placeDevops(context, action.id);

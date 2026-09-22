@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { SKILLS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { getAvailableActions } from "@/game/core/rules/actions";
@@ -58,25 +57,6 @@ describe("the backlog", () => {
       .filter((id) => id !== undefined);
     expect(new Set(promised).size).toBe(promised.length);
     for (const id of promised) expect(state.skills).not.toContain(id);
-  });
-
-  test("`reviewed` is never asked of a run that can never review", () => {
-    for (let i = 0; i < 60; i += 1) {
-      const state = newRun(`no-review-${i}`);
-      const learnable = state.unlockedSkills.some((id) => SKILLS[id].effects.canReview === true);
-      if (learnable) continue;
-      for (const ticket of sortedTickets(state)) {
-        expect(ticket.criteria).not.toContain("reviewed");
-      }
-    }
-
-    // And the other way round: with review unlockable, it does turn up.
-    let seen = 0;
-    for (let i = 0; i < 100; i += 1) {
-      const state = newRun(`review-crit-${i}`);
-      if (sortedTickets(state).some((ticket) => ticket.criteria.includes("reviewed"))) seen += 1;
-    }
-    expect(seen).toBeGreaterThan(0);
   });
 
   test("starting a ticket is free, takes a column, and puts it in hand", () => {

@@ -41,6 +41,8 @@ export const STORY = {
   roll: 120,
   boundary: 200,
   look: 320,
+  /** The review dialog's analysis. The canvas holds still while it reads. */
+  review: 2800,
 } as const;
 
 interface Held {
@@ -181,6 +183,16 @@ export function planBatch(
 
       case "roll":
         steps.push({ kind: "beat", hold: STORY.roll });
+        break;
+
+      case "pr_reviewed":
+        flush();
+        steps.push({ kind: "beat", hold: STORY.review });
+        break;
+
+      case "ticket_restarted":
+        flush();
+        steps.push({ kind: "beat", hold: STORY.boundary });
         break;
 
       case "merge_event":

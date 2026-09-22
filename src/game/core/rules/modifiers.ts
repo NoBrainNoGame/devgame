@@ -10,8 +10,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import { unreadAiOn } from "@/game/core/rules/criteria";
-import { behindOf, openTickets } from "@/game/core/rules/tickets";
+import { behindOf, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
 import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
 
 /**

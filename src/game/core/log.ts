@@ -33,6 +33,26 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text(event.forced ? `log.ticket_assigned.${event.kind}` : "log.ticket_started"),
       };
 
+    case "pr_reviewed":
+      return {
+        seq,
+        turn,
+        kind: event.accepted ? "merge" : "revert",
+        text: event.accepted
+          ? text("log.pr_accepted")
+          : event.bugs > 0
+            ? text("log.pr_rejected_bugs", { bugs: event.bugs })
+            : text("log.pr_rejected_debt"),
+      };
+
+    case "ticket_restarted":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.ticket_restarted", { count: event.nodeIds.length }),
+      };
+
     case "ticket_merged":
       return {
         seq,

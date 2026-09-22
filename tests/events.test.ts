@@ -35,7 +35,6 @@ describe("failures", () => {
     const hotfix = state.tickets[incident.ticketId];
     expect(hotfix?.kind).toBe("hotfix");
     expect(hotfix?.mustWrite).toBe("hotfix");
-    expect(hotfix?.criteria).toEqual([]);
     expect(hotfix?.points).toBe(BALANCE.failure.hotfixPoints);
     expect(state.quality).toBeGreaterThan(0);
   });
@@ -198,7 +197,7 @@ describe("debt explosion", () => {
 
     const onIt = makeReady(applyAction(exploded, { type: "checkout", ticketId: forced.id }).state);
     expect(ticketInHand(onIt).id).toBe(forced.id);
-    const result = applyAction(onIt, { type: "merge" });
+    const result = applyAction(onIt, { type: "submit" });
     if (result.state.phase.kind === "resolve_conflict") return;
 
     expect(result.state.debt).toBeLessThan(onIt.debt);
@@ -231,7 +230,8 @@ describe("merge events", () => {
     let migrationPaid = 0;
 
     for (let i = 0; i < 300; i += 1) {
-      const { events } = play(newRun(`merge-events-${i}`), { pick: policy("ai"), limit: 120 });
+      // Hand-written: the review accepts clean work, so the merges happen.
+      const { events } = play(newRun(`merge-events-${i}`), { pick: policy("craft"), limit: 160 });
 
       for (let index = 0; index < events.length; index += 1) {
         const event = events[index];

@@ -2,7 +2,6 @@ import { DEVOPS, devopsCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
-import { unreadAiOn } from "@/game/core/rules/criteria";
 import {
   commitChance,
   conflictChance,
@@ -12,7 +11,7 @@ import {
   reviewCleanCount,
   reviewEnergyCost,
 } from "@/game/core/rules/modifiers";
-import { behindOf, currentTicket, getTicket } from "@/game/core/rules/tickets";
+import { behindOf, currentTicket, getTicket, unreadAiOn } from "@/game/core/rules/tickets";
 import { pointsFor } from "@/game/core/rules/write";
 import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
 
@@ -107,11 +106,16 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       };
     }
 
-    case "merge": {
+    case "submit": {
       const ticket = currentTicket(state);
       const cost = nodeEnergyCost(state, "feature_merge", undefined);
       const notes: I18nText[] = [...cost.notes];
       if (ticket !== null) {
+        const unread = unreadAiOn(state, ticket).length;
+        if (unread > 0) notes.push(text("notes.unread_risk", { count: unread }));
+        if (state.debt > BALANCE.acceptance.maxDebt) {
+          notes.push(text("notes.debt_refusal", { max: BALANCE.acceptance.maxDebt }));
+        }
         const risk = mergeEventChance(state, ticket);
         if (risk > 0) notes.push(text("notes.merge_risk", { percent: risk }));
         const behind = behindOf(state, ticket);
@@ -127,6 +131,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         notes,
       };
     }
+
+    case "restart":
+    case "resume":
+      return { action, energyCost: 0, consumesTurn: false, notes: [] };
 
     case "devops": {
       const level = state.devops[action.id] ?? 0;
@@ -199,8 +207,9 @@ export function actionKey(action: PlayerAction): string {
     case "choose_relic":
       return `relic:${action.relicId}`;
     case "review":
-      return "review";
-    case "merge":
-      return "merge";
+    case "submit":
+    case "restart":
+    case "resume":
+      return action.type;
   }
 }

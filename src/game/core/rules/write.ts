@@ -94,6 +94,7 @@ export function writeCommit(
   });
   ticket.nodeIds.push(node.id);
   state.player.totalCommits += 1;
+  const debtBefore = state.debt;
 
   fillPoints(context, ticket, pointsFor(ticket, mode, kind));
 
@@ -129,8 +130,26 @@ export function writeCommit(
     emit(context, { type: "rebased", ticketId: ticket.id });
   }
 
+  // What this commit cost the codebase, which the review will hold against
+  // the ticket. Repayments are not credited: a refactor is its own reward.
+  ticket.debtAdded += Math.max(0, state.debt - debtBefore);
+
   emit(context, { type: "node_done", nodeId: node.id, mode, kind });
   return node;
+}
+
+/**
+ * Throws a ticket's commits away, the way `git reset --hard` does. The rows
+ * they took stay empty: history has a hole where the work was, which is
+ * exactly what a reset leaves behind.
+ */
+export function discardCommits(context: RuleContext, ticket: Ticket): NodeId[] {
+  const { state } = context;
+  const dropped = [...ticket.nodeIds];
+  for (const id of dropped) delete state.nodes[id];
+  state.player.totalCommits = Math.max(0, state.player.totalCommits - dropped.length);
+  ticket.nodeIds = [];
+  return dropped;
 }
 
 /** Moves the ticket along, never past full. Negative to take points back. */
