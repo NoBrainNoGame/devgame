@@ -280,7 +280,10 @@
     "currentTicket": "Ticket en main",
     "runStats": "La run",
     "skillsEarned": "Acquis cette run",
-    "nothingYet": "Rien pour l'instant."
+    "nothingYet": "Rien pour l'instant.",
+    "pickTicket": "Ouvrir un ticket",
+    "pickTicketHint": "{count, plural, one {# ticket attend au backlog : ouvrez le projet et choisissez.} other {# tickets attendent au backlog : ouvrez le projet et choisissez.}}",
+    "pickTicketEmpty": "Le backlog est vide : le sprint se termine dès que le tableau l'est."
   },
   "leaderboard": {
     "title": "Classement",
@@ -297,7 +300,8 @@
     "dailyResetsIn": "Nouvelle graine dans {time}",
     "periodToday": "Aujourd'hui",
     "periodYesterday": "Hier",
-    "periodAll": "Tout"
+    "periodAll": "Tout",
+    "unavailable": "Le classement est indisponible pour le moment. Le jeu, lui, fonctionne : vos runs sont sauvegardées dans ce navigateur et seront envoyées quand le serveur reviendra."
   },
   "profile": {
     "title": "Profil",

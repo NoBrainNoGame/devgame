@@ -280,7 +280,10 @@
     "currentTicket": "Ticket in hand",
     "runStats": "The run",
     "skillsEarned": "Earned this run",
-    "nothingYet": "Nothing yet."
+    "nothingYet": "Nothing yet.",
+    "pickTicket": "Open a ticket",
+    "pickTicketHint": "{count, plural, one {# ticket is waiting in the backlog: open the board and choose.} other {# tickets are waiting in the backlog: open the board and choose.}}",
+    "pickTicketEmpty": "The backlog is empty: the sprint ends as soon as the board is."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -297,7 +300,8 @@
     "dailyResetsIn": "New seed in {time}",
     "periodToday": "Today",
     "periodYesterday": "Yesterday",
-    "periodAll": "All time"
+    "periodAll": "All time",
+    "unavailable": "The leaderboard is unavailable right now. The game still works: your runs are saved in this browser and will be sent when the server is back."
   },
   "profile": {
     "title": "Profile",
