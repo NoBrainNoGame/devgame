@@ -120,12 +120,14 @@ export function drawDottedLane(
   const direction = Math.sign(yEnd - yStart);
   const length = Math.abs(yEnd - yStart);
 
+  // Butt caps: a round cap would grow each dash by half the width and eat
+  // the gap, and the dots would read as a line again.
   for (let offset = 0; offset < length; offset += LANE_DASH + LANE_GAP) {
     const y1 = yStart + direction * offset;
     const y2 = yStart + direction * Math.min(length, offset + LANE_DASH);
     graphics.moveTo(x, y1).lineTo(x, y2);
   }
-  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round" });
+  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "butt" });
 }
 
 export type LaneColour = "trunk" | "dev" | "feature" | "hotfix" | "refactor";

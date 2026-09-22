@@ -58,8 +58,8 @@ export const EDGE_WIDTH = 2.5;
 /** The radius of the one corner a fork or a merge turns, in world pixels. */
 export const CORNER = 10;
 /** A trunk with nothing new on it yet is dotted: dash and gap, in world pixels. */
-export const LANE_DASH = 4;
-export const LANE_GAP = 5;
+export const LANE_DASH = 3;
+export const LANE_GAP = 6;
 /** How strongly a branch's own line is drawn, and how faint its dotted continuation. */
 export const LANE_ALPHA = { trunk: 0.9, feature: 0.55, continuation: 0.35 } as const;
 /** Room between the last column and the subjects, where the refs sit. */
