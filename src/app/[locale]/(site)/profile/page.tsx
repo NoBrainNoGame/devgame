@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ProfilePage(): Promise<React.JSX.Element> {
+  // Offline there is no account to have: the page does not exist here.
+  if (!env.ONLINE) notFound();
+
   const locale = await getLocale();
   // `redirect` returns `never`, so the coalesce both sends the visitor to the
   // login page and leaves `session` non-null for the rest of the function.

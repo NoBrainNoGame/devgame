@@ -59,7 +59,9 @@ export default async function LeaderboardPage({
   // on its migrations, must not take the page down with it. The error goes to
   // the server log, where it names the cause; the page says only that the
   // board is unavailable.
-  const { viewerProfile, board, unavailable } = await loadBoard(mode, period, userId);
+  const { viewerProfile, board, unavailable } = env.ONLINE
+    ? await loadBoard(mode, period, userId)
+    : { viewerProfile: null, board: { entries: [], me: null }, unavailable: "offline" as const };
 
   const me = board.me;
   const pinned =
@@ -115,8 +117,10 @@ export default async function LeaderboardPage({
         </div>
       ) : null}
 
-      {unavailable ? (
-        <p className="mt-8 text-muted-foreground text-sm">{t("unavailable")}</p>
+      {unavailable !== false ? (
+        <p className="mt-8 text-muted-foreground text-sm">
+          {unavailable === "offline" ? t("offline") : t("unavailable")}
+        </p>
       ) : board.entries.length === 0 ? (
         <p className="mt-8 text-muted-foreground text-sm">{t("empty")}</p>
       ) : (
@@ -177,7 +181,7 @@ async function loadBoard(
 ): Promise<{
   viewerProfile: { id: string } | null;
   board: Leaderboard;
-  unavailable: boolean;
+  unavailable: false | "down" | "offline";
 }> {
   try {
     const viewerProfile =
@@ -189,13 +193,13 @@ async function loadBoard(
       period,
       viewerProfileId: viewerProfile?.id ?? null,
     });
-    return { viewerProfile, board, unavailable: false };
+    return { viewerProfile, board, unavailable: false as const };
   } catch (error) {
     console.error(
       "Leaderboard query failed — is the database up and migrated (`bun run db:up`, `bun run db:deploy`)?",
       error,
     );
-    return { viewerProfile: null, board: { entries: [], me: null }, unavailable: true };
+    return { viewerProfile: null, board: { entries: [], me: null }, unavailable: "down" as const };
   }
 }
 

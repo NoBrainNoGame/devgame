@@ -39,6 +39,8 @@ const LOCAL_SAVE_DEBOUNCE_MS = 500;
 const CLOUD_SAVE_INTERVAL_MS = 10_000;
 
 export interface PlayClientProps {
+  /** Whether this instance has a server side at all: offline, there is nothing to sign in to. */
+  online: boolean;
   signedIn: boolean;
   /** Progress already on the server, if any. Merged with the local copy. */
   serverMeta: MetaProgressDto | null;
@@ -282,7 +284,12 @@ export function PlayClient(props: PlayClientProps) {
       onPlayAgain={() => setStage({ kind: "setup" })}
       runOverFooter={
         status === "game_over" ? (
-          <SubmitFooter signedIn={props.signedIn} submitted={submitted} onSubmit={submit} />
+          <SubmitFooter
+            online={props.online}
+            signedIn={props.signedIn}
+            submitted={submitted}
+            onSubmit={submit}
+          />
         ) : null
       }
     />
@@ -290,15 +297,21 @@ export function PlayClient(props: PlayClientProps) {
 }
 
 function SubmitFooter({
+  online,
   signedIn,
   submitted,
   onSubmit,
 }: {
+  online: boolean;
   signedIn: boolean;
   submitted: boolean;
   onSubmit: () => void;
 }) {
   const t = useTranslations("play");
+
+  // Offline the score stays in the browser, and a sign-in button would lead
+  // to a page this instance does not have.
+  if (!online) return null;
 
   if (!signedIn) {
     return (

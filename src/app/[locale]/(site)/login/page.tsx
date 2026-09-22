@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
@@ -22,6 +23,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function LoginPage(): Promise<React.JSX.Element> {
+  // Offline there is no account to have: the page does not exist here.
+  if (!env.ONLINE) notFound();
+
   const [locale, session] = await Promise.all([getLocale(), getSession()]);
   if (session !== null) redirect({ href: "/profile", locale });
 

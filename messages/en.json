@@ -301,7 +301,8 @@
     "periodToday": "Today",
     "periodYesterday": "Yesterday",
     "periodAll": "All time",
-    "unavailable": "The leaderboard is unavailable right now. The game still works: your runs are saved in this browser and will be sent when the server is back."
+    "unavailable": "The leaderboard is unavailable right now. The game still works: your runs are saved in this browser and will be sent when the server is back.",
+    "offline": "This instance runs without a server: no accounts and no leaderboard. Your runs are saved in this browser."
   },
   "profile": {
     "title": "Profile",

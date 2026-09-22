@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { type RunSaveDto, RunSaveSchema } from "@/game";
 import { getDailySeed } from "@/lib/daily/store";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import { getMyProfile } from "@/lib/profile/actions";
 import { getCurrentUserId } from "@/lib/session";
 
@@ -37,6 +38,7 @@ export default async function PlayPage() {
 
   return (
     <PlayClient
+      online={env.ONLINE}
       signedIn={signedIn}
       serverMeta={profile?.ok === true && profile.data !== null ? profile.data.meta : null}
       dailySeed={daily?.seed ?? null}

@@ -77,8 +77,19 @@ PostgreSQL 17 · Better Auth
 
 ## Getting started
 
+**Just the game, no server.** With no `.env` at all the app runs offline: the
+game plays against `localStorage`, and sign-in, the profile, cloud saves and
+the leaderboard are simply absent — the header does not even show them.
+
 ```bash
 bun install
+bun run dev                 # http://localhost:3000
+```
+
+**With accounts and a leaderboard.** Set a database and the secrets that
+guard it:
+
+```bash
 cp .env.example .env
 
 openssl rand -hex 32        # -> BETTER_AUTH_SECRET
@@ -90,11 +101,12 @@ bun run db:migrate          # create and apply migrations
 bun run dev                 # http://localhost:3000
 ```
 
-Minimum to boot: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CRON_SECRET`,
-`DAILY_SEED_SECRET`. `src/lib/env.ts` validates them at import time, so a
-missing one fails at start-up with a message naming it.
+`DATABASE_URL` is the switch: absent, the app is offline; present,
+`BETTER_AUTH_SECRET` and `DAILY_SEED_SECRET` become required and
+`src/lib/env.ts` fails at start-up naming the missing one. `CRON_SECRET` only
+guards the routes under `/api/cron`, which stay off without it.
 
-The game itself needs no account: `/play` works signed out, against
+Even online the game needs no account: `/play` works signed out, against
 `localStorage`. Signing in is what buys you cloud saves and the leaderboard.
 
 **Signing in.** In development the magic link is printed to the server log —

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { AuthMenu, type Viewer } from "@/components/shell/AuthMenu";
 import { LocaleSwitch } from "@/components/shell/LocaleSwitch";
 import { Link } from "@/i18n/navigation";
+import { env } from "@/lib/env";
 import { getSession } from "@/lib/session";
 
 /**
@@ -20,10 +21,12 @@ export async function Header(): Promise<React.JSX.Element> {
   const viewer: Viewer | null =
     session === null ? null : { name: session.user.name, email: session.user.email };
 
+  // Offline there is no account to have: the profile link and the sign-in
+  // button would lead to pages that do not exist on this instance.
   const links = [
     { href: "/play", label: nav("play") },
     { href: "/leaderboard", label: nav("leaderboard") },
-    { href: "/profile", label: nav("profile") },
+    ...(env.ONLINE ? [{ href: "/profile", label: nav("profile") }] : []),
   ] as const;
 
   return (
@@ -49,7 +52,7 @@ export async function Header(): Promise<React.JSX.Element> {
 
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         <LocaleSwitch />
-        <AuthMenu viewer={viewer} />
+        {env.ONLINE ? <AuthMenu viewer={viewer} /> : null}
       </div>
     </header>
   );

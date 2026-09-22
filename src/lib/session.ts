@@ -9,6 +9,7 @@ import { auth, type Session } from "@/lib/auth";
  * here — never trust a user id supplied by the client.
  */
 export async function getSession(): Promise<Session | null> {
+  if (auth === null) return null;
   return auth.api.getSession({ headers: await headers() });
 }
 

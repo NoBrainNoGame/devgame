@@ -17,6 +17,8 @@ import { env } from "@/lib/env";
 
 /** Constant-time comparison so the secret can't be recovered by timing. */
 function secretMatches(provided: string): boolean {
+  // No secret configured means no scheduled jobs, not open ones.
+  if (env.CRON_SECRET === undefined) return false;
   const a = Buffer.from(provided);
   const b = Buffer.from(env.CRON_SECRET);
   return a.length === b.length && timingSafeEqual(a, b);

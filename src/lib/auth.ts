@@ -23,72 +23,82 @@ const googleCredentials =
     ? { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET }
     : undefined;
 
-export const auth = betterAuth({
-  appName: "Devgame",
-  secret: env.BETTER_AUTH_SECRET,
-  baseURL: env.BETTER_AUTH_URL,
+/**
+ * Offline there is no auth at all: no secret, no database, no session. Every
+ * reader checks for `null` and behaves as signed out, which is what the game
+ * is designed around anyway.
+ */
+export const auth = env.ONLINE && env.BETTER_AUTH_SECRET !== undefined ? buildAuth() : null;
 
-  database: prismaAdapter(prisma, { provider: "postgresql" }),
+function buildAuth() {
+  return betterAuth({
+    appName: "Devgame",
+    secret: env.BETTER_AUTH_SECRET,
+    baseURL: env.BETTER_AUTH_URL,
 
-  socialProviders: googleCredentials ? { google: googleCredentials } : {},
+    database: prismaAdapter(prisma, { provider: "postgresql" }),
 
-  /**
-   * Google is the front door, and the magic link is the way in when somebody
-   * has no Google account or Google is down. Both routes prove the same thing —
-   * control of an address — so a player who used one and then the other should
-   * land in the same account rather than a duplicate, or worse, an error they
-   * cannot get past.
-   *
-   * Only Google is trusted for automatic linking, because it verifies the
-   * address itself. Linking on an unverified address would let anyone claim an
-   * account by asserting its email.
-   */
-  account: {
-    accountLinking: {
-      enabled: true,
-      trustedProviders: ["google"],
-    },
-  },
+    socialProviders: googleCredentials ? { google: googleCredentials } : {},
 
-  plugins: [
-    magicLink({
-      /**
-       * ⚠ WIRE THIS BEFORE YOU DEPLOY.
-       *
-       * No email provider ships with the starter, so in development the link
-       * goes to the server log — enough to sign in locally. In production we
-       * throw instead of silently swallowing sign-in attempts, which means that
-       * unless you either fill in the Google OAuth pair or implement this
-       * function, **nobody can sign in to your deployed app**.
-       *
-       * A minimal Resend implementation:
-       *
-       *   await new Resend(env.RESEND_API_KEY).emails.send({
-       *     from: "you@yourdomain.com",
-       *     to: email,
-       *     subject: "Your sign-in link",
-       *     text: url,
-       *   });
-       */
-      async sendMagicLink({ email, url }) {
-        if (env.NODE_ENV === "production") {
-          throw new Error(
-            "Magic link email sending is not configured. Wire an email provider " +
-              "in src/lib/auth.ts before deploying.",
-          );
-        }
-
-        console.info(`\n  ✉  Magic link for ${email}:\n     ${url}\n`);
+    /**
+     * Google is the front door, and the magic link is the way in when somebody
+     * has no Google account or Google is down. Both routes prove the same thing —
+     * control of an address — so a player who used one and then the other should
+     * land in the same account rather than a duplicate, or worse, an error they
+     * cannot get past.
+     *
+     * Only Google is trusted for automatic linking, because it verifies the
+     * address itself. Linking on an unverified address would let anyone claim an
+     * account by asserting its email.
+     */
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ["google"],
       },
-      expiresIn: 60 * 15,
-    }),
+    },
 
-    // Must stay last: it flushes Better Auth's cookies into the Next.js response.
-    nextCookies(),
-  ],
-});
+    plugins: [
+      magicLink({
+        /**
+         * ⚠ WIRE THIS BEFORE YOU DEPLOY.
+         *
+         * No email provider ships with the starter, so in development the link
+         * goes to the server log — enough to sign in locally. In production we
+         * throw instead of silently swallowing sign-in attempts, which means that
+         * unless you either fill in the Google OAuth pair or implement this
+         * function, **nobody can sign in to your deployed app**.
+         *
+         * A minimal Resend implementation:
+         *
+         *   await new Resend(env.RESEND_API_KEY).emails.send({
+         *     from: "you@yourdomain.com",
+         *     to: email,
+         *     subject: "Your sign-in link",
+         *     text: url,
+         *   });
+         */
+        async sendMagicLink({ email, url }) {
+          if (env.NODE_ENV === "production") {
+            throw new Error(
+              "Magic link email sending is not configured. Wire an email provider " +
+                "in src/lib/auth.ts before deploying.",
+            );
+          }
 
-export type Session = typeof auth.$Infer.Session;
+          console.info(`\n  ✉  Magic link for ${email}:\n     ${url}\n`);
+        },
+        expiresIn: 60 * 15,
+      }),
+
+      // Must stay last: it flushes Better Auth's cookies into the Next.js response.
+      nextCookies(),
+    ],
+  });
+}
+
+export type Auth = ReturnType<typeof buildAuth>;
+export type Session = Auth["$Infer"]["Session"];
 
 /** Google sign-in is only offered when both OAuth credentials are present. */
 export const isGoogleEnabled = googleCredentials !== undefined;
