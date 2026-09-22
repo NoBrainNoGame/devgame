@@ -1,5 +1,6 @@
 import type { Application, Container } from "pixi.js";
 
+import type { RevealSet } from "@/game/bridge/reveal";
 import type { GameSession } from "@/game/bridge/session";
 import type { Camera } from "@/game/chips/Camera";
 import type { I18nText } from "@/game/core/i18n";
@@ -13,6 +14,8 @@ import type { I18nText } from "@/game/core/i18n";
  */
 export interface SceneControls {
   camera: Camera | null;
+  /** Ends the running sequence. The one path a skip takes, from anywhere. */
+  skip: (() => void) | null;
 }
 
 /**
@@ -22,6 +25,8 @@ export interface SceneControls {
 export interface SceneContext {
   app: Application;
   session: GameSession;
+  /** What the graph may draw right now. Written by the effect queue only. */
+  reveal: RevealSet;
   /** Resolves an engine key to a string. The engine never produces one itself. */
   translate: (text: I18nText) => string;
   container: Container;

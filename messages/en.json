@@ -72,7 +72,8 @@
     "fired": "Fired: too many bugs in production.",
     "playAgain": "Play again",
     "levelUp": "Reached level {level}",
-    "unlocked": "Unlocked: {name}"
+    "unlocked": "Unlocked: {name}",
+    "ticketsDelivered": "Tickets delivered"
   },
   "hud": {
     "resourcesTitle": "Resources",

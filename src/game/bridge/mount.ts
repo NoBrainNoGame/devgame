@@ -2,6 +2,7 @@
 
 import { Application } from "pixi.js";
 
+import { RevealSet } from "@/game/bridge/reveal";
 import { GameSession, type SessionOptions } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
@@ -97,12 +98,19 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     ...(options.resume === undefined ? {} : { resumeActions: options.resume.actions }),
   });
 
-  const controls: SceneControls = { camera: null };
+  const controls: SceneControls = { camera: null, skip: null };
+
+  // A resumed run is replayed inside the session without an `applied` event,
+  // so everything it wrote is on screen from the first frame and nothing of
+  // it is animated.
+  const reveal = new RevealSet();
+  reveal.showAll(session.getState());
 
   const runner = new booyah.Runner(() => new GameRoot(), {
     rootContext: {
       app,
       session,
+      reveal,
       translate: options.translate,
       reducedMotion: options.reducedMotion ?? false,
       controls,
@@ -135,7 +143,8 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       return session.getActions();
     },
     skipAnimations() {
-      gameStore.setState({ pendingAnimation: false });
+      if (controls.skip !== null) controls.skip();
+      else gameStore.setState({ pendingAnimation: false });
     },
     resize() {
       app.renderer.resize(element.clientWidth, element.clientHeight);

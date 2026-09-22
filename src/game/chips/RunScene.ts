@@ -31,7 +31,9 @@ export class RunScene extends ContainerChip {
     const graph = new GraphView();
     const fx = new FxQueue();
     const camera = new Camera(graph);
-    sceneContext(this.chipContext).controls.camera = camera;
+    const { controls } = sceneContext(this.chipContext);
+    controls.camera = camera;
+    controls.skip = () => fx.skip();
 
     this._activateChildChip(
       new booyah.Parallel(

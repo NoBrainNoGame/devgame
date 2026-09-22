@@ -47,7 +47,7 @@ export const BALANCE = {
      * merge has to give back less than that or energy becomes a resource that
      * only ever goes up.
      */
-    featureMergeRegen: 4,
+    featureMergeRegen: 5,
     sprintMergeRegen: 6,
     /**
      * Fraction of the maximum handed back when a sprint closes.
@@ -201,7 +201,7 @@ export const BALANCE = {
    */
   wip: {
     /** Added to the energy multiplier per extra open ticket. */
-    energyPerExtra: 0.5,
+    energyPerExtra: 0.35,
     /** Points taken off every roll per extra open ticket. */
     malusPerExtra: 10,
   },
@@ -214,8 +214,8 @@ export const BALANCE = {
   tickets: {
     /** Tickets arriving at sprint 1, and one more every `growEvery` sprints. */
     base: 2,
-    growEvery: 2,
-    maxPerSprint: 5,
+    growEvery: 3,
+    maxPerSprint: 4,
     /** Sprints a ticket may sit in the backlog before the board assigns it. */
     graceSprints: 1,
     /** Chance in percent that a ticket carries a skill, beyond the guaranteed one. */
@@ -245,12 +245,12 @@ export const BALANCE = {
   quality: {
     max: 100,
     perIncident: 25,
-    decayPerCleanSprint: 15,
+    decayPerCleanSprint: 20,
   },
 
   release: {
     /** Chance in percent that each unread machine-written commit shipped breaks. */
-    bugPerUnreadPct: 15,
+    bugPerUnreadPct: 12,
   },
 
   xp: {

@@ -28,7 +28,8 @@ export class Look extends booyah.ChipBase {
   }
 
   protected _onTick(): void {
+    const { reducedMotion } = sceneContext(this.chipContext);
     this.elapsed += this._lastTickInfo.timeSinceLastTick;
-    if (this.skip.value || this.elapsed >= this.duration) this.terminate();
+    if (this.skip.value || reducedMotion || this.elapsed >= this.duration) this.terminate();
   }
 }

@@ -14,9 +14,11 @@ import {
 import type { PlayerAction, RunSnapshot } from "@/game";
 
 /**
- * The two moments the game stops and asks a direct question: how to untangle a
- * merge conflict, and which improvement to take into the next sprint. Both are
- * modal because both are the only thing that can happen next.
+ * The moments the game stops and asks a direct question: how to untangle a
+ * merge conflict, which improvement to take into the next sprint, and what to
+ * do now the run is over. All modal, because each is the only thing that can
+ * happen next — and all of them wait for the canvas to finish telling what
+ * just happened, or the question would land on top of its own cause.
  */
 export function ConflictDialog({
   snapshot,
@@ -28,9 +30,10 @@ export function ConflictDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
-  const open = snapshot.phase.kind === "resolve_conflict";
+  const open = snapshot.phase.kind === "resolve_conflict" && !busy;
 
   const manual = snapshot.previews["conflict:manual"];
+  const machine = snapshot.previews["conflict:ai"];
 
   return (
     <Dialog open={open}>
@@ -48,7 +51,9 @@ export function ConflictDialog({
           >
             <span>
               {t("conflictManual")}
-              {manual?.successPct === undefined ? "" : `\u00a0— ${manual.successPct}\u00a0%`}
+              {manual === undefined
+                ? ""
+                : `\u00a0— −${manual.energyCost}\u00a0⚡ · ${manual.successPct ?? 0}\u00a0%`}
             </span>
             <span className="whitespace-normal font-normal text-muted-foreground text-xs">
               {t("conflictManualHint")}
@@ -61,7 +66,10 @@ export function ConflictDialog({
             disabled={busy}
             onClick={() => onAct({ type: "resolve_conflict", how: "ai" })}
           >
-            <span>{t("conflictAi")}</span>
+            <span>
+              {t("conflictAi")}
+              {machine?.debtDelta === undefined ? "" : `\u00a0— +${machine.debtDelta[1]} dette`}
+            </span>
             <span className="whitespace-normal font-normal text-muted-foreground text-xs">
               {t("conflictAiHint")}
             </span>
@@ -84,7 +92,7 @@ export function RelicDialog({
   const t = useTranslations("hud");
   const game = useTranslations("game");
 
-  const open = snapshot.phase.kind === "choose_relic";
+  const open = snapshot.phase.kind === "choose_relic" && !busy;
   const offer = snapshot.phase.kind === "choose_relic" ? snapshot.phase.offer : [];
 
   return (
@@ -118,17 +126,19 @@ export function RelicDialog({
 
 export function RunOverDialog({
   snapshot,
+  busy,
   onPlayAgain,
   footer,
 }: {
   snapshot: RunSnapshot;
+  busy: boolean;
   onPlayAgain: () => void;
   footer?: React.ReactNode;
 }) {
   const t = useTranslations("play");
   const common = useTranslations("common");
 
-  const open = snapshot.phase.kind === "game_over";
+  const open = snapshot.phase.kind === "game_over" && !busy;
   const reason = snapshot.phase.kind === "game_over" ? snapshot.phase.reason : null;
 
   return (
@@ -148,6 +158,8 @@ export function RunOverDialog({
           <dd className="text-right tabular-nums">{snapshot.player.totalCommits}</dd>
           <dt className="text-muted-foreground">{common("sprint")}</dt>
           <dd className="text-right tabular-nums">{Math.max(0, snapshot.sprint - 1)}</dd>
+          <dt className="text-muted-foreground">{t("ticketsDelivered")}</dt>
+          <dd className="text-right tabular-nums">{snapshot.ticketsDelivered}</dd>
         </dl>
 
         <DialogFooter className="sm:justify-between">

@@ -72,7 +72,8 @@
     "fired": "Licenciement : trop de bugs en production.",
     "playAgain": "Rejouer",
     "levelUp": "Niveau {level} atteint",
-    "unlocked": "Débloqué : {name}"
+    "unlocked": "Débloqué : {name}",
+    "ticketsDelivered": "Tickets livrés"
   },
   "hud": {
     "resourcesTitle": "Ressources",

@@ -10,7 +10,7 @@ import { floatingStyle } from "@/game/render/textStyles";
  * the canvas reports a quantity, so it has to be short: "+2", "−9 dette".
  */
 export class Pop extends booyah.ChipBase {
-  private label!: Text;
+  private label: Text | undefined;
   private elapsed = 0;
 
   constructor(
@@ -25,6 +25,8 @@ export class Pop extends booyah.ChipBase {
 
   protected _onActivate(): void {
     const { world, reducedMotion } = sceneContext(this.chipContext);
+    // Skipped before it started: nothing to draw, not even for a frame.
+    if (this.skip.value) return;
 
     this.label = new Text({ text: this.caption, style: floatingStyle });
     this.label.tint = this.colour;
@@ -36,7 +38,7 @@ export class Pop extends booyah.ChipBase {
   }
 
   protected _onTick(): void {
-    if (this.skip.value) {
+    if (this.skip.value || this.label === undefined) {
       this.terminate();
       return;
     }
@@ -51,6 +53,6 @@ export class Pop extends booyah.ChipBase {
   }
 
   protected _onTerminate(): void {
-    this.label.destroy();
+    this.label?.destroy();
   }
 }

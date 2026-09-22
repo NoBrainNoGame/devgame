@@ -3,27 +3,35 @@ import { gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import { Flash } from "@/game/chips/fx/Flash";
+import { Look } from "@/game/chips/fx/Look";
 import { Pop } from "@/game/chips/fx/Pop";
+import { Reveal } from "@/game/chips/fx/Reveal";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
-import { headOf } from "@/game/core/map/graph";
-import type { GameEvent, NodeId } from "@/game/core/types";
-import { nodeX, nodeY } from "@/game/render/coords";
-import { THEME } from "@/game/render/theme";
+import { planBatch, type Step } from "@/game/render/storyboard";
 
 /**
  * Plays a turn's events one after another.
  *
  * The HUD updates the moment an action is applied, but the canvas is a story:
- * the commit lands, then the debt pops, then production catches fire. Booyah's
- * `Queue` gives that ordering for free — each effect terminates itself and the
- * next one activates on the following tick.
+ * the commit appears, its cost lands on it, production catches fire. The
+ * storyboard decides the order; Booyah's `Queue` plays it — each effect
+ * terminates itself and the next one activates on the following tick — and
+ * the reveal set is what lets the graph draw a commit only when its moment
+ * comes.
  *
- * While the queue is draining, `pendingAnimation` is true and the session
- * refuses new actions. A click anywhere skips to the end rather than waiting,
- * because a player who already knows what happened should not have to watch.
+ * While the queue is draining, `pendingAnimation` is true, the session
+ * refuses new actions and the dialogs stay shut. A click anywhere skips to
+ * the end: everything is revealed at once and the UI unblocks.
  */
+
+interface Batch {
+  serial: number;
+  skip: SkipFlag;
+}
+
 export class FxQueue extends booyah.Queue {
-  private readonly skipFlag: SkipFlag = { value: false };
+  private serial = 0;
+  private current: Batch | null = null;
 
   protected _onActivate(): void {
     super._onActivate?.();
@@ -31,135 +39,69 @@ export class FxQueue extends booyah.Queue {
     const { session } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", (...args: unknown[]) => {
       const payload = args[0] as AppliedPayload | undefined;
-      if (payload !== undefined) this.enqueue(payload.events);
+      if (payload !== undefined) this.enqueue(payload);
     });
   }
 
   /**
-   * Cuts the rest of the sequence short. The queue still drains a frame at a
-   * time, but every remaining effect ends the moment it starts, and the UI
-   * unblocks immediately — the board is already up to date, only the show was
-   * still running.
+   * Cuts the rest of the sequence short. Every remaining effect ends the moment
+   * it starts, the graph is completed on the spot, and the UI unblocks now.
    */
   skip(): void {
-    this.skipFlag.value = true;
+    const { reveal, session } = sceneContext(this.chipContext);
+    if (this.current !== null) this.current.skip.value = true;
+    reveal.showAll(session.getState());
+    this.focus(null);
     gameStore.setState({ pendingAnimation: false });
   }
 
-  private enqueue(events: readonly GameEvent[]): void {
-    this.skipFlag.value = false;
-    // A turn opens on the player: whatever the camera went to look at last, the
-    // action that started this batch is theirs.
-    this.focus(null);
-    let queued = 0;
+  private enqueue(payload: AppliedPayload): void {
+    const { reveal, reducedMotion, translate } = sceneContext(this.chipContext);
 
-    for (const event of events) {
-      const chip = this.effectFor(event);
-      if (chip === null) continue;
-      this.add(chip);
-      queued += 1;
+    // One flag per batch. A skip on the previous batch must not cut this one
+    // short, and this one's final step must not unblock a later one.
+    this.serial += 1;
+    const batch: Batch = { serial: this.serial, skip: { value: false } };
+    this.current = batch;
+
+    if (reducedMotion) {
+      reveal.showAll(payload.state);
+      this.add(new Beat(1, batch.skip));
+    } else {
+      const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate);
+      for (const step of steps) this.add(this.chipFor(step, batch.skip));
     }
-
-    // Even a turn with nothing to show gets one beat, so the UI has a moment
-    // to settle rather than flickering between two states in the same frame.
-    if (queued === 0) this.add(new Beat(60, this.skipFlag));
 
     this.add(
       new booyah.Lambda(() => {
+        // A batch that was skipped and then followed by another must not be
+        // the one that says "done".
+        if (batch.serial !== this.serial) return;
+        // Whatever the storyboard did not think to reveal, the end of the
+        // batch does: the screen always ends a turn complete.
+        reveal.showAll(sceneContext(this.chipContext).session.getState());
         this.focus(null);
         gameStore.setState({ pendingAnimation: false });
       }),
     );
   }
 
-  private effectFor(event: GameEvent): booyah.Chip | null {
-    const { translate } = sceneContext(this.chipContext);
-
-    switch (event.type) {
-      case "node_done": {
-        const at = this.positionOf(event.nodeId);
-        if (at === null) return null;
-        return new Pop(
-          at,
-          event.mode === "ai" ? "ai" : "+1",
-          event.mode === "ai" ? THEME.node.ai : THEME.node.craft,
-          380,
-          this.skipFlag,
-        );
-      }
-
-      case "energy":
-        return new Pop(
-          this.playerPosition(),
-          `${event.delta > 0 ? "+" : ""}${event.delta}⚡`,
-          THEME.energy,
-          650,
-          this.skipFlag,
-        );
-
-      case "debt":
-        return new Pop(
-          this.playerPosition(),
-          `${event.delta > 0 ? "+" : ""}${event.delta}`,
-          THEME.debt,
-          650,
-          this.skipFlag,
-        );
-
-      case "points":
-        return new Pop(
-          this.playerPosition(),
-          `${event.delta > 0 ? "+" : ""}${event.delta} pts`,
-          THEME.lane.feature,
-          650,
-          this.skipFlag,
-        );
-
-      case "conflict":
-        return new Flash(this.playerPosition(), THEME.lane.hotfix, 420, this.skipFlag);
-
-      case "incident":
-        return new Flash(this.playerPosition(), THEME.lane.hotfix, 420, this.skipFlag);
-
-      case "pr_rejected":
-        return event.countered
-          ? null
-          : new Flash(this.playerPosition(), THEME.lane.hotfix, 300, this.skipFlag);
-
-      case "skill_gained":
-        return new Pop(
-          this.playerPosition(),
-          translate({ key: `skills.${event.skillId}.name` }),
-          THEME.lane.feature,
-          900,
-          this.skipFlag,
-        );
-
-      case "sprint_started":
-        return new Beat(200, this.skipFlag);
-
-      case "roll":
-        return new Beat(120, this.skipFlag);
-
-      default:
-        return null;
+  private chipFor(step: Step, skip: SkipFlag): booyah.Chip {
+    switch (step.kind) {
+      case "reveal":
+        return new Reveal(step.nodeId, step.at.y, step.asHead, step.hold, skip);
+      case "look":
+        return new Look(step.y, step.hold, skip);
+      case "pop":
+        return new Pop(step.at, step.caption, step.colour, step.hold, skip);
+      case "flash":
+        return new Flash(step.at, step.colour, step.hold, skip);
+      case "beat":
+        return new Beat(step.hold, skip);
     }
-  }
-
-  private positionOf(id: NodeId): { x: number; y: number } | null {
-    const { session } = sceneContext(this.chipContext);
-    const node = session.getState().nodes[id];
-    if (node === undefined) return null;
-    return { x: nodeX(node.lane), y: nodeY(node.depth) };
   }
 
   private focus(y: number | null): void {
     sceneContext(this.chipContext).controls.camera?.focusOn(y);
-  }
-
-  private playerPosition(): { x: number; y: number } {
-    const { session } = sceneContext(this.chipContext);
-    const head = headOf(session.getState());
-    return { x: nodeX(head.lane), y: nodeY(head.depth) };
   }
 }

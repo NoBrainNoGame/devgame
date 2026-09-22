@@ -231,8 +231,13 @@ export class Camera extends booyah.ChipBase {
   private targetY(): number {
     if (this.focusY !== null) return this.focusY;
 
-    const { session } = sceneContext(this.chipContext);
-    return nodeY(headOf(session.getState()).depth);
+    // The head as drawn, not as the engine has it: with `focusOn(null)` the
+    // camera would otherwise jump to the end of a batch still being played.
+    const { session, reveal } = sceneContext(this.chipContext);
+    const state = session.getState();
+    const head =
+      reveal.headId === null ? headOf(state) : (state.nodes[reveal.headId] ?? headOf(state));
+    return nodeY(head.depth);
   }
 
   private snap(keepY = false): void {

@@ -93,6 +93,7 @@ export function RunStage({
           <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
           <RunOverDialog
             snapshot={snapshot}
+            busy={busy}
             onPlayAgain={onPlayAgain}
             {...(runOverFooter === undefined ? {} : { footer: runOverFooter })}
           />

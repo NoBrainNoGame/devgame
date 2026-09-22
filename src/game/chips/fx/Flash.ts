@@ -7,7 +7,7 @@ import { NODE_RADIUS } from "@/game/render/theme";
 
 /** A ring that expands and fades: something went wrong here. */
 export class Flash extends booyah.ChipBase {
-  private ring!: Graphics;
+  private ring: Graphics | undefined;
   private elapsed = 0;
 
   constructor(
@@ -21,6 +21,7 @@ export class Flash extends booyah.ChipBase {
 
   protected _onActivate(): void {
     const { world, reducedMotion } = sceneContext(this.chipContext);
+    if (this.skip.value) return;
 
     this.ring = new Graphics();
     this.ring.position.set(this.position.x, this.position.y);
@@ -30,7 +31,7 @@ export class Flash extends booyah.ChipBase {
   }
 
   protected _onTick(): void {
-    if (this.skip.value) {
+    if (this.skip.value || this.ring === undefined) {
       this.terminate();
       return;
     }
@@ -47,6 +48,6 @@ export class Flash extends booyah.ChipBase {
   }
 
   protected _onTerminate(): void {
-    this.ring.destroy();
+    this.ring?.destroy();
   }
 }

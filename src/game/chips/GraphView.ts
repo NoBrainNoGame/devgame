@@ -3,7 +3,6 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import { headOf } from "@/game/core/map/graph";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
@@ -61,8 +60,12 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     this._container.addChild(this.edges, this.nodeLayer, this.labelLayer);
 
-    const { session } = sceneContext(this.chipContext);
+    // Two triggers, on purpose. The reveal set says *what* is drawn, and an
+    // applied action can change *how* a commit already drawn looks — reviewed,
+    // squashed — without revealing anything.
+    const { session, reveal } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", () => this.rebuild());
+    this._subscribe(reveal, "changed", () => this.rebuild());
 
     this.rebuild();
   }
@@ -93,12 +96,12 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   // --- what is visible ------------------------------------------------------
 
-  /** Every commit written. Nothing exists in the state before it is. */
+  /** The commits the effect queue has shown so far. */
   private revealed(): MapNode[] {
-    const { session } = sceneContext(this.chipContext);
+    const { session, reveal } = sceneContext(this.chipContext);
     const state = session.getState();
 
-    return Object.keys(state.nodes)
+    return [...reveal.nodes]
       .sort()
       .map((id) => state.nodes[id])
       .filter((node): node is MapNode => node !== undefined);
@@ -237,8 +240,8 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     // first, so it can ask before there is anything to answer with.
     if (this.sprites === undefined) return null;
 
-    const nodes = this.revealed();
-    const all = [...nodes, headOf(sceneContext(this.chipContext).session.getState())];
+    const all = this.revealed();
+    if (all.length === 0) return null;
 
     const xs = all.map((node) => nodeX(node.lane));
     const ys = all.map((node) => nodeY(node.depth));

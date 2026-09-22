@@ -1,3 +1,4 @@
+import { Emitter } from "@/game/bridge/emitter";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { isActionAvailable } from "@/game/core/rules/actions";
@@ -12,16 +13,14 @@ import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
  * Owns the live run: the state, the ordered action log that *is* the save, and
  * the store the UI reads.
  *
- * It exposes the Node-style `on`/`off`/`emit` trio so Booyah chips can
- * `_subscribe` to it and be unsubscribed automatically when they terminate.
+ * It is an `Emitter` so Booyah chips can `_subscribe` to it and be
+ * unsubscribed automatically when they terminate.
  */
 
 export interface AppliedPayload {
   events: GameEvent[];
   state: RunState;
 }
-
-type Listener = (...args: unknown[]) => void;
 
 export interface SessionOptions {
   seed: string;
@@ -36,12 +35,12 @@ export interface SessionOptions {
 
 export type DispatchResult = { ok: true } | { ok: false; reason: string };
 
-export class GameSession {
-  private readonly listeners = new Map<string, Set<Listener>>();
+export class GameSession extends Emitter {
   private readonly actionLog: PlayerAction[] = [];
   private state: RunState;
 
   constructor(private readonly options: SessionOptions) {
+    super();
     this.state = createRun({
       seed: options.seed,
       mode: options.mode,
@@ -130,31 +129,7 @@ export class GameSession {
     });
   }
 
-  // --- Node-style events, for Booyah's `_subscribe` -------------------------
-
-  on(type: string, listener: Listener): void {
-    const bucket = this.listeners.get(type) ?? new Set<Listener>();
-    bucket.add(listener);
-    this.listeners.set(type, bucket);
-  }
-
-  once(type: string, listener: Listener): void {
-    const wrapper: Listener = (...args) => {
-      this.off(type, wrapper);
-      listener(...args);
-    };
-    this.on(type, wrapper);
-  }
-
-  off(type: string, listener: Listener): void {
-    this.listeners.get(type)?.delete(listener);
-  }
-
-  emit(type: string, ...args: unknown[]): void {
-    for (const listener of [...(this.listeners.get(type) ?? [])]) listener(...args);
-  }
-
   destroy(): void {
-    this.listeners.clear();
+    this.clearListeners();
   }
 }
