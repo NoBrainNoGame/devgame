@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { toSnapshot } from "@/game/bridge/snapshot";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import {
@@ -372,6 +373,13 @@ describe("review", () => {
   test("a review with nothing to read is not offered at all", () => {
     const state = withReviewSkill(inHand("nothing"));
     expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+  });
+
+  test("the clock's speed tier is declared, summed and read: the snapshot shows the node's level", () => {
+    const state = inHand("fast-forward");
+    expect(toSnapshot(state).idleSpeedTier).toBe(0);
+    state.tree.fast_forward = 2;
+    expect(toSnapshot(state).idleSpeedTier).toBe(2);
   });
 
   test("review is there from the first turn, and a skill makes it read more", () => {

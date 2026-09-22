@@ -21,6 +21,12 @@ export const SKILL_IDS = [
   "feature_flags",
   "sprint_final",
   "lynx_eye",
+  "code_owners",
+  "ergonomic_chair",
+  "static_analysis",
+  "release_train",
+  "product_sense",
+  "prompt_engineering",
 ] as const;
 
 export type SkillId = (typeof SKILL_IDS)[number];
@@ -113,6 +119,37 @@ export const SKILLS: Record<SkillId, SkillDef> = {
     id: "lynx_eye",
     effects: { debtVisible: true },
     unlockCost: 300,
+  },
+
+  code_owners: {
+    id: "code_owners",
+    effects: { reviewExtraCommits: 1, reviewEnergyDiscount: 1 },
+    unlockCost: 200,
+  },
+  ergonomic_chair: {
+    id: "ergonomic_chair",
+    effects: { energyMaxBonus: 5 },
+    unlockCost: 200,
+  },
+  static_analysis: {
+    id: "static_analysis",
+    effects: { aiSuccessPoints: 6, debtDecayPerTurn: 1 },
+    unlockCost: 400,
+  },
+  release_train: {
+    id: "release_train",
+    effects: { mergeRegenBonus: 3 },
+    unlockCost: 400,
+  },
+  product_sense: {
+    id: "product_sense",
+    effects: { skillTicketPoints: 15 },
+    unlockCost: 500,
+  },
+  prompt_engineering: {
+    id: "prompt_engineering",
+    effects: { aiSuccessPoints: 8, aiDebtDiscount: 2 },
+    unlockCost: 800,
   },
 };
 

@@ -44,13 +44,16 @@ export function BoardDialog({
     onOpenChange(false);
   };
 
-  const columns: { key: "backlog" | "open" | "merged"; tickets: TicketView[] }[] = [
+  const cancelled = snapshot.tickets.filter((ticket) => ticket.status === "cancelled").reverse();
+  const columns: { key: TicketView["status"]; tickets: TicketView[] }[] = [
     { key: "backlog", tickets: snapshot.tickets.filter((ticket) => ticket.status === "backlog") },
     { key: "open", tickets: snapshot.tickets.filter((ticket) => ticket.status === "open") },
     {
       key: "merged",
       tickets: snapshot.tickets.filter((ticket) => ticket.status === "merged").reverse(),
     },
+    // Expired offers are worth a glance, not a permanent empty column.
+    ...(cancelled.length === 0 ? [] : [{ key: "cancelled" as const, tickets: cancelled }]),
   ];
 
   return (
@@ -132,6 +135,7 @@ function TicketCard({
         "space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm",
         current && "border-branch-feature",
         ticket.kind === "hotfix" && "border-branch-hotfix/60",
+        ticket.status === "cancelled" && "opacity-60",
       )}
     >
       <button
@@ -154,6 +158,9 @@ function TicketCard({
             {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
           </p>
         )}
+        {ticket.skillId !== undefined && ticket.status === "backlog" ? (
+          <p className="text-debt text-xs">{t("expiresAtSprintEnd")}</p>
+        ) : null}
         {ticket.mrr > 0 ? (
           <p className="text-muted-foreground text-xs tabular-nums">
             {t("ticketMrr", { money: ticket.mrr })}

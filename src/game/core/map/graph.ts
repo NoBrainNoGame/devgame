@@ -152,6 +152,12 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
     if (ticket.status === "open" && (ticket.lane === undefined) !== (ticket.nodeIds.length === 0)) {
       failures.push({ rule: "lane-follows-commits", detail: ticket.id });
     }
+    if (
+      ticket.status === "cancelled" &&
+      (ticket.nodeIds.length > 0 || ticket.lane !== undefined || ticket.assignee !== undefined)
+    ) {
+      failures.push({ rule: "cancelled-is-empty", detail: ticket.id });
+    }
     if (ticket.status === "open") {
       for (const id of ticket.nodeIds) {
         const node = state.nodes[id];

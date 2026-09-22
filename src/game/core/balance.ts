@@ -232,8 +232,12 @@ export const BALANCE = {
     maxPerSprint: 8,
     /** Sprints a ticket may sit in the backlog before the board assigns it. */
     graceSprints: 1,
-    /** Chance in percent that a ticket carries a skill, beyond the guaranteed one. */
-    skillPct: 40,
+    /**
+     * Chance in percent that a ticket carries a skill, beyond the guaranteed
+     * one. Low on purpose: a skill ticket is rare, expires unstarted at the
+     * end of its sprint, and the Product owner node is how you see more.
+     */
+    skillPct: 25,
     /** Story points of a ticket that grants nothing. */
     points: { min: 5, max: 7 },
     /**

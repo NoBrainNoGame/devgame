@@ -52,7 +52,8 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
   const { state, rng } = context;
   const { tickets } = BALANCE;
 
-  const rolled = rng.chance(tickets.skillPct);
+  // The same draw whatever the build: the effect only moves the threshold.
+  const rolled = rng.chance(tickets.skillPct + context.effects.skillTicketPoints);
   const wantsSkill = pool.length > 0 && (guaranteed || rolled);
   const skillId = wantsSkill ? rng.pick(pool) : undefined;
   if (skillId !== undefined) pool.splice(pool.indexOf(skillId), 1);

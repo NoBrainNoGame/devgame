@@ -59,6 +59,14 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text("log.debt_refactored", { debt: event.amount }),
       };
 
+    case "ticket_cancelled":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.ticket_cancelled", { skill: ref(`skills.${event.skillId}.name`) }),
+      };
+
     case "ticket_restarted":
       return {
         seq,

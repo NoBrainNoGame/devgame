@@ -155,7 +155,8 @@
     "column": {
       "backlog": "Backlog",
       "open": "En cours",
-      "merged": "Livrés"
+      "merged": "Livrés",
+      "cancelled": "Expirés"
     },
     "columnEmpty": "Rien ici.",
     "startTicket": "Démarrer",
@@ -200,7 +201,8 @@
     "ticketStatus": {
       "backlog": "Au backlog",
       "open": "En cours",
-      "merged": "Livré"
+      "merged": "Livré",
+      "cancelled": "Expiré"
     },
     "ticketArrived": "arrivé au sprint {sprint}",
     "ticketRework": "{count, plural, one {# point de correctif} other {# points de correctif}} ajouté par {rejections, plural, one {# review refusée} other {# reviews refusées}}",
@@ -274,7 +276,8 @@
     "nothingYet": "Rien pour l'instant.",
     "pickTicket": "Ouvrir un ticket",
     "pickTicketHint": "{count, plural, one {# ticket attend au backlog : ouvrez le projet et choisissez.} other {# tickets attendent au backlog : ouvrez le projet et choisissez.}}",
-    "pickTicketEmpty": "Le backlog est vide : le sprint se termine dès que le tableau l'est."
+    "pickTicketEmpty": "Le backlog est vide : le sprint se termine dès que le tableau l'est.",
+    "expiresAtSprintEnd": "Expire à la fin du sprint si personne ne le démarre."
   },
   "leaderboard": {
     "title": "Classement",
@@ -547,6 +550,30 @@
       "lynx_eye": {
         "name": "Œil de lynx",
         "desc": "La dette technique s'affiche au point près."
+      },
+      "code_owners": {
+        "name": "Code owners",
+        "desc": "Une review relit un commit de plus et coûte moins d'énergie."
+      },
+      "ergonomic_chair": {
+        "name": "Chaise ergonomique",
+        "desc": "Relève nettement le plafond d'énergie."
+      },
+      "static_analysis": {
+        "name": "Analyse statique",
+        "desc": "Fiabilise les commits IA et rembourse un peu de dette à chaque tour."
+      },
+      "release_train": {
+        "name": "Train de release",
+        "desc": "Chaque merge rend davantage d'énergie."
+      },
+      "product_sense": {
+        "name": "Sens produit",
+        "desc": "Les tickets apportent plus souvent une compétence."
+      },
+      "prompt_engineering": {
+        "name": "Prompt engineering",
+        "desc": "La machine réussit plus souvent et laisse moins de dette."
       }
     },
     "relics": {
@@ -643,6 +670,14 @@
       "calm": {
         "name": "Sang-froid",
         "desc": "Chaque niveau ajoute cinq points à la résolution de conflit à la main."
+      },
+      "product_owner": {
+        "name": "Product owner",
+        "desc": "Chaque niveau augmente la chance qu'un ticket apporte une compétence."
+      },
+      "fast_forward": {
+        "name": "Avance rapide",
+        "desc": "Chaque niveau accélère l'horloge du jeu : ×10, puis ×100."
       }
     },
     "branches": {
@@ -891,7 +926,8 @@
         "outage": "la prod perd patience : +{delta} pour les serveurs saturés ({value}/{max})",
         "idle_sprint": "la prod perd patience : +{delta}, rien livré de votre main ce sprint ({value}/{max})",
         "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})"
-      }
+      },
+      "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",

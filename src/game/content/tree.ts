@@ -35,6 +35,8 @@ export const TREE_IDS = [
   "stamina",
   "luck",
   "calm",
+  "product_owner",
+  "fast_forward",
 ] as const;
 
 export type TreeNodeId = (typeof TREE_IDS)[number];
@@ -153,6 +155,25 @@ export const TREE: Record<TreeNodeId, TreeNodeDef> = {
     perLevel: { devCapacityBonus: 1 },
     cost: [3],
     requires: [{ id: "agile_coach", level: 1 }],
+  },
+
+  product_owner: {
+    id: "product_owner",
+    branch: "management",
+    maxLevel: 3,
+    // Skill tickets are rare and perishable; this is the one way to see more
+    // of them. Three levels bring the chance back above where it started.
+    perLevel: { skillTicketPoints: 10 },
+    cost: [2, 3, 4],
+  },
+  fast_forward: {
+    id: "fast_forward",
+    branch: "management",
+    maxLevel: 2,
+    // A run earns one point a sprint: letting the game run itself ten or a
+    // hundred times faster is bought with sprints, not with money.
+    perLevel: { idleSpeedTier: 1 },
+    cost: [8, 15],
   },
 
   stamina: {

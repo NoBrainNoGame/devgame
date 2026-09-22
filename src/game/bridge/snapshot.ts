@@ -168,6 +168,8 @@ export interface RunSnapshot {
   devs: DevView[];
   /** The idle timer may play a move rather than rest: the supervisor is bought. */
   autopilot: boolean;
+  /** How fast the idle clock may run: 0 = ×1, 1 = ×10, 2 = ×100. */
+  idleSpeedTier: number;
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -293,6 +295,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     },
     devs,
     autopilot: effects.autopilot,
+    idleSpeedTier: effects.idleSpeedTier,
 
     nodes,
     tickets,

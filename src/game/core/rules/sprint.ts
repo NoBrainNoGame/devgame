@@ -10,7 +10,7 @@ import { energyMax } from "@/game/core/rules/modifiers";
 import { isOver } from "@/game/core/rules/over";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { pullTeam } from "@/game/core/rules/team";
-import { assignStaleTickets, sortedTickets } from "@/game/core/rules/tickets";
+import { assignStaleTickets, backlogTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { writeRelease, writeSprintStart } from "@/game/core/rules/write";
 import type { RunState } from "@/game/core/types";
 
@@ -126,9 +126,12 @@ export function startNextSprint(context: RuleContext): void {
 
   writeSprintStart(context);
 
-  // The team picks up what is waiting before the board forces it on you —
-  // that is what a team is for. Then what is left is yours, then the new work
-  // arrives on top.
+  // A skill ticket is an offer for one sprint: unstarted, it expires before
+  // the team or the board can pick it up, and its skill goes back in the pool
+  // in time for this sprint's arrivals. Then the team picks up what is
+  // waiting before the board forces it on you — that is what a team is for —
+  // then what is left is yours, then the new work arrives on top.
+  expireSkillTickets(context);
   pullTeam(context);
   assignStaleTickets(context);
   arriveTickets(context, availableSkills(state));
@@ -136,14 +139,24 @@ export function startNextSprint(context: RuleContext): void {
   emit(context, { type: "sprint_started", sprint: state.sprint });
 }
 
+function expireSkillTickets(context: RuleContext): void {
+  const { state } = context;
+  for (const ticket of backlogTickets(state)) {
+    if (ticket.skillId === undefined) continue;
+    ticket.status = "cancelled";
+    emit(context, { type: "ticket_cancelled", ticketId: ticket.id, skillId: ticket.skillId });
+  }
+}
+
 /**
  * Skills a new ticket may still grant: unlocked by the account, not already
- * earned this run, and not already promised by a ticket on the board.
+ * earned this run, and not already promised by a ticket still on the board.
  */
 export function availableSkills(state: RunState): SkillId[] {
   const taken = new Set<SkillId>(state.skills);
   for (const ticket of Object.values(state.tickets)) {
-    if (ticket.skillId !== undefined && ticket.status !== "merged") taken.add(ticket.skillId);
+    const onBoard = ticket.status === "backlog" || ticket.status === "open";
+    if (ticket.skillId !== undefined && onBoard) taken.add(ticket.skillId);
   }
   return [...state.unlockedSkills].filter((id) => !taken.has(id)).sort();
 }

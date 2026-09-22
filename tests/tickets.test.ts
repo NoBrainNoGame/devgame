@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
 
+import { SKILL_IDS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { checkInvariants } from "@/game/core/map/graph";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
+import { availableSkills } from "@/game/core/rules/sprint";
 import { backlogTickets, openTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
 import { SAVE_VERSION } from "@/game/dto/version";
@@ -18,6 +21,7 @@ import {
   plantCommit,
   play,
   policy,
+  settle,
 } from "./helpers";
 
 describe("the backlog", () => {
@@ -104,6 +108,45 @@ describe("the backlog", () => {
     const switched = applyAction(two, { type: "checkout", ticketId: start.ticketId }).state;
     expect(switched.player.ticketId).toBe(start.ticketId);
     expect(switched.turn).toBe(two.turn);
+  });
+
+  test("a skill ticket nobody started expires with its sprint, and its skill returns to the pool", () => {
+    const state = inHand("expire");
+    state.unlockedSkills = ["coffee", "unit_tests", "linter"];
+    for (const ticket of sortedTickets(state)) ticket.skillId = undefined;
+    const waiting = backlogTickets(state)[0];
+    if (waiting === undefined) throw new Error("expected a backlog ticket");
+    waiting.skillId = "coffee";
+    state.sprintTurn = BALANCE.sprint.turns - 1;
+
+    const result = applyAction(state, { type: "rest" });
+    const closed = settle(result.state);
+    expect(closed.sprint).toBe(state.sprint + 1);
+    expect(closed.tickets[waiting.id]?.status).toBe("cancelled");
+    expect(closed.tickets[waiting.id]?.lane).toBeUndefined();
+    // The sprint boundary runs through the relic choice, so the line is read
+    // from the log rather than from one action's events.
+    expect(closed.log.some((line) => line.text.key === "log.ticket_cancelled")).toBe(true);
+    // Never forced on you, never taken by the team.
+    expect(openTickets(closed).some((ticket) => ticket.id === waiting.id)).toBe(false);
+    // Back in the pool for this sprint's arrivals or the next.
+    expect(availableSkills(closed)).toContain("coffee");
+    expect(checkInvariants(closed)).toEqual([]);
+  });
+
+  test("the Product owner node makes skill tickets more frequent, on the same draws", () => {
+    const skillTickets = (level: number): number => {
+      let count = 0;
+      for (let i = 0; i < 120; i += 1) {
+        const state = newRun(`po-${i}`);
+        state.tree.product_owner = level;
+        state.unlockedSkills = [...SKILL_IDS];
+        const next = settle(play(state, { pick: policy("craft"), limit: 40 }).state);
+        count += sortedTickets(next).filter((t) => t.skillId !== undefined).length;
+      }
+      return count;
+    };
+    expect(skillTickets(3)).toBeGreaterThan(skillTickets(0));
   });
 
   test("a ticket left in the backlog past its grace is assigned to you", () => {

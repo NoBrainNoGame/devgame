@@ -101,7 +101,8 @@ export interface MapNode {
 }
 
 export type TicketKind = "feature" | "hotfix" | "refactor";
-export type TicketStatus = "backlog" | "open" | "merged";
+/** `cancelled`: a skill ticket nobody started before its sprint ended. */
+export type TicketStatus = "backlog" | "open" | "merged" | "cancelled";
 
 /**
  * A unit of work on the board. A feature until it is started, a branch once it
@@ -375,6 +376,8 @@ export type GameEvent =
       rework: number;
     }
   | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
+  /** A skill ticket sat in the backlog through its sprint: gone, the skill back in the pool. */
+  | { type: "ticket_cancelled"; ticketId: TicketId; skillId: SkillId }
   /** A fix took the bug out of a commit the review had flagged. */
   | { type: "bug_fixed"; ticketId: TicketId; nodeId: NodeId }
   /** A refactor redid a commit and took back the debt it had cost. */

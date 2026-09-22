@@ -105,5 +105,9 @@ describe("sprint boundary", () => {
     if (first !== undefined) first.skillId = "coffee";
 
     expect(availableSkills(state)).toEqual(["unit_tests"]);
+
+    // An expired offer is not a promise: its skill is back on the table.
+    if (first !== undefined) first.status = "cancelled";
+    expect(availableSkills(state)).toEqual(["coffee", "unit_tests"]);
   });
 });

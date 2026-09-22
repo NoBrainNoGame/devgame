@@ -155,7 +155,8 @@
     "column": {
       "backlog": "Backlog",
       "open": "In progress",
-      "merged": "Delivered"
+      "merged": "Delivered",
+      "cancelled": "Expired"
     },
     "columnEmpty": "Nothing here.",
     "startTicket": "Start",
@@ -200,7 +201,8 @@
     "ticketStatus": {
       "backlog": "In the backlog",
       "open": "In progress",
-      "merged": "Delivered"
+      "merged": "Delivered",
+      "cancelled": "Expired"
     },
     "ticketArrived": "arrived in sprint {sprint}",
     "ticketRework": "{count, plural, one {# fix point} other {# fix points}} added by {rejections, plural, one {# refused review} other {# refused reviews}}",
@@ -274,7 +276,8 @@
     "nothingYet": "Nothing yet.",
     "pickTicket": "Open a ticket",
     "pickTicketHint": "{count, plural, one {# ticket is waiting in the backlog: open the board and choose.} other {# tickets are waiting in the backlog: open the board and choose.}}",
-    "pickTicketEmpty": "The backlog is empty: the sprint ends as soon as the board is."
+    "pickTicketEmpty": "The backlog is empty: the sprint ends as soon as the board is.",
+    "expiresAtSprintEnd": "Expires at the end of the sprint unless someone starts it."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -547,6 +550,30 @@
       "lynx_eye": {
         "name": "Lynx eye",
         "desc": "Technical debt is shown exactly."
+      },
+      "code_owners": {
+        "name": "Code owners",
+        "desc": "A review reads one more commit and costs less energy."
+      },
+      "ergonomic_chair": {
+        "name": "Ergonomic chair",
+        "desc": "Raises the energy ceiling by a good margin."
+      },
+      "static_analysis": {
+        "name": "Static analysis",
+        "desc": "Steadies machine commits and repays a little debt every turn."
+      },
+      "release_train": {
+        "name": "Release train",
+        "desc": "Every merge gives back more energy."
+      },
+      "product_sense": {
+        "name": "Product sense",
+        "desc": "Tickets bring a skill more often."
+      },
+      "prompt_engineering": {
+        "name": "Prompt engineering",
+        "desc": "The machine succeeds more often and leaves less debt."
       }
     },
     "relics": {
@@ -643,6 +670,14 @@
       "calm": {
         "name": "Composure",
         "desc": "Each level adds five points to resolving a conflict by hand."
+      },
+      "product_owner": {
+        "name": "Product owner",
+        "desc": "Each level raises the chance that a ticket brings a skill."
+      },
+      "fast_forward": {
+        "name": "Fast forward",
+        "desc": "Each level speeds up the game's clock: ×10, then ×100."
       }
     },
     "branches": {
@@ -891,7 +926,8 @@
         "outage": "production loses patience: +{delta} for the saturated servers ({value}/{max})",
         "idle_sprint": "production loses patience: +{delta}, nothing landed by your hand this sprint ({value}/{max})",
         "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})"
-      }
+      },
+      "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",

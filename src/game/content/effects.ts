@@ -64,6 +64,13 @@ export interface Effects {
   devCapacityBonus: number;
   /** Percent taken off a hiring fee. */
   hiringDiscountPct: number;
+  /** Percentage points added to the chance that an arriving ticket carries a skill. */
+  skillTicketPoints: number;
+  /**
+   * How fast the idle clock may run: 0 = ×1 only, 1 = ×10, 2 = ×100. Read by
+   * the HUD like `autopilot`, bought in the run like everything else.
+   */
+  idleSpeedTier: number;
   /**
    * The idle timer plays a sensible move instead of resting. A rendering
    * concern read by the HUD, but bought in the run, so it is an effect.
@@ -109,6 +116,8 @@ export const NO_EFFECTS: Effects = {
   devSpeedBonus: 0,
   devCapacityBonus: 0,
   hiringDiscountPct: 0,
+  skillTicketPoints: 0,
+  idleSpeedTier: 0,
   autopilot: false,
   canReview: true,
 };
