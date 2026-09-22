@@ -1,14 +1,16 @@
 # Devgame
 
-A browser roguelike RPG whose dungeon is a procedurally generated **Git graph**.
+A browser roguelike RPG whose dungeon is a **Git graph** written as you play.
 You play a developer advancing commit by commit on a project that never ships:
-every node is a choice between a craft commit (safe, expensive in energy) and an
-AI commit (fast, accrues hidden technical debt). Feature branches you merge
-become permanent skills, a turn spent on code review repays debt, DevOps points
-automate away whole mechanics, and one to four rival bots race you down `main`.
-Get a bot fired and you inherit its branches — and its debt.
+every commit is a choice between a craft commit (safe, expensive in energy) and
+an AI commit (cheap, fills twice the story points, accrues hidden technical
+debt and ships bugs if nobody reads it). Tickets arrive every sprint with
+points to fill and acceptance criteria to hold, the ones you leave waiting get
+assigned to you anyway, and every ticket you hold beyond the first taxes every
+commit. Tickets you deliver become permanent skills, a turn spent on code
+review repays debt, and DevOps points automate away whole mechanics.
 
-Runs are infinite sprints. They end in burnout, or with you being fired.
+Runs are infinite sprints. They end in burnout, or with production firing you.
 
 ## Stack
 
@@ -69,7 +71,7 @@ plays fifty runs.
   no `Math.random()`: randomness comes from a seeded PRNG carried in the run
   state. The same seed and the same actions always produce the same run.
 - **Every number in one file.** `src/game/core/balance.ts` holds the tunables —
-  energy costs, success rates, debt gains, bot speeds, firing thresholds. A
+  energy costs, success rates, story points, debt gains, ticket cadence. A
   literal inside a rule is a bug waiting to be untunable.
 - **Readable randomness.** Success percentage, energy cost and effects are shown
   before you choose. Technical debt is shown as a fuzzy range, exact once you
@@ -109,10 +111,10 @@ src/
     ui/          shadcn primitives
     shell/       header, footer, locale switch, auth menu
     game/        the canvas mount point
-    hud/         resource bar, action panel, rival panel, commit log, dialogs
+    hud/         resource bar, action panel, commit log, dialogs
   game/
     core/        pure deterministic rules — no Pixi, no React, no clock
-    content/     data tables: skills, relics, bots, DevOps, events, profiles
+    content/     data tables: skills, relics, criteria, DevOps, events, profiles
     dto/         zod schemas and the server-side replay
     chips/       booyah flow — scene tree, camera, effect queue
     render/      Pixi 8 — the git graph, theme, coordinates

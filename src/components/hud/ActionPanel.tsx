@@ -331,16 +331,15 @@ function WrittenAsButton({
 
   if (action.kind === undefined) return null;
 
+  // Five detours in two hands is ten cards: the name on one line, the hand on
+  // the next, and the description waits in the tooltip.
   return (
     <ActionButton
-      label={`${game(`nodes.${action.kind}.name` as never)} · ${
-        action.mode === "craft" ? t("byHand") : t("byMachine")
-      }`}
+      label={game(`nodes.${action.kind}.name` as never)}
+      subtitle={action.mode === "craft" ? t("byHand") : t("byMachine")}
       hint={game(`nodes.${action.kind}.desc` as never)}
       preview={snapshot.previews[actionKey(action)]}
       busy={busy}
-      // Five detours in two hands is ten cards: the description waits in the
-      // tooltip so the list stays readable at a glance.
       compact
       onAct={() => onAct(action)}
     />
@@ -366,6 +365,7 @@ function DevopsLabel({
 
 function ActionButton({
   label,
+  subtitle,
   hint,
   preview,
   busy,
@@ -374,6 +374,8 @@ function ActionButton({
   onAct,
 }: {
   label: string;
+  /** A second, muted line under the label: the hand a detour is written by. */
+  subtitle?: string;
   hint: string;
   preview: ActionPreview | undefined;
   busy: boolean;
@@ -398,6 +400,9 @@ function ActionButton({
         >
           <span className="flex min-w-0 flex-col items-start gap-0.5">
             <span className="max-w-full truncate">{label}</span>
+            {subtitle === undefined ? null : (
+              <span className="font-normal text-muted-foreground text-xs">{subtitle}</span>
+            )}
             {compact ? null : (
               <span
                 className={cn(
@@ -456,7 +461,12 @@ function PreviewFace({
         {preview.successPct} %
       </span>
     );
-  const energy = <span className={cn(!emphasis && "text-energy")}>−{preview.energyCost} ⚡</span>;
+  // "−0" is correct arithmetic and reads as a typo: a free commit says 0.
+  const energy = (
+    <span className={cn(!emphasis && "text-energy")}>
+      {preview.energyCost > 0 ? `−${preview.energyCost}` : "0"} ⚡
+    </span>
+  );
   const gained =
     points > 0 ? (
       <span className={cn(!emphasis && "text-branch-feature")}>+{points} pts</span>
