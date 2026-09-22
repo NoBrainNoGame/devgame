@@ -1,6 +1,6 @@
 import type { DevopsId } from "@/game/content/devops";
 import type { PartialEffects } from "@/game/content/effects";
-import type { FeatureSkillId } from "@/game/content/skills";
+import type { SkillId } from "@/game/content/skills";
 
 /**
  * Starters. Each one is a different answer to the game's central question —
@@ -14,7 +14,7 @@ export type ProfileId = (typeof PROFILE_IDS)[number];
 export interface ProfileDef {
   id: ProfileId;
   effects: PartialEffects;
-  startingSkills: readonly FeatureSkillId[];
+  startingSkills: readonly SkillId[];
   startingDevops: Readonly<Partial<Record<DevopsId, number>>>;
   /** Banked commits needed to play it. The Junior is always available. */
   unlockCost: number;

@@ -130,7 +130,7 @@ export const BALANCE = {
     repayPerCommit: 4,
     /** How many recent AI commits count towards the reviewed ratio. */
     window: 10,
-    /** DevOps review bot cadence at one point; each further point removes one. */
+    /** Automatic review cadence at one point; each further point removes one. */
     botCadence: 4,
   },
 
@@ -181,55 +181,8 @@ export const BALANCE = {
     /** Nodes in a hotfix branch, and how many monitoring removes. */
     hotfixNodes: 3,
     hotfixNodesWithMonitoring: 2,
-    /** Progress lost to a rejected pull request. */
-    prRejectedProgress: 1,
-    /** How much a good reviewed ratio damps the Reviewer's weight. */
-    reviewedRatioDamping: 0.5,
-  },
-
-  bots: {
-    /** Bots present at sprint 1, and the cap. */
-    startCount: 1,
-    perSprint: 1,
-    max: 4,
-    /** Added to a newcomer's pace for every sprint already survived. */
-    speedPerSprint: 18,
-    /** Commits a rival writes before it merges the feature they belong to. */
-    featureLength: 4,
-    /**
-     * How far below the player a rival's commits are kept before being
-     * forgotten.
-     *
-     * They are decoration — nothing walks them — and an unbounded history makes
-     * every action's state copy a little slower than the last. It is also what
-     * keeps the graph readable: four rivals' full histories, each crossing to
-     * `dev` twice per feature, is more line than graph.
-     */
-    historyDepth: 24,
-    /**
-     * Reputation the player must hold to make progress towards firing a bot,
-     * and how far a rival must be ahead to count as overtaking.
-     *
-     * Both are measured in *features delivered*, of which a sprint holds three
-     * to five. They used to be measured in main-line nodes, of which a sprint
-     * held twelve to eighteen — on the new scale the old numbers meant "lead by
-     * the whole sprint", so nobody was ever fired and nobody ever fell behind.
-     */
-    firingReputationThreshold: 2,
-    overtakenGap: 2,
-    /** Turns overtaken before the player is fired. */
-    overtakenStreak: 6,
-    /** XP for a firing, multiplied by the sprint it happened in. */
-    firingXpPerSprint: 50,
-    /** Commits credited for a firing. */
-    firingCommits: 3,
-  },
-
-  reputation: {
-    /** Reputation floor of the quality multiplier, at a 0 % reviewed ratio. */
-    qualityFloor: 0.5,
-    /** How much a perfect reviewed ratio adds on top of the floor. */
-    qualityRange: 0.5,
+    /** Energy lost reworking a rejected pull request. */
+    prRejectedEnergy: 1,
   },
 
   devops: {
@@ -249,7 +202,6 @@ export const BALANCE = {
 
   score: {
     perCommit: 1,
-    perBotFired: 10,
     perSprintCompleted: 5,
   },
 
@@ -261,8 +213,8 @@ export const BALANCE = {
     /**
      * Commits inside a feature branch that grants nothing.
      *
-     * This is the fast option: you deliver, you keep pace with the rivals, and
-     * you come out of it with nothing lasting.
+     * This is the fast option: you deliver, and you come out of it with
+     * nothing lasting.
      */
     featureBranchLength: { min: 2, max: 3 },
     /**

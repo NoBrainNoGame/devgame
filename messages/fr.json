@@ -11,7 +11,6 @@
     "signOut": "Se déconnecter",
     "energy": "Énergie",
     "debt": "Dette",
-    "reputation": "Réputation",
     "commits": "Commits",
     "sprint": "Sprint",
     "turn": "Tour",
@@ -26,14 +25,14 @@
   "landing": {
     "title": "Devgame",
     "tagline": "Un roguelike dont le donjon est un graphe Git.",
-    "pitch": "Vous codez sur un projet qui ne se termine jamais, commit par commit. À chaque nœud, deux façons d'avancer : à la main, lent et sûr, ou avec l'IA, rapide et risqué. Des bots rivaux poussent sur la même branche main, et le dépôt n'a pas de place pour tout le monde.",
+    "pitch": "Vous codez sur un projet qui ne se termine jamais, commit par commit. À chaque nœud, deux façons d'avancer : à la main, lent et sûr, ou avec l'IA, rapide et risqué. Ce qui part en production sans avoir été relu finit par y casser quelque chose.",
     "cta": "Lancer une run",
     "howItWorksTitle": "Comment ça marche",
     "howItWorks1": "Choisissez un profil, puis avancez sur le graphe nœud par nœud.",
     "howItWorks2": "Chaque commit est un pari, et les chances de réussite sont affichées avant le choix.",
-    "howItWorks3": "Tenez la tête assez longtemps pour faire virer un bot, ou partez avant lui.",
+    "howItWorks3": "Livrez sans casser la production assez longtemps, ou partez avant.",
     "dailySeed": "En mode graine du jour, tout le monde joue la même carte, chaque jour UTC.",
-    "metaDescription": "Roguelike gratuit dans le navigateur : le donjon est un graphe Git. Commit à la main ou avec l'IA, remboursez votre dette technique, et faites virer les bots rivaux avant qu'ils ne vous distancent.",
+    "metaDescription": "Roguelike gratuit dans le navigateur : le donjon est un graphe Git. Commit à la main ou avec l'IA, remboursez votre dette technique, et livrez sans casser la production.",
     "ogTitle": "Devgame",
     "ogSubtitle": "Un roguelike dont le donjon est un graphe Git",
     "keywords": "roguelike, jeu de navigateur, git, développeur, jeu de gestion, graine du jour, jeu gratuit",
@@ -45,8 +44,8 @@
     "pillarCraft": "Lent, cher en énergie, mais il passe presque toujours et ne laisse rien derrière lui.",
     "pillarAiTitle": "Commit IA",
     "pillarAi": "Trois fois plus rapide pour un tiers du coût, et une dette technique que vous ne voyez qu'en gros.",
-    "pillarBotsTitle": "Bots rivaux",
-    "pillarBots": "Ils poussent sur la même branche, ne fatiguent jamais, et le dépôt n'a pas de place pour tout le monde.",
+    "pillarDebtTitle": "Dette technique",
+    "pillarDebt": "Elle monte avec chaque commit que la machine écrit, elle plombe chaque jet, et elle finit en production.",
     "dailyTitle": "Graine du jour",
     "dailyCta": "Classement du jour",
     "honestTitle": "Ce que c'est, et ce que ce n'est pas",
@@ -70,7 +69,7 @@
     "submitted": "Score envoyé",
     "runOver": "Run terminée",
     "burnout": "Burnout : il ne reste plus d'énergie.",
-    "fired": "Licenciement : les bots vous ont distancé.",
+    "fired": "Licenciement : trop de bugs en production.",
     "playAgain": "Rejouer",
     "levelUp": "Niveau {level} atteint",
     "unlocked": "Débloqué : {name}"
@@ -82,7 +81,6 @@
     "debt": "Dette",
     "debtRange": "entre {min} et {max}",
     "debtHint": "La dette n'est affichée précisément qu'avec un linter.",
-    "reputation": "Réputation",
     "commits": "Commits",
     "sprint": "Sprint {sprint}",
     "turn": "Tour {turn}",
@@ -100,13 +98,6 @@
     "devopsHint": "Automatiser ne coûte pas de tour, seulement des points.",
     "devopsPoints": "{count, plural, one {# point DevOps} other {# points DevOps}}",
     "devopsLevel": "Niveau {level} / {max}",
-    "rivalsTitle": "Rivaux",
-    "rivalPace": "Rythme",
-    "rivalReputation": "Réputation",
-    "rivalFiring": "Licenciement",
-    "rivalFired": "Viré",
-    "rivalStalled": "À l'arrêt",
-    "rivalLeadWarning": "Le bot de tête vous distance : encore quelques tours et vous partez.",
     "logTitle": "Journal",
     "logEmpty": "Rien à raconter pour l'instant.",
     "logTurn": "tour {turn}",
@@ -122,7 +113,7 @@
     "previewEnergy": "Énergie : {cost}",
     "previewProgress": "Progression : {min} à {max}",
     "previewDebt": "Dette : {min} à {max}",
-    "previewBotsAdvance": "Les rivaux avancent",
+    "previewTakesTurn": "Consomme un tour",
     "previewFreeMove": "Coup gratuit",
     "previewBlocked": "Indisponible",
     "previewNotes": "Détail du calcul",
@@ -422,19 +413,11 @@
       },
       "sprint_final": {
         "name": "Sprint final",
-        "desc": "Trophée du Rapide. Un commit IA réussi saute un nœud de plus."
+        "desc": "Un commit IA réussi saute un nœud de plus."
       },
       "lynx_eye": {
         "name": "Œil de lynx",
-        "desc": "Trophée du Reviewer. La dette technique s'affiche au point près."
-      },
-      "rebase_master": {
-        "name": "Maître du rebase",
-        "desc": "Trophée du Force-pusher. Un rebase forcé ne coûte plus de nœud."
-      },
-      "zen": {
-        "name": "Zen",
-        "desc": "Trophée de la Tortue. Les merges rendent plus d'énergie."
+        "desc": "La dette technique s'affiche au point près."
       }
     },
     "relics": {
@@ -499,24 +482,6 @@
       "monitoring": {
         "name": "Monitoring",
         "desc": "Prévient un nœud à l'avance d'un bug en production, et raccourcit le hotfix."
-      }
-    },
-    "bots": {
-      "rapide": {
-        "name": "Le Rapide",
-        "desc": "Avance vite, se trompe souvent, et vous laisse sa dette en partant."
-      },
-      "reviewer": {
-        "name": "Le Reviewer",
-        "desc": "Rythme modéré, rejette vos PR. Le viser en premier soulage toute la run."
-      },
-      "force_pusher": {
-        "name": "Le Force-pusher",
-        "desc": "Pousse sur main sans prévenir et vous fait rejouer des nœuds."
-      },
-      "tortue": {
-        "name": "La Tortue",
-        "desc": "Lente, sans dette, et la plus difficile à faire virer."
       }
     },
     "profiles": {
@@ -659,9 +624,6 @@
         "refactor": "{count, plural, one {# nœud de refacto imposé} other {# nœuds de refacto imposés}}"
       },
       "debt_explosion": "la dette a explosé, refacto obligatoire",
-      "bot_mistake": "{bot} s'est trompé et repart en arrière",
-      "bot_fired": "{bot} est parti, on hérite de ses branches",
-      "bot_arrived": "{bot} rejoint le dépôt",
       "sprint_ended": "sprint {sprint} clos",
       "sprint_started": "sprint {sprint} ouvert",
       "relic_chosen": "{relic} ajouté au projet",

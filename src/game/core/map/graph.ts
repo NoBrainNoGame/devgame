@@ -17,40 +17,6 @@ export function successors(state: RunState, id: NodeId): MapNode[] {
   return getNode(state, id).next.map((next) => getNode(state, next));
 }
 
-/**
- * The main line of a sprint, in order. Bot progress is an index into this, not
- * a depth: injecting a hotfix shifts every depth after it, and a bot should not
- * appear to leap because the player broke production.
- */
-export function devLineNodes(state: RunState, sprint: number): MapNode[] {
-  return Object.keys(state.nodes)
-    .sort((a, b) => nodeSerial(a) - nodeSerial(b))
-    .map((id) => getNode(state, id))
-    .filter((node) => node.sprint === sprint && node.lane === DEV_LANE)
-    .sort((a, b) => a.depth - b.depth);
-}
-
-/**
- * How far along `main` a node sits: the index of the last trunk node at or
- * before it.
- *
- * This is the unit the race is run in. A rival holds an index into the main
- * line, so the player needs the same number for the two to be subtracted — and
- * a node on a branch or a detour sits *between* two trunk nodes rather than
- * adding to the count.
- */
-export function devLineIndexOf(state: RunState, node: MapNode): number {
-  // Counted rather than sorted. This runs on every node the player resolves,
-  // and the node map grows for the whole run: sorting it here made a long run
-  // measurably slower with every turn.
-  let seen = 0;
-  for (const candidate of Object.values(state.nodes)) {
-    if (candidate.sprint !== node.sprint || candidate.lane !== DEV_LANE) continue;
-    if (candidate.depth <= node.depth) seen += 1;
-  }
-  return Math.max(0, seen - 1);
-}
-
 /** Every node in the run, in a stable order. Iteration order must never vary. */
 export function allNodes(state: RunState): MapNode[] {
   return Object.keys(state.nodes)

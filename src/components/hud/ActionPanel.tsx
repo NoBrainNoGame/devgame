@@ -398,7 +398,7 @@ function PreviewDetail({ preview }: { preview: ActionPreview }) {
         <p>{t("previewDebt", { min: preview.debtDelta[0], max: preview.debtDelta[1] })}</p>
       )}
       <p className="text-muted-foreground">
-        {preview.botsAdvance ? t("previewBotsAdvance") : t("previewFreeMove")}
+        {preview.consumesTurn ? t("previewTakesTurn") : t("previewFreeMove")}
       </p>
     </>
   );

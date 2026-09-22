@@ -70,7 +70,7 @@ export type AmbientEventId = (typeof AMBIENT_EVENT_IDS)[number];
 export interface AmbientEventDef {
   id: AmbientEventId;
   weight: number;
-  effect: { energy?: number; progress?: number; debt?: number };
+  effect: { energy?: number; debt?: number };
   /** Dependabot removes this one from the table entirely. */
   cancelledByDependabot: boolean;
 }
@@ -85,7 +85,7 @@ export const AMBIENT_EVENTS: Record<AmbientEventId, AmbientEventDef> = {
   perfect_lib: {
     id: "perfect_lib",
     weight: 20,
-    effect: { progress: 1 },
+    effect: { energy: 1 },
     cancelledByDependabot: false,
   },
   no_meeting_friday: {

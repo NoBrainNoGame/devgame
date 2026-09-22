@@ -56,20 +56,7 @@ describe("sprint boundary", () => {
     const after = applyAction(state, { type: "choose_relic", relicId }).state;
     expect(after.sprint).toBe(state.sprint + 1);
     expect(after.relics).toContain(relicId);
-    expect(after.player.sprintProgress).toBe(0);
     expect(after.player.rerollUsed).toBe(false);
-  });
-
-  test("a new rival joins every sprint until the cap", () => {
-    const { state } = findSeed((r) => r.state.sprint >= 3, {
-      prefix: "arrivals",
-      pick: policy,
-      limit: 400,
-    });
-
-    const alive = Object.values(state.bots).filter((bot) => !bot.fired);
-    expect(alive.length).toBeGreaterThanOrEqual(1);
-    expect(alive.length).toBeLessThanOrEqual(BALANCE.bots.max);
   });
 
   test("the next sprint's nodes continue below the previous release", () => {
@@ -90,9 +77,5 @@ describe("sprint boundary", () => {
 
   test("a skill already earned is never offered again", () => {
     expect(availableSkills(["unit_tests", "linter"], ["linter"])).toEqual(["unit_tests"]);
-  });
-
-  test("bot trophies are never placed on the map", () => {
-    expect(availableSkills(["sprint_final", "unit_tests"], [])).toEqual(["unit_tests"]);
   });
 });

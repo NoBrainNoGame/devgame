@@ -1,4 +1,4 @@
-import type { BotArchetypeId, DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
+import type { DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import {
   type DebtView,
@@ -13,7 +13,6 @@ import { previewAll } from "@/game/core/rules/preview";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
-  BotNode,
   Branch,
   BranchId,
   DetourKind,
@@ -34,18 +33,6 @@ import type {
  * instance, which is the one number the game deliberately blurs.
  */
 
-export interface BotView {
-  id: string;
-  archetype: BotArchetypeId;
-  sprintProgress: number;
-  reputation: number;
-  firingProgress: number;
-  firingTurns: number;
-  stalled: boolean;
-  fired: boolean;
-  speedPct: number;
-}
-
 export interface PlayerView {
   /** The node being written: where the next commit will land. */
   nodeId: NodeId;
@@ -53,7 +40,6 @@ export interface PlayerView {
   headId: NodeId;
   energy: number;
   energyMax: number;
-  sprintProgress: number;
   totalCommits: number;
   crunch: boolean;
   overextended: boolean;
@@ -71,7 +57,6 @@ export interface RunSnapshot {
   sprintLength: number;
   score: number;
   xpEarned: number;
-  botsFired: number;
 
   phase: Phase;
   candidates: NodeId[];
@@ -81,7 +66,6 @@ export interface RunSnapshot {
 
   player: PlayerView;
   debt: DebtView;
-  bots: BotView[];
 
   skills: SkillId[];
   relics: RelicId[];
@@ -123,14 +107,6 @@ export interface RunSnapshot {
       forks: boolean;
     }
   >;
-
-  /**
-   * What the rivals have written, in their own columns.
-   *
-   * A pace is not a thing you can look at. Commits and merges are, and the
-   * whole point of a rival is that you can see it gaining on you.
-   */
-  botNodes: BotNode[];
 }
 
 export function toSnapshot(state: RunState): RunSnapshot {
@@ -179,7 +155,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
     sprintLength: state.sprintLength,
     score: computeScore(state),
     xpEarned: state.xpEarned,
-    botsFired: state.botsFired,
 
     phase: state.phase,
     candidates: state.phase.kind === "choose_node" ? [...state.phase.candidates] : [],
@@ -191,7 +166,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
       headId: state.player.headId,
       energy: state.player.energy,
       energyMax: energyMax(state, effects),
-      sprintProgress: state.player.sprintProgress,
       totalCommits: state.player.totalCommits,
       crunch: isCrunch(state),
       overextended: isOverextended(state),
@@ -201,27 +175,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     debt: debtView(state, effects),
 
-    bots: Object.keys(state.bots)
-      .sort()
-      .flatMap((id) => {
-        const bot = state.bots[id];
-        return bot === undefined
-          ? []
-          : [
-              {
-                id: bot.id,
-                archetype: bot.archetype,
-                sprintProgress: bot.sprintProgress,
-                reputation: bot.reputation,
-                firingProgress: bot.firingProgress,
-                firingTurns: bot.firingTurns,
-                stalled: bot.stalled > 0,
-                fired: bot.fired,
-                speedPct: bot.speedPct,
-              },
-            ];
-      }),
-
     skills: [...state.skills],
     relics: [...state.relics],
     devops: { ...state.devops },
@@ -229,10 +182,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     nodes,
     branches,
-    botNodes: Object.keys(state.botNodes)
-      .sort()
-      .map((id) => state.botNodes[id])
-      .filter((node): node is BotNode => node !== undefined),
   };
 }
 

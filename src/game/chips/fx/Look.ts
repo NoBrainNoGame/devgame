@@ -5,10 +5,10 @@ import type { SkipFlag } from "@/game/chips/fx/skip";
 /**
  * Points the camera at something, and holds there while it happens.
  *
- * A turn is a sequence of things done by different people: you commit, then a
- * rival pushes. The camera has to go and look at each of them in turn, or the
- * rival's move is a label sliding somewhere off screen. Passing null hands the
- * camera back to the player.
+ * A turn is a sequence of things happening in different places: you commit,
+ * then production breaks somewhere else. The camera has to go and look at each
+ * of them in turn, or an effect is a label sliding somewhere off screen.
+ * Passing null hands the camera back to the player.
  *
  * It only asks. A camera the player has dragged stays where they put it.
  */

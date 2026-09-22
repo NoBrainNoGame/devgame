@@ -1,7 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { appendLog } from "@/game/core/log";
 import { isActionAvailable } from "@/game/core/rules/actions";
-import { advanceBots, checkFiring, checkOvertaken, updateReputation } from "@/game/core/rules/bots";
 import { completeConflict, performCommit } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay } from "@/game/core/rules/debt";
@@ -26,10 +25,9 @@ import { InvalidActionError } from "@/game/core/types";
  * a submitted action log and get the byte-identical game the player played.
  *
  * Which actions cost a turn is a design decision, not an implementation one:
- * committing and reviewing hand the rivals a turn, walking the graph and
- * spending DevOps points do not. A commit interrupted by a merge conflict
- * defers its turn to the choice that resolves it, so one mistake never costs
- * two turns.
+ * committing and reviewing end the turn, walking the graph and spending DevOps
+ * points do not. A commit interrupted by a merge conflict defers its turn to
+ * the choice that resolves it, so one mistake never costs two turns.
  */
 export function applyAction(state: RunState, action: PlayerAction): ApplyResult {
   if (state.phase.kind === "game_over") {
@@ -109,23 +107,13 @@ function dispatch(
 function endTurn(context: RuleContext): void {
   const { state } = context;
 
-  advanceBots(context);
-  updateReputation(context);
-  checkFiring(context);
-
   applyDebtDecay(context);
   runFreeReview(context, freeReviewCadence(context.effects));
 
   state.turn += 1;
   emit(context, { type: "turn_started", turn: state.turn });
 
-  if (checkBurnout(context)) {
-    gameOver(context, "burnout");
-    return;
-  }
-  if (checkOvertaken(context)) {
-    gameOver(context, "fired");
-  }
+  if (checkBurnout(context)) gameOver(context, "burnout");
 }
 
 function gameOver(context: RuleContext, reason: "burnout" | "fired"): void {

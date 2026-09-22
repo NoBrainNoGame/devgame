@@ -30,7 +30,6 @@ interface Outcome {
   sprints: number;
   score: number;
   commits: number;
-  botsFired: number;
   finalDebt: number;
   maxDebt: number;
   reviews: number;
@@ -196,7 +195,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
     if (verbose) {
       const label = action.type === "commit" ? `commit:${action.mode}` : action.type;
       console.log(
-        `t${state.turn} s${state.sprint} ${label.padEnd(14)} e=${state.player.energy} debt=${state.debt} prog=${state.player.sprintProgress} ${state.phase.kind}`,
+        `t${state.turn} s${state.sprint} ${label.padEnd(14)} e=${state.player.energy} debt=${state.debt} ${state.phase.kind}`,
       );
     }
   }
@@ -216,7 +215,6 @@ function summarise(
     sprints: Math.max(0, state.sprint - 1),
     score: computeScore(state),
     commits: state.player.totalCommits,
-    botsFired: state.botsFired,
     finalDebt: state.debt,
     maxDebt: extra.maxDebt,
     reviews: extra.reviews,
@@ -262,9 +260,7 @@ function report(policy: string, outcomes: Outcome[]): void {
   console.log(
     `  score     med ${quantile(scores, 0.5)}  p90 ${quantile(scores, 0.9)}  max ${Math.max(...scores)}`,
   );
-  console.log(
-    `  sprints   avg ${mean(outcomes.map((o) => o.sprints)).toFixed(2)}   bots fired avg ${mean(outcomes.map((o) => o.botsFired)).toFixed(2)}`,
-  );
+  console.log(`  sprints   avg ${mean(outcomes.map((o) => o.sprints)).toFixed(2)}`);
   console.log(
     `  debt      final avg ${mean(outcomes.map((o) => o.finalDebt)).toFixed(0)}  peak avg ${mean(outcomes.map((o) => o.maxDebt)).toFixed(0)}`,
   );

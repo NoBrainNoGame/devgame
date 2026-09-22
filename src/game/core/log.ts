@@ -4,10 +4,10 @@ import type { GameEvent, LogLine, RunState } from "@/game/core/types";
 /**
  * The run's history, written as commit subjects.
  *
- * Only the events worth a line get one — energy ticks and reputation updates
- * are in the HUD, not in the log. Everything is emitted as a key, and anything
- * that needs a *name* (a skill, a bot archetype) is emitted as a reference the
- * renderer resolves, because the engine has no idea what language it is in.
+ * Only the events worth a line get one — energy ticks are in the HUD, not in
+ * the log. Everything is emitted as a key, and anything that needs a *name* (a
+ * skill, a relic) is emitted as a reference the renderer resolves, because the
+ * engine has no idea what language it is in.
  */
 
 const LOG_CAP = 200;
@@ -114,30 +114,6 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
 
     case "debt_explosion":
       return { seq, turn, kind: "revert", text: text("log.debt_explosion") };
-
-    case "bot_mistake":
-      return {
-        seq,
-        turn,
-        kind: "revert",
-        text: text("log.bot_mistake", { bot: ref(`bots.${event.archetype}.name`) }),
-      };
-
-    case "bot_fired":
-      return {
-        seq,
-        turn,
-        kind: "merge",
-        text: text("log.bot_fired", { bot: ref(`bots.${event.archetype}.name`) }),
-      };
-
-    case "bot_arrived":
-      return {
-        seq,
-        turn,
-        kind: "note",
-        text: text("log.bot_arrived", { bot: ref(`bots.${event.archetype}.name`) }),
-      };
 
     case "sprint_ended":
       return { seq, turn, kind: "merge", text: text("log.sprint_ended", { sprint: event.sprint }) };

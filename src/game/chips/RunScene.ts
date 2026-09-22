@@ -1,6 +1,5 @@
 import { Container } from "pixi.js";
 
-import { BotCursors } from "@/game/chips/BotCursors";
 import { BranchRefs } from "@/game/chips/BranchRefs";
 import * as booyah from "@/game/chips/booyah";
 import { Camera } from "@/game/chips/Camera";
@@ -36,15 +35,7 @@ export class RunScene extends ContainerChip {
 
     this._activateChildChip(
       new booyah.Parallel(
-        [
-          camera,
-          graph,
-          new BotCursors(),
-          new BranchRefs(),
-          new PlayerMarker(),
-          fx,
-          new InputController(graph, fx),
-        ],
+        [camera, graph, new BranchRefs(), new PlayerMarker(), fx, new InputController(graph, fx)],
         { terminateOnCompletion: false },
       ),
     );

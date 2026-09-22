@@ -17,7 +17,7 @@ import type { PlayerAction, RunState } from "@/game/core/types";
  *
  * Review is gated, on two counts. It has to have been learned, and it has to
  * have something to read: a review with no unread machine-written commit
- * repays nothing, costs energy and lets every rival move. An action that can
+ * repays nothing, costs energy and spends a turn. An action that can
  * only ever make things worse is not a decision, it is a trap.
  */
 export function getAvailableActions(state: RunState): PlayerAction[] {

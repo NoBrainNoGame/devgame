@@ -5,9 +5,8 @@ import { cn } from "@/lib/utils";
  *
  * `main` runs down the middle. A feature branch leaves it and merges back — the
  * skill you went and fetched. A hotfix drops out to the left and does not come
- * back the same way. And a rival sits on `main` three commits above you, which
- * is the whole tension: the branch you took to get stronger is the branch that
- * let it past.
+ * back the same way. The branch you took to get stronger is the branch that
+ * kept you from shipping.
  *
  * Same shape and same palette as the canvas draws during a run, so the page and
  * the game look like one thing. Decorative — the prose beside it carries the
@@ -56,14 +55,6 @@ export function GitGraph({ className }: { className?: string }): React.JSX.Eleme
 
       {/* where you are: the node you have not resolved yet */}
       <circle cx={120} cy={168} r={11} className="fill-none stroke-2 stroke-white" />
-
-      {/* the rival, ahead of you on the same branch */}
-      <g className="fill-branch-bot">
-        <path d="M100 66 L112 72 L100 78 Z" />
-      </g>
-      <text x="92" y="76" textAnchor="end" className="fill-branch-bot font-mono text-[11px]">
-        bot
-      </text>
     </svg>
   );
 }

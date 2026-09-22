@@ -8,7 +8,6 @@ import {
 } from "@/game/content";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
 import { generateSprint } from "@/game/core/map/generate";
-import { spawnBotsForSprint } from "@/game/core/rules/bots";
 import { createContext } from "@/game/core/rules/context";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { arriveAt } from "@/game/core/rules/progress";
@@ -78,11 +77,8 @@ export function createRun(options: CreateRunOptions): RunState {
       headId: "",
       energy: 0,
       energyMax: 0,
-      sprintProgress: 0,
-      mainReached: 0,
       totalCommits: 0,
       zeroEnergyStreak: 0,
-      overtakenStreak: 0,
       aiHistory: [],
       aiChain: 0,
       rerollUsed: false,
@@ -90,11 +86,6 @@ export function createRun(options: CreateRunOptions): RunState {
       freeRefactor: false,
       docsCharges: 0,
     },
-    bots: {},
-    botNodes: {},
-    nextBotSerial: 1,
-    nextBotNodeSerial: 1,
-
     skills: [...profile.startingSkills].sort(),
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),
     statPoints,
@@ -106,7 +97,6 @@ export function createRun(options: CreateRunOptions): RunState {
     debtNoise: 0,
 
     monitoringWarning: false,
-    botsFired: 0,
     xpEarned: 0,
 
     phase: { kind: "choose_action" },
@@ -135,7 +125,6 @@ export function createRun(options: CreateRunOptions): RunState {
   state.nextBranchSerial = plan.branches.length;
   state.sprintLength = plan.length;
 
-  spawnBotsForSprint(context);
   arriveAt(context, plan.startId);
 
   // The setup events describe a board nobody has seen yet, so they are dropped

@@ -243,30 +243,4 @@ describe("what the graph can express", () => {
       }
     }
   });
-
-  test("a rival lands its features on dev, never on main", () => {
-    const played = play(newRun("rival-dev"), {
-      pick: prefer(isCommit("craft")),
-      limit: 200,
-    });
-
-    const merges = Object.values(played.state.botNodes).filter(
-      (node) => node.kind === "feature_merge",
-    );
-    expect(merges.length).toBeGreaterThan(0);
-
-    const devDepths = new Set<number>();
-    for (const node of Object.values(played.state.nodes)) {
-      if (node.lane === DEV_LANE) devDepths.add(node.depth);
-    }
-
-    for (const merge of merges) {
-      expect(merge.lane).toBe(DEV_LANE);
-      // `dev` is shared, so a rival's merge must not land on a row the player's
-      // own merges already occupy.
-      expect(devDepths.has(merge.depth)).toBe(false);
-      // A merge has two parents: what the rival wrote, and the dev it landed on.
-      expect(merge.parents.length).toBeGreaterThan(0);
-    }
-  });
 });

@@ -2,15 +2,14 @@ import { BALANCE } from "@/game/core/balance";
 import type { RunState } from "@/game/core/types";
 
 /**
- * A run's score. Commits are the body of it, but firing a rival is worth ten
- * of them and surviving a sprint is worth five — the leaderboard should reward
- * playing the game, not grinding safe commits forever.
+ * A run's score. Commits are the body of it, and surviving a sprint is worth
+ * five of them — the leaderboard should reward playing the game, not grinding
+ * safe commits forever.
  */
 export function computeScore(state: RunState): number {
   const { score } = BALANCE;
   return (
     state.player.totalCommits * score.perCommit +
-    state.botsFired * score.perBotFired +
     Math.max(0, state.sprint - 1) * score.perSprintCompleted
   );
 }

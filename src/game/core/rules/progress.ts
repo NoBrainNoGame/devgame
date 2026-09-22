@@ -1,5 +1,5 @@
 import { BALANCE } from "@/game/core/balance";
-import { devLineIndexOf, getNode, setCandidates, successors } from "@/game/core/map/graph";
+import { getNode, setCandidates, successors } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt, shouldExplode } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -36,7 +36,6 @@ export function resolveNode(
   // `HEAD` only ever moves onto a commit that now exists.
   state.player.headId = node.id;
   state.player.totalCommits += 1;
-  advanceRacePosition(context, node);
 
   if (mode === "ai") {
     // Documentation pays the debt for you, one machine-written node at a time.
@@ -69,23 +68,6 @@ export function resolveNode(
   closeBranchesInto(context, node);
 
   emit(context, { type: "node_done", nodeId: node.id, mode, kind: node.kind });
-}
-
-/**
- * Moves the player up the main line, if this node was further up it.
- *
- * Monotonic on purpose. A rejected pull request docks `sprintProgress`, and if
- * the next node simply recomputed the position from the graph that penalty
- * would vanish the moment you moved — so the furthest index reached is tracked
- * separately and only the *gain* is added.
- */
-function advanceRacePosition(context: RuleContext, node: MapNode): void {
-  const { player } = context.state;
-  const reached = devLineIndexOf(context.state, node);
-  if (reached <= player.mainReached) return;
-
-  player.sprintProgress += reached - player.mainReached;
-  player.mainReached = reached;
 }
 
 /**
@@ -202,8 +184,8 @@ function walkAhead(context: RuleContext, jumps: number, mode: CommitMode): NodeI
  * Rebase: the trunk moves under you and your work lands on top of it.
  *
  * The node it carries costs no roll and no energy, which is the whole appeal —
- * it is the only way in the game to gain ground on the rivals faster than one
- * node per turn without letting the machine write anything.
+ * it is the only way in the game to gain more than one node per turn without
+ * letting the machine write anything.
  */
 export function replayOntoTrunk(context: RuleContext): NodeId[] {
   const walked = walkAhead(context, BALANCE.rebase.carry, "craft");

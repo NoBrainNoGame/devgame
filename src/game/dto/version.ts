@@ -1,6 +1,5 @@
 import {
   AMBIENT_EVENT_IDS,
-  BOT_ARCHETYPE_IDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
   PROFILE_IDS,
@@ -60,7 +59,6 @@ export function fingerprintFor(epoch: number): string {
       relics: RELIC_IDS,
       devops: DEVOPS_IDS,
       profiles: PROFILE_IDS,
-      bots: BOT_ARCHETYPE_IDS,
       failures: FAILURE_EVENT_IDS,
       ambient: AMBIENT_EVENT_IDS,
     }),

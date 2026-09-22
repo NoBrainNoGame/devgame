@@ -11,7 +11,6 @@
     "signOut": "Sign out",
     "energy": "Energy",
     "debt": "Debt",
-    "reputation": "Reputation",
     "commits": "Commits",
     "sprint": "Sprint",
     "turn": "Turn",
@@ -26,14 +25,14 @@
   "landing": {
     "title": "Devgame",
     "tagline": "A roguelike whose dungeon is a Git graph.",
-    "pitch": "You work on a project that never ends, one commit at a time. At every node there are two ways forward: by hand, slow and safe, or with the AI, fast and risky. Rival bots push to the same main branch, and the repository has no room for everyone.",
+    "pitch": "You work on a project that never ends, one commit at a time. At every node there are two ways forward: by hand, slow and safe, or with the AI, fast and risky. Whatever ships to production unread eventually breaks something there.",
     "cta": "Start a run",
     "howItWorksTitle": "How it works",
     "howItWorks1": "Pick a profile, then walk the graph node by node.",
     "howItWorks2": "Every commit is a bet, and the odds are shown before you take it.",
-    "howItWorks3": "Stay ahead long enough to get a bot fired, or leave before it does.",
+    "howItWorks3": "Ship without breaking production for long enough, or leave before it does.",
     "dailySeed": "In daily seed mode everyone plays the same map, every UTC day.",
-    "metaDescription": "A free browser roguelike where the dungeon is a Git graph. Commit by hand or let the machine do it, repay your technical debt, and get the rival bots fired before they leave you behind.",
+    "metaDescription": "A free browser roguelike where the dungeon is a Git graph. Commit by hand or let the machine do it, repay your technical debt, and ship without breaking production.",
     "ogTitle": "Devgame",
     "ogSubtitle": "A roguelike whose dungeon is a Git graph",
     "keywords": "roguelike, browser game, git, developer game, management game, daily seed, free game",
@@ -45,8 +44,8 @@
     "pillarCraft": "Slow and expensive in energy, but it almost always lands and it leaves nothing behind.",
     "pillarAiTitle": "AI commit",
     "pillarAi": "Three times the ground for a third of the cost, and a technical debt you only ever see roughly.",
-    "pillarBotsTitle": "Rival bots",
-    "pillarBots": "They push to the same branch, they never get tired, and the repository has no room for everyone.",
+    "pillarDebtTitle": "Technical debt",
+    "pillarDebt": "It grows with every commit the machine writes, it drags every roll down, and it ends up in production.",
     "dailyTitle": "Daily seed",
     "dailyCta": "Today's board",
     "honestTitle": "What this is, and what it is not",
@@ -70,7 +69,7 @@
     "submitted": "Score submitted",
     "runOver": "Run over",
     "burnout": "Burnout: there is no energy left.",
-    "fired": "Fired: the bots left you behind.",
+    "fired": "Fired: too many bugs in production.",
     "playAgain": "Play again",
     "levelUp": "Reached level {level}",
     "unlocked": "Unlocked: {name}"
@@ -82,7 +81,6 @@
     "debt": "Debt",
     "debtRange": "between {min} and {max}",
     "debtHint": "Debt is only shown exactly once a linter is watching.",
-    "reputation": "Reputation",
     "commits": "Commits",
     "sprint": "Sprint {sprint}",
     "turn": "Turn {turn}",
@@ -100,13 +98,6 @@
     "devopsHint": "Automating costs no turn, only points.",
     "devopsPoints": "{count, plural, one {# DevOps point} other {# DevOps points}}",
     "devopsLevel": "Level {level} / {max}",
-    "rivalsTitle": "Rivals",
-    "rivalPace": "Pace",
-    "rivalReputation": "Reputation",
-    "rivalFiring": "Firing",
-    "rivalFired": "Fired",
-    "rivalStalled": "Stalled",
-    "rivalLeadWarning": "The leading bot is pulling away: a few more turns and you are out.",
     "logTitle": "Log",
     "logEmpty": "Nothing to tell yet.",
     "logTurn": "turn {turn}",
@@ -122,7 +113,7 @@
     "previewEnergy": "Energy: {cost}",
     "previewProgress": "Progress: {min} to {max}",
     "previewDebt": "Debt: {min} to {max}",
-    "previewBotsAdvance": "The rivals advance",
+    "previewTakesTurn": "Takes a turn",
     "previewFreeMove": "Free move",
     "previewBlocked": "Unavailable",
     "previewNotes": "How it adds up",
@@ -422,19 +413,11 @@
       },
       "sprint_final": {
         "name": "Final sprint",
-        "desc": "Trophy from the Fast one. A successful AI commit jumps one more node."
+        "desc": "A successful AI commit jumps one more node."
       },
       "lynx_eye": {
         "name": "Lynx eye",
-        "desc": "Trophy from the Reviewer. Technical debt is shown exactly."
-      },
-      "rebase_master": {
-        "name": "Rebase master",
-        "desc": "Trophy from the Force-pusher. A forced rebase costs no node."
-      },
-      "zen": {
-        "name": "Zen",
-        "desc": "Trophy from the Tortoise. Merges give back more energy."
+        "desc": "Technical debt is shown exactly."
       }
     },
     "relics": {
@@ -499,24 +482,6 @@
       "monitoring": {
         "name": "Monitoring",
         "desc": "Warns a node ahead of a production bug, and shortens the hotfix."
-      }
-    },
-    "bots": {
-      "rapide": {
-        "name": "The Fast one",
-        "desc": "Moves fast, breaks things often, and leaves you its debt on the way out."
-      },
-      "reviewer": {
-        "name": "The Reviewer",
-        "desc": "Steady pace, rejects your PRs. Going for it first eases the whole run."
-      },
-      "force_pusher": {
-        "name": "The Force-pusher",
-        "desc": "Pushes to main without warning and makes you replay nodes."
-      },
-      "tortue": {
-        "name": "The Tortoise",
-        "desc": "Slow, debt-free, and the hardest one to get fired."
       }
     },
     "profiles": {
@@ -659,9 +624,6 @@
         "refactor": "{count, plural, one {# refactor node forced} other {# refactor nodes forced}}"
       },
       "debt_explosion": "the debt blew up, refactor is mandatory",
-      "bot_mistake": "{bot} got it wrong and is back a step",
-      "bot_fired": "{bot} is gone, we inherit its branches",
-      "bot_arrived": "{bot} joins the repository",
       "sprint_ended": "sprint {sprint} closed",
       "sprint_started": "sprint {sprint} opened",
       "relic_chosen": "{relic} added to the project",

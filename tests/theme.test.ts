@@ -30,7 +30,6 @@ describe("theme", () => {
     ["branch-dev", THEME.lane.dev],
     ["branch-feature", THEME.lane.feature],
     ["branch-hotfix", THEME.lane.hotfix],
-    ["branch-bot", THEME.bot],
     ["debt", THEME.debt],
     ["energy", THEME.energy],
     ["ai", THEME.node.ai],

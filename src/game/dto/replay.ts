@@ -22,9 +22,10 @@ import { RULES_FINGERPRINT } from "@/game/dto/version";
 export interface ReplayStats {
   turns: number;
   sprints: number;
+  /** Always 0 until tickets exist; kept so the DTO shape does not move twice. */
   botsFired: number;
   commits: number;
-  /** XP the run earned, from firing rivals. */
+  /** XP the run earned. */
   xp: number;
   /** Fingerprint of the final state, for comparing a replay against a session. */
   hash: string;
@@ -101,7 +102,7 @@ export function replayRun(input: unknown): ReplayResult {
     stats: {
       turns: state.turn,
       sprints: Math.max(0, state.sprint - 1),
-      botsFired: state.botsFired,
+      botsFired: 0,
       commits: state.player.totalCommits,
       xp: state.xpEarned,
       hash: hashState(state),

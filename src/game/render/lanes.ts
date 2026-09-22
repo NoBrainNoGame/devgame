@@ -25,23 +25,6 @@ export function drawEdge(
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
 }
 
-/**
- * The same shape, drawn to recede.
- *
- * A rival's history is real work and has to be visible, but four of them
- * crossing to `dev` twice a feature will drown yours if they are drawn with
- * the same weight. Thinner and fainter puts them behind.
- */
-export function drawBackgroundEdge(
-  graphics: Graphics,
-  from: { lane: number; depth: number },
-  to: { lane: number; depth: number },
-  colour: number,
-): void {
-  drawEdgeShape(graphics, from, to);
-  graphics.stroke({ width: EDGE_WIDTH - 2, color: colour, alpha: 0.3, cap: "round" });
-}
-
 /** The path an edge follows, without committing to how it is stroked. */
 function drawEdgeShape(
   graphics: Graphics,

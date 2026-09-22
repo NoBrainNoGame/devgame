@@ -3,16 +3,12 @@ import { describe, expect, test } from "bun:test";
 import {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
-  BOT_ARCHETYPE_IDS,
-  BOT_ARCHETYPES,
-  BOT_SKILL_IDS,
   DEVOPS,
   DEVOPS_IDS,
   devopsCost,
   EFFECT_KEYS,
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
-  FEATURE_SKILL_IDS,
   NO_EFFECTS,
   PROFILE_IDS,
   PROFILES,
@@ -35,7 +31,6 @@ describe("content tables", () => {
       RELIC_IDS,
       DEVOPS_IDS,
       PROFILE_IDS,
-      BOT_ARCHETYPE_IDS,
       FAILURE_EVENT_IDS,
       AMBIENT_EVENT_IDS,
     ]) {
@@ -48,7 +43,6 @@ describe("content tables", () => {
     for (const id of RELIC_IDS) expect(RELICS[id].id).toBe(id);
     for (const id of DEVOPS_IDS) expect(DEVOPS[id].id).toBe(id);
     for (const id of PROFILE_IDS) expect(PROFILES[id].id).toBe(id);
-    for (const id of BOT_ARCHETYPE_IDS) expect(BOT_ARCHETYPES[id].id).toBe(id);
     for (const id of FAILURE_EVENT_IDS) expect(FAILURE_EVENTS[id].id).toBe(id);
     for (const id of AMBIENT_EVENT_IDS) expect(AMBIENT_EVENTS[id].id).toBe(id);
   });
@@ -81,18 +75,6 @@ describe("content tables", () => {
         expect(typeof value).toBe(expected);
       }
     }
-  });
-
-  test("each archetype hands over a distinct trophy, and only bot skills", () => {
-    const trophies = BOT_ARCHETYPE_IDS.map((id) => BOT_ARCHETYPES[id].trophy);
-    expect(new Set(trophies).size).toBe(trophies.length);
-    for (const trophy of trophies) expect(BOT_SKILL_IDS).toContain(trophy);
-  });
-
-  test("feature skills and bot skills do not overlap", () => {
-    for (const id of FEATURE_SKILL_IDS) expect(SKILLS[id].source).toBe("feature");
-    for (const id of BOT_SKILL_IDS) expect(SKILLS[id].source).toBe("bot");
-    expect(FEATURE_SKILL_IDS.length + BOT_SKILL_IDS.length).toBe(SKILL_IDS.length);
   });
 
   test("every DevOps node has a price for each of its levels", () => {
@@ -135,7 +117,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("0feeb9d0");
+    expect(RULES_FINGERPRINT).toBe("2f69cb67");
   });
 
   test("the save version and the epoch are positive integers", () => {

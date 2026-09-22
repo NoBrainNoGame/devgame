@@ -20,7 +20,7 @@ function forgedSave(seed: string, statPoints: StatPoints) {
     version: SAVE_VERSION,
     meta: { statPoints },
   });
-  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 2000 });
+  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 400 });
 
   return {
     version: SAVE_VERSION,
@@ -45,7 +45,7 @@ function unlockSave(seed: string, unlockedSkills: SkillId[]) {
     version: SAVE_VERSION,
     meta: { unlockedSkills },
   });
-  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 2000 });
+  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 400 });
 
   return {
     version: SAVE_VERSION,
@@ -96,10 +96,8 @@ describe("forged starting conditions", () => {
     if (!honest.valid || !forged.valid) return;
 
     // They score differently, and the replay has no way to say which set of
-    // stats it was entitled to. Forged energy no longer simply wins — the
-    // rivals get faster every sprint, so an unburnable player still gets
-    // fired — but a different score from the same action log is exactly the
-    // hole `overclaims` exists to close.
+    // stats it was entitled to. A different score from the same action log is
+    // exactly the hole `overclaims` exists to close.
     expect(forged.score).not.toBe(honest.score);
   });
 

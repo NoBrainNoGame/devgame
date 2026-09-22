@@ -9,7 +9,7 @@ import type { Branch, BranchId, DetourKind, MapNode, NodeId, NodeKind } from "@/
  *
  * Two long-lived branches carry no work at all. **`dev`** is where features are
  * integrated: it opens on a back-merge from `main` and then takes one merge per
- * feature delivered, yours and the rivals'. **`main`** receives exactly two
+ * feature delivered. **`main`** receives exactly two
  * nodes per sprint — the `dev → main` merge that ships it, and the release —
  * so the leftmost column reads as a history of sprints rather than of commits.
  *

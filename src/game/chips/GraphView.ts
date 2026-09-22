@@ -6,16 +6,9 @@ import { sceneContext } from "@/game/chips/context";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
-import { drawBackgroundEdge, drawEdge } from "@/game/render/lanes";
+import { drawEdge } from "@/game/render/lanes";
 import { glyphStyle, labelStyle } from "@/game/render/textStyles";
-import {
-  labelledKind,
-  laneColour,
-  NODE_RADIUS,
-  nodeGlyph,
-  nodePrefix,
-  THEME,
-} from "@/game/render/theme";
+import { labelledKind, laneColour, NODE_RADIUS, nodeGlyph, nodePrefix } from "@/game/render/theme";
 
 /**
  * The history, as it is written.
@@ -52,7 +45,6 @@ const REVEAL_MS = 260;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
   private edges!: Graphics;
-  private botLane!: Graphics;
   private nodeLayer!: Container;
   private labelLayer!: Container;
 
@@ -64,13 +56,12 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   protected _onActivate(): void {
     this.edges = new Graphics();
-    this.botLane = new Graphics();
     this.nodeLayer = new Container();
     this.labelLayer = new Container();
     this.sprites = new Map();
     this.labels = new Map();
 
-    this._container.addChild(this.botLane, this.edges, this.nodeLayer, this.labelLayer);
+    this._container.addChild(this.edges, this.nodeLayer, this.labelLayer);
 
     const { session } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", () => this.rebuild());
@@ -122,7 +113,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const nodes = this.revealed();
 
     this.drawEdges(nodes);
-    this.drawBotNodes();
 
     const live = new Set<NodeId>();
     for (const node of nodes) {
@@ -153,57 +143,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
         if (next === undefined) continue;
 
         drawEdge(this.edges, node, next, laneColour(next.lane, next.kind), 0.95);
-      }
-    }
-  }
-
-  /**
-   * What the rivals have written, in a column each, to the left of `main`.
-   *
-   * They used to be a dashed line and a floating label — a pace, drawn as an
-   * absence. Now they write commits and land merges exactly as you do, so the
-   * graph shows four repositories being built side by side and "the Rapide is
-   * two features ahead" is something you can see rather than read.
-   */
-  private drawBotNodes(): void {
-    this.botLane.clear();
-
-    const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-
-    const at = (id: NodeId): { lane: number; depth: number } | undefined =>
-      state.botNodes[id] ?? state.nodes[id];
-
-    // Edges first, in the same shape as yours: a rival's history is a history,
-    // not a dotted hint. Then the nodes on top of them.
-    for (const id of Object.keys(state.botNodes).sort()) {
-      const node = state.botNodes[id];
-      if (node === undefined) continue;
-
-      for (const parentId of node.parents) {
-        const parent = at(parentId);
-        if (parent === undefined) continue;
-        drawBackgroundEdge(this.botLane, parent, node, THEME.bot);
-      }
-    }
-
-    for (const id of Object.keys(state.botNodes).sort()) {
-      const node = state.botNodes[id];
-      if (node === undefined) continue;
-
-      const x = nodeX(node.lane);
-      const y = nodeY(node.depth);
-
-      if (node.kind === "feature_merge") {
-        this.botLane
-          .circle(x, y, NODE_RADIUS - 3)
-          .fill({ color: THEME.bot, alpha: 0.85 })
-          .stroke({ width: 2, color: THEME.background });
-      } else {
-        this.botLane
-          .circle(x, y, NODE_RADIUS - 6)
-          .fill({ color: THEME.background })
-          .stroke({ width: 2, color: THEME.bot, alpha: 0.7 });
       }
     }
   }

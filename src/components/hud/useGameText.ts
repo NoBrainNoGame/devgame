@@ -7,7 +7,7 @@ import { type I18nText, renderText } from "@/game";
 
 /**
  * Renders an engine-produced `I18nText`, resolving nested key references — a
- * log line that names a bot carries `bots.rapide.name`, not "Le Rapide", and
+ * log line that names a skill carries `skills.linter.name`, not "Linter", and
  * the engine has no idea which language it is in.
  */
 export function useGameText(): (value: I18nText) => string {

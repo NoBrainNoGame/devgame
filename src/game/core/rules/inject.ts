@@ -15,8 +15,7 @@ import type { BranchId, MapNode, NodeId, NodeKind } from "@/game/core/types";
  *
  * Every node deeper than the insertion point is pushed down to make room. That
  * keeps "depth strictly increases along every edge" true, which the renderer
- * and the invariant checks both rely on. Bot positions are indexes into `dev`,
- * not depths, so shifting is invisible to them — see `devLineNodes`.
+ * and the invariant checks both rely on.
  */
 export function injectBranch(
   context: RuleContext,
@@ -42,17 +41,6 @@ export function injectBranch(
   const insertDepth = current.depth;
   for (const node of allNodes(state)) {
     if (node.depth > insertDepth) node.depth += rows;
-  }
-
-  // The rivals' columns share the same rows, so they move with everything else.
-  // Leaving them put slid a rival's merge onto a row one of the player's own
-  // merges had just been pushed into — two merges drawn on the same spot of a
-  // branch that only ever has one.
-  for (const node of Object.values(state.botNodes)) {
-    if (node.depth > insertDepth) node.depth += rows;
-  }
-  for (const bot of Object.values(state.bots)) {
-    if (bot.depth > insertDepth) bot.depth += rows;
   }
 
   const nodeKind: NodeKind = kind === "hotfix" ? "hotfix" : "refactor";

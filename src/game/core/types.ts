@@ -1,6 +1,5 @@
 import type {
   AmbientEventId,
-  BotArchetypeId,
   DevopsId,
   EventId,
   FailureEventId,
@@ -13,7 +12,6 @@ import type { RngState } from "@/game/core/rng";
 
 /** `${sprint}:${index}`. Stable for the life of the run. */
 export type NodeId = string;
-export type BotId = string;
 export type BranchId = string;
 
 export type RunMode = "classic" | "daily";
@@ -67,7 +65,7 @@ export interface MapNode {
   id: NodeId;
   sprint: number;
   kind: NodeKind;
-  /** 0 is `main`, 1 is `dev`, 2 and up are features, negative lanes are rivals. */
+  /** 0 is `main`, 1 is `dev`, 2 and up are features. */
   lane: number;
   /** Row in the graph. Strictly increases along every edge. */
   depth: number;
@@ -95,60 +93,6 @@ export interface Branch {
   merged: boolean;
 }
 
-/**
- * A commit a rival wrote.
- *
- * Rivals build in their own column: they write commits and merge them, which is
- * the only honest way to show a pace as work. They are kept apart from
- * `state.nodes` because they are not part of the player's graph — nothing can
- * be walked onto, and none of the DAG invariants apply to them.
- */
-export interface BotNode {
-  id: NodeId;
-  botId: BotId;
-  kind: "commit" | "feature_merge";
-  lane: number;
-  depth: number;
-  /**
-   * What this commit was built on. One parent for ordinary work; a merge has
-   * two — the rival's last commit and the state of `dev` it landed on — which
-   * is what makes it a merge rather than a node that happens to be a diamond.
-   *
-   * Ids may name a node in `state.nodes` (a point on `dev`) or another
-   * `botNode`. A pruned parent simply stops being drawn.
-   */
-  parents: NodeId[];
-}
-
-export interface Bot {
-  id: BotId;
-  archetype: BotArchetypeId;
-  /** Commits written per turn, in percent of one. */
-  speedPct: number;
-  /** Accumulates `speedPct` per turn; every full 100 is one commit. */
-  acc: number;
-  /** The column this rival works in. Never one of yours. */
-  lane: number;
-  /** Commits written into the feature it currently has open. */
-  featureCommits: number;
-  /** Depth of its last commit, so its column climbs as it works. */
-  depth: number;
-  /** Features delivered this sprint: the number the race is run in. */
-  sprintProgress: number;
-  totalProgress: number;
-  /** Turns left to skip after a mistake. */
-  stalled: number;
-  /** Debt you inherit if you get it fired. */
-  debt: number;
-  /** Your reputation relative to this bot, recomputed every turn. */
-  reputation: number;
-  /** Consecutive turns spent above its firing threshold. */
-  firingProgress: number;
-  /** Turns needed at that threshold. Copied from the archetype. */
-  firingTurns: number;
-  fired: boolean;
-}
-
 export interface AiCommitRecord {
   nodeId: NodeId;
   reviewed: boolean;
@@ -171,29 +115,16 @@ export interface Player {
   headId: NodeId;
   energy: number;
   energyMax: number;
-  /**
-   * Position in the race, as an index into this sprint's main line — the same
-   * unit the rivals hold, so the two can be subtracted.
-   *
-   * It is not a count of nodes resolved. Branch and detour work costs turns and
-   * earns commits, but it is not ground a rival could have taken, and counting
-   * it advanced the player in a race the bots could not enter.
-   */
-  sprintProgress: number;
-  /** Furthest main-line index reached, so a penalty is not undone by the next node. */
-  mainReached: number;
   totalCommits: number;
   /** Turns finished with no energy left. Two in a row is burnout. */
   zeroEnergyStreak: number;
-  /** Turns spent far behind the leading bot. Enough of them gets you fired. */
-  overtakenStreak: number;
   /** Recent AI commits, oldest first, capped at the review window. */
   aiHistory: AiCommitRecord[];
   /** Consecutive AI commits, for the review chain bonus. */
   aiChain: number;
   /** Pair programming rerolls once per sprint. */
   rerollUsed: boolean;
-  /** Turns since the DevOps review bot last ran. */
+  /** Turns since the automatic review last ran. */
   turnsSinceFreeReview: number;
   /** A craft success sometimes makes the next refactor node free. */
   freeRefactor: boolean;
@@ -249,11 +180,6 @@ export interface RunState {
   nextBranchSerial: number;
 
   player: Player;
-  bots: Record<BotId, Bot>;
-  /** Everything the rivals have written, drawn beside your graph. */
-  botNodes: Record<NodeId, BotNode>;
-  nextBotSerial: number;
-  nextBotNodeSerial: number;
 
   skills: SkillId[];
   /** Feature skills this account has unlocked; the map draws branches from it. */
@@ -275,7 +201,6 @@ export interface RunState {
    * immunity.
    */
   monitoringWarning: boolean;
-  botsFired: number;
   xpEarned: number;
 
   phase: Phase;
@@ -293,13 +218,6 @@ export type PlayerAction =
   | { type: "choose_relic"; relicId: RelicId };
 
 export type PlayerActionType = PlayerAction["type"];
-
-export interface BotFiringRewards {
-  xp: number;
-  commits: number;
-  debt: number;
-  skillId: SkillId;
-}
 
 export type GameEvent =
   | { type: "turn_started"; turn: number }
@@ -324,7 +242,7 @@ export type GameEvent =
   | { type: "conflict"; nodeId: NodeId }
   | { type: "conflict_resolved"; how: "manual" | "ai"; hiddenBug: boolean }
   | { type: "forced_rebase"; nodeId: NodeId; absorbed: boolean }
-  | { type: "pr_rejected"; botId: BotId | null; countered: boolean }
+  | { type: "pr_rejected"; countered: boolean }
   | { type: "debt_explosion"; branchId: BranchId }
   | { type: "failure_event"; eventId: FailureEventId }
   | { type: "monitoring_warning" }
@@ -334,12 +252,6 @@ export type GameEvent =
   | { type: "docs_written"; charges: number }
   | { type: "docs_used"; nodeId: NodeId; remaining: number }
   | { type: "rebased"; nodeIds: NodeId[] }
-  | { type: "bot_advanced"; botId: BotId; from: number; to: number }
-  | { type: "bot_committed"; botId: BotId; nodeId: NodeId; merged: boolean }
-  | { type: "bot_mistake"; botId: BotId; archetype: BotArchetypeId }
-  | { type: "reputation"; botId: BotId; value: number; firingProgress: number }
-  | { type: "bot_fired"; botId: BotId; archetype: BotArchetypeId; rewards: BotFiringRewards }
-  | { type: "bot_arrived"; botId: BotId; archetype: BotArchetypeId }
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }
   | { type: "relic_chosen"; relicId: RelicId }
@@ -363,8 +275,8 @@ export interface ActionPreview {
   progress?: [number, number];
   /** Debt added on success, as a range. */
   debtDelta?: [number, number];
-  /** Whether taking this action lets the bots move. */
-  botsAdvance: boolean;
+  /** Whether taking this action ends the turn. */
+  consumesTurn: boolean;
   /** Why the numbers are what they are: "Crunch −15", "CI ×2 +10"… */
   notes: I18nText[];
   /** Set when the action is offered but not currently legal. */

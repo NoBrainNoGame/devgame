@@ -12,7 +12,7 @@
 
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
 export { mountGame } from "@/game/bridge/mount";
-export type { BotView, PlayerView, RunSnapshot } from "@/game/bridge/snapshot";
+export type { PlayerView, RunSnapshot } from "@/game/bridge/snapshot";
 export type { GameStore } from "@/game/bridge/store";
 export { gameStore, resetGameStore, useGameStore } from "@/game/bridge/store";
 export type { I18nParam, I18nText } from "@/game/core/i18n";

@@ -8,7 +8,6 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { isOnHotfix } from "@/game/core/map/graph";
-import { failurePressure } from "@/game/core/rules/bots";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -20,9 +19,9 @@ import { hasUnreviewedAi } from "@/game/core/rules/review";
  * What a missed roll costs you.
  *
  * Only half of the table actually takes the turn away. A merge conflict hands
- * you a second decision instead, and the two rival-driven failures are exactly
- * the ones a skill can neutralise — so the answer to "the Reviewer keeps
- * blocking me" is a build, not luck.
+ * you a second decision instead, and two of the others are exactly the ones a
+ * skill can neutralise — so the answer to "my PRs keep getting rejected" is a
+ * build, not luck.
  */
 
 export type FailureOutcome =
@@ -70,15 +69,11 @@ export function resolveFailure(context: RuleContext): FailureOutcome {
 
     case "pr_rejected": {
       const countered = context.effects.counterPrRejection;
-      const { reviewerId } = failurePressure(context.state);
-      emit(context, { type: "pr_rejected", botId: reviewerId, countered });
+      emit(context, { type: "pr_rejected", countered });
 
       if (countered) return { kind: "resolve" };
 
-      context.state.player.sprintProgress = Math.max(
-        0,
-        context.state.player.sprintProgress - BALANCE.failure.prRejectedProgress,
-      );
+      spendEnergy(context, BALANCE.failure.prRejectedEnergy, "pr_rejected");
       return { kind: "retry" };
     }
 
@@ -96,7 +91,6 @@ export function resolveFailure(context: RuleContext): FailureOutcome {
 
 function drawFailure(context: RuleContext): FailureEventId {
   const { state } = context;
-  const pressure = failurePressure(state);
   const onHotfix = isOnHotfix(state);
   const unreviewed = hasUnreviewedAi(context);
 
@@ -108,30 +102,12 @@ function drawFailure(context: RuleContext): FailureEventId {
     if (def.forbiddenOnHotfix && onHotfix) continue;
     if (id === "merge_conflict" && !canTangle(context)) continue;
 
-    let weight = def.weight;
-
-    if (id === "pr_rejected") {
-      weight += pressure.prRejected;
-      // A well-read codebase gives a reviewer less to object to.
-      const ratio = reviewedShare(context);
-      weight *= 1 - ratio * BALANCE.failure.reviewedRatioDamping;
-    }
-    if (id === "forced_rebase") {
-      weight += pressure.forcedRebase;
-    }
-
-    if (weight > 0) entries.push({ value: id, weight });
+    entries.push({ value: id, weight: def.weight });
   }
 
   // `forced_rebase` carries no prerequisite, so this is a guard, not a path.
   if (entries.length === 0) return "forced_rebase";
   return context.rng.weighted(entries);
-}
-
-function reviewedShare(context: RuleContext): number {
-  const history = context.state.player.aiHistory;
-  if (history.length === 0) return 1;
-  return history.filter((entry) => entry.reviewed).length / history.length;
 }
 
 /**
@@ -206,9 +182,6 @@ export function drawAmbient(context: RuleContext): AmbientEventId | null {
     else spendEnergy(context, -effect.energy, eventId);
   }
   if (effect.debt !== undefined) addDebt(context, effect.debt);
-  if (effect.progress !== undefined) {
-    context.state.player.sprintProgress += effect.progress;
-  }
 
   return eventId;
 }

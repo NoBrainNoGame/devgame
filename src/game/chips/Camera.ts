@@ -17,15 +17,15 @@ import { ZOOM } from "@/game/render/theme";
  * to find.
  *
  * Vertically there are two modes. **Following**: the camera eases towards
- * whatever is acting — your head commit, or the rival that just pushed — which
- * is what lets a machine-written burst of three read as three things happening
- * rather than as the graph suddenly being longer. **Free**: the player has
- * dragged, and the camera stays where they left it.
+ * whatever is acting — your head commit, or the effect that just played —
+ * which is what lets a machine-written burst of three read as three things
+ * happening rather than as the graph suddenly being longer. **Free**: the
+ * player has dragged, and the camera stays where they left it.
  *
  * Free lasts until something happens. Dragging is for reading your history
- * between turns, so it survives exactly that long: the next action, yours or a
- * rival's, takes the camera back to whoever is acting. Watching the graph move
- * is how the turn is read, and a player parked elsewhere would see none of it.
+ * between turns, so it survives exactly that long: the next action takes the
+ * camera back to whatever is acting. Watching the graph move is how the turn
+ * is read, and a player parked elsewhere would see none of it.
  *
  * Zoom is never touched by any of this. The recentre button returns to
  * following and leaves the scale alone, because how close you like to sit is a
@@ -40,7 +40,7 @@ export class Camera extends booyah.ChipBase {
 
   /**
    * What the camera is looking at, in world units, or null for "the player".
-   * A rival's push borrows it for the length of its animation.
+   * An effect borrows it for the length of its animation.
    */
   private focusY: number | null = null;
 
@@ -138,8 +138,8 @@ export class Camera extends booyah.ChipBase {
   // --- what the scene calls -------------------------------------------------
 
   /**
-   * Look at a point in world space until told otherwise — a rival's ref while
-   * it moves, say. Passing null hands the camera back to the player.
+   * Look at a point in world space until told otherwise. Passing null hands the
+   * camera back to the player.
    *
    * This also ends a free camera. Something is happening and the player asked
    * for it, directly or by taking a turn; showing them somewhere else would be

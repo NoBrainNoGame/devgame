@@ -3,7 +3,7 @@ import { emit, type RuleContext } from "@/game/core/rules/context";
 import { syncEnergyMax } from "@/game/core/rules/energy";
 
 /**
- * Placing a DevOps point is the only move that does not hand the rivals a turn.
+ * Placing a DevOps point costs no turn.
  * It is free in time and expensive in tempo: the points come from surviving
  * sprints and gaining levels, so spending one is always something you did
  * instead of something else.

@@ -1,5 +1,5 @@
 import { levelForXp, type MetaProgressDto } from "@/game";
-import { FEATURE_SKILL_IDS, PROFILE_IDS, PROFILES, SKILLS } from "@/game/content";
+import { PROFILE_IDS, PROFILES, SKILL_IDS, SKILLS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 
 /**
@@ -11,7 +11,7 @@ import { BALANCE } from "@/game/core/balance";
  */
 
 export interface RunOutcome {
-  /** XP the run earned, from firing rivals. */
+  /** XP the run earned. */
   xp: number;
   commits: number;
   botsFired: number;
@@ -37,7 +37,7 @@ export function applyRunToMeta(meta: MetaProgressDto, outcome: RunOutcome, now: 
   const unlockedProfiles = PROFILE_IDS.filter(
     (id) => PROFILES[id].unlockCost <= commitsBank || meta.unlockedProfiles.includes(id),
   );
-  const unlockedSkills = FEATURE_SKILL_IDS.filter(
+  const unlockedSkills = SKILL_IDS.filter(
     (id) => SKILLS[id].unlockCost <= commitsBank || meta.unlockedSkills.includes(id),
   );
 

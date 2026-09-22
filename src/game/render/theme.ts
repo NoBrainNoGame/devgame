@@ -19,7 +19,7 @@ export const THEME = {
   lane: {
     /** `main`: nothing but sprint merges and releases. */
     trunk: 0x62c073,
-    /** `dev`: where every feature is integrated, yours and the rivals'. */
+    /** `dev`: where every feature is integrated. */
     dev: 0x4fb3a8,
     feature: 0x5aa9e6,
     hotfix: 0xe2645a,
@@ -38,7 +38,6 @@ export const THEME = {
   },
 
   player: 0xffffff,
-  bot: 0xd06dc4,
   debt: 0xe0a458,
   energy: 0xf5d76e,
 } as const;
@@ -74,7 +73,6 @@ export function laneColour(lane: number, kind: NodeKind): number {
 
   if (lane === MAIN_LANE) return THEME.lane.trunk;
   if (lane === DEV_LANE) return THEME.lane.dev;
-  if (lane < 0) return THEME.bot;
   return THEME.lane.feature;
 }
 

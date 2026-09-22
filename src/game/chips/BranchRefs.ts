@@ -10,10 +10,10 @@ import { NODE_RADIUS, THEME } from "@/game/render/theme";
 /**
  * The `main` and `dev` refs, riding the newest commit of their column.
  *
- * Two long-lived branches carry no work: `dev` takes one merge per feature the
- * team delivers, `main` takes the sprint merge and the release. Without a label
- * on each, the two leftmost columns are just lines — and which one is which is
- * the thing a player needs to read first.
+ * Two long-lived branches carry no work: `dev` takes one merge per feature
+ * delivered, `main` takes the sprint merge and the release. Without a label on
+ * each, the two leftmost columns are just lines — and which one is which is the
+ * thing a player needs to read first.
  */
 export class BranchRefs extends booyah.ChipBase {
   private refs!: { lane: number; root: Container; y: number; placed: boolean }[];
@@ -39,16 +39,11 @@ export class BranchRefs extends booyah.ChipBase {
     const ease = reducedMotion ? 1 : Math.min(1, this._lastTickInfo.timeSinceLastTick / 140);
 
     for (const ref of this.refs) {
-      // The tip of the column, counting the rivals: `dev` is shared, so its ref
-      // moves when a rival lands a feature too.
+      // The tip of the column.
       let top = Number.NEGATIVE_INFINITY;
 
       for (const node of Object.values(state.nodes)) {
         if (node.lane !== ref.lane || node.status !== "done") continue;
-        if (node.depth > top) top = node.depth;
-      }
-      for (const node of Object.values(state.botNodes)) {
-        if (node.lane !== ref.lane) continue;
         if (node.depth > top) top = node.depth;
       }
 

@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
-import { devLineIndexOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import {
   commitChance,
@@ -60,14 +59,11 @@ describe("commit", () => {
   });
 
   test("a craft commit adds no debt, an AI commit does", () => {
-    // The Rapide bot pushes its own mess onto shared `main`, so the only fair
-    // comparison is a stretch of turns where it did not make a mistake.
-    const craft = findSeed(
-      (r) =>
-        r.events.some((e) => e.type === "node_done") &&
-        !r.events.some((e) => e.type === "bot_mistake"),
-      { prefix: "craft-debt", pick: prefer(isCommit("craft")), limit: 4 },
-    );
+    const craft = findSeed((r) => r.events.some((e) => e.type === "node_done"), {
+      prefix: "craft-debt",
+      pick: prefer(isCommit("craft")),
+      limit: 4,
+    });
     expect(craft.state.debt).toBe(0);
 
     // Asserted on the emitted delta, not the total: a detour on the way can
@@ -291,7 +287,8 @@ describe("review", () => {
 
     const after = play(withReviewSkill(withAi.state), {
       pick: prefer(isType("review")),
-      limit: 2,
+      stop: (_, events) => events.some((event) => event.type === "reviewed"),
+      limit: 6,
     }).state;
     expect(reviewedRatio(after)).toBeGreaterThan(reviewedRatio(withAi.state));
   });
@@ -383,7 +380,7 @@ describe("review", () => {
 });
 
 describe("free actions", () => {
-  test("walking the graph does not hand the rivals a turn", () => {
+  test("walking the graph does not take a turn", () => {
     const state = newRun("free-move");
     expect(state.phase.kind).toBe("choose_node");
 
@@ -393,7 +390,7 @@ describe("free actions", () => {
 
     const after = applyAction(state, { type: "move", nodeId: move }).state;
     expect(after.turn).toBe(state.turn);
-    expect(getActionPreview(state, { type: "move", nodeId: move }).botsAdvance).toBe(false);
+    expect(getActionPreview(state, { type: "move", nodeId: move }).consumesTurn).toBe(false);
   });
 
   test("placing a DevOps point does not either", () => {
@@ -433,56 +430,6 @@ describe("free actions", () => {
     expect(gatherEffects(automated).mergeRegenBonus).toBeGreaterThan(
       gatherEffects(state).mergeRegenBonus,
     );
-  });
-});
-
-describe("the race", () => {
-  test("the race position is measured in features, like a rival's", () => {
-    for (let i = 0; i < 40; i += 1) {
-      const { state } = play(newRun(`race-${i}`), { pick: prefer(isCommit("ai")), limit: 60 });
-      const node = state.nodes[state.player.nodeId];
-      if (node === undefined || state.phase.kind === "game_over") continue;
-
-      // The player holds the same number a rival holds: how far along `dev`
-      // this sprint has got. It cannot exceed the features the sprint has.
-      expect(state.player.sprintProgress).toBeGreaterThanOrEqual(0);
-      expect(state.player.sprintProgress).toBeLessThanOrEqual(state.sprintLength - 1);
-
-      // And it tracks the trunk, give or take the ground an ambient event
-      // hands over for free.
-      expect(state.player.mainReached).toBeLessThanOrEqual(devLineIndexOf(state, node));
-    }
-  });
-
-  test("a machine-written burst banks the nodes, not the ground", () => {
-    const start = newRun("burst");
-    let state = start;
-
-    for (let i = 0; i < 200; i += 1) {
-      if (state.phase.kind === "game_over") break;
-      const legal = getAvailableActions(state);
-      const action = legal.find(isCommit("ai")) ?? legal[0];
-      if (action === undefined) break;
-
-      const beforePosition = state.player.sprintProgress;
-      const beforeCommits = state.player.totalCommits;
-      const result = applyAction(state, action);
-      state = result.state;
-
-      const jumped = eventsOfType(result.events, "ai_jumped")[0];
-      if (jumped === undefined || jumped.nodeIds.length === 0) continue;
-
-      const nodes = state.player.totalCommits - beforeCommits;
-      const ground = state.player.sprintProgress - beforePosition;
-
-      // Every node resolved is a commit; only the ones that moved the trunk
-      // are ground taken off a rival.
-      expect(nodes).toBeGreaterThan(0);
-      expect(ground).toBeLessThanOrEqual(nodes);
-      return;
-    }
-
-    throw new Error("no machine-written burst happened in 200 actions");
   });
 });
 
@@ -569,7 +516,15 @@ describe("rebase", () => {
   });
 
   test("landing it carries the next commit for free", () => {
-    const { after, events } = committedOn("rebase");
+    // Only a plain commit can be carried: a rebase written right before a
+    // merge has nothing to replay, and that is a different test.
+    const { after, events } = committedOn("rebase", {
+      where: (state) => {
+        const standing = state.nodes[state.player.nodeId];
+        const nextId = standing?.next.length === 1 ? standing.next[0] : undefined;
+        return nextId !== undefined && state.nodes[nextId]?.kind === "commit";
+      },
+    });
     const carried = eventsOfType(events, "rebased")[0];
     expect(carried).toBeDefined();
     if (carried === undefined) return;

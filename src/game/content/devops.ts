@@ -1,11 +1,10 @@
 import type { PartialEffects } from "@/game/content/effects";
 
 /**
- * The automation tree. Placing a point is free in time — it is the only action
- * that does not let the bots advance — but points are scarce: one per sprint
- * survived and one per level gained.
+ * The automation tree. Placing a point is free in time, but points are scarce:
+ * one per sprint survived and one per level gained.
  *
- * The tension the design asks for: build it early and the bots pull ahead while
+ * The tension the design asks for: build it early and the work piles up while
  * you tinker; build it late and the debt has already exploded.
  */
 

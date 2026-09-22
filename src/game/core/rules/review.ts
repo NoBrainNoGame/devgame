@@ -9,10 +9,9 @@ import type { NodeId, RunState } from "@/game/core/types";
 /**
  * Reading back what the machine wrote.
  *
- * A review buys no ground — the rivals move while you read — so it has to pay
- * for itself twice: it repays debt, and because reputation is weighted by how
- * much of your output has been read, it also makes you look better than the
- * bot that shipped twice as much rubbish.
+ * A review buys no ground — the turn goes by while you read — so it has to pay
+ * for itself: it repays debt, and it takes machine-written commits out of the
+ * pool a production bug can be traced back to.
  *
  * Reviewing while the code is fresh pays more. That is what turns the choice
  * into a rhythm (AI, AI, AI, review, merge) instead of a coin flip every node.
@@ -28,8 +27,8 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
   const { state } = context;
   const { review } = BALANCE;
 
-  // The automatic review a DevOps bot performs is the thing the player paid
-  // points for; a deliberate one costs what the preview advertised.
+  // The automatic review is the thing the player paid DevOps points for; a
+  // deliberate one costs what the preview advertised.
   if (!free) {
     spendEnergy(context, reviewEnergyCost(state, context.effects).value, "review");
   }
@@ -82,8 +81,8 @@ export function hasUnreviewedAiIn(state: RunState): boolean {
  *
  * Both halves matter. `canReview` is learned — from the Code review branch, or
  * from Pair programming, which is the same habit under another name. Having
- * something unread is what stops the button being a way to donate a turn to
- * the rivals.
+ * something unread is what stops the button being a way to throw a turn
+ * away.
  */
 export function canReview(state: RunState, effects: Effects): boolean {
   return effects.canReview && hasUnreviewedAiIn(state);

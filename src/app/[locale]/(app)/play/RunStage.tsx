@@ -4,7 +4,6 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
-import { BotPanel } from "@/components/hud/BotPanel";
 import { CommitLog } from "@/components/hud/CommitLog";
 import { ConflictDialog, RelicDialog, RunOverDialog } from "@/components/hud/GameDialogs";
 import { GraphControls } from "@/components/hud/GraphControls";
@@ -86,7 +85,6 @@ export function RunStage({
           {snapshot === null ? null : (
             <>
               <ActionPanel snapshot={snapshot} busy={busy} onAct={onAct} />
-              <BotPanel snapshot={snapshot} />
             </>
           )}
           <CommitLog log={log} />

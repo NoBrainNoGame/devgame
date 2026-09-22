@@ -73,7 +73,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         // The jump is a maximum, not a promise: it stops at the next decision.
         progress: [1 + carried, 1 + carried + jumpMax],
         debtDelta: [nodeDebt + aiDebt(jumpMin), nodeDebt + aiDebt(jumpMax)],
-        botsAdvance: true,
+        consumesTurn: true,
         notes,
       };
     }
@@ -94,7 +94,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         energyCost: cost.value,
         progress: [0, 0],
         debtDelta: [delta, delta],
-        botsAdvance: true,
+        consumesTurn: true,
         notes,
       };
     }
@@ -115,8 +115,8 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         energyCost: cost?.value ?? 0,
         progress: [0, 0],
         debtDelta: node.kind === "refactor" ? [-BALANCE.debt.refactorRepay, 0] : [0, 0],
-        // Walking is not working: the rivals only move when you do.
-        botsAdvance: false,
+        // Walking is not working: it costs no turn.
+        consumesTurn: false,
         notes,
       };
     }
@@ -128,7 +128,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return {
         action,
         energyCost: 0,
-        botsAdvance: false,
+        consumesTurn: false,
         notes: [text("notes.devops_cost", { points: cost ?? 0 })],
         ...(cost === undefined
           ? { blocked: text("notes.devops_maxed", { max: DEVOPS[action.id].maxLevel }) }
@@ -145,7 +145,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
           action,
           energyCost: BALANCE.failure.conflictManualEnergy,
           successPct: chance.value,
-          botsAdvance: true,
+          consumesTurn: true,
           notes: chance.notes,
         };
       }
@@ -154,7 +154,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         action,
         energyCost: 0,
         debtDelta: [BALANCE.debt.perAiConflictFix, BALANCE.debt.perAiConflictFix],
-        botsAdvance: true,
+        consumesTurn: true,
         notes: [text("notes.hidden_bug_risk", { percent: BALANCE.failure.conflictAiHiddenBugPct })],
       };
     }
@@ -163,7 +163,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return {
         action,
         energyCost: 0,
-        botsAdvance: false,
+        consumesTurn: false,
         notes: [],
       };
   }

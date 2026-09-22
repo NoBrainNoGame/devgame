@@ -32,8 +32,8 @@ import { getCurrentUserId } from "@/lib/session";
  * is refused either way.
  *
  * On cost: the longest run the engine produces is a few hundred actions and
- * replays in about a tenth of a second, because burnout and the rivals end a
- * run long before the schema's 5000-action ceiling. Nothing lets a player stall
+ * replays in about a tenth of a second, because burnout ends a run long before
+ * the schema's 5000-action ceiling. Nothing lets a player stall
  * indefinitely — the free moves are bounded by the graph and by the finite
  * DevOps tree — so that ceiling is a belt-and-braces bound rather than the real
  * one. If replay ever shows up in a profile, cap it by wall clock instead of by

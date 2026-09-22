@@ -80,9 +80,8 @@ export function isOverextended(state: RunState): boolean {
 }
 
 /**
- * Share of recent AI commits that have been read by a human. Drives both the
- * Reviewer bot's patience and the quality half of the reputation formula.
- * With nothing unread, the ratio is a perfect 1.
+ * Share of recent AI commits that have been read by a human. With nothing
+ * unread, the ratio is a perfect 1.
  */
 export function reviewedRatio(state: RunState): number {
   const history = state.player.aiHistory;

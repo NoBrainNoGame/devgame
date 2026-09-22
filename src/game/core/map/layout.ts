@@ -6,8 +6,7 @@ import type { MapNode, NodeId } from "@/game/core/types";
  * This is `git log --graph` logic, with the two long-lived branches pinned:
  * `main` holds lane 0 and `dev` holds lane 1. Every feature takes the leftmost
  * free column to the right of `dev`, and a column is free again once the branch
- * occupying it has merged. The rivals work in negative lanes — see `botLane` in
- * `rules/bots.ts` — so their work reads as somebody else's, not as yours.
+ * occupying it has merged.
  *
  * It lives in `core` rather than in the renderer because the tests assert on it
  * and because two branches sharing a column is a generation bug, not a drawing
@@ -16,7 +15,7 @@ import type { MapNode, NodeId } from "@/game/core/types";
 
 /** `main`: nothing but the sprint merge and the release it ships. */
 export const MAIN_LANE = 0;
-/** `dev`: where every feature is integrated, yours and the rivals'. */
+/** `dev`: where every feature is integrated. */
 export const DEV_LANE = 1;
 /** The first column a feature branch may take. */
 export const FIRST_FEATURE_LANE = 2;

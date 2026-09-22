@@ -8,9 +8,9 @@
  */
 
 /**
- * A parameter may itself be a key. "The Rapide made a mistake" needs the bot's
- * *name*, and the engine only knows its archetype — so it passes a reference and
- * lets the renderer resolve it. Marking those explicitly beats guessing from
+ * A parameter may itself be a key. "Linter merged" needs the skill's *name*,
+ * and the engine only knows its id — so it passes a reference and lets the
+ * renderer resolve it. Marking those explicitly beats guessing from
  * the shape of a string.
  */
 export type I18nParam = string | number | { key: string };

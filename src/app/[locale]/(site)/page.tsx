@@ -38,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const HOW_IT_WORKS = ["howItWorks1", "howItWorks2", "howItWorks3"] as const;
-const PILLARS = ["pillarCraft", "pillarAi", "pillarBots"] as const;
+const PILLARS = ["pillarCraft", "pillarAi", "pillarDebt"] as const;
 
 export default async function HomePage(): Promise<React.JSX.Element> {
   const locale = await getLocale();

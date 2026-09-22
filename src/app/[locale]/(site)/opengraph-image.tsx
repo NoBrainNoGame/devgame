@@ -51,7 +51,6 @@ export default async function OpenGraphImage({
         trunk={hex(THEME.lane.trunk)}
         feature={hex(THEME.lane.feature)}
         hotfix={hex(THEME.lane.hotfix)}
-        bot={hex(THEME.bot)}
       />
     </div>,
     { ...size, ...(mono === null ? {} : { fonts: [mono] }) },
@@ -101,12 +100,10 @@ function Graph({
   trunk,
   feature,
   hotfix,
-  bot,
 }: {
   trunk: string;
   feature: string;
   hotfix: string;
-  bot: string;
 }): React.JSX.Element {
   return (
     /* Labelled rather than titled: this SVG is rasterised into a PNG, so a
@@ -125,11 +122,6 @@ function Graph({
       <path d="M24 130 H1032" stroke={trunk} />
       <path d="M300 130 C348 130 348 44 396 44 H612 C660 44 660 130 684 130" stroke={feature} />
       <path d="M684 130 C732 130 732 58 780 58" stroke={hotfix} />
-      <path
-        d="M120 130 C168 130 168 200 216 200 H768 C816 200 816 130 864 130"
-        stroke={bot}
-        strokeDasharray="12 16"
-      />
       {[120, 300, 492, 684, 864, 1008].map((cx) => (
         <circle key={cx} cx={cx} cy={130} r={13} fill={trunk} />
       ))}
@@ -137,9 +129,6 @@ function Graph({
         <circle key={cx} cx={cx} cy={44} r={13} fill={feature} />
       ))}
       <circle cx={780} cy={58} r={13} fill={hotfix} />
-      {[216, 768].map((cx) => (
-        <circle key={cx} cx={cx} cy={200} r={11} fill={bot} />
-      ))}
     </svg>
   );
 }

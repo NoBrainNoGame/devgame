@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 
 import {
   AMBIENT_EVENT_IDS,
-  BOT_ARCHETYPE_IDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
   PROFILE_IDS,
@@ -91,7 +90,6 @@ describe("game content is fully named", () => {
     ["skills", SKILL_IDS, "name", "desc"],
     ["relics", RELIC_IDS, "name", "desc"],
     ["devops", DEVOPS_IDS, "name", "desc"],
-    ["bots", BOT_ARCHETYPE_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
     ["events", FAILURE_EVENT_IDS, "title", "log"],
     ["events", AMBIENT_EVENT_IDS, "title", "log"],
