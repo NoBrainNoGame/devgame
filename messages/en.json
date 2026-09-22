@@ -139,7 +139,7 @@
     "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
     "previewPoints": "Points: {min} to {max}",
     "quality": "Prod",
-    "qualityHint": "Every bug in production fills this gauge. Full means you are fired. A sprint without an incident lowers it.",
+    "qualityHint": "Production's patience: a bug in production, a refused pull request or a backlog ticket left waiting fill it. Full is the sack. A clean sprint brings it down.",
     "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}",
     "board": "Project",
     "boardTitle": "Project board",
@@ -155,7 +155,7 @@
     "grants": "Delivers:",
     "storyPointsShort": "{count, plural, one {# story point} other {# story points}}",
     "storyPointsOf": "{filled}/{max} story points",
-    "storyPointsHint": "Every commit that lands fills points: one by hand, two by the machine. Points full and no bug left, the ticket goes to review.",
+    "storyPointsHint": "Every commit that lands fills points: one by hand, three by the machine. Points full and no bug left, the ticket goes to review.",
     "unreadOn": "{count, plural, one {# unread AI commit} other {# unread AI commits}}",
     "readyToSubmit": "Ready: open the PR.",
     "inHand": "The ticket in hand.",
@@ -205,7 +205,9 @@
     "ticketNoCommits": "No commit yet. The first one forks off dev.",
     "ticketBugged": "bugged",
     "ticketCost": "+{debt} debt",
-    "reviewMergeHint": "The merge costs the turn; the review did not."
+    "reviewMergeHint": "The merge costs the turn; the review did not.",
+    "rest": "Take a breath",
+    "restHint": "A turn without code: energy comes back, minus one per extra open ticket."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -418,7 +420,7 @@
     "skills": {
       "code_review": {
         "name": "Code review",
-        "desc": "Unlocks the Review action: you can finally read back what the machine wrote."
+        "desc": "A review reads one more machine commit."
       },
       "unit_tests": {
         "name": "Unit tests",
@@ -706,7 +708,8 @@
       "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
       "pr_rejected_debt": "PR rejected, the debt is too high",
       "bug_fixed": "bugged commit redone, the bug is gone",
-      "debt_refactored": "commit redone, {debt} debt taken back"
+      "debt_refactored": "commit redone, {debt} debt taken back",
+      "rested": "a turn to breathe, +{energy} energy"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -733,7 +736,9 @@
       "unread_risk": "{count, plural, one {# unread AI commit} other {# unread AI commits}}: the review may find bugs",
       "debt_refusal": "Debt above the ceiling ({max}): the review will refuse",
       "refactor_target": "Redoes the commit that cost {debt} debt",
-      "fix_bug": "Redoes the ticket's oldest bugged commit"
+      "fix_bug": "Redoes the ticket's oldest bugged commit",
+      "rest_regen": "+{energy} energy",
+      "rest_wip": "{count, plural, one {# extra ticket: less rest} other {# extra tickets: less rest}}"
     },
     "tickets": {
       "feature": {

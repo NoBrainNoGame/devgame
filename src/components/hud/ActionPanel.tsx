@@ -42,6 +42,7 @@ export function ActionPanel({
   const plain = commits.filter((action) => action.kind === undefined);
   const written = commits.filter((action) => action.kind !== undefined);
   const review = snapshot.actions.find((action) => action.type === "review");
+  const rest = snapshot.actions.find((action) => action.type === "rest");
   const submit = snapshot.actions.find((action) => action.type === "submit");
   const devops = snapshot.actions.filter(
     (action): action is Extract<PlayerAction, { type: "devops" }> => action.type === "devops",
@@ -95,6 +96,16 @@ export function ActionPanel({
             preview={snapshot.previews[actionKey(review)]}
             busy={busy}
             onAct={() => onAct(review)}
+          />
+        )}
+
+        {rest === undefined ? null : (
+          <ActionButton
+            label={t("rest")}
+            hint={t("restHint")}
+            preview={snapshot.previews[actionKey(rest)]}
+            busy={busy}
+            onAct={() => onAct(rest)}
           />
         )}
 

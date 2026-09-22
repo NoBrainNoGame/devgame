@@ -139,7 +139,7 @@
     "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
     "previewPoints": "Points : {min} à {max}",
     "quality": "Prod",
-    "qualityHint": "Chaque bug en production remplit cette jauge. Pleine, c'est le licenciement. Un sprint sans incident la fait baisser.",
+    "qualityHint": "La patience de la prod : un bug en production, une PR refusée ou un ticket du backlog qui a traîné la remplissent. Pleine, c'est le licenciement. Un sprint propre la fait baisser.",
     "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}",
     "board": "Projet",
     "boardTitle": "Tableau du projet",
@@ -155,7 +155,7 @@
     "grants": "Livre :",
     "storyPointsShort": "{count, plural, one {# point de story} other {# points de story}}",
     "storyPointsOf": "{filled}/{max} points de story",
-    "storyPointsHint": "Chaque commit qui atterrit remplit des points : un à la main, deux par l'IA. Points pleins et sans bug, le ticket part en review.",
+    "storyPointsHint": "Chaque commit qui atterrit remplit des points : un à la main, trois par l'IA. Points pleins et sans bug, le ticket part en review.",
     "unreadOn": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
     "readyToSubmit": "Prêt : ouvrez la PR.",
     "inHand": "Le ticket en main.",
@@ -205,7 +205,9 @@
     "ticketNoCommits": "Aucun commit encore. Le premier bifurque de dev.",
     "ticketBugged": "bugué",
     "ticketCost": "+{debt} dette",
-    "reviewMergeHint": "Le merge coûte le tour ; la review, non."
+    "reviewMergeHint": "Le merge coûte le tour ; la review, non.",
+    "rest": "Souffler",
+    "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus."
   },
   "leaderboard": {
     "title": "Classement",
@@ -418,7 +420,7 @@
     "skills": {
       "code_review": {
         "name": "Revue de code",
-        "desc": "Débloque l'action « Relire » : vous pouvez enfin relire ce que la machine a écrit."
+        "desc": "Une review relit un commit IA de plus."
       },
       "unit_tests": {
         "name": "Tests unitaires",
@@ -706,7 +708,8 @@
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
       "pr_rejected_debt": "PR refusée, la dette est trop haute",
       "bug_fixed": "commit bugué repris, le bug est parti",
-      "debt_refactored": "commit repris, {debt} de dette en moins"
+      "debt_refactored": "commit repris, {debt} de dette en moins",
+      "rested": "un tour pour souffler, +{energy} énergie"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -733,7 +736,9 @@
       "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",
       "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera",
       "refactor_target": "Reprend le commit qui a coûté {debt} de dette",
-      "fix_bug": "Reprend le plus ancien commit bugué du ticket"
+      "fix_bug": "Reprend le plus ancien commit bugué du ticket",
+      "rest_regen": "+{energy} énergie",
+      "rest_wip": "{count, plural, one {# ticket en plus : on souffle moins} other {# tickets en plus : on souffle moins}}"
     },
     "tickets": {
       "feature": {

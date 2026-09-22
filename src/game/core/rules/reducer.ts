@@ -11,7 +11,7 @@ import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { placeDevops } from "@/game/core/rules/devops";
-import { checkBurnout, reportCrunch } from "@/game/core/rules/energy";
+import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { grantRelic } from "@/game/core/rules/grants";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
 import { gameOver, isOver } from "@/game/core/rules/over";
@@ -96,6 +96,10 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
 
     case "review":
       performReview(context, false);
+      return true;
+
+    case "rest":
+      performRest(context);
       return true;
 
     case "submit":

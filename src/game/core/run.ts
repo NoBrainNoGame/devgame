@@ -103,6 +103,7 @@ export function createRun(options: CreateRunOptions): RunState {
     monitoringWarning: false,
     quality: 0,
     sprintIncidents: 0,
+    sprintForced: false,
 
     xpEarned: 0,
     pointsDelivered: 0,

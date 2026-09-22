@@ -14,7 +14,7 @@ import { SKILLS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { gatherEffects } from "@/game/core/rules/modifiers";
+import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import {
   buggedOn,
@@ -40,6 +40,8 @@ interface Outcome {
   score: number;
   commits: number;
   ticketsDelivered: number;
+  pointsDelivered: number;
+  rests: number;
   carriedOver: number;
   forced: number;
   incidents: number;
@@ -127,6 +129,7 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const isCraft = (a: PlayerAction) =>
     a.type === "commit" && a.mode === "craft" && a.kind === undefined;
   const isReview = (a: PlayerAction) => a.type === "review";
+  const isRest = (a: PlayerAction) => a.type === "rest";
   const isSubmit = (a: PlayerAction) => a.type === "submit";
   const isDevops = (a: PlayerAction) => a.type === "devops";
   const writtenAs = (kind: string) => (a: PlayerAction) =>
@@ -202,6 +205,14 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
     }
   }
 
+  // Out of breath: everyone but the naive machine player takes a turn off,
+  // when the board still leaves room to rest.
+  const restWorth = BALANCE.energy.restRegen - wipExtra(state) >= 3;
+  if (policy !== "ai" && lowEnergy && restWorth) {
+    const rest = actions.find(isRest);
+    if (rest !== undefined) return rest;
+  }
+
   switch (policy) {
     case "ai":
       return prefer(actions, isAi, isCraft) ?? fallback;
@@ -230,6 +241,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
 
   const failures: Record<string, number> = {};
   let reviews = 0;
+  let rests = 0;
   let maxDebt = 0;
   let turns = 0;
   let incidents = 0;
@@ -243,6 +255,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
       return summarise(state, "stuck", {
         failures,
         reviews,
+        rests,
         maxDebt,
         incidents,
         forced,
@@ -261,6 +274,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
       return summarise(state, "stuck", {
         failures,
         reviews,
+        rests,
         maxDebt,
         incidents,
         forced,
@@ -280,6 +294,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
         failures[event.eventId] = (failures[event.eventId] ?? 0) + 1;
       }
       if (event.type === "reviewed") reviews += 1;
+      if (event.type === "rested") rests += 1;
       if (event.type === "incident") incidents += 1;
       if (event.type === "ticket_started" && event.forced) forced += 1;
       if (event.type === "sprint_ended") {
@@ -305,6 +320,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
   return summarise(state, reason, {
     failures,
     reviews,
+    rests,
     maxDebt,
     incidents,
     forced,
@@ -318,7 +334,14 @@ function summarise(
   reason: Outcome["reason"],
   extra: Omit<
     Outcome,
-    "reason" | "turns" | "sprints" | "score" | "commits" | "ticketsDelivered" | "finalDebt"
+    | "reason"
+    | "turns"
+    | "sprints"
+    | "score"
+    | "commits"
+    | "ticketsDelivered"
+    | "pointsDelivered"
+    | "finalDebt"
   >,
 ): Outcome {
   return {
@@ -328,6 +351,7 @@ function summarise(
     score: computeScore(state),
     commits: state.player.totalCommits,
     ticketsDelivered: state.ticketsDelivered,
+    pointsDelivered: state.pointsDelivered,
     finalDebt: state.debt,
     ...extra,
   };
@@ -380,6 +404,7 @@ function report(policy: string, outcomes: Outcome[]): void {
   );
   console.log(
     `  wip       avg ${(outcomes.reduce((s, o) => s + o.wipSum, 0) / totalTurns).toFixed(2)} extra tickets per turn   incidents avg ${mean(outcomes.map((o) => o.incidents)).toFixed(2)}`,
+    `  points    delivered avg ${mean(outcomes.map((o) => o.pointsDelivered)).toFixed(1)}   per turn ${(outcomes.reduce((s, o) => s + o.pointsDelivered, 0) / totalTurns).toFixed(2)}   rests avg ${mean(outcomes.map((o) => o.rests)).toFixed(1)}`,
   );
   console.log(
     `  debt      final avg ${mean(outcomes.map((o) => o.finalDebt)).toFixed(0)}  peak avg ${mean(outcomes.map((o) => o.maxDebt)).toFixed(0)}`,

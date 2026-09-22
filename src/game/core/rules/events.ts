@@ -14,7 +14,7 @@ import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { conflictChance } from "@/game/core/rules/modifiers";
-import { gameOver } from "@/game/core/rules/over";
+import { raiseQuality } from "@/game/core/rules/quality";
 import { hasUnreviewedAi } from "@/game/core/rules/review";
 import { currentTicket, forceTicket, isOnHotfix } from "@/game/core/rules/tickets";
 import { fillPoints } from "@/game/core/rules/write";
@@ -189,14 +189,9 @@ export function recordIncident(
   const ticket = forceTicket(context, "hotfix", points);
   state.monitoringWarning = false;
 
-  const before = state.quality;
-  state.quality = Math.min(BALANCE.quality.max, before + BALANCE.quality.perIncident);
   state.sprintIncidents += 1;
-
   emit(context, { type: "incident", source, nodeId, ticketId: ticket.id });
-  emit(context, { type: "quality", delta: state.quality - before, value: state.quality });
-
-  if (state.quality >= BALANCE.quality.max) gameOver(context, "fired");
+  raiseQuality(context, BALANCE.quality.perIncident);
   return true;
 }
 

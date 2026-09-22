@@ -1,10 +1,15 @@
 import { BALANCE } from "@/game/core/balance";
-import { arriveTicket } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { drawMergeEvent } from "@/game/core/rules/events";
 import { mergeEventChance } from "@/game/core/rules/modifiers";
-import { availableSkills } from "@/game/core/rules/sprint";
-import { currentTicket, getTicket, openTicket, unreadAiOn } from "@/game/core/rules/tickets";
+import { raiseQuality } from "@/game/core/rules/quality";
+import {
+  backlogTickets,
+  currentTicket,
+  getTicket,
+  openTicket,
+  unreadAiOn,
+} from "@/game/core/rules/tickets";
 import { completeMerge, discardCommits } from "@/game/core/rules/write";
 import type { Ticket } from "@/game/core/types";
 
@@ -67,14 +72,17 @@ export function performSubmit(context: RuleContext): void {
     if (node !== undefined) node.commit.bugged = true;
   }
   ticket.rejections += 1;
+  raiseQuality(context, BALANCE.quality.perRejection);
   ticket.rework += rework;
   ticket.points += rework;
   ticket.filled = Math.min(ticket.filled, ticket.points);
 
-  // The sprint does not wait for a rewrite: a new ticket arrives and opens
-  // beside this one, whatever the player decides next.
-  const extra = arriveTicket(context, availableSkills(state), false);
-  openTicket(context, extra, true);
+  // The sprint does not wait for a rewrite: the next ticket in the backlog
+  // opens beside this one, whatever the player decides next. Nothing waiting
+  // means nothing opens — the pressure is what the sprint had planned, not a
+  // ticket invented to punish, so a run cannot spiral past its own backlog.
+  const extra = backlogTickets(state)[0];
+  if (extra !== undefined) openTicket(context, extra, true);
 
   state.phase = { kind: "ticket_rejected", ticketId: ticket.id, bugs, overDebt };
 }

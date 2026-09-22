@@ -1,6 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { energyMax } from "@/game/core/rules/modifiers";
+import { energyMax, restRegen } from "@/game/core/rules/modifiers";
 
 /**
  * Energy is the run's clock. Every commit spends it, merges and weekends give
@@ -37,6 +37,13 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
 }
 
 /** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
+/** A turn spent not coding. */
+export function performRest(context: RuleContext): void {
+  const regen = restRegen(context.state);
+  gainEnergy(context, regen, "rest");
+  emit(context, { type: "rested", energy: regen });
+}
+
 export function syncEnergyMax(context: RuleContext): void {
   const { player } = context.state;
   const max = energyMax(context.state, context.effects);

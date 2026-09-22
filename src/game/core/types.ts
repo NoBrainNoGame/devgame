@@ -242,6 +242,8 @@ export interface RunState {
   quality: number;
   /** Incidents this sprint, so a clean sprint can be told apart. */
   sprintIncidents: number;
+  /** A backlog ticket was forced open this sprint: it does not count as clean. */
+  sprintForced: boolean;
 
   xpEarned: number;
   pointsDelivered: number;
@@ -260,6 +262,8 @@ export type PlayerAction =
   /** `kind` writes the commit as a detour instead of plainly. */
   | { type: "commit"; mode: CommitMode; kind?: DetourKind }
   | { type: "review" }
+  /** A turn spent not coding. Energy back, minus what the open board costs. */
+  | { type: "rest" }
   /** Open the pull request: the review decides whether the ticket lands. */
   | { type: "submit" }
   /** Lands an accepted pull request. Costs the turn the review did not. */
@@ -290,6 +294,7 @@ export type GameEvent =
   /** Story points filled on a ticket. */
   | { type: "points"; ticketId: TicketId; delta: number; value: number; max: number }
   | { type: "energy"; delta: number; value: number; reason: string }
+  | { type: "rested"; energy: number }
   | { type: "debt"; delta: number; value: number }
   | { type: "ticket_arrived"; ticketId: TicketId }
   /** `forced` when the board assigned it rather than the player. */

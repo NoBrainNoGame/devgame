@@ -43,7 +43,7 @@ export const FAILURE_EVENTS: Record<FailureEventId, FailureEventDef> = {
   },
   prod_bug: {
     id: "prod_bug",
-    weight: 35,
+    weight: 20,
     // Something has to have shipped unread for production to break.
     requiresUnreviewedAi: true,
     // Stacking a hotfix on a hotfix is a spiral, not a game.

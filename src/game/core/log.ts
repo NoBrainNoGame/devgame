@@ -45,6 +45,9 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
             : text("log.pr_rejected_debt"),
       };
 
+    case "rested":
+      return { seq, turn, kind: "note", text: text("log.rested", { energy: event.energy }) };
+
     case "bug_fixed":
       return { seq, turn, kind: "fix", text: text("log.bug_fixed") };
 

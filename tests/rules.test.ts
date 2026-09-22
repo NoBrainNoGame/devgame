@@ -192,8 +192,9 @@ describe("work in progress", () => {
     expect(wipExtra(one)).toBe(0);
     expect(wipExtra(both)).toBe(1);
 
+    const alone = commitChance(one, "craft", "commit").value;
     expect(commitChance(both, "craft", "commit").value).toBe(
-      commitChance(one, "craft", "commit").value - BALANCE.wip.malusPerExtra,
+      alone - Math.round((alone * BALANCE.wip.malusPctPerExtra) / 100),
     );
     expect(nodeEnergyCost(both, "commit", "craft").value).toBe(
       Math.round(nodeEnergyCost(one, "commit", "craft").value * (1 + BALANCE.wip.energyPerExtra)),
@@ -371,14 +372,17 @@ describe("review", () => {
     expect(getAvailableActions(state).some(isType("review"))).toBe(false);
   });
 
-  test("review has to be learned before it is offered", () => {
+  test("review is there from the first turn, and a skill makes it read more", () => {
     const state = inHand("unlearned");
     state.skills = [];
     plantAiCommit(state);
-    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
-
-    state.skills = ["code_review"];
     expect(getAvailableActions(state).some(isType("review"))).toBe(true);
+
+    const learned = structuredClone(state);
+    learned.skills = ["code_review"];
+    expect(reviewCleanCount(learned, gatherEffects(learned))).toBe(
+      reviewCleanCount(state, gatherEffects(state)) + 1,
+    );
   });
 
   test("a review still costs a turn, which is what makes it a decision", () => {
@@ -499,7 +503,6 @@ describe("squash", () => {
 
     for (let i = 0; i < BALANCE.squash.minUnread; i += 1) plantAiCommit(state);
     expect(offersOf(state, ticketInHand(state))).toContain("squash");
-    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
   });
 });
 

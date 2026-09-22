@@ -30,7 +30,10 @@ export function endSprint(context: RuleContext): void {
   shipBugs(context);
   if (isOver(context)) return;
 
-  if (state.sprintIncidents === 0) {
+  // A clean sprint earns patience back: nothing broke, and nothing had to be
+  // forced on you. The forced tickets are counted when the next sprint opens,
+  // so the flag is read here and reset there.
+  if (state.sprintIncidents === 0 && !state.sprintForced) {
     state.quality = Math.max(0, state.quality - BALANCE.quality.decayPerCleanSprint);
   }
 
@@ -94,6 +97,7 @@ export function startNextSprint(context: RuleContext): void {
   state.sprint += 1;
   state.sprintTurn = 0;
   state.sprintIncidents = 0;
+  state.sprintForced = false;
   state.player.rerollUsed = false;
   state.phase = { kind: "choose_action" };
 

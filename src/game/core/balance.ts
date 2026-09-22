@@ -62,11 +62,16 @@ export const BALANCE = {
     crunchMalusPoints: 15,
     /** Turns finished at zero energy before the run ends in burnout. */
     burnoutStreak: 2,
+    /**
+     * Energy a turn spent resting gives back, minus one per open ticket beyond
+     * the first: a crowded board is one you cannot rest on.
+     */
+    restRegen: 5,
   },
 
   commit: {
     /** Base success chance in percent, before any modifier. */
-    base: { craft: 92, ai: 74 } satisfies Record<CommitMode, number>,
+    base: { craft: 92, ai: 72 } satisfies Record<CommitMode, number>,
     /** Replaces the base chance on a `risky` commit. */
     riskyBase: 78,
     /**
@@ -99,7 +104,7 @@ export const BALANCE = {
    */
   points: {
     craft: 1,
-    ai: 2,
+    ai: 3,
     /** Added on a `risky` commit, whichever hand wrote it. */
     riskyBonus: 1,
     /** A hotfix or a forced refactor counts one per commit, whoever writes it. */
@@ -109,7 +114,7 @@ export const BALANCE = {
   debt: {
     max: 100,
     /** Debt added by a machine-written commit, on success. */
-    perAiCommit: 11,
+    perAiCommit: 10,
     perCraftCommit: 0,
     perRiskyNode: 5,
     perAiConflictFix: 10,
@@ -135,7 +140,7 @@ export const BALANCE = {
 
   review: {
     /** AI commits a single review cleans up. */
-    cleans: 3,
+    cleans: 2,
     /** Extra commits cleaned when the chain bonus applies. */
     chainBonus: 2,
     /** Consecutive AI commits needed for the chain bonus. */
@@ -206,9 +211,13 @@ export const BALANCE = {
    */
   wip: {
     /** Added to the energy multiplier per extra open ticket. */
-    energyPerExtra: 0.35,
-    /** Points taken off every roll per extra open ticket. */
-    malusPerExtra: 10,
+    energyPerExtra: 0.25,
+    /**
+     * Percent of the roll lost per open ticket beyond the first. Relative, so
+     * the gap between the two hands stays what the base rates say it is.
+     * Hotfix tickets do not count: the forced ticket is the punishment.
+     */
+    malusPctPerExtra: 12,
   },
 
   sprint: {
@@ -219,14 +228,14 @@ export const BALANCE = {
   tickets: {
     /** Tickets arriving at sprint 1, and one more every `growEvery` sprints. */
     base: 2,
-    growEvery: 3,
+    growEvery: 4,
     maxPerSprint: 4,
     /** Sprints a ticket may sit in the backlog before the board assigns it. */
     graceSprints: 1,
     /** Chance in percent that a ticket carries a skill, beyond the guaranteed one. */
     skillPct: 40,
     /** Story points of a ticket that grants nothing. */
-    points: { min: 4, max: 6 },
+    points: { min: 5, max: 7 },
     /**
      * Extra points a ticket carries when it also grants a skill.
      *
@@ -258,6 +267,10 @@ export const BALANCE = {
   quality: {
     max: 100,
     perIncident: 25,
+    /** Production's patience lost for every backlog ticket the sprint had to force on you. */
+    perStaleTicket: 10,
+    /** Patience lost when a review sends a pull request back. */
+    perRejection: 15,
     decayPerCleanSprint: 20,
   },
 

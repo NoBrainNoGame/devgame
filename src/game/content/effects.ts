@@ -88,7 +88,7 @@ export const NO_EFFECTS: Effects = {
   cancelObsoleteLib: false,
   monitoring: false,
   freeReviewEvery: 0,
-  canReview: false,
+  canReview: true,
 };
 
 export const EFFECT_KEYS = Object.keys(NO_EFFECTS).sort() as (keyof Effects)[];

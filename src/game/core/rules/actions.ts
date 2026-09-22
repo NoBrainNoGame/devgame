@@ -55,6 +55,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
         if (isReady(state, ticket)) actions.push({ type: "submit" });
       }
+      actions.push({ type: "rest" });
 
       for (const id of DEVOPS_IDS) {
         if (canPlaceDevops(state, id)) actions.push({ type: "devops", id });
@@ -100,6 +101,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "choose_relic":
       return b.type === "choose_relic" && a.relicId === b.relicId;
     case "review":
+    case "rest":
     case "submit":
     case "merge":
     case "restart":

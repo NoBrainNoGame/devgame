@@ -242,6 +242,7 @@ export function planBatch(
       case "ticket_merged":
       case "conflict_resolved":
       case "debt_refactored":
+      case "rested":
       case "monitoring_warning":
       case "docs_written":
       case "rebased":

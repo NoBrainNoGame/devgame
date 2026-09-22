@@ -33,10 +33,9 @@ export interface SkillDef {
 }
 
 export const SKILLS: Record<SkillId, SkillDef> = {
-  // The review action does not exist until a run merges this. See `canReview`.
   code_review: {
     id: "code_review",
-    effects: { canReview: true },
+    effects: { reviewExtraCommits: 1 },
     unlockCost: 0,
   },
   unit_tests: {
@@ -59,7 +58,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   pair_programming: {
     id: "pair_programming",
-    effects: { canReview: true, reviewEnergyDiscount: 1, rerollFailedRoll: true },
+    effects: { reviewEnergyDiscount: 1, rerollFailedRoll: true },
     unlockCost: 0,
   },
   copilot_v2: {

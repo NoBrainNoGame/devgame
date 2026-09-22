@@ -62,7 +62,7 @@ plus.**
 Un ticket, c'est :
 
 - des **points de story** à remplir — chaque commit qui atterrit en remplit,
-  un à la main, deux par la machine ;
+  un à la main, trois par la machine ;
 - parfois une **compétence**, payée en points de story supplémentaires : le
   ticket qui donne quelque chose coûte strictement plus que celui qui ne donne
   rien, sinon il n'y a pas de décision.
@@ -82,14 +82,17 @@ voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
   commits sont jetés, `git reset --hard`, la branche repart de `dev`) ou
   **continuer** (garder les commits, et écrire un fix par commit bugué avant
   de resoumettre : un ticket qui porte un bug marqué ne repart pas en review).
-  Dans les deux cas **un nouveau ticket s'ouvre en parallèle** : le sprint
-  n'attend pas.
+  Dans les deux cas **le prochain ticket du backlog s'ouvre en parallèle** :
+  le sprint n'attend pas. Backlog vide, rien ne s'ouvre — la pression est ce
+  que le sprint avait prévu, pas un ticket inventé pour punir. Chaque refus
+  coûte aussi de la patience à la production (voir [Ressources](#ressources)).
 
 **Démarrer** un ticket depuis le tableau du projet et **basculer** d'un ticket
 ouvert à l'autre sont gratuits en temps. Ce qui coûte, c'est d'en tenir
 plusieurs : chaque ticket ouvert au-delà du premier majore l'énergie de chaque
-commit et retire des points à chaque jet. Un hotfix ou une refacto imposée
-comptent dedans — c'est le but.
+commit et retire un **pourcentage** de chaque jet — relatif, pour que l'écart
+entre les deux mains reste celui des taux de base. Une refacto imposée compte
+dedans ; un hotfix, non : le ticket forcé est déjà la punition.
 
 **Le backlog s'impose.** Un ticket resté en attente au-delà d'un sprint de
 grâce est ouvert d'office au sprint suivant. C'est la pression du jeu : plus on
@@ -106,7 +109,7 @@ intermédiaire, trois pour un senior.
 |  | Commit artisanal | Commit IA |
 | --- | --- | --- |
 | Coût en énergie | Celui du type de commit, plus la main | **Un point, quoi qu'elle écrive** |
-| Points de story | Un | **Deux** |
+| Points de story | Un | **Trois** |
 | Risque d'échec | Faible, jamais nul | Nettement plus élevé |
 | Effets secondaires | Peut débloquer un refacto gratuit | Génère de la dette ; non relu, finit en production |
 
@@ -146,20 +149,24 @@ Un **hotfix** ou une **refacto imposée** est un ticket ouvert de force, qui
 n'accepte qu'un seul type de commit tant que ses points ne sont
 pas pleins.
 
-Le commit, la review et le merge consomment un tour. Démarrer un ticket,
-basculer, placer un point DevOps, choisir une relique et résoudre un conflit
-sont gratuits en temps.
+Le commit, la review, le merge et **souffler** consomment un tour. Démarrer
+un ticket, basculer, placer un point DevOps, choisir une relique et résoudre
+un conflit sont gratuits en temps.
+
+**Souffler** est le tour sans code : de l'énergie revient, moins un par ticket
+ouvert au-delà du premier. C'est la soupape contre le burnout, et elle se
+ferme d'elle-même quand le tableau est chargé — un joueur qui a laissé les
+tickets s'empiler ne peut plus se reposer, c'est le nœud des deux fins.
 
 ### La review
 
-À la place d'un commit, le joueur peut **relire** le ticket en main — mais
-seulement s'il a appris à le faire, et seulement s'il y reste un commit IA non
-relu.
+À la place d'un commit, le joueur peut **relire** le ticket en main, dès le
+premier tour, tant qu'il y reste un commit IA non relu.
 
-**La review s'apprend.** L'action n'existe pas tant qu'un ticket livré ne l'a
-pas accordée : Revue de code, ou Pair programming, qui est la même habitude
-sous un autre nom. Une run qui ne croise ni l'une ni l'autre n'a que le squash
-pour faire disparaître un commit IA avant la pull request.
+**La review est là dès le départ, les compétences la font lire plus.** Une
+review de base relit deux commits ; Revue de code en ajoute un, Documentation
+deux. Sans review, l'IA est injouable pour le profil de départ — et c'est lui
+qu'on apprend à jouer.
 
 - Elle coûte un peu d'énergie et un tour.
 - Elle nettoie les derniers commits IA non relus du ticket, du plus récent au
@@ -189,9 +196,13 @@ et la dette retombe quand elle merge. Elle est affichée sous forme de
 **fourchette floue** — assez pour décider, pas assez pour optimiser au point
 près. Le Linter, Œil de lynx et le point DevOps correspondant la rendent exacte.
 
-**Production.** Une jauge, visible en permanence : chaque incident la remplit,
-un sprint sans incident la fait baisser, et pleine, c'est le licenciement.
-Personne ne doit être surpris.
+**Production.** Une jauge de patience, visible en permanence, et pleine, c'est
+le licenciement. Trois choses la remplissent : un **incident** en production,
+une **PR refusée**, et chaque **ticket du backlog que le sprint a dû imposer**
+parce qu'il a traîné. Un sprint propre — sans incident et sans ticket imposé —
+la fait baisser. C'est la fin du joueur trop lent ou trop sale ; le burnout est
+celle du joueur qui a tenu trop de choses à la fois. Personne ne doit être
+surpris.
 
 ## Compétences
 
@@ -389,5 +400,5 @@ Les décisions ci-dessous sont dans le moteur.
 | 7 | Rien n'explique comment on perd | **Jauge de production**, visible en permanence, remplie par les incidents. Un objectif invisible n'est pas un objectif. |
 | 8 | Aucune reproductibilité ni anti-triche pour un classement | Moteur **pur et déterministe** : une run est sa **graine plus la liste ordonnée des actions**, et le serveur la **rejoue** pour calculer le score. Sauvegardes minuscules, scores non falsifiables. |
 | 9 | Pas de mode compétitif comparable | **Mode graine du jour** : même carte pour tout le monde le même jour UTC, graine dérivée côté serveur. Rendu possible par la décision 8. |
-| 10 | Un commit IA avance de plusieurs nœuds d'un coup | **Un jet, un commit.** La machine remplit deux points de story au lieu d'un : l'avantage est chiffré sur la carte, et le joueur choisit à chaque commit. |
+| 10 | Un commit IA avance de plusieurs nœuds d'un coup | **Un jet, un commit.** La machine remplit trois points de story au lieu d'un : l'avantage est chiffré sur la carte, et le joueur choisit à chaque commit. |
 | 11 | Stack proposée : vanilla ou Svelte, `localStorage`, jeu 100 % client | Remplacée par la stack du projet (Next.js, React, Pixi.js, booyah, Prisma). La sauvegarde locale reste — le jeu est jouable hors ligne et sans compte — et la synchronisation cloud s'ajoute par-dessus. |

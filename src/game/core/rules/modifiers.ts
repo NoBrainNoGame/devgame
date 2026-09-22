@@ -70,7 +70,13 @@ export function isCrunch(state: RunState): boolean {
  * in your head, and every commit and every roll pays for it.
  */
 export function wipExtra(state: RunState): number {
-  return Math.max(0, openTickets(state).length - 1);
+  const features = openTickets(state).filter((ticket) => ticket.kind !== "hotfix").length;
+  return Math.max(0, features - 1);
+}
+
+/** What a turn of rest gives back. A crowded board is one you cannot rest on. */
+export function restRegen(state: RunState): number {
+  return Math.max(1, BALANCE.energy.restRegen - wipExtra(state));
 }
 
 /**
@@ -167,7 +173,7 @@ export function commitChance(
 
   const extra = wipExtra(state);
   if (extra > 0) {
-    const malus = BALANCE.wip.malusPerExtra * extra;
+    const malus = Math.round((value * BALANCE.wip.malusPctPerExtra * extra) / 100);
     value -= malus;
     notes.push(text("notes.wip", { points: signed(-malus), count: extra }));
   }

@@ -26,6 +26,7 @@ export const PlayerActionSchema = z.discriminatedUnion("type", [
     kind: DetourKindSchema.optional(),
   }),
   z.object({ type: z.literal("review") }),
+  z.object({ type: z.literal("rest") }),
   z.object({ type: z.literal("submit") }),
   z.object({ type: z.literal("merge") }),
   z.object({ type: z.literal("restart") }),

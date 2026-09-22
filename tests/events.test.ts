@@ -139,10 +139,12 @@ describe("failures", () => {
   });
 
   test("a conflict does not cost two turns", () => {
+    // Merges are where conflicts come from, and the hand that gets its pull
+    // requests accepted is the one that merges.
     const { state } = findSeed((r) => r.state.phase.kind === "resolve_conflict", {
       prefix: "conflict-turn",
-      pick: policy("ai"),
-      limit: 120,
+      pick: policy("craft"),
+      limit: 300,
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
 

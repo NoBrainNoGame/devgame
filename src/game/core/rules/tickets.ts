@@ -1,6 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { raiseQuality } from "@/game/core/rules/quality";
 import type { DetourKind, NodeId, RunState, Ticket, TicketId } from "@/game/core/types";
 
 /**
@@ -151,8 +152,15 @@ export function assignStaleTickets(context: RuleContext): void {
   const { state } = context;
   const cutoff = state.sprint - BALANCE.tickets.graceSprints;
 
+  // Every ticket the sprint has to force on you is one production noticed
+  // waiting. Patience is spent before the ticket opens, so the log reads in
+  // the order it happened: the complaint, then the assignment.
   for (const ticket of backlogTickets(state)) {
-    if (ticket.sprintArrived < cutoff) openTicket(context, ticket, true);
+    if (ticket.sprintArrived >= cutoff) continue;
+    state.sprintForced = true;
+    raiseQuality(context, BALANCE.quality.perStaleTicket);
+    if (state.phase.kind === "game_over") return;
+    openTicket(context, ticket, true);
   }
 }
 

@@ -95,10 +95,10 @@ export function hasUnreviewedAi(state: RunState): boolean {
 /**
  * Whether the review action is on the table at all.
  *
- * Both halves matter. `canReview` is learned — from the Code review ticket, or
- * from Pair programming, which is the same habit under another name. Having
- * something unread is what stops the button being a way to throw a turn
- * away.
+ * Reading is something every developer can do from the first turn; skills
+ * make it read more. Having something unread is what stops the button being
+ * a way to throw a turn away. `canReview` stays an effect so a profile or a
+ * relic could still take it away.
  */
 export function canReview(state: RunState, effects: Effects): boolean {
   return effects.canReview && hasUnreviewedAi(state);

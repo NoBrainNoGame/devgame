@@ -8,8 +8,10 @@ import {
   gatherEffects,
   mergeEventChance,
   nodeEnergyCost,
+  restRegen,
   reviewCleanCount,
   reviewEnergyCost,
+  wipExtra,
 } from "@/game/core/rules/modifiers";
 import {
   behindOf,
@@ -158,6 +160,13 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     case "resume":
       return { action, energyCost: 0, consumesTurn: false, notes: [] };
 
+    case "rest": {
+      const regen = restRegen(state);
+      const notes: I18nText[] = [text("notes.rest_regen", { energy: regen })];
+      if (wipExtra(state) > 0) notes.push(text("notes.rest_wip", { count: wipExtra(state) }));
+      return { action, energyCost: 0, consumesTurn: true, notes };
+    }
+
     case "devops": {
       const level = state.devops[action.id] ?? 0;
       const cost = devopsCost(action.id, level);
@@ -229,6 +238,7 @@ export function actionKey(action: PlayerAction): string {
     case "choose_relic":
       return `relic:${action.relicId}`;
     case "review":
+    case "rest":
     case "submit":
     case "merge":
     case "restart":
