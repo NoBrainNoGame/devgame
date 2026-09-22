@@ -1,21 +1,71 @@
 import type { Graphics } from "pixi.js";
 
+import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
+import type { MapNode, Ticket, TicketId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { BEND, EDGE_WIDTH } from "@/game/render/theme";
+import { CORNER, EDGE_WIDTH, LANE_DASH, LANE_GAP } from "@/game/render/theme";
 
 /**
  * How the lines of the graph are drawn.
  *
- * A branch is a continuous vertical line for as long as it is alive, whether
- * or not a commit sits on every row — that is what a git client draws, and
- * what makes `dev` read as a branch rather than as a dot with a name. Between
- * columns an edge leaves its own column, sweeps across on a short curve and
- * arrives travelling straight again. A single bezier from node to node looks
- * like a wire diagram; this looks like history.
+ * A branch is a line between its own commits and nothing more: `main` and
+ * `dev` run solid from their first drawn node to their last, then dotted up
+ * to the top row to say they are still there; a ticket's line runs from the
+ * row it forked on to its tip and stops, whether or not the ticket is open.
+ * Nothing runs ahead of a commit that has not happened.
  *
- * Everything is in graph space, and the y flip lives in `nodeY` — nothing here
- * needs to know which way time runs.
+ * Between columns an edge does what a git client draws: it leaves the trunk
+ * sideways on the trunk's own row, turns one rounded corner, and travels
+ * vertically in the branch's column. Read the other way that is a merge
+ * arriving square into the branch it lands on. One rule, both shapes.
+ *
+ * The geometry is pure (`edgePath`, `laneSegments`) so a test can read it;
+ * only the `draw*` functions touch Pixi. Everything is in graph space, and
+ * the y flip lives in `nodeY`.
  */
+
+export type EdgeSegment =
+  | { kind: "line"; x1: number; y1: number; x2: number; y2: number }
+  /** A rounded corner: from (x1, y1) towards the control point (cx, cy), ending at (x2, y2). */
+  | {
+      kind: "arc";
+      x1: number;
+      y1: number;
+      cx: number;
+      cy: number;
+      x2: number;
+      y2: number;
+      r: number;
+    };
+
+/**
+ * The path between a node and its parent. The endpoint with the smaller lane
+ * is the trunk end: the horizontal run sits on its row, the vertical run in
+ * the other column, and the corner between them is as round as the gap allows.
+ */
+export function edgePath(
+  from: { lane: number; depth: number },
+  to: { lane: number; depth: number },
+): EdgeSegment[] {
+  const [trunk, branch] = from.lane <= to.lane ? [from, to] : [to, from];
+  const xt = nodeX(trunk.lane);
+  const yt = nodeY(trunk.depth);
+  const xb = nodeX(branch.lane);
+  const yb = nodeY(branch.depth);
+
+  if (xt === xb) return [{ kind: "line", x1: xt, y1: yt, x2: xb, y2: yb }];
+  if (yt === yb) return [{ kind: "line", x1: xt, y1: yt, x2: xb, y2: yb }];
+
+  const sx = Math.sign(xb - xt);
+  const sy = Math.sign(yb - yt);
+  const r = Math.min(CORNER, Math.abs(xb - xt) / 2, Math.abs(yb - yt) / 2);
+
+  return [
+    { kind: "line", x1: xt, y1: yt, x2: xb - sx * r, y2: yt },
+    { kind: "arc", x1: xb - sx * r, y1: yt, cx: xb, cy: yt, x2: xb, y2: yt + sy * r, r },
+    { kind: "line", x1: xb, y1: yt + sy * r, x2: xb, y2: yb },
+  ];
+}
 
 export function drawEdge(
   graphics: Graphics,
@@ -24,11 +74,19 @@ export function drawEdge(
   colour: number,
   alpha: number,
 ): void {
-  drawEdgeShape(graphics, from, to);
+  const path = edgePath(from, to);
+  const head = path[0];
+  if (head === undefined) return;
+
+  graphics.moveTo(head.x1, head.y1);
+  for (const segment of path) {
+    if (segment.kind === "line") graphics.lineTo(segment.x2, segment.y2);
+    else graphics.arcTo(segment.cx, segment.cy, segment.x2, segment.y2, segment.r);
+  }
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
 }
 
-/** A branch's own line, from the row it was born on to the row it lives on. */
+/** A branch's own line, from one of its rows to another. */
 export function drawLane(
   graphics: Graphics,
   lane: number,
@@ -43,33 +101,92 @@ export function drawLane(
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round" });
 }
 
-/** The path an edge follows, without committing to how it is stroked. */
-function drawEdgeShape(
+/**
+ * The same line, dotted: a trunk that is still there but has nothing new on
+ * it yet. Pixi 8 has no dash style, so the dashes are drawn one by one.
+ */
+export function drawDottedLane(
   graphics: Graphics,
-  from: { lane: number; depth: number },
-  to: { lane: number; depth: number },
+  lane: number,
+  fromDepth: number,
+  toDepth: number,
+  colour: number,
+  alpha: number,
 ): void {
-  const x1 = nodeX(from.lane);
-  const y1 = nodeY(from.depth);
-  const x2 = nodeX(to.lane);
-  const y2 = nodeY(to.depth);
+  if (toDepth <= fromDepth) return;
+  const x = nodeX(lane);
+  const yStart = nodeY(fromDepth);
+  const yEnd = nodeY(toDepth);
+  const direction = Math.sign(yEnd - yStart);
+  const length = Math.abs(yEnd - yStart);
 
-  if (x1 === x2) {
-    graphics.moveTo(x1, y1).lineTo(x2, y2);
-    return;
+  for (let offset = 0; offset < length; offset += LANE_DASH + LANE_GAP) {
+    const y1 = yStart + direction * offset;
+    const y2 = yStart + direction * Math.min(length, offset + LANE_DASH);
+    graphics.moveTo(x, y1).lineTo(x, y2);
+  }
+  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round" });
+}
+
+export type LaneColour = "trunk" | "dev" | "feature" | "hotfix" | "refactor";
+
+export interface LaneSegment {
+  lane: number;
+  from: number;
+  to: number;
+  style: "solid" | "dotted";
+  colour: LaneColour;
+}
+
+/** What a ticket's column is drawn in: an emergency reads as one wherever it sits. */
+export function ticketColour(kind: Ticket["kind"] | undefined): LaneColour {
+  if (kind === "hotfix") return "hotfix";
+  if (kind === "refactor") return "refactor";
+  return "feature";
+}
+
+/**
+ * The lines to draw for what is on screen. Trunks: solid between their own
+ * nodes, dotted from the last one to the top row (`main` with no node yet is
+ * dotted all the way, so its column reads as reserved rather than as a gap).
+ * Features: one solid segment per *ticket*, so a column two tickets used in
+ * turn shows two lines with a gap between them, not one line through both.
+ */
+export function laneSegments(
+  nodes: readonly Pick<MapNode, "lane" | "depth" | "ticketId">[],
+  kindOf: (ticketId: TicketId) => Ticket["kind"] | undefined,
+  topDepth: number,
+): LaneSegment[] {
+  const segments: LaneSegment[] = [];
+
+  for (const lane of [MAIN_LANE, DEV_LANE]) {
+    const colour: LaneColour = lane === MAIN_LANE ? "trunk" : "dev";
+    const depths = nodes.filter((node) => node.lane === lane).map((node) => node.depth);
+    if (depths.length === 0) {
+      if (topDepth > 0) segments.push({ lane, from: 0, to: topDepth, style: "dotted", colour });
+      continue;
+    }
+    const first = Math.min(...depths);
+    const last = Math.max(...depths);
+    if (last > first) segments.push({ lane, from: first, to: last, style: "solid", colour });
+    if (topDepth > last) segments.push({ lane, from: last, to: topDepth, style: "dotted", colour });
   }
 
-  // Travel in the origin column first, then bend once into the destination
-  // column and arrive vertical. `BEND` is how much room the curve gets; on a
-  // single row the whole distance is the curve.
-  const towards = Math.sign(y2 - y1);
-  const room = Math.min(BEND, Math.abs(y2 - y1) / 2);
-  const bendStart = y1 + towards * room;
-  const bendEnd = y2 - towards * room;
+  const byTicket = new Map<TicketId, { lane: number; from: number; to: number }>();
+  for (const node of nodes) {
+    if (node.lane < FIRST_FEATURE_LANE || node.ticketId === undefined) continue;
+    const span = byTicket.get(node.ticketId);
+    if (span === undefined) {
+      byTicket.set(node.ticketId, { lane: node.lane, from: node.depth, to: node.depth });
+    } else {
+      span.from = Math.min(span.from, node.depth);
+      span.to = Math.max(span.to, node.depth);
+    }
+  }
+  for (const [ticketId, span] of byTicket) {
+    if (span.to === span.from) continue;
+    segments.push({ ...span, style: "solid", colour: ticketColour(kindOf(ticketId)) });
+  }
 
-  graphics
-    .moveTo(x1, y1)
-    .lineTo(x1, bendStart)
-    .bezierCurveTo(x1, bendEnd, x2, bendStart, x2, bendEnd)
-    .lineTo(x2, y2);
+  return segments;
 }

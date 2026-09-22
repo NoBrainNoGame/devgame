@@ -3,13 +3,20 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
+import { DEV_LANE, FIRST_FEATURE_LANE } from "@/game/core/map/layout";
 import type { MapNode, NodeId, RunState } from "@/game/core/types";
 import { labelX, nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
-import { drawEdge, drawLane } from "@/game/render/lanes";
+import { drawDottedLane, drawEdge, drawLane, laneSegments } from "@/game/render/lanes";
 import { labelStyle } from "@/game/render/textStyles";
-import { laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER, THEME } from "@/game/render/theme";
+import {
+  LANE_ALPHA,
+  laneColour,
+  NODE_RADIUS,
+  nodePrefix,
+  REF_GUTTER,
+  THEME,
+} from "@/game/render/theme";
 
 /**
  * The history, drawn the way a git client draws it.
@@ -141,39 +148,23 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   }
 
   /**
-   * One line per branch. The trunk lines run from their first commit to the
-   * top of what is drawn: they are never done. A ticket's line runs from the
-   * row it forked on to its tip, and up to the top too while it is open — a
-   * branch you are still writing is alive on every row, commit or not.
+   * One line per branch, between its own commits only: the trunks continue
+   * dotted to the top row, a ticket's line stops at its tip. `laneSegments`
+   * decides; this only strokes.
    */
   private drawLanes(state: RunState, nodes: readonly MapNode[]): void {
     this.lanes.clear();
 
-    const first = new Map<number, number>();
-    const last = new Map<number, number>();
-    for (const node of nodes) {
-      first.set(node.lane, Math.min(first.get(node.lane) ?? Infinity, node.depth));
-      last.set(node.lane, Math.max(last.get(node.lane) ?? -Infinity, node.depth));
-    }
-
-    for (const lane of [MAIN_LANE, DEV_LANE]) {
-      const from = first.get(lane);
-      if (from === undefined) continue;
-      const colour = lane === MAIN_LANE ? THEME.lane.trunk : THEME.lane.dev;
-      drawLane(this.lanes, lane, from, this.topDepth, colour, 0.9);
-    }
-
-    const openLanes = new Set<number>();
-    for (const ticket of Object.values(state.tickets)) {
-      if (ticket.status === "open" && ticket.lane !== undefined) openLanes.add(ticket.lane);
-    }
-
-    for (const [lane, from] of first) {
-      if (lane < FIRST_FEATURE_LANE) continue;
-      const tip = last.get(lane) ?? from;
-      const to = openLanes.has(lane) ? Math.max(tip, this.topDepth) : tip;
-      const kind = nodes.find((node) => node.lane === lane)?.kind ?? "commit";
-      drawLane(this.lanes, lane, from, to, laneColour(lane, kind), 0.55);
+    const segments = laneSegments(nodes, (id) => state.tickets[id]?.kind, this.topDepth);
+    for (const segment of segments) {
+      const colour = THEME.lane[segment.colour];
+      if (segment.style === "dotted") {
+        const alpha = LANE_ALPHA.continuation;
+        drawDottedLane(this.lanes, segment.lane, segment.from, segment.to, colour, alpha);
+      } else {
+        const alpha = segment.lane < FIRST_FEATURE_LANE ? LANE_ALPHA.trunk : LANE_ALPHA.feature;
+        drawLane(this.lanes, segment.lane, segment.from, segment.to, colour, alpha);
+      }
     }
   }
 
