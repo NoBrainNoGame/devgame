@@ -3,6 +3,7 @@
 import { Building2, GitBranchPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -26,6 +27,7 @@ export function ResourceBar({
   onOpenTree: () => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const common = useTranslations("common");
 
   const { player, debt, economy } = snapshot;
@@ -119,7 +121,7 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenCompany}>
               <Building2 className="size-4" />
-              <span className="tabular-nums">{t("money", { money: economy.money })}</span>
+              <span className="tabular-nums">{t("money", { money: money(economy.money) })}</span>
               <span
                 className={cn(
                   "text-xs tabular-nums",
@@ -127,8 +129,13 @@ export function ResourceBar({
                 )}
               >
                 {economy.net >= 0 ? "+" : ""}
-                {economy.net}/{t("monthShort")}
+                {money(economy.net)}/{t("monthShort")}
               </span>
+              {economy.tier > 0 ? (
+                <span className="rounded-full bg-branch-feature/20 px-1.5 text-branch-feature text-xs tabular-nums">
+                  {t("tierBadge", { tier: economy.tier })}
+                </span>
+              ) : null}
               {saturated ? (
                 <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs">
                   {t("saturatedShort")}

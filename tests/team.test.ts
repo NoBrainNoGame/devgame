@@ -102,6 +102,8 @@ describe("the team's turn", () => {
       rework: 0,
       debtAdded: 0,
       rejections: 0,
+      tier: 0,
+      load: 0,
       mrr: 0,
       sprintArrived: 1,
       devMergesAtOpen: 0,

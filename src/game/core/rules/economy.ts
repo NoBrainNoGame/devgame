@@ -5,6 +5,7 @@ import { changeMoney } from "@/game/core/rules/money";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { payTeam } from "@/game/core/rules/team";
 import { sortedTickets } from "@/game/core/rules/tickets";
+import { raiseTier, tierOf } from "@/game/core/rules/tier";
 import type { RunState } from "@/game/core/types";
 
 /**
@@ -30,18 +31,15 @@ export function monthTurns(): number {
 }
 
 export interface MonthlyReport {
-  /** Recurring revenue the shipped features would earn, bonuses included. */
   mrr: number;
-  /** Features in production, against what the servers can serve. */
+  /** Users the shipped features bring, against what production serves. */
   load: number;
   capacity: number;
-  /** Revenue actually collected, after the servers saturated. */
+  /** How far over capacity, in percent of it; zero when served. */
+  overPct: number;
   revenue: number;
-  /** Revenue lost to saturation. */
   lost: number;
-  /** Subscriptions charged this month. */
   upkeep: number;
-  /** Salaries owed this month. */
   salaries: number;
   net: number;
 }
@@ -58,13 +56,14 @@ export function mrrOf(state: RunState, effects: Effects): number {
 export function loadOf(state: RunState): number {
   let load = 0;
   for (const ticket of sortedTickets(state)) {
-    if (ticket.status === "merged" && ticket.kind === "feature") load += 1;
+    if (ticket.status === "merged" && ticket.kind === "feature") load += ticket.load;
   }
   return load;
 }
 
 export function capacityOf(effects: Effects): number {
-  return BALANCE.economy.infra.baseCapacity + effects.infraCapacity;
+  const base = BALANCE.economy.infra.baseCapacity + effects.infraCapacity;
+  return Math.floor((base * (100 + effects.infraCapacityPct)) / 100);
 }
 
 export function upkeepOf(state: RunState): number {
@@ -83,6 +82,7 @@ export function monthlyReport(state: RunState, effects: Effects): MonthlyReport 
   const load = loadOf(state);
   const capacity = capacityOf(effects);
   const revenue = load <= capacity ? mrr : Math.floor((mrr * capacity) / load);
+  const overPct = load <= capacity ? 0 : Math.ceil(((load - capacity) * 100) / capacity);
   const upkeep = upkeepOf(state);
   const salaries = salariesOf(state);
 
@@ -90,6 +90,7 @@ export function monthlyReport(state: RunState, effects: Effects): MonthlyReport 
     mrr,
     load,
     capacity,
+    overPct,
     revenue,
     lost: mrr - revenue,
     upkeep,
@@ -121,18 +122,27 @@ export function closeMonth(context: RuleContext): void {
   changeMoney(context, report.revenue, "revenue");
   state.moneyEarned += report.revenue;
   state.stats.moneyLost += report.lost;
-  // Per feature over the line: a product that keeps growing past its servers
-  // is the one ending a long run, so the bleed has to grow with the excess.
-  if (report.load > report.capacity) {
+  // Per ten percent over the line: a product that keeps growing past its
+  // servers is the one ending a long run, so the bleed grows with the excess
+  // — relative, so it reads the same at every order of magnitude.
+  if (report.overPct > 0) {
     state.stats.outages += 1;
-    emit(context, { type: "outage", load: report.load, capacity: report.capacity });
+    emit(context, {
+      type: "outage",
+      load: report.load,
+      capacity: report.capacity,
+      overPct: report.overPct,
+    });
     raiseQuality(
       context,
-      BALANCE.economy.infra.outageQuality * (report.load - report.capacity),
+      BALANCE.economy.infra.outageQualityPer10Pct * Math.ceil(report.overPct / 10),
       "outage",
     );
   }
   changeMoney(context, -report.upkeep, "upkeep");
+  // Revenue raises the tier too: a run that spends everything it makes still
+  // grows.
+  raiseTier(context, tierOf(Math.max(state.money, report.mrr * BALANCE.economy.tier.mrrFactor)));
 
   // Salaries are the team's rule, and a departure is too; the bill is
   // reported here so the log line has the whole month on it.

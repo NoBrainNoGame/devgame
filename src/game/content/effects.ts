@@ -54,8 +54,10 @@ export interface Effects {
   /** A free review happens automatically every N turns. 0 disables it. */
   freeReviewEvery: number;
 
-  /** Features production can serve before the servers saturate. */
+  /** Users production can serve before the servers saturate. */
   infraCapacity: number;
+  /** Percent added to the whole capacity: what scales with the servers you own. */
+  infraCapacityPct: number;
   /** Percent added to the monthly recurring revenue. */
   mrrBonusPct: number;
   /** Story points a hired developer fills per turn, on top of the base rate. */
@@ -112,6 +114,7 @@ export const NO_EFFECTS: Effects = {
   monitoring: false,
   freeReviewEvery: 0,
   infraCapacity: 0,
+  infraCapacityPct: 0,
   mrrBonusPct: 0,
   devSpeedBonus: 0,
   devCapacityBonus: 0,

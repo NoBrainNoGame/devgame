@@ -18,8 +18,8 @@ import { eventsOfType, findSeed, inHand, isType, newRun, play, policy } from "./
  * month, and what it pays for is the management half of the game.
  */
 
-/** A shipped feature, planted straight onto the board. */
-function shipFeature(state: RunState, mrr: number): void {
+/** A shipped feature, planted straight onto the board, with the users it brings. */
+function shipFeature(state: RunState, mrr: number, load = 50): void {
   const id = `t${state.nextTicketSerial}`;
   state.nextTicketSerial += 1;
   state.tickets[id] = {
@@ -31,6 +31,8 @@ function shipFeature(state: RunState, mrr: number): void {
     rework: 0,
     debtAdded: 0,
     rejections: 0,
+    tier: 0,
+    load,
     mrr,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
@@ -119,24 +121,27 @@ describe("the month", () => {
   test("past the servers' capacity the excess earns nothing and production notices", () => {
     const state = inHand("outage");
     const capacity = BALANCE.economy.infra.baseCapacity;
-    for (let i = 0; i < capacity * 2; i++) shipFeature(state, 10);
+    // Twice the users production serves, in one feature.
+    shipFeature(state, 100, capacity * 2);
     state.sprintTurn = monthTurns() - 1;
 
     const report = monthlyReport(state, gatherEffects(state));
     expect(report.load).toBe(capacity * 2);
+    expect(report.overPct).toBe(100);
     expect(report.revenue).toBe(Math.floor(report.mrr / 2));
     expect(report.lost).toBe(report.mrr - report.revenue);
 
     const { state: after, events } = applyAction(state, { type: "rest" });
-    expect(eventsOfType(events, "outage").length).toBe(1);
-    // Per feature over the line, so growing past the servers hurts more.
+    expect(eventsOfType(events, "outage")[0]?.overPct).toBe(100);
+    // Per ten percent over the line, so growing past the servers hurts more,
+    // and the same share hurts the same at every order of magnitude.
     expect(after.quality).toBe(
-      state.quality + BALANCE.economy.infra.outageQuality * (report.load - report.capacity),
+      state.quality + BALANCE.economy.infra.outageQualityPer10Pct * Math.ceil(report.overPct / 10),
     );
 
     const served = structuredClone(state);
     served.upgrades.servers = 8;
-    expect(monthlyReport(served, gatherEffects(served)).lost).toBe(0);
+    expect(monthlyReport(served, gatherEffects(served)).lost).toBeLessThan(report.lost);
   });
 });
 

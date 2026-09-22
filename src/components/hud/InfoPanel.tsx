@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { useMoney } from "@/components/hud/useGameText";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import type { RunSnapshot, TicketView } from "@/game";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
  */
 export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
   const t = useTranslations("hud");
+  const _money = useMoney();
   const common = useTranslations("common");
   const game = useTranslations("game");
 
@@ -110,6 +112,7 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
 /** The ticket in hand: what it asks for, and how far along it is. */
 function TicketCard({ ticket }: { ticket: TicketView }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
 
   return (
@@ -131,7 +134,7 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
       )}
       {ticket.mrr > 0 ? (
         <p className="text-muted-foreground text-xs tabular-nums">
-          {t("ticketMrr", { money: ticket.mrr })}
+          {t("ticketMrr", { money: money(ticket.mrr) })}
         </p>
       ) : null}
       {ticket.unread > 0 ? (

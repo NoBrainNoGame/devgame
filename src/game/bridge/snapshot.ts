@@ -114,11 +114,15 @@ export interface DevView {
 
 /** The finances, as the company screen and the resource bar show them. */
 export interface EconomyView {
+  /** The order of magnitude reached: what the unit of account and the shop follow. */
+  tier: number;
   money: number;
   moneyEarned: number;
   mrr: number;
   load: number;
   capacity: number;
+  /** How far over capacity, in percent of it; zero when served. */
+  overPct: number;
   revenue: number;
   upkeep: number;
   salaries: number;
@@ -280,11 +284,13 @@ export function toSnapshot(state: RunState): RunSnapshot {
     skillPoints: state.skillPoints,
     upgrades: { ...state.upgrades },
     economy: {
+      tier: state.tier,
       money: state.money,
       moneyEarned: state.moneyEarned,
       mrr: report.mrr,
       load: report.load,
       capacity: report.capacity,
+      overPct: report.overPct,
       revenue: report.revenue,
       upkeep: report.upkeep,
       salaries: report.salaries,

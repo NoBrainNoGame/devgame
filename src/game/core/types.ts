@@ -124,6 +124,10 @@ export interface Ticket {
   /** The reward, paid for with extra points. */
   skillId?: SkillId;
   /** Monthly revenue it earns once shipped. Zero for a hotfix or a forced refactor. */
+  /** The tier the ticket arrived at: its revenue and load are scaled by it. */
+  tier: number;
+  /** Users it brings to production once shipped. Zero for a hotfix or a forced refactor. */
+  load: number;
   mrr: number;
   /** The developer working it, when it is not you. */
   assignee?: DevId;
@@ -281,6 +285,8 @@ export interface RunState {
   nextDevSerial: number;
   /** Months closed since the run started. */
   months: number;
+  /** The order of magnitude reached, and never lost. */
+  tier: number;
   /** Months closed this sprint, so the sprint's end can close the rest. */
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
@@ -420,7 +426,8 @@ export type GameEvent =
       money: number;
     }
   /** The servers saturated this month. */
-  | { type: "outage"; load: number; capacity: number }
+  | { type: "outage"; load: number; capacity: number; overPct: number }
+  | { type: "tier_reached"; tier: number }
   | { type: "upgrade_bought"; id: UpgradeId; level: number }
   | { type: "skill_point_bought"; price: number }
   | { type: "hired"; devId: DevId; rank: DevRank }

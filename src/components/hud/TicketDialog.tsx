@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,6 +35,7 @@ export function TicketDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
 
   if (ticket === null) return null;
@@ -74,7 +76,7 @@ export function TicketDialog({
           )}
           {ticket.mrr > 0 ? (
             <p className="text-muted-foreground text-xs tabular-nums">
-              {t("ticketMrr", { money: ticket.mrr })}
+              {t("ticketMrr", { money: money(ticket.mrr) })}
             </p>
           ) : null}
           {ticket.assignee === undefined ? null : (

@@ -27,8 +27,9 @@ export type {
 export type { GameStore, ReviewEvent } from "@/game/bridge/store";
 export { gameStore, resetGameStore, useGameStore } from "@/game/bridge/store";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
-export { ref, renderText, text } from "@/game/core/i18n";
+export { money, ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";
+export { tierOf } from "@/game/core/rules/tier";
 export { accountSkillPoints, levelForXp, xpForLevel } from "@/game/core/score";
 export type {
   ActionPreview,

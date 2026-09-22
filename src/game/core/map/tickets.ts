@@ -1,6 +1,7 @@
 import type { SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { tierScale } from "@/game/core/rules/tier";
 import type { Ticket, TicketId } from "@/game/core/types";
 
 /**
@@ -18,15 +19,17 @@ import type { Ticket, TicketId } from "@/game/core/types";
  */
 
 /** How many tickets a sprint brings. More as the project goes on. */
-export function ticketsFor(sprint: number): number {
-  const { base, growEvery, maxPerSprint } = BALANCE.tickets;
-  return Math.min(maxPerSprint, base + Math.floor((sprint - 1) / growEvery));
+export function ticketsFor(sprint: number, tier: number): number {
+  const { base, growEvery, maxPerSprint, perTier } = BALANCE.tickets;
+  // The cap holds the sprint curve; the tier term has no cap, because the
+  // backlog is what ends a run the servers no longer can.
+  return Math.min(maxPerSprint, base + Math.floor((sprint - 1) / growEvery)) + perTier * tier;
 }
 
 /** Brings this sprint's tickets into the backlog. */
 export function arriveTickets(context: RuleContext, skillPool: readonly SkillId[]): void {
   const pool = [...skillPool];
-  const count = ticketsFor(context.state.sprint);
+  const count = ticketsFor(context.state.sprint, context.state.tier);
 
   for (let i = 0; i < count; i += 1) arriveTicket(context, pool, i === 0);
 }
@@ -65,8 +68,14 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
 
   // What it will earn every month once shipped: the bigger the feature, the
   // more it pays, with a jitter so two tickets of a size are not the same.
+  // The whole of it is scaled by the tier it arrives at, after the draws, so
+  // the stream of rolls is the same at every order of magnitude.
   const { economy } = BALANCE;
-  const mrr = points * economy.mrrPerPoint + rng.int(economy.mrrJitter.min, economy.mrrJitter.max);
+  const jitter = rng.int(economy.mrrJitter.min, economy.mrrJitter.max);
+  const mrr =
+    (points * economy.mrrPerPoint + jitter) * tierScale(state.tier, economy.tier.mrrGrowth);
+  const load =
+    points * economy.infra.usersPerPoint * tierScale(state.tier, economy.tier.loadGrowth);
 
   const id: TicketId = `t${state.nextTicketSerial}`;
   state.nextTicketSerial += 1;
@@ -81,6 +90,8 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     debtAdded: 0,
     rejections: 0,
     ...(skillId === undefined ? {} : { skillId }),
+    tier: state.tier,
+    load,
     mrr,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,

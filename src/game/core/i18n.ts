@@ -1,22 +1,17 @@
 /**
- * The rules engine never produces a display string. It produces a key and its
- * parameters, and whoever renders — React or the Pixi scene — looks the key up
- * in `messages/<locale>.json`.
+ * What the engine says, and how the page turns it into words.
  *
- * This is what lets the same run log read in French and in English, and what
- * lets the server replay a run without pulling a translation layer in.
+ * The engine never produces a display string: it emits a key and parameters,
+ * and the page translates. Three kinds of parameter: a plain value, a
+ * reference to another key (a log line that names a skill carries
+ * `skills.linter.name`, not "Linter"), and a sum of money, which the page
+ * formats in the unit the run has reached — 842 €, 12,4 k€, 1,20 M€ — since
+ * the engine keeps raw integers and has no idea what a thousand looks like.
  */
 
-/**
- * A parameter may itself be a key. "Linter merged" needs the skill's *name*,
- * and the engine only knows its id — so it passes a reference and lets the
- * renderer resolve it. Marking those explicitly beats guessing from
- * the shape of a string.
- */
-export type I18nParam = string | number | { key: string };
+export type I18nParam = string | number | { key: string } | { money: number };
 
 export interface I18nText {
-  /** Dot path inside the `game` namespace, e.g. `events.merge_conflict.log`. */
   key: string;
   params?: Readonly<Record<string, I18nParam>>;
 }
@@ -25,24 +20,29 @@ export function text(key: string, params?: Record<string, I18nParam>): I18nText 
   return params === undefined ? { key } : { key, params };
 }
 
-/** A parameter that has to be translated before it is substituted. */
 export function ref(key: string): { key: string } {
   return { key };
 }
 
-/**
- * Renders an `I18nText` with a plain lookup function, resolving any nested
- * references first. Shared by the HUD and the canvas so both read identically.
- */
+export function money(value: number): { money: number } {
+  return { money: value };
+}
+
 export function renderText(
   translate: (key: string, params?: Record<string, string | number>) => string,
   value: I18nText,
+  formatMoney: (value: number) => string = (amount) => String(amount),
 ): string {
   if (value.params === undefined) return translate(value.key);
 
   const resolved: Record<string, string | number> = {};
   for (const [name, param] of Object.entries(value.params)) {
-    resolved[name] = typeof param === "object" ? translate(param.key) : param;
+    resolved[name] =
+      typeof param !== "object"
+        ? param
+        : "money" in param
+          ? formatMoney(param.money)
+          : translate(param.key);
   }
 
   return translate(value.key, resolved);

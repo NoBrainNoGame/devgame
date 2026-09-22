@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Fragment } from "react";
 
 import { IdleBar } from "@/components/hud/IdleBar";
+import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -152,6 +153,7 @@ export function RunOverDialog({
 }) {
   const t = useTranslations("play");
   const common = useTranslations("common");
+  const money = useMoney();
 
   const reviewing = useReviewing();
   const open = snapshot.phase.kind === "game_over" && !busy && !reviewing;
@@ -198,7 +200,7 @@ export function RunOverDialog({
           <dt className="text-muted-foreground">{t("ticketsDelivered")}</dt>
           <dd className="text-right tabular-nums">{snapshot.ticketsDelivered}</dd>
           <dt className="text-muted-foreground">{t("moneyEarned")}</dt>
-          <dd className="text-right tabular-nums">{snapshot.economy.moneyEarned} €</dd>
+          <dd className="text-right tabular-nums">{money(snapshot.economy.moneyEarned)}</dd>
         </dl>
 
         {breakdown.length === 0 ? null : (
@@ -224,7 +226,7 @@ export function RunOverDialog({
             <Fragment key={key}>
               <dt>{t(`stats.${key}` as never)}</dt>
               <dd className="text-right tabular-nums">
-                {key === "moneyLost" ? `${value} €` : value}
+                {key === "moneyLost" ? money(value) : value}
               </dd>
             </Fragment>
           ))}

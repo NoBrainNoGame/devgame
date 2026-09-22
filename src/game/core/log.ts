@@ -1,4 +1,4 @@
-import { ref, text } from "@/game/core/i18n";
+import { money, ref, text } from "@/game/core/i18n";
 import type { GameEvent, LogLine, RunState } from "@/game/core/types";
 
 /**
@@ -47,6 +47,9 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
 
     case "rested":
       return { seq, turn, kind: "note", text: text("log.rested", { energy: event.energy }) };
+
+    case "tier_reached":
+      return { seq, turn, kind: "feat", text: text("log.tier_reached", { tier: event.tier }) };
 
     case "bug_fixed":
       return { seq, turn, kind: "fix", text: text("log.bug_fixed") };
@@ -192,9 +195,9 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         kind: "chore",
         text: text("log.month_closed", {
           month: event.month,
-          revenue: event.revenue,
-          costs: event.upkeep + event.salaries,
-          money: event.money,
+          revenue: money(event.revenue),
+          costs: money(event.upkeep + event.salaries),
+          money: money(event.money),
         }),
       };
 
@@ -203,7 +206,11 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         seq,
         turn,
         kind: "revert",
-        text: text("log.outage", { load: event.load, capacity: event.capacity }),
+        text: text("log.outage", {
+          load: event.load,
+          capacity: event.capacity,
+          pct: event.overPct,
+        }),
       };
 
     case "upgrade_bought":
@@ -222,7 +229,7 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         seq,
         turn,
         kind: "chore",
-        text: text("log.skill_point_bought", { money: event.price }),
+        text: text("log.skill_point_bought", { money: money(event.price) }),
       };
 
     case "hired":

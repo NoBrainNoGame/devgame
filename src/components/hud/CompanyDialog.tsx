@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { useGameText } from "@/components/hud/useGameText";
+import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -49,6 +49,7 @@ export function CompanyDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const { economy } = snapshot;
 
   return (
@@ -58,10 +59,10 @@ export function CompanyDialog({
           <DialogTitle>{t("company")}</DialogTitle>
           <DialogDescription>
             <span className="text-foreground tabular-nums">
-              {t("money", { money: economy.money })}
+              {t("money", { money: money(economy.money) })}
             </span>
             {" · "}
-            {t("mrr", { money: economy.mrr })}
+            {t("mrr", { money: money(economy.mrr) })}
             {" · "}
             {t("paydayIn", { count: economy.paydayIn })}
           </DialogDescription>
@@ -98,6 +99,7 @@ export function CompanyDialog({
 
 function Finances({ snapshot }: { snapshot: RunSnapshot }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const { economy } = snapshot;
   const saturated = economy.load > economy.capacity;
   const loadPct = Math.min(100, (economy.load / Math.max(1, economy.capacity)) * 100);
@@ -151,7 +153,7 @@ function Finances({ snapshot }: { snapshot: RunSnapshot }) {
           {saturated ? t("saturated") : t("capacityHint")}
         </p>
         <p className="text-muted-foreground text-xs">
-          {t("moneyEarned", { money: economy.moneyEarned })}
+          {t("moneyEarned", { money: money(economy.moneyEarned) })}
         </p>
       </section>
     </div>
@@ -181,6 +183,7 @@ function Shop({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const point: PlayerAction = { type: "buy_point" };
   const pointOffered = snapshot.actions.some((a) => a.type === "buy_point");
 
@@ -197,7 +200,7 @@ function Shop({
           disabled={busy || !pointOffered}
           onClick={() => onAct(point)}
         >
-          {t("buyFor", { money: snapshot.economy.skillPointPrice })}
+          {t("buyFor", { money: money(snapshot.economy.skillPointPrice) })}
         </Button>
       </section>
 
@@ -231,6 +234,7 @@ function UpgradeCard({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
   const render = useGameText();
 
@@ -262,8 +266,8 @@ function UpgradeCard({
       </p>
       {def.upkeep > 0 ? (
         <p className="text-muted-foreground text-xs">
-          {t("upkeepPerLevel", { money: def.upkeep })}
-          {level > 0 ? ` · ${t("upkeepNow", { money: def.upkeep * level })}` : ""}
+          {t("upkeepPerLevel", { money: money(def.upkeep) })}
+          {level > 0 ? ` · ${t("upkeepNow", { money: money(def.upkeep * level) })}` : ""}
         </p>
       ) : null}
       <Tooltip>
@@ -276,7 +280,7 @@ function UpgradeCard({
               disabled={busy || !offered}
               onClick={() => onAct(action)}
             >
-              {maxed ? t("treeMaxed") : t("buyFor", { money: cost ?? 0 })}
+              {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost ?? 0) })}
             </Button>
           </span>
         </TooltipTrigger>
@@ -302,6 +306,7 @@ function Team({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
   const render = useGameText();
 
@@ -326,7 +331,7 @@ function Team({
                 <p className="text-muted-foreground text-xs">
                   {t("rankCapacity", { count: DEV_RANK[rank].capacity })}
                   {" · "}
-                  {t("rankSalary", { money: DEV_RANK[rank].salary })}
+                  {t("rankSalary", { money: money(DEV_RANK[rank].salary) })}
                 </p>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -338,7 +343,7 @@ function Team({
                         disabled={busy || !offered}
                         onClick={() => onAct(action)}
                       >
-                        {t("buyFor", { money: DEV_RANK[rank].hireCost })}
+                        {t("buyFor", { money: money(DEV_RANK[rank].hireCost) })}
                       </Button>
                     </span>
                   </TooltipTrigger>
@@ -376,6 +381,7 @@ function Team({
 
 function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
   const held = snapshot.tickets.filter((ticket) => ticket.assignee === dev.id);
 
@@ -386,7 +392,7 @@ function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
           {dev.id} · {game(`ranks.${dev.rank}.name` as never)}
         </span>
         <span className="text-muted-foreground text-xs tabular-nums">
-          {t("rankSalary", { money: dev.salary })}
+          {t("rankSalary", { money: money(dev.salary) })}
         </span>
       </div>
       <p className="text-muted-foreground text-xs">

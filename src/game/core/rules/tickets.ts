@@ -148,6 +148,8 @@ export function forceTicket(
     rejections: 0,
     // Nothing is drawn here: a forced ticket earns nothing, and a draw that
     // depended on whether production broke would move every seed's stream.
+    tier: state.tier,
+    load: 0,
     mrr: 0,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,

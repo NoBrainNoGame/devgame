@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { IdleBar } from "@/components/hud/IdleBar";
 import { TicketDialog } from "@/components/hud/TicketDialog";
+import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function BoardDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const _money = useMoney();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = snapshot.tickets.find((ticket) => ticket.id === selectedId) ?? null;
 
@@ -124,6 +126,7 @@ function TicketCard({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const money = useMoney();
   const game = useTranslations("game");
 
   // The card is two things: a button that opens the ticket in full, and the
@@ -164,7 +167,7 @@ function TicketCard({
         ) : null}
         {ticket.mrr > 0 ? (
           <p className="text-muted-foreground text-xs tabular-nums">
-            {t("ticketMrr", { money: ticket.mrr })}
+            {t("ticketMrr", { money: money(ticket.mrr) })}
           </p>
         ) : null}
         {ticket.assignee === undefined ? null : (

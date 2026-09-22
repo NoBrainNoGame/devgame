@@ -27,13 +27,13 @@ import {
 describe("the backlog", () => {
   test("a sprint brings the tickets the balance says, more as the project goes on", () => {
     const { base, growEvery, maxPerSprint } = BALANCE.tickets;
-    expect(ticketsFor(1)).toBe(base);
-    expect(ticketsFor(1 + growEvery)).toBe(base + 1);
-    expect(ticketsFor(999)).toBe(maxPerSprint);
+    expect(ticketsFor(1, 0)).toBe(base);
+    expect(ticketsFor(1 + growEvery, 0)).toBe(base + 1);
+    expect(ticketsFor(999, 0)).toBe(maxPerSprint);
 
     for (let i = 0; i < 50; i += 1) {
       const state = newRun(`arrivals-${i}`);
-      expect(backlogTickets(state).length).toBe(ticketsFor(1));
+      expect(backlogTickets(state).length).toBe(ticketsFor(1, 0));
       expect(openTickets(state)).toEqual([]);
     }
   });

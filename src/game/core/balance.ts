@@ -230,6 +230,8 @@ export const BALANCE = {
     base: 2,
     growEvery: 4,
     maxPerSprint: 8,
+    /** More tickets per sprint for every tier reached, on top of the cap. */
+    perTier: 2,
     /** Sprints a ticket may sit in the backlog before the board assigns it. */
     graceSprints: 1,
     /**
@@ -309,21 +311,44 @@ export const BALANCE = {
   economy: {
     /** Paydays per sprint. `sprint.turns` must divide by it. */
     monthsPerSprint: 3,
-    startingMoney: 30,
+    startingMoney: 100,
     /** Monthly revenue of a shipped feature: this per story point, plus a jitter. */
     mrrPerPoint: 2,
     mrrJitter: { min: 0, max: 3 },
-    infra: {
-      /** Features production serves before anything has been bought. */
-      baseCapacity: 4,
-      /**
-       * Patience lost every month, per feature over the capacity. One over
-       * the line is a slow bleed a clean sprint outpaces; five over is the
-       * end of the run in a sprint or two. The backlog never stops growing,
-       * so this is what ends a run the team would otherwise carry forever.
-       */
-      outageQuality: 4,
+    /**
+     * Orders of magnitude. A tier is reached at `first × growth^(tier−1)` of
+     * money, or of monthly revenue times `mrrFactor` — and never lost: a
+     * purchase must not shrink the next ticket. Every feature that arrives at
+     * a tier earns and weighs `mrrGrowth`/`loadGrowth` to that power, so the
+     * unit of account changes with the run and yesterday's features become
+     * rounding noise, the way an incremental game is meant to feel.
+     */
+    tier: {
+      first: 1_000,
+      growth: 10,
+      mrrFactor: 10,
+      mrrGrowth: 10,
+      loadGrowth: 10,
     },
+    infra: {
+      /** Users production serves before anything has been bought. */
+      baseCapacity: 300,
+      /** Users a story point of a tier-0 feature brings. */
+      usersPerPoint: 10,
+      /**
+       * Patience lost every month per ten percent over capacity. A quarter
+       * over is a slow bleed a clean sprint outpaces; twice over is the end
+       * of the run in a sprint or two. Relative, so it means the same thing
+       * at every order of magnitude.
+       */
+      outageQualityPer10Pct: 2,
+      /** Share of capacity at which the board is warned. */
+      warnPct: 80,
+      /** An open ticket this full counts towards the next payday's load. */
+      predictFillPct: 75,
+    },
+    /** Months of finance history kept for the chart. */
+    historyMonths: 60,
     /** A skill point bought outright: this, times `growth` per point already bought. */
     skillPoint: { price: 60, growth: 1.5 },
   },

@@ -1,6 +1,6 @@
 import { DEV_RANK, TREE, treeCost, UPGRADES, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { type I18nText, ref, text } from "@/game/core/i18n";
+import { type I18nText, money, ref, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
 import {
   commitChance,
@@ -201,8 +201,8 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const def = UPGRADES[action.id];
       const level = state.upgrades[action.id] ?? 0;
       const cost = upgradeCost(action.id, level);
-      const notes: I18nText[] = [text("notes.price", { money: cost ?? 0 })];
-      if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: def.upkeep }));
+      const notes: I18nText[] = [text("notes.price", { money: money(cost ?? 0) })];
+      if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: money(def.upkeep) }));
 
       return {
         action,
@@ -212,7 +212,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         ...(cost === undefined
           ? { blocked: text("notes.tree_maxed", { max: def.maxLevel }) }
           : cost > state.money
-            ? { blocked: text("notes.too_expensive", { money: cost }) }
+            ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
             : {}),
       };
     }
@@ -223,10 +223,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         action,
         energyCost: 0,
         consumesTurn: false,
-        notes: [text("notes.price", { money: price })],
+        notes: [text("notes.price", { money: money(price) })],
         ...(canBuySkillPoint(state)
           ? {}
-          : { blocked: text("notes.too_expensive", { money: price }) }),
+          : { blocked: text("notes.too_expensive", { money: money(price) }) }),
       };
     }
 
@@ -241,14 +241,14 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         energyCost: 0,
         consumesTurn: false,
         notes: [
-          text("notes.price", { money: cost }),
-          text("notes.salary", { money: DEV_RANK[action.rank].salary }),
+          text("notes.price", { money: money(cost) }),
+          text("notes.salary", { money: money(DEV_RANK[action.rank].salary) }),
           text("notes.capacity", { count: capacity }),
         ],
         ...(state.devs.length >= BALANCE.team.maxDevs
           ? { blocked: text("notes.team_full", { max: BALANCE.team.maxDevs }) }
           : cost > state.money
-            ? { blocked: text("notes.too_expensive", { money: cost }) }
+            ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
             : {}),
       };
     }

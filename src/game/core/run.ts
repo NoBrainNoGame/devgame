@@ -104,6 +104,7 @@ export function createRun(options: CreateRunOptions): RunState {
     devs: [],
     nextDevSerial: 1,
     months: 0,
+    tier: 0,
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
 
