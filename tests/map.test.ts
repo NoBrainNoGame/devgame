@@ -2,18 +2,25 @@ import { describe, expect, test } from "bun:test";
 
 import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
+import { getAvailableActions } from "@/game/core/rules/actions";
+import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 
 import {
   findSeed,
   funded,
   hiringPolicy,
+  inHand,
   isCommit,
   isType,
+  makeReady,
   newRun,
+  plantCommit,
   play,
   policy,
   prefer,
+  submitAndMerge,
+  ticketInHand,
 } from "./helpers";
 
 /**
@@ -107,14 +114,20 @@ describe("the written graph", () => {
     }
   });
 
-  test("every open ticket has a column of its own, freed when it merges", () => {
+  test("every written ticket has a column of its own, freed when it merges", () => {
     for (let i = 0; i < 60; i++) {
-      // Start everything, merge nothing: as many columns as tickets.
+      // Start everything, merge nothing: as many columns as written tickets,
+      // and none for a ticket nobody has committed on yet.
       const greedy = play(newRun(`columns-${i}`), {
         pick: prefer(isType("start"), isCommit("ai")),
         limit: 30,
       });
-      const lanes = openTickets(greedy.state).map((ticket) => ticket.lane);
+      for (const ticket of openTickets(greedy.state)) {
+        expect(ticket.lane === undefined).toBe(ticket.nodeIds.length === 0);
+      }
+      const lanes = openTickets(greedy.state)
+        .map((ticket) => ticket.lane)
+        .filter((lane) => lane !== undefined);
       expect(new Set(lanes).size).toBe(lanes.length);
       for (const lane of lanes) expect(lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
     }
@@ -126,6 +139,43 @@ describe("the written graph", () => {
     });
     const merged = Object.values(state.tickets).find((ticket) => ticket.status === "merged");
     expect(merged?.lane).toBeUndefined();
+  });
+
+  test("a freed column goes to the next ticket that forks, so the graph stays narrow", () => {
+    // Two tickets written side by side, the first one landed: the third
+    // ticket forks into the column the first one handed back, not a new one.
+    const state = inHand("reuse-column");
+    plantCommit(state, "craft");
+    const first = ticketInHand(state);
+    const second = getAvailableActions(state).find(isType("start"));
+    if (second?.type !== "start") throw new Error("expected a second ticket");
+    const both = applyAction(state, second).state;
+    const onSecond = applyAction(both, { type: "checkout", ticketId: second.ticketId }).state;
+    plantCommit(onSecond, "craft");
+    expect(onSecond.tickets[second.ticketId]?.lane).toBe(first.lane === 2 ? 3 : 2);
+
+    const backOnFirst = applyAction(onSecond, { type: "checkout", ticketId: first.id }).state;
+    const landed = submitAndMerge(makeReady(backOnFirst)).state;
+    if (landed.phase.kind === "resolve_conflict") return;
+    expect(landed.tickets[first.id]?.lane).toBeUndefined();
+
+    const third = getAvailableActions(landed).find(isType("start"));
+    if (third?.type !== "start") return;
+    const withThird = applyAction(landed, third).state;
+    const onThird = applyAction(withThird, { type: "checkout", ticketId: third.ticketId }).state;
+    plantCommit(onThird, "craft");
+    expect(onThird.tickets[third.ticketId]?.lane).toBe(first.lane);
+    expect(checkInvariants(onThird)).toEqual([]);
+  });
+
+  test("a restart hands the column back with the commits", () => {
+    const state = makeReady(inHand("restart-column"));
+    state.debt = 90;
+    const rejected = applyAction(state, { type: "submit" }).state;
+    if (rejected.phase.kind !== "ticket_rejected") return;
+    const restarted = applyAction(rejected, { type: "restart" }).state;
+    expect(ticketInHand(restarted).lane).toBeUndefined();
+    expect(checkInvariants(restarted)).toEqual([]);
   });
 
   test("node ids stay unique once later sprints are appended", () => {

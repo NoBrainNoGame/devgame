@@ -138,7 +138,8 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
   }
 
   // A ticket is a chain: each commit's first parent is the previous one, and
-  // the first commit forks off `dev`. Two open tickets never share a column.
+  // the first commit forks off `dev`. Two open tickets never share a column,
+  // and a column is held exactly when the ticket has written something.
   const lanes = new Map<number, string>();
   for (const ticket of Object.values(state.tickets)) {
     if (ticket.status === "open" && ticket.lane !== undefined) {
@@ -147,6 +148,17 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
         failures.push({ rule: "one-ticket-per-lane", detail: `${other} and ${ticket.id}` });
       }
       lanes.set(ticket.lane, ticket.id);
+    }
+    if (ticket.status === "open" && (ticket.lane === undefined) !== (ticket.nodeIds.length === 0)) {
+      failures.push({ rule: "lane-follows-commits", detail: ticket.id });
+    }
+    if (ticket.status === "open") {
+      for (const id of ticket.nodeIds) {
+        const node = state.nodes[id];
+        if (node !== undefined && node.lane !== ticket.lane) {
+          failures.push({ rule: "ticket-nodes-in-lane", detail: `${ticket.id} -> ${id}` });
+        }
+      }
     }
 
     ticket.nodeIds.forEach((id, index) => {

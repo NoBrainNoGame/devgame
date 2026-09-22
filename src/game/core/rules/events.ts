@@ -190,8 +190,9 @@ export function recordIncident(
   state.monitoringWarning = false;
 
   state.sprintIncidents += 1;
+  state.stats.incidents += 1;
   emit(context, { type: "incident", source, nodeId, ticketId: ticket.id });
-  raiseQuality(context, BALANCE.quality.perIncident);
+  raiseQuality(context, BALANCE.quality.perIncident, "incident");
   return true;
 }
 

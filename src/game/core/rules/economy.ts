@@ -120,11 +120,17 @@ export function closeMonth(context: RuleContext): void {
 
   changeMoney(context, report.revenue, "revenue");
   state.moneyEarned += report.revenue;
+  state.stats.moneyLost += report.lost;
   // Per feature over the line: a product that keeps growing past its servers
   // is the one ending a long run, so the bleed has to grow with the excess.
   if (report.load > report.capacity) {
+    state.stats.outages += 1;
     emit(context, { type: "outage", load: report.load, capacity: report.capacity });
-    raiseQuality(context, BALANCE.economy.infra.outageQuality * (report.load - report.capacity));
+    raiseQuality(
+      context,
+      BALANCE.economy.infra.outageQuality * (report.load - report.capacity),
+      "outage",
+    );
   }
   changeMoney(context, -report.upkeep, "upkeep");
 

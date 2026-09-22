@@ -8,7 +8,7 @@ import { recordIncident } from "@/game/core/rules/events";
 import { grantSkillPoints } from "@/game/core/rules/grants";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { isOver } from "@/game/core/rules/over";
-import { raiseQuality } from "@/game/core/rules/quality";
+import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { pullTeam } from "@/game/core/rules/team";
 import { assignStaleTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { writeRelease, writeSprintStart } from "@/game/core/rules/write";
@@ -45,7 +45,8 @@ export function endSprint(context: RuleContext): void {
   // ends.
   const idle = state.sprintPlayerDelivered === 0;
   if (idle) {
-    raiseQuality(context, BALANCE.quality.perIdleSprint);
+    state.stats.idleSprints += 1;
+    raiseQuality(context, BALANCE.quality.perIdleSprint, "idle_sprint");
     if (isOver(context)) return;
   }
 
@@ -54,7 +55,7 @@ export function endSprint(context: RuleContext): void {
   // counted when the next sprint opens, so the flag is read here and reset
   // there.
   if (state.sprintIncidents === 0 && !state.sprintForced && !idle) {
-    state.quality = Math.max(0, state.quality - BALANCE.quality.decayPerCleanSprint);
+    lowerQuality(context, BALANCE.quality.decayPerCleanSprint);
   }
 
   grantSkillPoints(context, BALANCE.tree.perSprint);

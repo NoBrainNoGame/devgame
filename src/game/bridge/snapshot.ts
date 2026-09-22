@@ -34,6 +34,7 @@ import type {
   PlayerAction,
   RunMode,
   RunState,
+  RunStats,
   Ticket,
   TicketId,
 } from "@/game/core/types";
@@ -146,6 +147,8 @@ export interface RunSnapshot {
   /** Production's patience, 0 to `qualityMax`. Full is the sack. */
   quality: number;
   qualityMax: number;
+  /** What the run went through, for the screen that ends it. */
+  stats: RunStats;
 
   phase: Phase;
   actions: PlayerAction[];
@@ -249,6 +252,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     pointsDelivered: state.pointsDelivered,
     quality: state.quality,
     qualityMax: BALANCE.quality.max,
+    stats: { ...state.stats, qualityBySource: { ...state.stats.qualityBySource } },
 
     phase: state.phase,
     actions,

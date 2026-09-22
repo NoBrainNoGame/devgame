@@ -9,7 +9,16 @@ import { backlogTickets, openTickets, sortedTickets } from "@/game/core/rules/ti
 import { createRun } from "@/game/core/run";
 import { SAVE_VERSION } from "@/game/dto/version";
 
-import { eventsOfType, findSeed, inHand, isType, newRun, play, policy } from "./helpers";
+import {
+  eventsOfType,
+  findSeed,
+  inHand,
+  isType,
+  newRun,
+  plantCommit,
+  play,
+  policy,
+} from "./helpers";
 
 describe("the backlog", () => {
   test("a sprint brings the tickets the balance says, more as the project goes on", () => {
@@ -60,7 +69,7 @@ describe("the backlog", () => {
     for (const id of promised) expect(state.skills).not.toContain(id);
   });
 
-  test("starting a ticket is free, takes a column, and puts it in hand", () => {
+  test("starting a ticket is free and puts it in hand; its column comes with the first commit", () => {
     const state = newRun("start");
     const start = getAvailableActions(state).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a start");
@@ -70,17 +79,24 @@ describe("the backlog", () => {
 
     expect(after.turn).toBe(state.turn);
     expect(ticket?.status).toBe("open");
-    expect(ticket?.lane).toBeGreaterThanOrEqual(2);
+    // Open but unwritten: no column yet, so the graph shows no empty lane.
+    expect(ticket?.lane).toBeUndefined();
     expect(after.player.ticketId).toBe(start.ticketId);
+
+    plantCommit(after, "craft");
+    expect(after.tickets[start.ticketId]?.lane).toBeGreaterThanOrEqual(2);
   });
 
-  test("a second ticket takes its own column, and switching is free", () => {
+  test("a second ticket takes its own column once written, and switching is free", () => {
     const one = inHand("two-columns");
+    plantCommit(one, "craft");
     const start = getAvailableActions(one).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a second ticket");
 
     const two = applyAction(one, start).state;
-    const lanes = openTickets(two).map((ticket) => ticket.lane);
+    const written = applyAction(two, { type: "checkout", ticketId: start.ticketId }).state;
+    plantCommit(written, "craft");
+    const lanes = openTickets(written).map((ticket) => ticket.lane);
     expect(new Set(lanes).size).toBe(2);
     // Starting a second one does not pull you off the first.
     expect(two.player.ticketId).toBe(one.player.ticketId);

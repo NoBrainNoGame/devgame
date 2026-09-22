@@ -2,7 +2,7 @@ import { BALANCE } from "@/game/core/balance";
 import { DEV_LANE } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { currentTicket, offersOf } from "@/game/core/rules/tickets";
+import { currentTicket, ensureLane, offersOf } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
 import type {
   CommitMode,
@@ -67,7 +67,7 @@ export function plantAiCommit(state: RunState): string {
 /** Writes a commit of either hand onto the ticket in hand, without a roll. */
 export function plantCommit(state: RunState, mode: CommitMode): string {
   const ticket = ticketInHand(state);
-  if (ticket.lane === undefined) throw new Error("ticket has no column");
+  const lane = ensureLane(state, ticket);
 
   const last = ticket.nodeIds[ticket.nodeIds.length - 1];
   const dev = Object.values(state.nodes)
@@ -82,7 +82,7 @@ export function plantCommit(state: RunState, mode: CommitMode): string {
     id,
     sprint: state.sprint,
     kind: "commit",
-    lane: ticket.lane,
+    lane,
     depth: state.nextDepth,
     parents: [parent],
     ticketId: ticket.id,

@@ -171,10 +171,22 @@ export function assignStaleTickets(context: RuleContext): void {
   for (const ticket of backlogTickets(state)) {
     if (ticket.sprintArrived >= cutoff) continue;
     state.sprintForced = true;
-    raiseQuality(context, BALANCE.quality.perStaleTicket);
+    state.stats.staleForced += 1;
+    raiseQuality(context, BALANCE.quality.perStaleTicket, "stale");
     if (state.phase.kind === "game_over") return;
     openTicket(context, ticket, true);
   }
+}
+
+/**
+ * The column a ticket writes in, taken by its first commit and not before:
+ * a ticket that is open but unwritten holds no column, so the graph never
+ * shows a gap where nothing happened, and a column freed by a merge goes to
+ * the next ticket that actually forks. Handed back on merge and on restart.
+ */
+export function ensureLane(state: RunState, ticket: Ticket): number {
+  if (ticket.lane === undefined) ticket.lane = pickFeatureLane(openTickets(state));
+  return ticket.lane;
 }
 
 export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean): void {
@@ -182,7 +194,6 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
   if (ticket.status !== "backlog") return;
 
   ticket.status = "open";
-  ticket.lane = pickFeatureLane(openTickets(state));
   ticket.devMergesAtOpen = state.devMerges;
 
   // Yours if you had nothing in hand. If you did, it waits: being pulled off

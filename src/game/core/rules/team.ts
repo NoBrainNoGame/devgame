@@ -1,6 +1,5 @@
 import { DEV_RANK, type DevRank, type Effects, nextRank } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { pickFeatureLane } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
 import {
@@ -79,7 +78,6 @@ export function assignTicket(context: RuleContext, ticket: Ticket, dev: Dev): vo
   if (ticket.status !== "backlog") return;
 
   ticket.status = "open";
-  ticket.lane = pickFeatureLane(openTickets(state));
   ticket.devMergesAtOpen = state.devMerges;
   ticket.assignee = dev.id;
 
@@ -173,6 +171,7 @@ export function releaseDev(context: RuleContext, dev: Dev): void {
     if (ticket.assignee === dev.id) delete ticket.assignee;
   }
   state.devs = state.devs.filter((other) => other.id !== dev.id);
+  state.stats.devsLeft += 1;
 
   emit(context, { type: "dev_left", devId: dev.id, ticketIds: handedBack });
   settleCurrent(context);

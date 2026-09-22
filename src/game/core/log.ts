@@ -260,6 +260,20 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text(`log.game_over.${event.reason}`, { score: event.score }),
       };
 
+    // Every move of production's patience is a line: the gauge is what ends
+    // the run, and a number that moves in silence is the one nobody can act on.
+    case "quality":
+      return {
+        seq,
+        turn,
+        kind: event.delta < 0 ? "feat" : "revert",
+        text: text(`log.quality.${event.source}`, {
+          delta: Math.abs(event.delta),
+          value: event.value,
+          max: event.max,
+        }),
+      };
+
     // Listed rather than defaulted: a new event should fail to compile here,
     // not silently vanish from the log.
     case "turn_started":
@@ -269,7 +283,6 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
     case "debt":
     case "checkout":
     case "docs_used":
-    case "quality":
     case "skill_points":
     case "money":
     case "crunch":

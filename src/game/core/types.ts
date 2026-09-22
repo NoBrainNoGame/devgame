@@ -164,6 +164,30 @@ export interface Player {
 
 export type GameOverReason = "burnout" | "fired";
 
+/** What can spend production's patience. The run-over screen names the last one. */
+export type QualitySource = "incident" | "rejection" | "stale" | "outage" | "idle_sprint";
+/** Every way the gauge moves, the one way down included. */
+export type QualityChange = QualitySource | "clean_sprint";
+
+/**
+ * What happened over the whole run, counted in the rules as it happens and
+ * never reconstructed from the log. The run-over screen reads it; nothing in
+ * the rules does.
+ */
+export interface RunStats {
+  incidents: number;
+  outages: number;
+  rejections: number;
+  /** Backlog tickets a sprint had to force open. */
+  staleForced: number;
+  idleSprints: number;
+  devsLeft: number;
+  /** Revenue lost to saturated servers. */
+  moneyLost: number;
+  qualityBySource: Record<QualitySource, number>;
+  lastQualitySource: QualitySource | null;
+}
+
 /** A hired developer. Their tickets are found by `Ticket.assignee`. */
 export interface Dev {
   id: DevId;
@@ -193,7 +217,7 @@ export type Phase =
   /** The review said no. Start the ticket over, or fix it and carry on. */
   | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number; overDebt: boolean }
   | { kind: "choose_relic"; offer: RelicId[] }
-  | { kind: "game_over"; reason: GameOverReason };
+  | { kind: "game_over"; reason: GameOverReason; cause?: QualitySource };
 
 export interface LogLine {
   /** Monotonic within a run. Append-only, so it is a stable React key. */
@@ -277,6 +301,7 @@ export interface RunState {
   sprintIncidents: number;
   /** A backlog ticket was forced open this sprint: it does not count as clean. */
   sprintForced: boolean;
+  stats: RunStats;
 
   xpEarned: number;
   pointsDelivered: number;
@@ -373,7 +398,7 @@ export type GameEvent =
   | { type: "rebased"; ticketId: TicketId }
   /** Production broke. `ticketId` is the hotfix it opened. */
   | { type: "incident"; source: IncidentSource; nodeId: NodeId; ticketId: TicketId }
-  | { type: "quality"; delta: number; value: number }
+  | { type: "quality"; delta: number; value: number; max: number; source: QualityChange }
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }
   | { type: "relic_chosen"; relicId: RelicId }
@@ -401,7 +426,7 @@ export type GameEvent =
   /** A developer picked a ticket up from the backlog. */
   | { type: "ticket_assigned"; ticketId: TicketId; devId: DevId }
   | { type: "crunch"; active: boolean }
-  | { type: "game_over"; reason: GameOverReason; score: number };
+  | { type: "game_over"; reason: GameOverReason; cause?: QualitySource; score: number };
 
 export interface ApplyResult {
   state: RunState;

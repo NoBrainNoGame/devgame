@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
+import { toLogLine } from "@/game/core/log";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
+import type { QualityChange } from "@/game/core/types";
 
 import {
   eventsOfType,
@@ -88,6 +90,39 @@ describe("production", () => {
 
     const quality = eventsOfType(events, "quality");
     expect(quality.some((e) => e.delta === BALANCE.quality.perIncident)).toBe(true);
+    // The line names what it was for, and the run remembers it.
+    expect(quality.find((e) => e.source === "incident")).toBeDefined();
+    expect(state.stats.incidents).toBeGreaterThan(0);
+    expect(state.stats.qualityBySource.incident).toBeGreaterThanOrEqual(
+      BALANCE.quality.perIncident,
+    );
+  });
+
+  test("every move of the gauge is a log line that says why", () => {
+    const changes: QualityChange[] = [
+      "incident",
+      "rejection",
+      "stale",
+      "outage",
+      "idle_sprint",
+      "clean_sprint",
+    ];
+    for (const source of changes) {
+      const line = toLogLine(
+        {
+          type: "quality",
+          delta: source === "clean_sprint" ? -20 : 10,
+          value: 30,
+          max: 100,
+          source,
+        },
+        1,
+        1,
+      );
+      expect(line).not.toBeNull();
+      expect(line?.text.key).toBe(`log.quality.${source}`);
+      expect(line?.kind).toBe(source === "clean_sprint" ? "feat" : "revert");
+    }
   });
 
   test("a clean sprint lowers the gauge", () => {
@@ -116,7 +151,7 @@ describe("production", () => {
       const incident = eventsOfType(result.events, "incident")[0];
       if (incident === undefined) continue;
 
-      expect(result.state.phase).toEqual({ kind: "game_over", reason: "fired" });
+      expect(result.state.phase).toEqual({ kind: "game_over", reason: "fired", cause: "incident" });
       return;
     }
     throw new Error("no release broke in 40 attempts");

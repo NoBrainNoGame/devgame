@@ -786,8 +786,8 @@
         "log": "prod is red, opening a hotfix"
       },
       "pr_rejected": {
-        "title": "PR rejected",
-        "log": "a reviewer closed the PR without a word"
+        "title": "Commit sent back",
+        "log": "a reviewer sends the commit back before it even reaches a pull request"
       },
       "helpful_colleague": {
         "title": "Helpful colleague",
@@ -841,8 +841,8 @@
         "manual": "conflict untangled by hand, line by line",
         "ai": "conflict resolved by the machine, unread"
       },
-      "pr_countered": "PR challenged, the tests settled it",
-      "pr_rejected": "PR refused, back one node",
+      "pr_countered": "commit sent back, but the unit tests settled it: nothing lost",
+      "pr_rejected": "commit sent back: −1 story point on the ticket",
       "reviewed": "{count, plural, one {# commit reviewed} other {# commits reviewed}}",
       "reviewed_free": "{count, plural, one {# commit reviewed by the bot} other {# commits reviewed by the bot}}",
       "debt_explosion": "the debt blew up, refactor is mandatory",
@@ -883,7 +883,15 @@
       "pr_rejected_debt": "PR rejected, the debt is too high",
       "bug_fixed": "bugged commit redone, the bug is gone",
       "debt_refactored": "commit redone, {debt} debt taken back",
-      "rested": "a turn to breathe, +{energy} energy"
+      "rested": "a turn to breathe, +{energy} energy",
+      "quality": {
+        "incident": "production loses patience: +{delta} for the incident ({value}/{max})",
+        "rejection": "production loses patience: +{delta} for the refused pull request ({value}/{max})",
+        "stale": "production loses patience: +{delta} for the ticket left in the backlog ({value}/{max})",
+        "outage": "production loses patience: +{delta} for the saturated servers ({value}/{max})",
+        "idle_sprint": "production loses patience: +{delta}, nothing landed by your hand this sprint ({value}/{max})",
+        "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})"
+      }
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",

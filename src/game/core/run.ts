@@ -114,6 +114,17 @@ export function createRun(options: CreateRunOptions): RunState {
     quality: 0,
     sprintIncidents: 0,
     sprintForced: false,
+    stats: {
+      incidents: 0,
+      outages: 0,
+      rejections: 0,
+      staleForced: 0,
+      idleSprints: 0,
+      devsLeft: 0,
+      moneyLost: 0,
+      qualityBySource: { incident: 0, rejection: 0, stale: 0, outage: 0, idle_sprint: 0 },
+      lastQualitySource: null,
+    },
 
     xpEarned: 0,
     pointsDelivered: 0,

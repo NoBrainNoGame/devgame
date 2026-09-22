@@ -72,7 +72,8 @@ export function performSubmit(context: RuleContext): void {
     if (node !== undefined) node.commit.bugged = true;
   }
   ticket.rejections += 1;
-  raiseQuality(context, BALANCE.quality.perRejection);
+  state.stats.rejections += 1;
+  raiseQuality(context, BALANCE.quality.perRejection, "rejection");
   // The refusal that fills the gauge is the sack, not a rejection to answer.
   if (state.phase.kind === "game_over") return;
   ticket.rework += rework;
@@ -126,6 +127,8 @@ export function restartTicket(context: RuleContext): void {
 
   const ticket = getTicket(state, phase.ticketId);
   const dropped = discardCommits(context, ticket);
+  // The column goes with the commits: the next one forks into whatever is free.
+  ticket.lane = undefined;
 
   ticket.points -= ticket.rework;
   ticket.rework = 0;

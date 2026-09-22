@@ -129,7 +129,7 @@ export function planBatch(
       case "quality":
         held.push({
           caption: `${signed(event.delta)} prod`,
-          colour: THEME.lane.hotfix,
+          colour: event.delta < 0 ? THEME.lane.trunk : THEME.lane.hotfix,
           hold: STORY.pop,
         });
         break;

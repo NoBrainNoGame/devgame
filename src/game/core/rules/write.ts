@@ -6,7 +6,7 @@ import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { grantSkill } from "@/game/core/rules/grants";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
-import { mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
+import { ensureLane, mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
 import type {
   CommitMode,
   DevId,
@@ -86,11 +86,11 @@ export function writeCommit(
   if (previous === undefined || previous === null) {
     throw new Error("writeCommit: nothing on dev to fork from");
   }
-  if (ticket.lane === undefined) throw new Error(`writeCommit: ${ticket.id} has no column`);
+  const lane = ensureLane(state, ticket);
 
   const node = writeNode(context, {
     kind,
-    lane: ticket.lane,
+    lane,
     parents: [previous.id],
     ticketId: ticket.id,
     commit: {
@@ -263,11 +263,11 @@ export function writeTeamCommit(
   if (previous === undefined || previous === null) {
     throw new Error("writeTeamCommit: nothing on dev to fork from");
   }
-  if (ticket.lane === undefined) throw new Error(`writeTeamCommit: ${ticket.id} has no column`);
+  const lane = ensureLane(state, ticket);
 
   const node = writeNode(context, {
     kind: "commit",
-    lane: ticket.lane,
+    lane,
     parents: [previous.id],
     ticketId: ticket.id,
     commit: { mode: "craft", reviewed: true, author },

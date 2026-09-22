@@ -786,8 +786,8 @@
         "log": "la prod est rouge, ouverture d'un hotfix"
       },
       "pr_rejected": {
-        "title": "PR rejetée",
-        "log": "un relecteur a fermé la PR sans commentaire"
+        "title": "Commit retoqué",
+        "log": "un relecteur retoque le commit avant même la PR"
       },
       "helpful_colleague": {
         "title": "Collègue serviable",
@@ -841,8 +841,8 @@
         "manual": "conflit démêlé à la main, ligne par ligne",
         "ai": "conflit résolu par la machine, sans relire"
       },
-      "pr_countered": "PR contestée, les tests ont tranché",
-      "pr_rejected": "PR refusée, retour en arrière",
+      "pr_countered": "commit retoqué, mais les tests unitaires ont tranché : rien de perdu",
+      "pr_rejected": "commit retoqué : −1 point de story sur le ticket",
       "reviewed": "{count, plural, one {# commit relu} other {# commits relus}}",
       "reviewed_free": "{count, plural, one {# commit relu par le bot} other {# commits relus par le bot}}",
       "debt_explosion": "la dette a explosé, refacto obligatoire",
@@ -883,7 +883,15 @@
       "pr_rejected_debt": "PR refusée, la dette est trop haute",
       "bug_fixed": "commit bugué repris, le bug est parti",
       "debt_refactored": "commit repris, {debt} de dette en moins",
-      "rested": "un tour pour souffler, +{energy} énergie"
+      "rested": "un tour pour souffler, +{energy} énergie",
+      "quality": {
+        "incident": "la prod perd patience : +{delta} pour l'incident ({value}/{max})",
+        "rejection": "la prod perd patience : +{delta} pour la PR refusée ({value}/{max})",
+        "stale": "la prod perd patience : +{delta} pour le ticket laissé au backlog ({value}/{max})",
+        "outage": "la prod perd patience : +{delta} pour les serveurs saturés ({value}/{max})",
+        "idle_sprint": "la prod perd patience : +{delta}, rien livré de votre main ce sprint ({value}/{max})",
+        "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})"
+      }
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",

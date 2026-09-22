@@ -84,7 +84,11 @@ describe("the pull request review", () => {
       if (review === undefined || review.accepted) continue;
       seen = true;
 
-      expect(result.state.phase).toEqual({ kind: "game_over", reason: "fired" });
+      expect(result.state.phase).toEqual({
+        kind: "game_over",
+        reason: "fired",
+        cause: "rejection",
+      });
       expect(getAvailableActions(result.state)).toEqual([]);
     }
     expect(seen).toBe(true);
