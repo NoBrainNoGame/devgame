@@ -55,13 +55,15 @@ export class Camera extends booyah.ChipBase {
   }
 
   protected _onActivate(): void {
-    const { world, app, session } = sceneContext(this.chipContext);
+    const { world, app, session, interactive } = sceneContext(this.chipContext);
     this.world = world;
     this.world.scale.set(this.zoom);
 
     const canvas = app.canvas;
 
     this._subscribe(canvas, "wheel", (event) => {
+      // A canvas that is only looked at lets the page scroll over it.
+      if (!interactive) return;
       const wheel = event as unknown as WheelEvent;
       wheel.preventDefault();
 
@@ -76,6 +78,7 @@ export class Camera extends booyah.ChipBase {
     });
 
     this._subscribe(canvas, "pointerdown", (event) => {
+      if (!interactive) return;
       this.dragging = true;
       this.dragMoved = 0;
       this.lastY = (event as unknown as PointerEvent).clientY;
@@ -171,6 +174,27 @@ export class Camera extends booyah.ChipBase {
   }
 
   /** Zooms out until the whole revealed history is on screen. */
+  /**
+   * The zoom at which the whole picture fits, without letting go of the
+   * player: the scale glides there on the next ticks, x recentres itself, and
+   * y keeps following the head. For a canvas that watches a run rather than
+   * plays one. Never below the zoom where labels disappear — past that the
+   * camera follows instead of shrinking.
+   */
+  frame(): void {
+    const { app } = sceneContext(this.chipContext);
+    const bounds = this.graph?.bounds();
+    if (bounds === null || bounds === undefined) return;
+
+    const width = Math.max(1, bounds.maxX - bounds.minX) + FRAME_PADDING;
+    const height = Math.max(1, bounds.maxY - bounds.minY) + FRAME_PADDING;
+    const fitted = Math.min(app.screen.width / width, app.screen.height / height);
+
+    this.zoom = clampZoom(Math.max(LABEL_ZOOM, fitted));
+    this.following = true;
+    this.publish();
+  }
+
   fit(): void {
     const { app } = sceneContext(this.chipContext);
     const bounds = this.graph?.bounds();
@@ -257,7 +281,7 @@ export class Camera extends booyah.ChipBase {
     gameStore.setState({ zoom: this.zoom, cameraFollowing: this.following });
     // Below about three quarters, labels stop being readable and start being
     // texture; hiding them is what makes zooming out useful at all.
-    this.graph?.setLabelsVisible(this.zoom >= 0.75);
+    this.graph?.setLabelsVisible(this.zoom >= LABEL_ZOOM);
   }
 }
 
@@ -272,6 +296,11 @@ const FOCUS_Y = 0.45;
 
 /** Time constant of the glide, in milliseconds. */
 const GLIDE_MS = 150;
+
+const LABEL_ZOOM = 0.75;
+
+/** Room around a framed picture, in world units. */
+const FRAME_PADDING = 80;
 
 function clampZoom(value: number): number {
   return Math.max(ZOOM.min, Math.min(ZOOM.max, value));

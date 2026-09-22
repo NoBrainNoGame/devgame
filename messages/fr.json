@@ -54,17 +54,8 @@
     "ogTitle": "Devgame",
     "ogSubtitle": "Un roguelike dont le donjon est un graphe Git",
     "keywords": "roguelike, jeu de navigateur, git, développeur, jeu de gestion, graine du jour, jeu gratuit, open source",
-    "graph1": "release: v1.0",
-    "graph2": "merge: dev → main",
-    "graph3": "merge: fix/t2",
-    "graph4": "fix: la prod est rouge",
-    "graph5": "merge: feat/t1",
-    "graph6": "fix: le commit marqué",
-    "graph7": "feat: par la machine",
-    "graph8": "fix: retour arrière",
-    "graph9": "feat: par la machine",
-    "graph10": "feat: à la main",
-    "graph11": "init: sprint 1"
+    "graphLabel": "Un sprint du jeu, joué par son propre pilote automatique. Cliquer rejoue sa génération.",
+    "graphHint": "Un vrai sprint, joué par le jeu lui-même. Survolez un commit ; cliquez pour le rejouer."
   },
   "play": {
     "title": "Nouvelle run",

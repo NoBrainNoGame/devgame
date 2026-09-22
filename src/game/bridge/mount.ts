@@ -26,6 +26,15 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   /** A previously saved action log, replayed to resume where it left off. */
   resume?: RunSaveDto;
   reducedMotion?: boolean;
+  /** False for a canvas that is looked at, not played: no zoom, no drag, no skip. */
+  interactive?: boolean;
+  /**
+   * Whether this mount is the page's game. The landing page mounts a run to
+   * look at and must not take the play page's global handle; it still
+   * publishes to the store, since the tooltip reads it, on a page where
+   * nothing else does.
+   */
+  claimsGlobal?: boolean;
 }
 
 export interface GameHandle {
@@ -38,6 +47,8 @@ export interface GameHandle {
     recentre(): void;
     /** Zoom out until the whole revealed history fits. */
     fit(): void;
+    /** Fit the picture without letting go of the head: for a canvas that watches a run. */
+    frame(): void;
   };
   /** The run so far, ready to persist. */
   save(): RunSaveDto;
@@ -65,8 +76,10 @@ declare global {
 let mountSerial = 0;
 
 export async function mountGame(element: HTMLElement, options: MountOptions): Promise<GameHandle> {
+  const claimsGlobal = options.claimsGlobal ?? true;
+
   // A hot reload re-runs this module with the old canvas still on screen.
-  globalThis.__devgameHandle?.dispose();
+  if (claimsGlobal) globalThis.__devgameHandle?.dispose();
 
   mountSerial += 1;
   const serial = mountSerial;
@@ -113,6 +126,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       reveal,
       translate: options.translate,
       reducedMotion: options.reducedMotion ?? false,
+      interactive: options.interactive ?? true,
       controls,
     },
     minFps: 10,
@@ -135,6 +149,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       zoomOut: () => controls.camera?.zoomOut(),
       recentre: () => controls.camera?.recentre(),
       fit: () => controls.camera?.fit(),
+      frame: () => controls.camera?.frame(),
     },
     save() {
       return session.save();
@@ -163,6 +178,8 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       if (globalThis.__devgameHandle === handle) {
         globalThis.__devgameHandle = undefined;
         resetGameStore();
+      } else if (!claimsGlobal && isCurrent()) {
+        resetGameStore();
       }
     },
   };
@@ -170,7 +187,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   // A superseded mount keeps its handle — the caller still has to be able to
   // dispose of it — but it neither claims the store nor writes to it.
   if (isCurrent()) {
-    globalThis.__devgameHandle = handle;
+    if (claimsGlobal) globalThis.__devgameHandle = handle;
     // Publishing after claiming ownership means the store always describes the
     // run that is actually on screen.
     session.publish();

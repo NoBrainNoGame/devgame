@@ -33,6 +33,11 @@ export interface SceneContext {
   /** The camera's transform. Everything in graph space is a child of it. */
   world: Container;
   reducedMotion: boolean;
+  /**
+   * Whether the pointer drives the camera and skips animations. The landing
+   * page draws a run nobody plays: it hovers, and nothing else.
+   */
+  interactive: boolean;
   controls: SceneControls;
 }
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { GitGraph, GRAPH_ROWS } from "@/components/landing/GitGraph";
+import { LandingGraph } from "@/components/landing/LandingGraph";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { env } from "@/lib/env";
@@ -15,7 +15,7 @@ import { alternatesFor, siteUrl } from "@/lib/seo";
  * company that grows, two ways to lose — and press play. Everything on the
  * page earns its place against that, which is why there is no feature grid
  * and no screenshot carousel; the graph beside the headline is the game's own
- * rendering, redrawn in SVG.
+ * canvas, playing a real run.
  *
  * Static: nothing here reads the session or the database, so it can be cached
  * and served fast, which is also the single biggest thing search ranking cares
@@ -83,10 +83,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             <p className="mt-4 text-muted-foreground text-xs">{t("ctaNote")}</p>
           </div>
 
-          <GitGraph
-            subjects={Array.from({ length: GRAPH_ROWS }, (_, row) => t(`graph${row + 1}` as never))}
-            className="mx-auto w-full max-w-[360px] lg:max-w-none"
-          />
+          <LandingGraph className="w-full" />
         </section>
 
         {/* The three ideas the game rests on -------------------------------- */}

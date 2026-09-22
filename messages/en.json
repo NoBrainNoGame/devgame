@@ -54,17 +54,8 @@
     "ogTitle": "Devgame",
     "ogSubtitle": "A roguelike whose dungeon is a Git graph",
     "keywords": "roguelike, browser game, git, developer game, management game, daily seed, free game, open source",
-    "graph1": "release: v1.0",
-    "graph2": "merge: dev → main",
-    "graph3": "merge: fix/t2",
-    "graph4": "fix: production is red",
-    "graph5": "merge: feat/t1",
-    "graph6": "fix: the flagged commit",
-    "graph7": "feat: by the machine",
-    "graph8": "fix: rollback",
-    "graph9": "feat: by the machine",
-    "graph10": "feat: by hand",
-    "graph11": "init: sprint 1"
+    "graphLabel": "One sprint of the game, played by its own autopilot. Click to replay its generation.",
+    "graphHint": "A real sprint, played by the game itself. Hover a commit; click to replay it."
   },
   "play": {
     "title": "New run",

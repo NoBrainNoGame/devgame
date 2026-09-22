@@ -36,6 +36,9 @@ export class InputController extends booyah.ChipBase {
       });
     });
 
+    // A click skips the sequence in the game. A run that is only looked at
+    // keeps its click for whatever the page does with it.
+    if (!sceneContext(this.chipContext).interactive) return;
     this._subscribe(app.canvas, "pointerdown", () => {
       if (gameStore.getState().pendingAnimation) this.fx.skip();
     });

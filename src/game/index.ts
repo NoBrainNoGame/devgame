@@ -11,6 +11,8 @@
  */
 
 export { chooseAutopilot } from "@/game/bridge/autopilot";
+export type { LandingHandle } from "@/game/bridge/landing";
+export { mountLanding } from "@/game/bridge/landing";
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
 export { mountGame } from "@/game/bridge/mount";
 export type {
