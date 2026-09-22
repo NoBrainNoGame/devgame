@@ -18,8 +18,11 @@ import { cn } from "@/lib/utils";
  * the debt, then the answer. The canvas holds still meanwhile; the storyboard
  * gives it the same beat this animation takes.
  *
- * Refused, the same dialog asks the one question a rejection leaves: start
- * over, or fix it and carry on.
+ * Accepted, the merge waits for the button: it is the player's move, costs
+ * the turn, and is what the canvas animates next. Refused, the same dialog
+ * asks the one question a rejection leaves: start over, or fix it and carry
+ * on. A run reloaded in either phase gets the verdict without the reading —
+ * the event that carried the details is gone, the decision is not.
  */
 
 const STEP_MS = 650;
@@ -32,55 +35,70 @@ export function ReviewDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
-  const review = useGameStore((state) => state.pendingReview);
+  const pending = useGameStore((state) => state.pendingReview);
   const reducedMotion = useGameStore(() => false);
   const [step, setStep] = useState(0);
 
-  const ticketId = review?.ticketId ?? null;
+  const phase = snapshot.phase;
+  const verdict =
+    pending !== null
+      ? { ticketId: pending.ticketId, accepted: pending.accepted, bugs: pending.bugs }
+      : phase.kind === "pr_accepted"
+        ? { ticketId: phase.ticketId, accepted: true, bugs: 0 }
+        : phase.kind === "ticket_rejected"
+          ? { ticketId: phase.ticketId, accepted: false, bugs: phase.bugs }
+          : null;
+  const ticketId = verdict?.ticketId ?? null;
+  const reading = pending !== null && !reducedMotion;
 
   // Restart the reading for every new review, and let a reduced-motion
-  // setting skip straight to the verdict.
+  // setting — or a reload with nothing to read — skip straight to the verdict.
   useEffect(() => {
     if (ticketId === null) return;
-    setStep(reducedMotion ? 4 : 0);
-    if (reducedMotion) return;
+    setStep(reading ? 0 : 4);
+    if (!reading) return;
     const timers = [1, 2, 3, 4].map((n) => setTimeout(() => setStep(n), n * STEP_MS));
     return () => {
       for (const timer of timers) clearTimeout(timer);
     };
-  }, [ticketId, reducedMotion]);
+  }, [ticketId, reading]);
 
-  if (review === null) return null;
+  if (verdict === null) return null;
 
-  const rejected = snapshot.phase.kind === "ticket_rejected";
-  const ticket = snapshot.tickets.find((item) => item.id === review.ticketId);
+  const decided = phase.kind === "pr_accepted" || phase.kind === "ticket_rejected";
+  const ticket = snapshot.tickets.find((item) => item.id === verdict.ticketId);
   const done = step >= 4;
 
-  const dismiss = (): void => {
+  const answer = (action: PlayerAction): void => {
     gameStore.setState({ pendingReview: null });
+    onAct(action);
   };
 
   return (
     <Dialog open>
       <DialogContent showCloseButton={false} className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("reviewTitle", { id: review.ticketId.slice(1) })}</DialogTitle>
+          <DialogTitle>{t("reviewTitle", { id: verdict.ticketId.slice(1) })}</DialogTitle>
         </DialogHeader>
 
         <ol className="space-y-1.5 font-mono text-xs">
-          <Line shown={step >= 1}>{t("reviewReading", { count: ticket?.commits ?? 0 })}</Line>
-          <Line shown={step >= 2} tone={review.unread > 0 ? "warn" : "ok"}>
-            {review.unread > 0
-              ? `${t("reviewUnread", { count: review.unread })} → ${
-                  review.bugs > 0 ? t("reviewBugs", { bugs: review.bugs }) : t("reviewNoBugs")
-                }`
-              : t("reviewAllRead")}
-          </Line>
-          <Line shown={step >= 3} tone={review.debt > review.maxDebt ? "warn" : "ok"}>
-            {t("reviewDebt", { debt: review.debt, max: review.maxDebt })}
-          </Line>
-          <Line shown={done} tone={review.accepted ? "ok" : "bad"} strong>
-            {review.accepted ? t("reviewAccepted") : t("reviewRejected")}
+          {pending === null ? null : (
+            <>
+              <Line shown={step >= 1}>{t("reviewReading", { count: ticket?.commits ?? 0 })}</Line>
+              <Line shown={step >= 2} tone={pending.unread > 0 ? "warn" : "ok"}>
+                {pending.unread > 0
+                  ? `${t("reviewUnread", { count: pending.unread })} → ${
+                      pending.bugs > 0 ? t("reviewBugs", { bugs: pending.bugs }) : t("reviewNoBugs")
+                    }`
+                  : t("reviewAllRead")}
+              </Line>
+              <Line shown={step >= 3} tone={pending.debt > pending.maxDebt ? "warn" : "ok"}>
+                {t("reviewDebt", { debt: pending.debt, max: pending.maxDebt })}
+              </Line>
+            </>
+          )}
+          <Line shown={done} tone={verdict.accepted ? "ok" : "bad"} strong>
+            {verdict.accepted ? t("reviewAccepted") : t("reviewRejected")}
           </Line>
         </ol>
 
@@ -90,25 +108,25 @@ export function ReviewDialog({
               {t("skip")}
             </Button>
           </div>
-        ) : review.accepted ? (
-          <div className="flex justify-end">
-            <Button onClick={dismiss}>{t("reviewMerge")}</Button>
+        ) : verdict.accepted ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-muted-foreground text-xs">{t("reviewMergeHint")}</p>
+            <Button disabled={!decided} onClick={() => answer({ type: "merge" })}>
+              {t("reviewMerge")}
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
             <p className="text-muted-foreground text-xs">
-              {review.bugs > 0 ? `${t("reviewBugsToFix", { count: review.bugs })} ` : ""}
+              {verdict.bugs > 0 ? `${t("reviewBugsToFix", { count: verdict.bugs })} ` : ""}
               {t("reviewParallel")}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               <Button
                 variant="outline"
                 className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                disabled={!rejected}
-                onClick={() => {
-                  dismiss();
-                  onAct({ type: "restart" });
-                }}
+                disabled={!decided}
+                onClick={() => answer({ type: "restart" })}
               >
                 <span>{t("reviewRestart")}</span>
                 <span className="font-normal text-muted-foreground text-xs">
@@ -117,11 +135,8 @@ export function ReviewDialog({
               </Button>
               <Button
                 className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                disabled={!rejected}
-                onClick={() => {
-                  dismiss();
-                  onAct({ type: "resume" });
-                }}
+                disabled={!decided}
+                onClick={() => answer({ type: "resume" })}
               >
                 <span>{t("reviewResume")}</span>
                 <span className="font-normal text-xs opacity-80">{t("reviewResumeHint")}</span>
@@ -157,7 +172,7 @@ function Line({
         strong && "pt-1 font-sans text-sm",
       )}
     >
-      {shown ? children : " "}
+      {shown ? children : " "}
     </li>
   );
 }

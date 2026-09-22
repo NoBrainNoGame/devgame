@@ -44,7 +44,7 @@ describe("PlayerActionSchema", () => {
     expect(PlayerActionSchema.safeParse({ type: "start", ticketId: "main" }).success).toBe(false);
     expect(PlayerActionSchema.safeParse({ type: "start", ticketId: "t7" }).success).toBe(true);
     expect(PlayerActionSchema.safeParse({ type: "submit" }).success).toBe(true);
-    expect(PlayerActionSchema.safeParse({ type: "merge" }).success).toBe(false);
+    expect(PlayerActionSchema.safeParse({ type: "move" }).success).toBe(false);
   });
 
   test("rejects an unknown DevOps or relic id", () => {

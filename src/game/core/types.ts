@@ -174,6 +174,8 @@ export type Phase =
     }
   /** A merge tangled. Resolving it lands the ticket. */
   | { kind: "resolve_conflict"; source: "merge"; ticketId: TicketId }
+  /** The review said yes. The merge waits for the player to press the button. */
+  | { kind: "pr_accepted"; ticketId: TicketId }
   /** The review said no. Start the ticket over, or fix it and carry on. */
   | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number; overDebt: boolean }
   | { kind: "choose_relic"; offer: RelicId[] }
@@ -260,6 +262,8 @@ export type PlayerAction =
   | { type: "review" }
   /** Open the pull request: the review decides whether the ticket lands. */
   | { type: "submit" }
+  /** Lands an accepted pull request. Costs the turn the review did not. */
+  | { type: "merge" }
   /** After a rejection: throw the ticket's commits away and start again. */
   | { type: "restart" }
   /** After a rejection: keep the commits and fix what was found. */

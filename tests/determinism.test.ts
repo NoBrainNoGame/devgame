@@ -13,7 +13,13 @@ import { isCommit, isType, newRun, play, prefer } from "./helpers";
  * longer be verified and the leaderboard is fiction.
  */
 describe("determinism", () => {
-  const policy = prefer(isType("submit"), isCommit("ai"), isCommit("craft"), isType("start"));
+  const policy = prefer(
+    isType("merge"),
+    isType("submit"),
+    isCommit("ai"),
+    isCommit("craft"),
+    isType("start"),
+  );
 
   test("the same seed and actions produce the same state", () => {
     for (const seed of ["alpha", "beta", "gamma", "delta"]) {

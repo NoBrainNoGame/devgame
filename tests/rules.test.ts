@@ -250,9 +250,16 @@ describe("energy and crunch", () => {
   test("an accepted ticket hands energy back, costs a turn, and lands on dev with two parents", () => {
     const state = makeReady(inHand("regen"));
     const ticket = ticketInHand(state);
-    const result = applyAction(state, { type: "submit" });
 
-    expect(eventsOfType(result.events, "pr_reviewed")[0]?.accepted).toBe(true);
+    // The review is free and waits for the button; the merge costs the turn.
+    const reviewed = applyAction(state, { type: "submit" });
+    expect(eventsOfType(reviewed.events, "pr_reviewed")[0]?.accepted).toBe(true);
+    expect(reviewed.state.phase.kind).toBe("pr_accepted");
+    expect(reviewed.state.turn).toBe(state.turn);
+    expect(reviewed.state.tickets[ticket.id]?.status).toBe("open");
+    expect(getAvailableActions(reviewed.state).map((a) => a.type)).toEqual(["merge"]);
+
+    const result = applyAction(reviewed.state, { type: "merge" });
     if (result.state.phase.kind === "resolve_conflict") return;
 
     const regen = eventsOfType(result.events, "energy").filter((e) => e.reason === "merge_regen");

@@ -73,8 +73,10 @@ commit IA non relu peut être attrapé comme un bug, et un code au-dessus de son
 plafond de dette ne prend rien de plus. La modale de review lit le ticket à
 voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
 
-- **Acceptée** : le ticket merge sur `dev` dans le même tour, et livre sa
-  compétence.
+- **Acceptée** : la review ne coûte rien ; le joueur presse **Merger**, le
+  ticket atterrit sur `dev` — c'est ce merge qui coûte le tour — et livre sa
+  compétence. Le merge n'est jamais joué à la place du joueur : le graphe ne
+  bouge qu'après le bouton.
 - **Refusée** : les commits attrapés sont **marqués bugués** et les bugs
   reviennent en points de correctif. Le joueur choisit — **recommencer** (les
   commits sont jetés, `git reset --hard`, la branche repart de `dev`) ou

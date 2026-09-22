@@ -169,6 +169,7 @@ function offering(
       // happens within a sprint or two rather than never.
       const legal = getAvailableActions(state);
       const action = prefer(
+        isType("merge"),
         isType("submit"),
         isType("start"),
         isCommit("ai"),
@@ -274,7 +275,25 @@ export function policy(
   mode: CommitMode,
 ): (state: RunState, actions: PlayerAction[]) => PlayerAction | undefined {
   const other: CommitMode = mode === "ai" ? "craft" : "ai";
-  return prefer(isType("submit"), isCommit(mode), isCommit(other), isType("start"));
+  return prefer(
+    isType("merge"),
+    isType("submit"),
+    isCommit(mode),
+    isCommit(other),
+    isType("start"),
+  );
+}
+
+/**
+ * Submits the ticket in hand and, if the review says yes, presses merge: the
+ * two moves a landed ticket takes, with the events of both. A test about
+ * what landing does starts here.
+ */
+export function submitAndMerge(state: RunState): { state: RunState; events: GameEvent[] } {
+  const reviewed = applyAction(state, { type: "submit" });
+  if (reviewed.state.phase.kind !== "pr_accepted") return reviewed;
+  const merged = applyAction(reviewed.state, { type: "merge" });
+  return { state: merged.state, events: [...reviewed.events, ...merged.events] };
 }
 
 /**

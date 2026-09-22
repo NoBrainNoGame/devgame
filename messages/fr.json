@@ -174,7 +174,7 @@
     "reviewReading": "Lecture de {count, plural, one {# commit} other {# commits}}…",
     "reviewAllRead": "Tout a été relu, aucun bug.",
     "reviewDebt": "Dette technique : {debt} (plafond {max})",
-    "reviewAccepted": "Acceptée. Le ticket merge sur dev.",
+    "reviewAccepted": "Acceptée. Prête à merger sur dev.",
     "reviewRejected": "Refusée.",
     "reviewMerge": "Merger",
     "reviewParallel": "Un nouveau ticket est arrivé en parallèle : le sprint n'attend pas.",
@@ -204,7 +204,8 @@
     "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
     "ticketNoCommits": "Aucun commit encore. Le premier bifurque de dev.",
     "ticketBugged": "bugué",
-    "ticketCost": "+{debt} dette"
+    "ticketCost": "+{debt} dette",
+    "reviewMergeHint": "Le merge coûte le tour ; la review, non."
   },
   "leaderboard": {
     "title": "Classement",

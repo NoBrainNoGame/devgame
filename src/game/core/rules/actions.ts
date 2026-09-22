@@ -68,6 +68,9 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         { type: "resolve_conflict", how: "ai" },
       ];
 
+    case "pr_accepted":
+      return [{ type: "merge" }];
+
     case "ticket_rejected":
       return [{ type: "restart" }, { type: "resume" }];
 
@@ -98,6 +101,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
       return b.type === "choose_relic" && a.relicId === b.relicId;
     case "review":
     case "submit":
+    case "merge":
     case "restart":
     case "resume":
       return true;

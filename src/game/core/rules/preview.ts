@@ -124,14 +124,25 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
     case "submit": {
       const ticket = currentTicket(state);
-      const cost = nodeEnergyCost(state, "feature_merge", undefined);
-      const notes: I18nText[] = [...cost.notes];
+      const notes: I18nText[] = [];
       if (ticket !== null) {
         const unread = unreadAiOn(state, ticket).length;
         if (unread > 0) notes.push(text("notes.unread_risk", { count: unread }));
         if (state.debt > BALANCE.acceptance.maxDebt) {
           notes.push(text("notes.debt_refusal", { max: BALANCE.acceptance.maxDebt }));
         }
+      }
+      // The review itself is free; the merge that follows an acceptance is
+      // priced on its own button, and a refusal costs the turn.
+      return { action, energyCost: 0, consumesTurn: true, notes };
+    }
+
+    case "merge": {
+      const ticket =
+        state.phase.kind === "pr_accepted" ? getTicket(state, state.phase.ticketId) : null;
+      const cost = nodeEnergyCost(state, "feature_merge", undefined);
+      const notes: I18nText[] = [...cost.notes];
+      if (ticket !== null) {
         const risk = mergeEventChance(state, ticket);
         if (risk > 0) notes.push(text("notes.merge_risk", { percent: risk }));
         const behind = behindOf(state, ticket);
@@ -140,12 +151,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const regen = BALANCE.energy.featureMergeRegen + effects.mergeRegenBonus;
       notes.push(text("notes.merge_regen", { energy: regen }));
 
-      return {
-        action,
-        energyCost: cost.value,
-        consumesTurn: true,
-        notes,
-      };
+      return { action, energyCost: cost.value, consumesTurn: true, notes };
     }
 
     case "restart":
@@ -224,6 +230,7 @@ export function actionKey(action: PlayerAction): string {
       return `relic:${action.relicId}`;
     case "review":
     case "submit":
+    case "merge":
     case "restart":
     case "resume":
       return action.type;

@@ -12,19 +12,22 @@ import {
   makeReady,
   plantAiCommit,
   plantCommit,
+  submitAndMerge,
   ticketInHand,
 } from "./helpers";
 
 describe("the pull request review", () => {
-  test("clean work is accepted and lands in the same turn", () => {
+  test("clean work is accepted, and lands once the merge is pressed", () => {
     const state = makeReady(inHand("pr-clean"));
-    const result = applyAction(state, { type: "submit" });
+    const result = submitAndMerge(state);
 
     const review = eventsOfType(result.events, "pr_reviewed")[0];
     expect(review?.accepted).toBe(true);
     expect(review?.bugs).toBe(0);
     if (result.state.phase.kind === "resolve_conflict") return;
     expect(result.state.tickets[ticketInHand(state).id]?.status).toBe("merged");
+    // One turn for the pair, not two.
+    expect(result.state.turn).toBe(state.turn + 1);
   });
 
   test("debt over the ceiling is refused whatever the code", () => {

@@ -145,6 +145,9 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const start = chooseStart(state, actions);
   if (start !== undefined) return start;
 
+  // An acceptance has one answer.
+  if (state.phase.kind === "pr_accepted") return { type: "merge" };
+
   // A rejection: start over when the fixes would cost more than the work
   // already done, carry on otherwise.
   if (state.phase.kind === "ticket_rejected") {

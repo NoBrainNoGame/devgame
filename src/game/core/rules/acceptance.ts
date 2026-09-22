@@ -15,9 +15,11 @@ import type { Ticket } from "@/game/core/types";
  * reads it, and what they find is exactly what the design punishes: every
  * machine-written commit nobody reviewed may be caught as a bug, and a
  * codebase over its debt ceiling takes nothing more. Accepted, the ticket
- * lands in the same turn. Refused, it comes back with the bugs to fix as
- * extra points — and the board hands you another ticket meanwhile, because
- * the sprint does not wait.
+ * waits for the player to press merge — the verdict is read out first, and a
+ * merge that lands before the button is pressed reads as the game playing
+ * itself — and the merge costs the turn. Refused, it comes back with the bugs
+ * to fix as extra points, the refusal costs the turn, and the board hands you
+ * another ticket meanwhile, because the sprint does not wait.
  */
 
 export function performSubmit(context: RuleContext): void {
@@ -52,7 +54,7 @@ export function performSubmit(context: RuleContext): void {
   });
 
   if (accepted) {
-    land(context, ticket);
+    state.phase = { kind: "pr_accepted", ticketId: ticket.id };
     return;
   }
 
@@ -82,6 +84,12 @@ export function performSubmit(context: RuleContext): void {
  * the way in; the merge-event table decides what. A conflict is the only
  * outcome that stops the merge, and everything else costs something and lands.
  */
+export function performMerge(context: RuleContext): void {
+  const { state } = context;
+  if (state.phase.kind !== "pr_accepted") throw new Error("performMerge: nothing was accepted");
+  land(context, getTicket(state, state.phase.ticketId));
+}
+
 function land(context: RuleContext, ticket: Ticket): void {
   const { state } = context;
 

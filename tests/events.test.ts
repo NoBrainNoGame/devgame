@@ -18,6 +18,7 @@ import {
   policy,
   prefer,
   settle,
+  submitAndMerge,
   ticketInHand,
 } from "./helpers";
 
@@ -197,7 +198,7 @@ describe("debt explosion", () => {
 
     const onIt = makeReady(applyAction(exploded, { type: "checkout", ticketId: forced.id }).state);
     expect(ticketInHand(onIt).id).toBe(forced.id);
-    const result = applyAction(onIt, { type: "submit" });
+    const result = submitAndMerge(onIt);
     if (result.state.phase.kind === "resolve_conflict") return;
 
     expect(result.state.debt).toBeLessThan(onIt.debt);

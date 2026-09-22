@@ -174,7 +174,7 @@
     "reviewReading": "Reading {count, plural, one {# commit} other {# commits}}…",
     "reviewAllRead": "Everything was read, no bug.",
     "reviewDebt": "Technical debt: {debt} (ceiling {max})",
-    "reviewAccepted": "Accepted. The ticket merges into dev.",
+    "reviewAccepted": "Accepted. Ready to merge on dev.",
     "reviewRejected": "Rejected.",
     "reviewMerge": "Merge",
     "reviewParallel": "A new ticket arrived alongside: the sprint does not wait.",
@@ -204,7 +204,8 @@
     "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
     "ticketNoCommits": "No commit yet. The first one forks off dev.",
     "ticketBugged": "bugged",
-    "ticketCost": "+{debt} debt"
+    "ticketCost": "+{debt} debt",
+    "reviewMergeHint": "The merge costs the turn; the review did not."
   },
   "leaderboard": {
     "title": "Leaderboard",
