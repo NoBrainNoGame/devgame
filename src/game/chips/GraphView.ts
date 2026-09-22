@@ -3,28 +3,27 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
-import type { MapNode, NodeId } from "@/game/core/types";
-import { nodeX, nodeY } from "@/game/render/coords";
+import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
+import type { MapNode, NodeId, RunState } from "@/game/core/types";
+import { labelX, nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
-import { drawEdge } from "@/game/render/lanes";
-import { glyphStyle, labelStyle } from "@/game/render/textStyles";
-import { labelledKind, laneColour, NODE_RADIUS, nodeGlyph, nodePrefix } from "@/game/render/theme";
+import { drawEdge, drawLane } from "@/game/render/lanes";
+import { labelStyle } from "@/game/render/textStyles";
+import { laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER, THEME } from "@/game/render/theme";
 
 /**
- * The history, as it is written.
+ * The history, drawn the way a git client draws it.
+ *
+ * Three things, layered: the lanes — one continuous line per branch for as
+ * long as it is alive — then the commits as small discs on them, then a
+ * column of subjects to the right of the graph, past the gutter where the
+ * refs sit. `main` and `dev` never end; a ticket's line runs from the row it
+ * forked on to its tip, and on up to the present while it is still open.
  *
  * The graph shows **what has happened and nothing else**. The engine holds no
- * commit before it is written — a ticket is a demand, not a path — so the
- * graph stops at the last commit: nothing above it, not even a hint of what
- * comes next. A ticket's column appears with its first commit and not before.
- *
- * A new commit is never inserted silently: `reveal` animates it in, which is
- * what lets a machine-written burst of three read as three separate things
- * happening rather than as the graph suddenly being longer.
- *
- * Nothing is drawn for the commit you are *about* to write. It does not exist
- * yet, and a hollow circle where it will go is the graph claiming to know the
- * future.
+ * commit before it is written, so the graph stops at the last commit: nothing
+ * above it, not even a hint of what comes next. A new commit is never inserted
+ * silently: the reveal set says when, and the sprite grows in.
  */
 
 export interface GraphViewEvents extends booyah.BaseCompositeEvents {
@@ -41,6 +40,7 @@ interface CommitSprite {
 const REVEAL_MS = 260;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
+  private lanes!: Graphics;
   private edges!: Graphics;
   private nodeLayer!: Container;
   private labelLayer!: Container;
@@ -50,15 +50,20 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   private hovered: NodeId | null = null;
   /** Labels are noise when the graph is zoomed out to find your way. */
   private showLabels = true;
+  /** The rightmost column drawn, which is where the label column starts. */
+  private maxLane = DEV_LANE;
+  /** The highest row drawn: how far the living branches' lines run. */
+  private topDepth = 0;
 
   protected _onActivate(): void {
+    this.lanes = new Graphics();
     this.edges = new Graphics();
     this.nodeLayer = new Container();
     this.labelLayer = new Container();
     this.sprites = new Map();
     this.labels = new Map();
 
-    this._container.addChild(this.edges, this.nodeLayer, this.labelLayer);
+    this._container.addChild(this.lanes, this.edges, this.nodeLayer, this.labelLayer);
 
     // Two triggers, on purpose. The reveal set says *what* is drawn, and an
     // applied action can change *how* a commit already drawn looks — reviewed,
@@ -86,7 +91,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       const eased = 1 - (1 - sprite.reveal) ** 3;
 
       // Overshoot slightly on the way in: a commit lands, it does not fade up.
-      sprite.root.scale.set(eased * (1 + 0.18 * (1 - eased)));
+      sprite.root.scale.set(eased * (1 + 0.25 * (1 - eased)));
       sprite.root.alpha = eased;
 
       const label = this.labels.get(id);
@@ -108,9 +113,15 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   }
 
   private rebuild(): void {
+    const { session } = sceneContext(this.chipContext);
+    const state = session.getState();
     const nodes = this.revealed();
 
-    this.drawEdges(nodes);
+    this.maxLane = Math.max(DEV_LANE, ...nodes.map((node) => node.lane));
+    this.topDepth = Math.max(0, ...nodes.map((node) => node.depth));
+
+    this.drawLanes(state, nodes);
+    this.drawEdges(state, nodes);
 
     const live = new Set<NodeId>();
     for (const node of nodes) {
@@ -127,23 +138,63 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     }
   }
 
-  private drawEdges(nodes: readonly MapNode[]): void {
-    this.edges.clear();
+  /**
+   * One line per branch. The trunk lines run from their first commit to the
+   * top of what is drawn: they are never done. A ticket's line runs from the
+   * row it forked on to its tip, and up to the top too while it is open — a
+   * branch you are still writing is alive on every row, commit or not.
+   */
+  private drawLanes(state: RunState, nodes: readonly MapNode[]): void {
+    this.lanes.clear();
 
+    const first = new Map<number, number>();
+    const last = new Map<number, number>();
+    for (const node of nodes) {
+      first.set(node.lane, Math.min(first.get(node.lane) ?? Infinity, node.depth));
+      last.set(node.lane, Math.max(last.get(node.lane) ?? -Infinity, node.depth));
+    }
+
+    for (const lane of [MAIN_LANE, DEV_LANE]) {
+      const from = first.get(lane);
+      if (from === undefined) continue;
+      const colour = lane === MAIN_LANE ? THEME.lane.trunk : THEME.lane.dev;
+      drawLane(this.lanes, lane, from, this.topDepth, colour, 0.9);
+    }
+
+    const openLanes = new Set<number>();
+    for (const ticket of Object.values(state.tickets)) {
+      if (ticket.status === "open" && ticket.lane !== undefined) openLanes.add(ticket.lane);
+    }
+
+    for (const [lane, from] of first) {
+      if (lane < FIRST_FEATURE_LANE) continue;
+      const tip = last.get(lane) ?? from;
+      const to = openLanes.has(lane) ? Math.max(tip, this.topDepth) : tip;
+      const kind = nodes.find((node) => node.lane === lane)?.kind ?? "commit";
+      drawLane(this.lanes, lane, from, to, laneColour(lane, kind), 0.55);
+    }
+  }
+
+  private drawEdges(state: RunState, nodes: readonly MapNode[]): void {
+    this.edges.clear();
     const shown = new Set(nodes.map((node) => node.id));
-    const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
 
     // An edge runs from a commit to each of its parents, the way git records
-    // it: a merge draws two, one straight up its column and one bending in
-    // from the ticket it landed.
+    // it. Only the ones that change column are drawn here — along a column the
+    // lane already is the edge.
     for (const node of nodes) {
       for (const parentId of node.parents) {
         if (!shown.has(parentId)) continue;
         const parent = state.nodes[parentId];
-        if (parent === undefined) continue;
+        if (parent === undefined || parent.lane === node.lane) continue;
 
-        drawEdge(this.edges, parent, node, laneColour(node.lane, node.kind), 0.95);
+        // A fork takes the colour of the branch it opens; a merge, of the
+        // branch it brings home.
+        const colour =
+          node.lane >= FIRST_FEATURE_LANE
+            ? laneColour(node.lane, node.kind)
+            : laneColour(parent.lane, parent.kind);
+        drawEdge(this.edges, parent, node, colour, 0.9);
       }
     }
   }
@@ -159,16 +210,9 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       const graphics = new Graphics();
       root.addChild(graphics);
 
-      const glyph = glyphFor(node);
-      if (glyph !== "") {
-        const text = new Text({ text: glyph, style: glyphStyle });
-        text.anchor.set(0.5);
-        root.addChild(text);
-      }
-
       root.eventMode = "static";
       root.cursor = "help";
-      root.hitArea = { contains: (x, y) => x * x + y * y <= (NODE_RADIUS + 10) ** 2 };
+      root.hitArea = { contains: (x, y) => x * x + y * y <= (NODE_RADIUS + 8) ** 2 };
       root.on("pointerover", () => this.setHovered(node.id));
       root.on("pointerout", () => {
         if (this.hovered === node.id) this.setHovered(null);
@@ -179,8 +223,8 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       this.sprites.set(node.id, sprite);
 
       const label = new Text({
-        text: `${nodePrefix(node.kind, node.commit?.mode)}: ${translate({
-          key: `nodes.${labelledKind(node.kind)}.name`,
+        text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({
+          key: `nodes.${node.kind}.name`,
         })}`,
         style: labelStyle,
       });
@@ -198,7 +242,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     const label = this.labels.get(node.id);
     if (label !== undefined) {
-      label.position.set(x + NODE_RADIUS + 12, y);
+      label.position.set(this.subjectX(), y);
       label.visible = this.showLabels;
     }
   }
@@ -216,6 +260,18 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   private node(id: NodeId): MapNode | undefined {
     const { session } = sceneContext(this.chipContext);
     return session.getState().nodes[id];
+  }
+
+  // --- what the others read -------------------------------------------------
+
+  /** Where the refs column starts, right of the last lane drawn. */
+  refX(): number {
+    return labelX(this.maxLane);
+  }
+
+  /** Where the subjects start, past the refs. */
+  subjectX(): number {
+    return this.refX() + REF_GUTTER;
   }
 
   /** Screen position of a commit, so the HUD can put a tooltip beside it. */
@@ -253,10 +309,4 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       maxY: Math.max(...ys),
     };
   }
-}
-
-/** A glyph on every node is a glyph on none, so ordinary commits stay plain. */
-function glyphFor(node: MapNode): string {
-  if (node.kind === "commit") return "";
-  return nodeGlyph(node.kind);
 }

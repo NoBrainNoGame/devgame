@@ -37,7 +37,14 @@ export class RunScene extends ContainerChip {
 
     this._activateChildChip(
       new booyah.Parallel(
-        [camera, graph, new BranchRefs(), new PlayerMarker(), fx, new InputController(graph, fx)],
+        [
+          camera,
+          graph,
+          new BranchRefs(graph),
+          new PlayerMarker(),
+          fx,
+          new InputController(graph, fx),
+        ],
         { terminateOnCompletion: false },
       ),
     );

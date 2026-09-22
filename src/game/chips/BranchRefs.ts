@@ -2,96 +2,119 @@ import { Container, Graphics, Text } from "pixi.js";
 
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
+import type { GraphView } from "@/game/chips/GraphView";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
-import { nodeX, nodeY } from "@/game/render/coords";
+import type { NodeId } from "@/game/core/types";
+import { nodeY } from "@/game/render/coords";
 import { cursorStyle } from "@/game/render/textStyles";
-import { NODE_RADIUS, THEME } from "@/game/render/theme";
+import { THEME } from "@/game/render/theme";
 
 /**
- * The `main` and `dev` refs, riding the newest commit of their column.
- *
- * Two long-lived branches carry no work: `dev` takes one merge per feature
- * delivered, `main` takes the sprint merge and the release. Without a label on
- * each, the two leftmost columns are just lines — and which one is which is the
- * thing a player needs to read first.
+ * The refs, drawn as pills in the gutter between the graph and the subjects,
+ * the way a git client lists them beside the commit they point at: `main`,
+ * `dev`, `HEAD`, and one per open ticket. A ref rides the newest commit of
+ * its branch as drawn — a merge the effect queue has not revealed yet does
+ * not move it.
  */
 export class BranchRefs extends booyah.ChipBase {
-  private refs!: { lane: number; root: Container; y: number; placed: boolean }[];
+  private layer!: Container;
+  private pills = new Map<string, { root: Container; width: number }>();
+
+  constructor(private readonly graph: GraphView) {
+    super();
+  }
 
   protected _onActivate(): void {
     const { world } = sceneContext(this.chipContext);
-
-    this.refs = [
-      { lane: MAIN_LANE, root: makeRef("main", THEME.lane.trunk), y: 0, placed: false },
-      { lane: DEV_LANE, root: makeRef("dev", THEME.lane.dev), y: 0, placed: false },
-    ];
-
-    for (const ref of this.refs) {
-      ref.root.visible = false;
-      world.addChild(ref.root);
-    }
+    this.layer = new Container();
+    world.addChild(this.layer);
   }
 
   protected _onTick(): void {
-    const { session, reveal, reducedMotion } = sceneContext(this.chipContext);
+    const { session, reveal } = sceneContext(this.chipContext);
     const state = session.getState();
 
-    const ease = reducedMotion ? 1 : Math.min(1, this._lastTickInfo.timeSinceLastTick / 140);
-
-    for (const ref of this.refs) {
-      // The tip of the column, as drawn: a merge the queue has not revealed
-      // yet does not move the ref.
-      let top = Number.NEGATIVE_INFINITY;
-
-      for (const id of reveal.nodes) {
-        const node = state.nodes[id];
-        if (node === undefined || node.lane !== ref.lane) continue;
-        if (node.depth > top) top = node.depth;
+    // Which commit each ref sits on, as drawn.
+    const tipOfLane = new Map<number, NodeId>();
+    const depthOf = new Map<NodeId, number>();
+    for (const id of reveal.nodes) {
+      const node = state.nodes[id];
+      if (node === undefined) continue;
+      depthOf.set(id, node.depth);
+      const current = tipOfLane.get(node.lane);
+      if (current === undefined || (depthOf.get(current) ?? -1) < node.depth) {
+        tipOfLane.set(node.lane, id);
       }
+    }
 
-      if (top === Number.NEGATIVE_INFINITY) {
-        ref.root.visible = false;
-        continue;
+    const refs: { key: string; label: string; colour: number; nodeId: NodeId }[] = [];
+    const main = tipOfLane.get(MAIN_LANE);
+    if (main !== undefined)
+      refs.push({ key: "main", label: "main", colour: THEME.lane.trunk, nodeId: main });
+    const dev = tipOfLane.get(DEV_LANE);
+    if (dev !== undefined)
+      refs.push({ key: "dev", label: "dev", colour: THEME.lane.dev, nodeId: dev });
+
+    for (const ticket of Object.values(state.tickets)) {
+      if (ticket.status !== "open" || ticket.lane === undefined) continue;
+      const tip = tipOfLane.get(ticket.lane);
+      if (tip === undefined) continue;
+      const colour = ticket.kind === "hotfix" ? THEME.lane.hotfix : THEME.lane.feature;
+      refs.push({ key: ticket.id, label: `${ticket.kind}/${ticket.id}`, colour, nodeId: tip });
+    }
+
+    if (reveal.headId !== null && depthOf.has(reveal.headId)) {
+      refs.push({ key: "HEAD", label: "HEAD", colour: THEME.player, nodeId: reveal.headId });
+    }
+
+    // Lay the pills out per row, left to right, in the gutter.
+    const x0 = this.graph.refX();
+    const offset = new Map<NodeId, number>();
+    const live = new Set<string>();
+
+    for (const ref of refs) {
+      live.add(ref.key);
+      let pill = this.pills.get(ref.key);
+      if (pill === undefined) {
+        pill = makePill(ref.label, ref.colour);
+        this.pills.set(ref.key, pill);
+        this.layer.addChild(pill.root);
       }
+      const depth = depthOf.get(ref.nodeId) ?? 0;
+      const dx = offset.get(ref.nodeId) ?? 0;
+      pill.root.position.set(x0 + dx, nodeY(depth));
+      offset.set(ref.nodeId, dx + pill.width + 4);
+    }
 
-      // `HEAD` hangs off the left of its own commit. When it is on this very
-      // node — you just landed a merge — the two refs are stacked rather than
-      // drawn on top of each other, which is what a git client does.
-      const head = reveal.headId === null ? undefined : state.nodes[reveal.headId];
-      const shared = head !== undefined && head.lane === ref.lane && head.depth === top;
-
-      const target = nodeY(top) - (shared ? STACK : 0);
-      ref.y = ref.placed ? ref.y + (target - ref.y) * ease : target;
-      ref.placed = true;
-
-      ref.root.visible = true;
-      ref.root.position.set(nodeX(ref.lane), ref.y);
+    for (const [key, pill] of this.pills) {
+      if (live.has(key)) continue;
+      pill.root.destroy({ children: true });
+      this.pills.delete(key);
     }
   }
 
   protected _onTerminate(): void {
-    for (const ref of this.refs) ref.root.destroy({ children: true });
+    this.layer.destroy({ children: true });
+    this.pills.clear();
   }
 }
 
-/** A ref pill hanging to the left of its column, the way `HEAD` does. */
-function makeRef(name: string, colour: number): Container {
+/** A ref pill, anchored on its left edge at the row's centre. */
+function makePill(name: string, colour: number): { root: Container; width: number } {
   const root = new Container();
 
-  const label = new Text({ text: name, style: cursorStyle });
-  label.anchor.set(1, 0.5);
-  label.x = -NODE_RADIUS - 16;
-  label.alpha = 0.85;
+  const label = new Text({ text: name, style: { ...cursorStyle, fontSize: 10 } });
+  label.anchor.set(0, 0.5);
+  label.x = 6;
+  label.tint = colour;
 
+  const width = label.width + 12;
   const chip = new Graphics();
   chip
-    .roundRect(-NODE_RADIUS - 20 - label.width - 8, -11, label.width + 16, 22, 11)
-    .fill({ color: THEME.background, alpha: 0.92 })
-    .stroke({ width: 1.5, color: colour, alpha: 0.7 });
+    .roundRect(0, -8, width, 16, 4)
+    .fill({ color: THEME.background, alpha: 0.95 })
+    .stroke({ width: 1, color: colour, alpha: 0.8 });
 
   root.addChild(chip, label);
-  return root;
+  return { root, width };
 }
-
-/** Vertical room for a second ref on the same commit. */
-const STACK = 24;

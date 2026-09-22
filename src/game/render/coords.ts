@@ -1,4 +1,4 @@
-import { DEPTH_HEIGHT, LANE_WIDTH } from "@/game/render/theme";
+import { DEPTH_HEIGHT, LABEL_GAP, LANE_WIDTH } from "@/game/render/theme";
 
 /**
  * Graph space to world pixels.
@@ -17,4 +17,9 @@ export function nodeX(lane: number): number {
 
 export function nodeY(depth: number): number {
   return -depth * DEPTH_HEIGHT;
+}
+
+/** Where the refs and subjects start: just right of the rightmost column. */
+export function labelX(maxLane: number): number {
+  return nodeX(maxLane) + LABEL_GAP + LANE_WIDTH / 2;
 }

@@ -180,9 +180,9 @@ export class Camera extends booyah.ChipBase {
     }
 
     // Padding so the outermost commits are not flush against the edge, and so
-    // their labels have somewhere to go.
-    const width = Math.max(1, bounds.maxX - bounds.minX) + 260;
-    const height = Math.max(1, bounds.maxY - bounds.minY) + 180;
+    // the refs and subjects to the right have somewhere to go.
+    const width = Math.max(1, bounds.maxX - bounds.minX) + 420;
+    const height = Math.max(1, bounds.maxY - bounds.minY) + 120;
 
     this.zoom = clampZoom(Math.min(app.screen.width / width, app.screen.height / height));
 

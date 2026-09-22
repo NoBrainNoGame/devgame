@@ -4,16 +4,19 @@ import { nodeX, nodeY } from "@/game/render/coords";
 import { BEND, EDGE_WIDTH } from "@/game/render/theme";
 
 /**
- * How an edge between two commits is drawn.
+ * How the lines of the graph are drawn.
  *
- * Within a column it is a straight line. Between columns it is the shape a
- * desktop git client draws: the lane leaves its own column, sweeps across on a
- * short curve, and arrives travelling straight again. A single bezier from node
- * to node looks like a wire diagram; this looks like history.
+ * A branch is a continuous vertical line for as long as it is alive, whether
+ * or not a commit sits on every row — that is what a git client draws, and
+ * what makes `dev` read as a branch rather than as a dot with a name. Between
+ * columns an edge leaves its own column, sweeps across on a short curve and
+ * arrives travelling straight again. A single bezier from node to node looks
+ * like a wire diagram; this looks like history.
  *
- * Both arguments are in graph space, and the y flip lives in `nodeY` — nothing
- * here needs to know which way time runs.
+ * Everything is in graph space, and the y flip lives in `nodeY` — nothing here
+ * needs to know which way time runs.
  */
+
 export function drawEdge(
   graphics: Graphics,
   from: { lane: number; depth: number },
@@ -23,6 +26,21 @@ export function drawEdge(
 ): void {
   drawEdgeShape(graphics, from, to);
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
+}
+
+/** A branch's own line, from the row it was born on to the row it lives on. */
+export function drawLane(
+  graphics: Graphics,
+  lane: number,
+  fromDepth: number,
+  toDepth: number,
+  colour: number,
+  alpha: number,
+): void {
+  if (toDepth <= fromDepth) return;
+  const x = nodeX(lane);
+  graphics.moveTo(x, nodeY(fromDepth)).lineTo(x, nodeY(toDepth));
+  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round" });
 }
 
 /** The path an edge follows, without committing to how it is stroked. */
@@ -42,10 +60,12 @@ function drawEdgeShape(
   }
 
   // Travel in the origin column first, then bend once into the destination
-  // column and arrive vertical. `BEND` is how much room the curve gets.
+  // column and arrive vertical. `BEND` is how much room the curve gets; on a
+  // single row the whole distance is the curve.
   const towards = Math.sign(y2 - y1);
-  const bendStart = y1 + towards * BEND;
-  const bendEnd = y2 - towards * BEND;
+  const room = Math.min(BEND, Math.abs(y2 - y1) / 2);
+  const bendStart = y1 + towards * room;
+  const bendEnd = y2 - towards * room;
 
   graphics
     .moveTo(x1, y1)

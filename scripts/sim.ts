@@ -11,6 +11,7 @@
  */
 
 import { SKILLS } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { gatherEffects } from "@/game/core/rules/modifiers";
@@ -146,13 +147,23 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
       : { type: "resume" };
   }
 
-  // Ready to submit. The reviewer catches unread machine work, so a policy
-  // that can read does so first; the naive `ai` policy submits blind.
+  // Ready to submit. The reviewer catches unread machine work and refuses an
+  // indebted codebase, so a policy that reads its options cleans up first:
+  // review until nothing is unread, refactor under the ceiling, then submit.
+  // The naive `ai` policy submits blind and pays for it.
   const submit = actions.find(isSubmit);
   if (submit !== undefined) {
-    if (policy !== "ai" && unreviewed > 0) {
-      const review = actions.find(isReview);
-      if (review !== undefined) return review;
+    if (policy !== "ai") {
+      if (unreviewed > 0) {
+        const review = actions.find(isReview);
+        if (review !== undefined) return review;
+        const squash = actions.find(writtenAs("squash"));
+        if (squash !== undefined) return squash;
+      }
+      if (state.debt > BALANCE.acceptance.maxDebt) {
+        const refactor = actions.find(writtenAs("refactor"));
+        if (refactor !== undefined) return refactor;
+      }
     }
     return submit;
   }

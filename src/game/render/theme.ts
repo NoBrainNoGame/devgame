@@ -45,23 +45,27 @@ export const THEME = {
 /**
  * Column width and row height, in world pixels.
  *
- * Generous compared with a real git client: there are far fewer commits here,
- * and every one of them is a decision somebody made rather than a line in a
- * history nobody reads.
+ * The proportions of a desktop git client: narrow columns, short rows, small
+ * dots, and the commit subjects in a column of their own to the right of the
+ * graph rather than beside each node. That is what makes it read as history
+ * rather than as a diagram.
  */
-export const LANE_WIDTH = 64;
-export const DEPTH_HEIGHT = 70;
-export const NODE_RADIUS = 13;
-/** Thick and rounded, the way a desktop git client draws a lane. */
-export const EDGE_WIDTH = 4;
-/** How far a merge or a fork bends out of its column. */
-export const BEND = 26;
+export const LANE_WIDTH = 26;
+export const DEPTH_HEIGHT = 34;
+export const NODE_RADIUS = 6;
+/** The lane lines, and the edges that run along them. */
+export const EDGE_WIDTH = 2.5;
+/** How far a merge or a fork bends out of its column: a bit less than a row. */
+export const BEND = 12;
+/** Room between the last column and the subjects, where the refs sit. */
+export const REF_GUTTER = 96;
+export const LABEL_GAP = 14;
 
 export const ZOOM: { min: number; max: number; step: number; default: number } = {
-  min: 0.4,
-  max: 2.4,
+  min: 0.5,
+  max: 3,
   step: 1.15,
-  default: 1,
+  default: 1.4,
 };
 
 export function laneColour(lane: number, kind: NodeKind): number {
