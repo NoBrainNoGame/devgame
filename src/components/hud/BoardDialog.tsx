@@ -136,7 +136,7 @@ function TicketCard({
           <Progress value={(ticket.filled / Math.max(1, ticket.points)) * 100} className="h-1.5" />
           <p className="text-muted-foreground text-xs">
             {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
-            {ticket.rework > 0 ? ` · ${t("reworkOf", { count: ticket.rework })}` : ""}
+            {ticket.bugs > 0 ? ` · ${t("bugsOn", { count: ticket.bugs })}` : ""}
             {ticket.unread > 0 ? ` · ${t("unreadOn", { count: ticket.unread })}` : ""}
           </p>
         </>

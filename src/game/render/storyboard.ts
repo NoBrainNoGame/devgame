@@ -195,8 +195,37 @@ export function planBatch(
         steps.push({ kind: "beat", hold: STORY.boundary });
         break;
 
+      case "ambient_event":
+        held.push({
+          caption: translate({ key: `events.${event.eventId}.title` }),
+          colour: THEME.text,
+          hold: STORY.popLong,
+        });
+        break;
+
+      case "failure_event":
+        if (event.eventId !== "merge_conflict") {
+          held.push({
+            caption: translate({ key: `events.${event.eventId}.title` }),
+            colour: THEME.lane.hotfix,
+            hold: STORY.popLong,
+          });
+        }
+        break;
+
       case "merge_event":
-        if (event.eventId !== "merge_conflict") flashAt(THEME.lane.refactor);
+        if (event.eventId !== "merge_conflict") {
+          held.push({
+            caption: translate({ key: `events.${event.eventId}.title` }),
+            colour: THEME.lane.refactor,
+            hold: STORY.popLong,
+          });
+          flashAt(THEME.lane.refactor);
+        }
+        break;
+
+      case "bug_fixed":
+        held.push({ caption: "✓ bug", colour: THEME.node.craft, hold: STORY.pop });
         break;
 
       case "sprint_ended":
@@ -212,9 +241,7 @@ export function planBatch(
       // Nothing to show on their own: their consequences are other events.
       case "ticket_merged":
       case "conflict_resolved":
-      case "failure_event":
       case "monitoring_warning":
-      case "ambient_event":
       case "docs_written":
       case "rebased":
       case "debt_explosion":

@@ -19,7 +19,9 @@ export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean):
   const work = node.lane >= 2;
   const fill = node.commit.mode === "ai" ? THEME.node.ai : THEME.node.craft;
 
-  if (node.commit.mode === "ai" && node.commit.reviewed === false) {
+  if (node.commit.bugged === true) {
+    graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 2, color: THEME.lane.hotfix });
+  } else if (node.commit.mode === "ai" && node.commit.reviewed === false) {
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: THEME.node.unreviewed });
   }
 

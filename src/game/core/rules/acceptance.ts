@@ -28,11 +28,14 @@ export function performSubmit(context: RuleContext): void {
   const { acceptance } = BALANCE;
   const unread = unreadAiOn(state, ticket);
 
-  let bugs = 0;
+  // Every unread machine-written commit is read now; the ones that turn out
+  // to hide a bug are flagged, and stay flagged until a refactor redoes them.
+  const caught: string[] = [];
   for (const id of unread) {
     const hidden = state.nodes[id]?.commit.hiddenBug === true;
-    if (hidden || context.rng.chance(acceptance.bugDetectPct)) bugs += 1;
+    if (hidden || context.rng.chance(acceptance.bugDetectPct)) caught.push(id);
   }
+  const bugs = caught.length;
   const overDebt = state.debt > acceptance.maxDebt;
   const accepted = bugs === 0 && !overDebt;
   const rework = accepted ? 0 : bugs * acceptance.pointsPerBug;
@@ -53,10 +56,13 @@ export function performSubmit(context: RuleContext): void {
     return;
   }
 
-  // What the reviewer flagged is read now; fixing it is the extra points.
   for (const id of unread) {
     const node = state.nodes[id];
     if (node !== undefined) node.commit.reviewed = true;
+  }
+  for (const id of caught) {
+    const node = state.nodes[id];
+    if (node !== undefined) node.commit.bugged = true;
   }
   ticket.rejections += 1;
   ticket.rework += rework;

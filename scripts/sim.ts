@@ -16,7 +16,13 @@ import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
-import { currentTicket, getTicket, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
+import {
+  buggedOn,
+  currentTicket,
+  getTicket,
+  openTickets,
+  unreadAiOn,
+} from "@/game/core/rules/tickets";
 import { createRun, hashState } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
@@ -145,6 +151,13 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
     return state.phase.bugs * 2 > (currentTicket(state)?.filled ?? 0)
       ? { type: "restart" }
       : { type: "resume" };
+  }
+
+  // The review flagged a commit: nothing else on this ticket goes anywhere
+  // until a refactor has redone it, so every policy does that first.
+  if (ticket !== null && buggedOn(state, ticket).length > 0) {
+    const refactor = actions.find(writtenAs("refactor"));
+    if (refactor !== undefined) return refactor;
   }
 
   // Ready to submit. The reviewer catches unread machine work and refuses an

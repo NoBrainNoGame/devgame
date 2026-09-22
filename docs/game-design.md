@@ -75,9 +75,11 @@ voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
 
 - **Acceptée** : le ticket merge sur `dev` dans le même tour, et livre sa
   compétence.
-- **Refusée** : les bugs trouvés reviennent en points de correctif, et le
-  joueur choisit — **recommencer** (les commits sont jetés, `git reset --hard`,
-  la branche repart de `dev`) ou **continuer** (garder les commits, corriger).
+- **Refusée** : les commits attrapés sont **marqués bugués** et les bugs
+  reviennent en points de correctif. Le joueur choisit — **recommencer** (les
+  commits sont jetés, `git reset --hard`, la branche repart de `dev`) ou
+  **continuer** (garder les commits, et refactorer chaque commit bugué avant
+  de resoumettre : un ticket qui porte un bug marqué ne repart pas en review).
   Dans les deux cas **un nouveau ticket s'ouvre en parallèle** : le sprint
   n'attend pas.
 
@@ -114,14 +116,18 @@ dette sont sur la carte**, pas dans une infobulle. Un échec déclenche un
 
 **Un détour n'est pas une bifurcation.** Écrire un commit en refacto, en
 documentation, en squash ou en rebase est une décision sur *ce commit-là* :
-il coûte un tour comme les autres et laisse le graphe en chaîne. Les détours
-sont toujours proposés, sauf deux qui sont situationnels :
+il coûte un tour comme les autres et laisse le graphe en chaîne. Deux détours
+sont toujours proposés ; les trois autres ont besoin d'une **cible**, et
+n'apparaissent pas sans elle — un refacto de rien est un commit avec un joli
+nom.
 
-- **Refacto** — rembourse de la dette.
 - **Commit risqué** — un point de story de plus contre un jet nettement moins
   sûr.
-- **Corvée** — déclenche un événement du quotidien, souvent favorable.
 - **Documentation** — les prochains commits IA n'ajoutent aucune dette.
+- **Refacto** — proposé seulement quand il y a quelque chose à refaire : un
+  **commit que la review a marqué bugué**, ou une dette au-dessus du plafond
+  que la review refuse. Il reprend le plus ancien commit bugué du ticket — le
+  bug s'en va — et rembourse de la dette.
 - **Squash** — proposé dès que le ticket porte assez de commits IA non relus :
   leur dette part avec eux, et eux partent du score. La seule façon d'effacer
   de la dette **sans savoir reviewer**.

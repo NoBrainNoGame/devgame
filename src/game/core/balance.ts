@@ -22,7 +22,6 @@ export const BALANCE = {
       commit: 0,
       refactor: 2,
       risky: 1,
-      chore: 1,
       squash: 2,
       docs: 2,
       rebase: 1,

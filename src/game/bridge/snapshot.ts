@@ -14,6 +14,7 @@ import {
 import { previewAll } from "@/game/core/rules/preview";
 import {
   behindOf,
+  buggedOn,
   currentTicket,
   isReady,
   sortedTickets,
@@ -73,6 +74,8 @@ export interface TicketView {
   rejections: number;
   /** Machine-written commits on it nobody has read: what a review may catch. */
   unread: number;
+  /** Commits the review flagged. A refactor each, before it can go back. */
+  bugs: number;
   skillId?: SkillId;
   lane?: number;
   /** Merges landed on `dev` since it was opened. Its merge pays for each. */
@@ -153,10 +156,11 @@ export function toSnapshot(state: RunState): RunSnapshot {
     rework: ticket.rework,
     rejections: ticket.rejections,
     unread: unreadAiOn(state, ticket).length,
+    bugs: buggedOn(state, ticket).length,
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     behind: behindOf(state, ticket),
-    ready: ticket.status === "open" && isReady(ticket),
+    ready: ticket.status === "open" && isReady(state, ticket),
     commits: ticket.nodeIds.length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
   }));

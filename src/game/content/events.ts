@@ -11,9 +11,8 @@
  * table: a conflict opens the resolution choice, the others cost something and
  * land anyway.
  *
- * Ambient events are the small weather of a working week. They are drawn on
- * `chore` commits and, rarely, after a successful one. Their whole effect fits
- * in the table.
+ * Ambient events are the small weather of a working week, drawn now and then
+ * after a successful commit. Their whole effect fits in the table.
  */
 
 export const FAILURE_EVENT_IDS = [

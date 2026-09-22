@@ -106,7 +106,11 @@ function TicketTab({
           <span className="tabular-nums text-xs">
             {ticket.filled}/{ticket.points}
           </span>
-          {ticket.unread > 0 ? (
+          {ticket.bugs > 0 ? (
+            <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs tabular-nums">
+              {ticket.bugs}
+            </span>
+          ) : ticket.unread > 0 ? (
             <span className="rounded-full bg-debt/20 px-1.5 text-debt text-xs tabular-nums">
               {ticket.unread}
             </span>
@@ -116,6 +120,9 @@ function TicketTab({
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-64">
         <p>{t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}</p>
+        {ticket.bugs > 0 ? (
+          <p className="text-branch-hotfix">{t("bugsOn", { count: ticket.bugs })}</p>
+        ) : null}
         {ticket.unread > 0 ? (
           <p className="text-debt">{t("unreadOn", { count: ticket.unread })}</p>
         ) : null}

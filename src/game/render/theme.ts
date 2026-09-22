@@ -100,8 +100,6 @@ export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): st
       return "refactor";
     case "release":
       return "release";
-    case "chore":
-      return "chore";
     case "squash":
       return "squash";
     case "docs":
@@ -133,8 +131,6 @@ export function nodeGlyph(kind: NodeKind): string {
       return "↻";
     case "risky":
       return "⚡";
-    case "chore":
-      return "~";
     case "squash":
       return "\u229f";
     case "docs":

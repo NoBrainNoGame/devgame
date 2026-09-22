@@ -3,9 +3,17 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { openTickets } from "@/game/core/rules/tickets";
+import { buggedOn, offersOf, openTickets } from "@/game/core/rules/tickets";
 
-import { eventsOfType, inHand, isType, makeReady, plantAiCommit, ticketInHand } from "./helpers";
+import {
+  eventsOfType,
+  inHand,
+  isType,
+  makeReady,
+  plantAiCommit,
+  plantCommit,
+  ticketInHand,
+} from "./helpers";
 
 describe("the pull request review", () => {
   test("clean work is accepted and lands in the same turn", () => {
@@ -52,6 +60,8 @@ describe("the pull request review", () => {
       expect(after?.rework).toBe(review.bugs * BALANCE.acceptance.pointsPerBug);
       // The reviewer read them: they are no longer a surprise for the release.
       expect(after?.nodeIds.every((id) => result.state.nodes[id]?.commit.reviewed)).toBe(true);
+      // And the ones it caught stay flagged until a refactor redoes them.
+      if (after !== undefined) expect(buggedOn(result.state, after).length).toBe(review.bugs);
       // And the sprint did not wait.
       expect(openTickets(result.state).length).toBe(openBefore + 1);
       expect(eventsOfType(result.events, "ticket_started").some((e) => e.forced)).toBe(true);
@@ -89,6 +99,53 @@ describe("the pull request review", () => {
     expect(resumed.phase.kind).toBe("choose_action");
     // Still over the ceiling: a second submit is refused again.
     expect(getAvailableActions(resumed).some(isType("submit"))).toBe(true);
+  });
+
+  test("a flagged commit blocks the next submit until a refactor takes the bug out", () => {
+    const state = makeReady(inHand("pr-flagged"));
+    const first = plantAiCommit(state);
+    const second = plantAiCommit(state);
+    for (const id of [first, second]) {
+      const node = state.nodes[id];
+      if (node !== undefined) node.commit.hiddenBug = true;
+    }
+    const rejected = applyAction(state, { type: "submit" }).state;
+    const ticket = ticketInHand(rejected);
+    expect(buggedOn(rejected, ticket)).toEqual([first, second]);
+
+    const resumed = applyAction(rejected, { type: "resume" }).state;
+    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(false);
+    expect(offersOf(resumed, ticketInHand(resumed))).toContain("refactor");
+
+    // The oldest flagged commit is the one a refactor redoes.
+    let cleaned = resumed;
+    for (let i = 0; i < 20 && buggedOn(cleaned, ticketInHand(cleaned)).length === 2; i += 1) {
+      const result = applyAction(cleaned, { type: "commit", mode: "craft", kind: "refactor" });
+      if (result.state.phase.kind === "resolve_conflict") {
+        cleaned = applyAction(result.state, { type: "resolve_conflict", how: "manual" }).state;
+      } else cleaned = result.state;
+      if (buggedOn(cleaned, ticketInHand(cleaned)).length === 1) {
+        expect(eventsOfType(result.events, "bug_fixed")[0]?.nodeId).toBe(first);
+      }
+    }
+    expect(buggedOn(cleaned, ticketInHand(cleaned))).toEqual([second]);
+    expect(cleaned.nodes[first]?.commit.bugged).toBeUndefined();
+  });
+
+  test("a refactor is only offered when it has something to redo", () => {
+    const clean = makeReady(inHand("pr-refactor-target"));
+    plantCommit(clean, "craft");
+    expect(offersOf(clean, ticketInHand(clean))).not.toContain("refactor");
+
+    const indebted = structuredClone(clean);
+    indebted.debt = BALANCE.acceptance.maxDebt + 1;
+    expect(offersOf(indebted, ticketInHand(indebted))).toContain("refactor");
+
+    const flagged = structuredClone(clean);
+    const planted = flagged.nodes[plantAiCommit(flagged)];
+    if (planted !== undefined) planted.commit.bugged = true;
+    expect(offersOf(flagged, ticketInHand(flagged))).toContain("refactor");
+    expect(getAvailableActions(flagged).some(isType("submit"))).toBe(false);
   });
 
   test("a submitted ticket costs a turn; answering a rejection does not", () => {

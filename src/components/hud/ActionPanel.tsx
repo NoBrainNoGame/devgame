@@ -162,8 +162,8 @@ function TicketHeader({ ticket }: { ticket: TicketView }) {
       {ticket.unread > 0 ? (
         <p className="text-debt text-xs">{t("unreadOn", { count: ticket.unread })}</p>
       ) : null}
-      {ticket.rework > 0 ? (
-        <p className="text-branch-hotfix text-xs">{t("reworkOf", { count: ticket.rework })}</p>
+      {ticket.bugs > 0 ? (
+        <p className="text-branch-hotfix text-xs">{t("bugsOn", { count: ticket.bugs })}</p>
       ) : null}
       {ticket.behind > 0 ? (
         <p className="text-muted-foreground text-xs">{t("behindDev", { count: ticket.behind })}</p>

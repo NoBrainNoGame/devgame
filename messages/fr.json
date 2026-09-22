@@ -155,9 +155,8 @@
     "grants": "Livre :",
     "storyPointsShort": "{count, plural, one {# point de story} other {# points de story}}",
     "storyPointsOf": "{filled}/{max} points de story",
-    "storyPointsHint": "Chaque commit qui atterrit remplit des points : un à la main, deux par l'IA. Points pleins, le ticket part en review.",
+    "storyPointsHint": "Chaque commit qui atterrit remplit des points : un à la main, deux par l'IA. Points pleins et sans bug, le ticket part en review.",
     "unreadOn": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
-    "reworkOf": "{count, plural, one {# point de correctif} other {# points de correctifs}}",
     "readyToSubmit": "Prêt : ouvrez la PR.",
     "inHand": "Le ticket en main.",
     "clickToSwitch": "Cliquer pour basculer dessus (gratuit).",
@@ -178,16 +177,17 @@
     "reviewAccepted": "Acceptée. Le ticket merge sur dev.",
     "reviewRejected": "Refusée.",
     "reviewMerge": "Merger",
-    "reviewRework": "{count, plural, one {# point de correctif ajouté} other {# points de correctifs ajoutés}}.",
     "reviewParallel": "Un nouveau ticket est arrivé en parallèle : le sprint n'attend pas.",
     "reviewRestart": "Recommencer",
     "reviewRestartHint": "Les commits sont jetés, la branche repart de dev.",
     "reviewResume": "Continuer",
-    "reviewResumeHint": "Garder les commits, corriger ce qui a été trouvé.",
+    "reviewResumeHint": "Garder les commits, refactorer ceux qui sont bugués.",
     "skip": "Passer",
     "reviewUnread": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
     "reviewBugs": "{bugs, plural, one {# bug trouvé} other {# bugs trouvés}}",
-    "reviewNoBugs": "aucun bug trouvé"
+    "reviewNoBugs": "aucun bug trouvé",
+    "bugsOn": "{count, plural, one {# bug à corriger} other {# bugs à corriger}}",
+    "reviewBugsToFix": "{count, plural, one {# commit est marqué bugué : un refacto le corrige.} other {# commits sont marqués bugués : un refacto chacun.}}"
   },
   "leaderboard": {
     "title": "Classement",
@@ -564,15 +564,11 @@
       },
       "refactor": {
         "name": "Refacto",
-        "desc": "Écrire ce commit en remboursant de la dette technique."
+        "desc": "Reprendre un commit bugué, ou faire baisser une dette que la review refuse. Rembourse de la dette."
       },
       "risky": {
         "name": "Commit risqué",
         "desc": "Un point de story de plus, contre un jet nettement moins sûr."
-      },
-      "chore": {
-        "name": "Corvée",
-        "desc": "Un commit d'entretien : il déclenche un événement du quotidien."
       },
       "feature_merge": {
         "name": "Merge de feature",
@@ -686,7 +682,8 @@
       "pr_accepted": "PR acceptée, ticket mergé sur dev",
       "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
-      "pr_rejected_debt": "PR refusée, la dette est trop haute"
+      "pr_rejected_debt": "PR refusée, la dette est trop haute",
+      "bug_fixed": "commit bugué repris, le bug est parti"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -711,7 +708,9 @@
       "merge_regen": "Rend {energy} ⚡",
       "merge_risk": "{percent} % de risque d'incident au merge",
       "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",
-      "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera"
+      "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera",
+      "refactor_bug": "Reprend le plus ancien commit bugué du ticket",
+      "refactor_debt": "Dette au-dessus du plafond de la review : ce refacto la fait baisser"
     },
     "tickets": {
       "feature": {

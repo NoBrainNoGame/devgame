@@ -53,7 +53,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         }
 
         if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
-        if (isReady(ticket)) actions.push({ type: "submit" });
+        if (isReady(state, ticket)) actions.push({ type: "submit" });
       }
 
       for (const id of DEVOPS_IDS) {

@@ -97,7 +97,7 @@ export function ReviewDialog({
         ) : (
           <div className="space-y-3">
             <p className="text-muted-foreground text-xs">
-              {review.rework > 0 ? `${t("reviewRework", { count: review.rework })} ` : ""}
+              {review.bugs > 0 ? `${t("reviewBugsToFix", { count: review.bugs })} ` : ""}
               {t("reviewParallel")}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">

@@ -4,7 +4,6 @@ import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
-import { drawAmbient } from "@/game/core/rules/events";
 import { grantSkill } from "@/game/core/rules/grants";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { settleCurrent } from "@/game/core/rules/tickets";
@@ -54,8 +53,8 @@ function writeNode(context: RuleContext, spec: NodeSpec): MapNode {
 export function pointsFor(ticket: Ticket, mode: CommitMode, kind: NodeKind): number {
   const { points } = BALANCE;
   if (ticket.mustWrite !== undefined) return points.mustWrite;
-  // A chore is an errand and a rebase is housekeeping: neither moves the ticket.
-  if (kind === "chore" || kind === "rebase") return 0;
+  // A rebase is housekeeping: it does not move the ticket.
+  if (kind === "rebase") return 0;
   return points[mode] + (kind === "risky" ? points.riskyBonus : 0);
 }
 
@@ -117,9 +116,16 @@ export function writeCommit(
   if (kind === "refactor") {
     repayDebt(context, debt.refactorRepay);
     state.player.freeRefactor = false;
+
+    // The oldest bug the review flagged is what this refactor redid.
+    const fixed = ticket.nodeIds.find((id) => state.nodes[id]?.commit.bugged === true);
+    const target = fixed === undefined ? undefined : state.nodes[fixed];
+    if (fixed !== undefined && target !== undefined) {
+      delete target.commit.bugged;
+      emit(context, { type: "bug_fixed", ticketId: ticket.id, nodeId: fixed });
+    }
   }
 
-  if (kind === "chore") drawAmbient(context);
   if (kind === "squash") performSquash(context, ticket);
   if (kind === "docs") writeDocs(context);
 
