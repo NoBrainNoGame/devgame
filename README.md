@@ -8,7 +8,7 @@ review decides what lands, production decides whether you keep your job, and
 the money your features earn buys you the team and the tooling to hold on a
 little longer.
 
-<img width="2512" height="1838" alt="A run: the git graph in the middle, the ticket bar above, the actions on the right" src="https://github.com/user-attachments/assets/ee8e9f08-fefd-4004-8275-7fe178f36d4f" />
+![The landing page: the headline, the pitch, and the git graph of a first sprint drawn as the game draws it](docs/homepage.png)
 
 There is no end. A run stops in **burnout** (you ran out of energy) or with
 **production firing you** (it ran out of patience). The score is what you held.
