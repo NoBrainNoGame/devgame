@@ -168,7 +168,7 @@ an eligibility flag that is never satisfied. Merge events are counted by
 
 ### A way of writing a commit (a "detour")
 
-Refactor, risky, squash, docs and rebase are not nodes. They are kinds a
+Refactor, fix, risky, squash, docs and rebase are not nodes. They are kinds a
 commit *becomes* when the player chooses to write it that way, so adding one is
 a weight and a rule, not a place on the map.
 
@@ -177,9 +177,9 @@ a weight and a rule, not a place on the map.
    `src/game/dto/run.ts`, or a save that took it will not parse.
 2. Say when it is offered: `offersOf` in `src/game/core/rules/tickets.ts` is
    the **one** source of truth the actions, the previews and the commit rule
-   all read. Always, or under a condition the way `squash`, `rebase` and
-   `refactor` are — a detour with a target (`refactorTarget`) is one the
-   player can read; a detour offered at random is one they ignore.
+   all read. Always, or under a condition the way `squash`, `rebase`, `fix`
+   and `refactor` are — a detour with a target on the ticket in hand is one
+   the player can read; a detour offered at random is one they ignore.
 3. Add an energy price to `BALANCE.energy.cost` — a typecheck error until you
    do — and a glyph to `nodeGlyph` in `src/game/render/theme.ts`, likewise.
    `pointsFor` in `rules/write.ts` decides what it fills: a rebase fills
@@ -218,7 +218,7 @@ is the one with the most places to touch and the least help from the compiler.
    sit on `main` and `dev`; a new trunk kind has to be added there or the
    tests will refuse it.
 5. Teach the rules what it does, in `writeCommit`: it special-cases `risky`,
-   `refactor`, `squash`, `docs` and `rebase`. **A new kind falls
+   `refactor`, `fix`, `squash`, `docs` and `rebase`. **A new kind falls
    through silently** and behaves like an ordinary commit — no typecheck
    error, no test failure.
 6. Two message entries under `game.nodes.<kind>` — the log renders

@@ -78,7 +78,7 @@ voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
 - **Refusée** : les commits attrapés sont **marqués bugués** et les bugs
   reviennent en points de correctif. Le joueur choisit — **recommencer** (les
   commits sont jetés, `git reset --hard`, la branche repart de `dev`) ou
-  **continuer** (garder les commits, et refactorer chaque commit bugué avant
+  **continuer** (garder les commits, et écrire un fix par commit bugué avant
   de resoumettre : un ticket qui porte un bug marqué ne repart pas en review).
   Dans les deux cas **un nouveau ticket s'ouvre en parallèle** : le sprint
   n'attend pas.
@@ -117,17 +117,20 @@ dette sont sur la carte**, pas dans une infobulle. Un échec déclenche un
 **Un détour n'est pas une bifurcation.** Écrire un commit en refacto, en
 documentation, en squash ou en rebase est une décision sur *ce commit-là* :
 il coûte un tour comme les autres et laisse le graphe en chaîne. Deux détours
-sont toujours proposés ; les trois autres ont besoin d'une **cible**, et
-n'apparaissent pas sans elle — un refacto de rien est un commit avec un joli
-nom.
+sont toujours proposés ; les quatre autres ont besoin d'une **cible** sur le
+ticket en main, et n'apparaissent pas sans elle — un refacto de rien est un
+commit avec un joli nom.
 
 - **Commit risqué** — un point de story de plus contre un jet nettement moins
   sûr.
 - **Documentation** — les prochains commits IA n'ajoutent aucune dette.
-- **Refacto** — proposé seulement quand il y a quelque chose à refaire : un
-  **commit que la review a marqué bugué**, ou une dette au-dessus du plafond
-  que la review refuse. Il reprend le plus ancien commit bugué du ticket — le
-  bug s'en va — et rembourse de la dette.
+- **Refacto** — proposé quand un commit du ticket a **coûté de la dette**.
+  Chaque commit se souvient de ce qu'il a coûté ; le refacto reprend le plus
+  cher et reprend exactement cette dette. Une dette venue d'un autre ticket se
+  refactore sur cet autre ticket.
+- **Fix** — proposé quand la review a **marqué un commit bugué**. Il reprend le
+  plus ancien, et le bug s'en va. Un fix écrit par l'IA est un commit IA comme
+  un autre : non relu, il peut être attrapé à la review suivante.
 - **Squash** — proposé dès que le ticket porte assez de commits IA non relus :
   leur dette part avec eux, et eux partent du score. La seule façon d'effacer
   de la dette **sans savoir reviewer**.

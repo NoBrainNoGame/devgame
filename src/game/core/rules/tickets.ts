@@ -54,6 +54,20 @@ export function buggedOn(state: RunState, ticket: Ticket): NodeId[] {
   return ticket.nodeIds.filter((id) => state.nodes[id]?.commit.bugged === true);
 }
 
+/** The commit on the ticket that cost the codebase the most, if any did. */
+export function mostIndebtedOn(state: RunState, ticket: Ticket): NodeId | null {
+  let best: NodeId | null = null;
+  let most = 0;
+  for (const id of ticket.nodeIds) {
+    const cost = state.nodes[id]?.commit.debt ?? 0;
+    if (cost > most) {
+      best = id;
+      most = cost;
+    }
+  }
+  return best;
+}
+
 /** Points full and no bug left standing: the ticket may go to review. */
 export function isReady(state: RunState, ticket: Ticket): boolean {
   return ticket.filled >= ticket.points && buggedOn(state, ticket).length === 0;
@@ -74,29 +88,19 @@ export function behindOf(state: RunState, ticket: Ticket): number {
  * One source of truth: the actions, the previews and the commit rule all ask
  * here. A hotfix or a forced refactor offers nothing — it is one kind of
  * commit until it is done. The situational ones each need a target: a squash
- * needs something to squash, a rebase needs `dev` to have moved, and a
- * refactor needs something to redo — a bug the review flagged, or a debt the
- * review will refuse. A refactor of nothing is a commit with a nicer name.
+ * needs something to squash, a rebase needs `dev` to have moved, a fix needs
+ * a commit the review flagged, and a refactor needs a commit that cost debt.
+ * A refactor of nothing is a commit with a nicer name.
  */
 export function offersOf(state: RunState, ticket: Ticket): DetourKind[] {
   if (ticket.mustWrite !== undefined) return [];
 
   const offers: DetourKind[] = ["docs", "risky"];
-  if (canRefactor(state, ticket)) offers.push("refactor");
+  if (buggedOn(state, ticket).length > 0) offers.push("fix");
+  if (mostIndebtedOn(state, ticket) !== null) offers.push("refactor");
   if (unreadAiOn(state, ticket).length >= BALANCE.squash.minUnread) offers.push("squash");
   if (behindOf(state, ticket) > 0) offers.push("rebase");
   return offers.sort();
-}
-
-/** What a refactor on this ticket would redo, if anything. */
-export function refactorTarget(state: RunState, ticket: Ticket): "bug" | "debt" | null {
-  if (buggedOn(state, ticket).length > 0) return "bug";
-  if (state.debt > BALANCE.acceptance.maxDebt) return "debt";
-  return null;
-}
-
-export function canRefactor(state: RunState, ticket: Ticket): boolean {
-  return refactorTarget(state, ticket) !== null;
 }
 
 export function startTicket(context: RuleContext, ticketId: TicketId): void {

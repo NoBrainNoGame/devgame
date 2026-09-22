@@ -71,7 +71,7 @@ export const ZOOM: { min: number; max: number; step: number; default: number } =
 export function laneColour(lane: number, kind: NodeKind): number {
   // A `fix:` commit keeps its own colour wherever it was written: an emergency
   // has to read as one even though it lives on the feature you had open.
-  if (kind === "hotfix") return THEME.lane.hotfix;
+  if (kind === "hotfix" || kind === "fix") return THEME.lane.hotfix;
   // The maintenance commits share one colour: they are all "stop and tidy up".
   if (kind === "refactor" || kind === "squash" || kind === "docs") return THEME.lane.refactor;
 
@@ -95,6 +95,7 @@ export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): st
     case "sprint_merge":
       return "merge";
     case "hotfix":
+    case "fix":
       return "fix";
     case "refactor":
       return "refactor";
@@ -127,6 +128,8 @@ export function nodeGlyph(kind: NodeKind): string {
       return "★";
     case "hotfix":
       return "!";
+    case "fix":
+      return "\u2713";
     case "refactor":
       return "↻";
     case "risky":

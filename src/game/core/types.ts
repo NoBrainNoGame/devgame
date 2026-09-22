@@ -25,17 +25,18 @@ export type RunMode = "classic" | "daily";
  * decision about *this* commit, so it costs a turn like any other and leaves
  * the graph a chain — the shape a feature branch actually has.
  */
-export type DetourKind = "refactor" | "risky" | "squash" | "docs" | "rebase";
+export type DetourKind = "refactor" | "fix" | "risky" | "squash" | "docs" | "rebase";
 
 export type NodeKind =
   /** Opens a sprint on `dev`: `main` merged back in. Never played. */
   | "sprint_start"
   | "commit"
-  /** Repays debt. */
+  /** Redoes the commit on the ticket that cost the most debt: that debt goes. */
   | "refactor"
+  /** Redoes the oldest commit the review flagged: the bug goes. */
+  | "fix"
   /** More story points for a worse roll. */
   | "risky"
-  /** Draws an ambient event. */
   /** Erases machine-written history: debt repaid, commits lost. */
   | "squash"
   /** Buys the next few machine-written commits out of their debt. */
@@ -63,9 +64,14 @@ export interface NodeCommit {
   hiddenBug?: true;
   /**
    * The review found a bug here. The ticket cannot be resubmitted until a
-   * refactor has taken it out — that is what a refactor is *for*.
+   * `fix` commit has taken it out.
    */
   bugged?: true;
+  /**
+   * What this commit cost the codebase when it landed. A refactor targets the
+   * commit that cost the most and takes exactly that back.
+   */
+  debt?: number;
 }
 
 /**
@@ -298,8 +304,10 @@ export type GameEvent =
       rework: number;
     }
   | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
-  /** A refactor took the bug out of a commit the review had flagged. */
+  /** A fix took the bug out of a commit the review had flagged. */
   | { type: "bug_fixed"; ticketId: TicketId; nodeId: NodeId }
+  /** A refactor redid a commit and took back the debt it had cost. */
+  | { type: "debt_refactored"; ticketId: TicketId; nodeId: NodeId; amount: number }
   | { type: "ticket_merged"; ticketId: TicketId; nodeId: NodeId; skillId?: SkillId }
   | { type: "skill_gained"; skillId: SkillId }
   | { type: "conflict"; ticketId: TicketId }

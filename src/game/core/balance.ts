@@ -21,6 +21,7 @@ export const BALANCE = {
       sprint_start: 0,
       commit: 0,
       refactor: 2,
+      fix: 2,
       risky: 1,
       squash: 2,
       docs: 2,
@@ -112,7 +113,11 @@ export const BALANCE = {
     perCraftCommit: 0,
     perRiskyNode: 5,
     perAiConflictFix: 10,
-    /** Debt repaid by a refactor commit. */
+    /**
+     * Debt repaid by a refactor commit on a *forced* refactor ticket, which has
+     * no indebted commit of its own to redo. An offered refactor repays exactly
+     * what its target commit cost.
+     */
     refactorRepay: 10,
     /** Half-width of the noise added to the displayed range. */
     noiseSpread: 7,

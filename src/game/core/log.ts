@@ -48,6 +48,14 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
     case "bug_fixed":
       return { seq, turn, kind: "fix", text: text("log.bug_fixed") };
 
+    case "debt_refactored":
+      return {
+        seq,
+        turn,
+        kind: "chore",
+        text: text("log.debt_refactored", { debt: event.amount }),
+      };
+
     case "ticket_restarted":
       return {
         seq,

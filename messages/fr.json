@@ -181,13 +181,13 @@
     "reviewRestart": "Recommencer",
     "reviewRestartHint": "Les commits sont jetés, la branche repart de dev.",
     "reviewResume": "Continuer",
-    "reviewResumeHint": "Garder les commits, refactorer ceux qui sont bugués.",
+    "reviewResumeHint": "Garder les commits, corriger ceux qui sont bugués.",
     "skip": "Passer",
     "reviewUnread": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
     "reviewBugs": "{bugs, plural, one {# bug trouvé} other {# bugs trouvés}}",
     "reviewNoBugs": "aucun bug trouvé",
     "bugsOn": "{count, plural, one {# bug à corriger} other {# bugs à corriger}}",
-    "reviewBugsToFix": "{count, plural, one {# commit est marqué bugué : un refacto le corrige.} other {# commits sont marqués bugués : un refacto chacun.}}"
+    "reviewBugsToFix": "{count, plural, one {# commit est marqué bugué : un fix le corrige.} other {# commits sont marqués bugués : un fix chacun.}}"
   },
   "leaderboard": {
     "title": "Classement",
@@ -564,7 +564,7 @@
       },
       "refactor": {
         "name": "Refacto",
-        "desc": "Reprendre un commit bugué, ou faire baisser une dette que la review refuse. Rembourse de la dette."
+        "desc": "Reprendre le commit du ticket qui a coûté le plus de dette : cette dette s'en va."
       },
       "risky": {
         "name": "Commit risqué",
@@ -585,6 +585,10 @@
       "release": {
         "name": "Release",
         "desc": "Le tag posé sur main. Le sprint est clos."
+      },
+      "fix": {
+        "name": "Fix",
+        "desc": "Reprendre le plus ancien commit que la review a marqué bugué : le bug s'en va."
       }
     },
     "events": {
@@ -683,7 +687,8 @@
       "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
       "pr_rejected_debt": "PR refusée, la dette est trop haute",
-      "bug_fixed": "commit bugué repris, le bug est parti"
+      "bug_fixed": "commit bugué repris, le bug est parti",
+      "debt_refactored": "commit repris, {debt} de dette en moins"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -709,8 +714,8 @@
       "merge_risk": "{percent} % de risque d'incident au merge",
       "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",
       "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera",
-      "refactor_bug": "Reprend le plus ancien commit bugué du ticket",
-      "refactor_debt": "Dette au-dessus du plafond de la review : ce refacto la fait baisser"
+      "refactor_target": "Reprend le commit qui a coûté {debt} de dette",
+      "fix_bug": "Reprend le plus ancien commit bugué du ticket"
     },
     "tickets": {
       "feature": {

@@ -241,6 +241,7 @@ export function planBatch(
       // Nothing to show on their own: their consequences are other events.
       case "ticket_merged":
       case "conflict_resolved":
+      case "debt_refactored":
       case "monitoring_warning":
       case "docs_written":
       case "rebased":

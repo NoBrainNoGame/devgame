@@ -154,10 +154,10 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   }
 
   // The review flagged a commit: nothing else on this ticket goes anywhere
-  // until a refactor has redone it, so every policy does that first.
+  // until a fix has redone it, so every policy does that first.
   if (ticket !== null && buggedOn(state, ticket).length > 0) {
-    const refactor = actions.find(writtenAs("refactor"));
-    if (refactor !== undefined) return refactor;
+    const fix = actions.find(writtenAs("fix"));
+    if (fix !== undefined) return fix;
   }
 
   // Ready to submit. The reviewer catches unread machine work and refuses an

@@ -6,7 +6,7 @@ import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { grantSkill } from "@/game/core/rules/grants";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
-import { settleCurrent } from "@/game/core/rules/tickets";
+import { mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
 import type { CommitMode, MapNode, NodeCommit, NodeId, NodeKind, Ticket } from "@/game/core/types";
 
 /**
@@ -113,11 +113,29 @@ export function writeCommit(
 
   if (kind === "risky") addDebt(context, debt.perRiskyNode);
 
-  if (kind === "refactor") {
-    repayDebt(context, debt.refactorRepay);
-    state.player.freeRefactor = false;
+  // What this one cost, remembered on the commit: a refactor later takes back
+  // exactly that. Measured before anything this commit repays.
+  const cost = Math.max(0, state.debt - debtBefore);
+  if (cost > 0) node.commit.debt = cost;
 
-    // The oldest bug the review flagged is what this refactor redid.
+  if (kind === "refactor") {
+    state.player.freeRefactor = false;
+    // The commit that cost the most is the one worth redoing. A forced refactor
+    // ticket has no commits of its own to redo, and repays a flat amount.
+    const targetId = mostIndebtedOn(state, ticket);
+    const target = targetId === null ? undefined : state.nodes[targetId];
+    if (targetId !== null && target !== undefined && target.commit.debt !== undefined) {
+      const amount = target.commit.debt;
+      delete target.commit.debt;
+      repayDebt(context, amount);
+      emit(context, { type: "debt_refactored", ticketId: ticket.id, nodeId: targetId, amount });
+    } else {
+      repayDebt(context, debt.refactorRepay);
+    }
+  }
+
+  if (kind === "fix") {
+    // The oldest bug the review flagged is the one this fix redid.
     const fixed = ticket.nodeIds.find((id) => state.nodes[id]?.commit.bugged === true);
     const target = fixed === undefined ? undefined : state.nodes[fixed];
     if (fixed !== undefined && target !== undefined) {

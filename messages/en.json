@@ -181,13 +181,13 @@
     "reviewRestart": "Start over",
     "reviewRestartHint": "The commits are thrown away, the branch restarts from dev.",
     "reviewResume": "Carry on",
-    "reviewResumeHint": "Keep the commits, refactor the bugged ones.",
+    "reviewResumeHint": "Keep the commits, fix the bugged ones.",
     "skip": "Skip",
     "reviewUnread": "{count, plural, one {# unread AI commit} other {# unread AI commits}}",
     "reviewBugs": "{bugs, plural, one {# bug found} other {# bugs found}}",
     "reviewNoBugs": "no bug found",
     "bugsOn": "{count, plural, one {# bug to fix} other {# bugs to fix}}",
-    "reviewBugsToFix": "{count, plural, one {# commit is flagged as bugged: a refactor fixes it.} other {# commits are flagged as bugged: one refactor each.}}"
+    "reviewBugsToFix": "{count, plural, one {# commit is flagged as bugged: a fix corrects it.} other {# commits are flagged as bugged: one fix each.}}"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -564,7 +564,7 @@
       },
       "refactor": {
         "name": "Refactor",
-        "desc": "Redo a bugged commit, or bring down a debt the review refuses. Repays debt."
+        "desc": "Redo the commit on the ticket that cost the most debt: that debt goes."
       },
       "risky": {
         "name": "Risky commit",
@@ -585,6 +585,10 @@
       "release": {
         "name": "Release",
         "desc": "The tag on main. The sprint is closed."
+      },
+      "fix": {
+        "name": "Fix",
+        "desc": "Redo the oldest commit the review flagged as bugged: the bug goes."
       }
     },
     "events": {
@@ -683,7 +687,8 @@
       "ticket_restarted": "branch thrown away, {count, plural, one {# commit} other {# commits}} fewer, starting again from dev",
       "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
       "pr_rejected_debt": "PR rejected, the debt is too high",
-      "bug_fixed": "bugged commit redone, the bug is gone"
+      "bug_fixed": "bugged commit redone, the bug is gone",
+      "debt_refactored": "commit redone, {debt} debt taken back"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -709,8 +714,8 @@
       "merge_risk": "{percent} % risk of something at the merge",
       "unread_risk": "{count, plural, one {# unread AI commit} other {# unread AI commits}}: the review may find bugs",
       "debt_refusal": "Debt above the ceiling ({max}): the review will refuse",
-      "refactor_bug": "Redoes the ticket's oldest bugged commit",
-      "refactor_debt": "Debt above the review's ceiling: this refactor brings it down"
+      "refactor_target": "Redoes the commit that cost {debt} debt",
+      "fix_bug": "Redoes the ticket's oldest bugged commit"
     },
     "tickets": {
       "feature": {

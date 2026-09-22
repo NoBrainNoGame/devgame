@@ -15,7 +15,7 @@ import {
   behindOf,
   currentTicket,
   getTicket,
-  refactorTarget,
+  mostIndebtedOn,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
 import { pointsFor } from "@/game/core/rules/write";
@@ -69,12 +69,17 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         debt = BALANCE.debt.perCraftCommit;
       }
       if (kind === "risky") debt += BALANCE.debt.perRiskyNode;
-      if (kind === "refactor") debt -= BALANCE.debt.refactorRepay;
-
       if (kind === "refactor") {
-        const target = refactorTarget(state, ticket);
-        if (target !== null) notes.push(text(`notes.refactor_${target}`));
+        const targetId = mostIndebtedOn(state, ticket);
+        const repaid =
+          targetId === null
+            ? BALANCE.debt.refactorRepay
+            : (state.nodes[targetId]?.commit.debt ?? BALANCE.debt.refactorRepay);
+        debt -= repaid;
+        if (targetId !== null) notes.push(text("notes.refactor_target", { debt: repaid }));
       }
+
+      if (kind === "fix") notes.push(text("notes.fix_bug"));
 
       if (kind === "rebase") {
         notes.push(text("notes.rebase_why", { count: behindOf(state, ticket) }));

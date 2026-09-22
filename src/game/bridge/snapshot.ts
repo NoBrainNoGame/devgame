@@ -74,7 +74,7 @@ export interface TicketView {
   rejections: number;
   /** Machine-written commits on it nobody has read: what a review may catch. */
   unread: number;
-  /** Commits the review flagged. A refactor each, before it can go back. */
+  /** Commits the review flagged. A fix each, before it can go back. */
   bugs: number;
   skillId?: SkillId;
   lane?: number;
