@@ -6,7 +6,7 @@ import { sceneContext } from "@/game/chips/context";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
-import { drawEdge } from "@/game/render/lanes";
+import { drawBackgroundEdge, drawEdge } from "@/game/render/lanes";
 import { glyphStyle, labelStyle } from "@/game/render/textStyles";
 import {
   labelledKind,
@@ -183,7 +183,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       for (const parentId of node.parents) {
         const parent = at(parentId);
         if (parent === undefined) continue;
-        drawEdge(this.botLane, parent, node, THEME.bot, 0.45);
+        drawBackgroundEdge(this.botLane, parent, node, THEME.bot);
       }
     }
 

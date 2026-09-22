@@ -86,14 +86,16 @@ export function spawnBotsForSprint(context: RuleContext): void {
 }
 
 /**
- * The leftmost free column for a new rival.
+ * The nearest free column for a new rival, working left from `main`.
  *
- * Negative, and never -1: that one belongs to hotfixes, which have to read as
- * an interruption rather than as one more rival.
+ * It used to start at -2, leaving -1 for hotfixes. Hotfixes are written on the
+ * branch you already had open now, so that column is free — and every lane a
+ * rival sits further out is a lane its merge has to cross to reach `dev`, four
+ * times over. Close in is the difference between a graph and a knot.
  */
 function botLane(state: RunState): number {
   const taken = new Set(aliveBots(state).map((bot) => bot.lane));
-  let lane = -2;
+  let lane = -1;
   while (taken.has(lane)) lane -= 1;
   return lane;
 }

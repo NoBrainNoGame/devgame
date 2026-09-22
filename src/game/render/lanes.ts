@@ -21,6 +21,33 @@ export function drawEdge(
   colour: number,
   alpha: number,
 ): void {
+  drawEdgeShape(graphics, from, to);
+  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
+}
+
+/**
+ * The same shape, drawn to recede.
+ *
+ * A rival's history is real work and has to be visible, but four of them
+ * crossing to `dev` twice a feature will drown yours if they are drawn with
+ * the same weight. Thinner and fainter puts them behind.
+ */
+export function drawBackgroundEdge(
+  graphics: Graphics,
+  from: { lane: number; depth: number },
+  to: { lane: number; depth: number },
+  colour: number,
+): void {
+  drawEdgeShape(graphics, from, to);
+  graphics.stroke({ width: EDGE_WIDTH - 2, color: colour, alpha: 0.3, cap: "round" });
+}
+
+/** The path an edge follows, without committing to how it is stroked. */
+function drawEdgeShape(
+  graphics: Graphics,
+  from: { lane: number; depth: number },
+  to: { lane: number; depth: number },
+): void {
   const x1 = nodeX(from.lane);
   const y1 = nodeY(from.depth);
   const x2 = nodeX(to.lane);
@@ -28,19 +55,18 @@ export function drawEdge(
 
   if (x1 === x2) {
     graphics.moveTo(x1, y1).lineTo(x2, y2);
-  } else {
-    // Travel in the origin column first, then bend once into the destination
-    // column and arrive vertical. `BEND` is how much room the curve gets.
-    const towards = Math.sign(y2 - y1);
-    const bendStart = y1 + towards * BEND;
-    const bendEnd = y2 - towards * BEND;
-
-    graphics
-      .moveTo(x1, y1)
-      .lineTo(x1, bendStart)
-      .bezierCurveTo(x1, bendEnd, x2, bendStart, x2, bendEnd)
-      .lineTo(x2, y2);
+    return;
   }
 
-  graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
+  // Travel in the origin column first, then bend once into the destination
+  // column and arrive vertical. `BEND` is how much room the curve gets.
+  const towards = Math.sign(y2 - y1);
+  const bendStart = y1 + towards * BEND;
+  const bendEnd = y2 - towards * BEND;
+
+  graphics
+    .moveTo(x1, y1)
+    .lineTo(x1, bendStart)
+    .bezierCurveTo(x1, bendEnd, x2, bendStart, x2, bendEnd)
+    .lineTo(x2, y2);
 }

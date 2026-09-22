@@ -198,10 +198,14 @@ export const BALANCE = {
     featureLength: 4,
     /**
      * How far below the player a rival's commits are kept before being
-     * forgotten. They are decoration — nothing walks them — and an unbounded
-     * history makes every action's state copy a little slower than the last.
+     * forgotten.
+     *
+     * They are decoration — nothing walks them — and an unbounded history makes
+     * every action's state copy a little slower than the last. It is also what
+     * keeps the graph readable: four rivals' full histories, each crossing to
+     * `dev` twice per feature, is more line than graph.
      */
-    historyDepth: 60,
+    historyDepth: 24,
     /**
      * Reputation the player must hold to make progress towards firing a bot,
      * and how far a rival must be ahead to count as overtaking.
