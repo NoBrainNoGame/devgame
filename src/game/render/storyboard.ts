@@ -183,6 +183,10 @@ export function planBatch(
         steps.push({ kind: "beat", hold: STORY.roll });
         break;
 
+      case "merge_event":
+        if (event.eventId !== "merge_conflict") flashAt(THEME.lane.refactor);
+        break;
+
       case "sprint_ended":
       case "sprint_started":
       case "turn_started":

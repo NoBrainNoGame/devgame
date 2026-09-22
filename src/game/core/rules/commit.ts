@@ -4,11 +4,12 @@ import { addDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import {
   drawAmbient,
+  drawMergeEvent,
   recordIncident,
   resolveConflict,
   resolveFailure,
 } from "@/game/core/rules/events";
-import { commitChance, mergeConflictChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
+import { commitChance, mergeEventChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { currentTicket, getTicket } from "@/game/core/rules/tickets";
 import { completeMerge, writeCommit } from "@/game/core/rules/write";
 import type { CommitMode, DetourKind, MapNode, NodeKind, Ticket } from "@/game/core/types";
@@ -122,22 +123,28 @@ function succeed(
 }
 
 /**
- * Landing the ticket in hand. The only place a merge conflict can start,
- * because it is the only place two histories meet — that and a rebase, which
- * is the same act under another name.
+ * Landing the ticket in hand. One roll decides whether anything happens; the
+ * merge-event table decides what. A conflict is the only outcome that stops
+ * the merge — it is the only place two histories meet, that and a rebase —
+ * and everything else costs something and lands.
  */
 export function performMerge(context: RuleContext): void {
   const { state } = context;
   const ticket = currentTicket(state);
   if (ticket === null) throw new Error("performMerge: no ticket in hand");
 
-  if (context.rng.chance(mergeConflictChance(state, ticket))) {
-    state.phase = { kind: "resolve_conflict", source: "merge", ticketId: ticket.id };
-    emit(context, { type: "conflict", ticketId: ticket.id });
-    return;
+  let noRegen = false;
+  if (context.rng.chance(mergeEventChance(state, ticket))) {
+    const event = drawMergeEvent(context);
+    if (event.outcome === "conflict") {
+      state.phase = { kind: "resolve_conflict", source: "merge", ticketId: ticket.id };
+      emit(context, { type: "conflict", ticketId: ticket.id });
+      return;
+    }
+    noRegen = event.noRegen;
   }
 
-  completeMerge(context, ticket);
+  completeMerge(context, ticket, { noRegen });
   state.phase = { kind: "choose_action" };
 }
 

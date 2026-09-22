@@ -10,12 +10,16 @@ export type {
   EventId,
   FailureEventDef,
   FailureEventId,
+  MergeEventDef,
+  MergeEventId,
 } from "@/game/content/events";
 export {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
+  MERGE_EVENT_IDS,
+  MERGE_EVENTS,
 } from "@/game/content/events";
 export type { ProfileDef, ProfileId } from "@/game/content/profiles";
 export { isProfileId, PROFILE_IDS, PROFILES } from "@/game/content/profiles";

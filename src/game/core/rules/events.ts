@@ -5,6 +5,9 @@ import {
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
   type FailureEventId,
+  MERGE_EVENT_IDS,
+  MERGE_EVENTS,
+  type MergeEventDef,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
@@ -100,6 +103,27 @@ function drawFailure(context: RuleContext, kind: NodeKind): FailureEventId {
   // `broken_build` carries no prerequisite, so this is a guard, not a path.
   if (entries.length === 0) return "broken_build";
   return context.rng.weighted(entries);
+}
+
+/**
+ * What happened as the ticket landed. Drawn once `performMerge` has decided
+ * something did; the effect is applied here, the outcome is the caller's.
+ */
+export function drawMergeEvent(context: RuleContext): MergeEventDef {
+  const entries = MERGE_EVENT_IDS.filter(
+    (id) => !(MERGE_EVENTS[id].cancelledByDependabot && context.effects.cancelObsoleteLib),
+  ).map((id) => ({ value: id, weight: MERGE_EVENTS[id].weight }));
+
+  const def = MERGE_EVENTS[context.rng.weighted(entries)];
+  emit(context, { type: "merge_event", eventId: def.id });
+
+  if (def.effect.energy !== undefined) {
+    if (def.effect.energy >= 0) gainEnergy(context, def.effect.energy, def.id);
+    else spendEnergy(context, -def.effect.energy, def.id);
+  }
+  if (def.effect.debt !== undefined) addDebt(context, def.effect.debt);
+
+  return def;
 }
 
 /**

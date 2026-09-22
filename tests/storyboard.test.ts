@@ -134,6 +134,9 @@ describe("the storyboard", () => {
       for (const batch of batchesOf(seed, "ai")) {
         const merged = batch.events.find((e) => e.type === "ticket_merged");
         if (merged?.type !== "ticket_merged") continue;
+        // A merge that closes the sprint is followed by the release's own rest,
+        // which lands elsewhere; the rest under test is the merge's.
+        if (batch.events.some((e) => e.type === "sprint_ended")) continue;
         merges += 1;
 
         const reveal = new RevealSet();

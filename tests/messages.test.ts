@@ -4,6 +4,7 @@ import {
   AMBIENT_EVENT_IDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
+  MERGE_EVENT_IDS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
@@ -92,6 +93,7 @@ describe("game content is fully named", () => {
     ["devops", DEVOPS_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
     ["events", FAILURE_EVENT_IDS, "title", "log"],
+    ["events", MERGE_EVENT_IDS, "title", "log"],
     ["events", AMBIENT_EVENT_IDS, "title", "log"],
   ];
 

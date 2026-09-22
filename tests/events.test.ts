@@ -223,3 +223,54 @@ describe("ambient events", () => {
     expect(ticketInHand(state).nodeIds.length).toBe(1);
   });
 });
+
+describe("merge events", () => {
+  test("every merge event fires somewhere in three hundred seeds, with its effect", () => {
+    const seen = new Map<string, number>();
+    let nitpickRegen = 0;
+    let migrationPaid = 0;
+
+    for (let i = 0; i < 300; i += 1) {
+      const { events } = play(newRun(`merge-events-${i}`), { pick: policy("ai"), limit: 120 });
+
+      for (let index = 0; index < events.length; index += 1) {
+        const event = events[index];
+        if (event?.type !== "merge_event") continue;
+        seen.set(event.eventId, (seen.get(event.eventId) ?? 0) + 1);
+
+        // What follows in the same batch, up to the next turn.
+        const rest = events.slice(index + 1);
+        const turn = rest.findIndex((e) => e.type === "turn_started");
+        const batch = turn === -1 ? rest : rest.slice(0, turn);
+
+        if (event.eventId === "review_nitpick") {
+          if (batch.some((e) => e.type === "energy" && e.reason === "merge_regen")) {
+            nitpickRegen += 1;
+          }
+        }
+        if (event.eventId === "new_lib_migration") {
+          const paid =
+            batch.some((e) => e.type === "energy" && e.reason === "new_lib_migration") ||
+            batch.some((e) => e.type === "debt" && e.delta > 0);
+          if (paid) migrationPaid += 1;
+        }
+      }
+    }
+
+    for (const id of ["merge_conflict", "new_lib_migration", "flaky_ci", "review_nitpick"]) {
+      expect(seen.get(id) ?? 0).toBeGreaterThan(0);
+    }
+    expect(nitpickRegen).toBe(0);
+    expect(migrationPaid).toBe(seen.get("new_lib_migration") ?? 0);
+  });
+
+  test("Dependabot removes the library migration from the merge table", () => {
+    const armed = inHand("no-migration");
+    armed.devops.dependabot = 1;
+    const run = play(armed, { pick: policy("ai"), limit: 400 });
+    const migrations = eventsOfType(run.events, "merge_event").filter(
+      (e) => e.eventId === "new_lib_migration",
+    );
+    expect(migrations).toEqual([]);
+  });
+});

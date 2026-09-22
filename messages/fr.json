@@ -589,6 +589,22 @@
       "broken_build": {
         "title": "Build cassé",
         "log": "le CI est rouge, et ce n'est pas le code"
+      },
+      "new_lib_migration": {
+        "title": "Migration de lib",
+        "log": "la migration vers la nouvelle lib est passée avec le merge, à quel prix"
+      },
+      "flaky_ci": {
+        "title": "CI capricieuse",
+        "log": "le CI a rougi pour rien, relancé"
+      },
+      "review_nitpick": {
+        "title": "Review pointilleuse",
+        "log": "mergé après une review pointilleuse, sans souffler"
+      },
+      "dependency_bump": {
+        "title": "Montée de version",
+        "log": "une dépendance a changé de version majeure"
       }
     },
     "log": {
@@ -653,9 +669,9 @@
       "wip_cost": "Énergie majorée : {count, plural, one {# ticket en plus} other {# tickets en plus}}",
       "machine_flat": "La machine coûte toujours le même prix",
       "rebase_why": "{count, plural, one {# merge a atterri sur dev} other {# merges ont atterri sur dev}} depuis l'ouverture",
-      "conflict_risk": "{percent} % de risque de conflit",
       "behind_dev": "En retard de {count, plural, one {# merge} other {# merges}} sur dev",
-      "merge_regen": "Rend {energy} ⚡"
+      "merge_regen": "Rend {energy} ⚡",
+      "merge_risk": "{percent} % de risque d'incident au merge"
     },
     "criteria": {
       "reviewed": {

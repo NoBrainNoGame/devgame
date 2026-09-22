@@ -589,6 +589,22 @@
       "broken_build": {
         "title": "Broken build",
         "log": "CI is red, and it is not the code"
+      },
+      "new_lib_migration": {
+        "title": "Library migration",
+        "log": "the move to the new library went in with the merge, at a price"
+      },
+      "flaky_ci": {
+        "title": "Flaky CI",
+        "log": "CI went red for nothing, rerun"
+      },
+      "review_nitpick": {
+        "title": "Nitpicky review",
+        "log": "merged after a nitpicky review, no rest"
+      },
+      "dependency_bump": {
+        "title": "Version bump",
+        "log": "a dependency moved to a new major version"
       }
     },
     "log": {
@@ -653,9 +669,9 @@
       "wip_cost": "Energy raised: {count, plural, one {# extra ticket} other {# extra tickets}}",
       "machine_flat": "The machine always costs the same",
       "rebase_why": "{count, plural, one {# merge landed on dev} other {# merges landed on dev}} since it was opened",
-      "conflict_risk": "{percent} % conflict risk",
       "behind_dev": "{count, plural, one {# merge} other {# merges}} behind dev",
-      "merge_regen": "Gives back {energy} ⚡"
+      "merge_regen": "Gives back {energy} ⚡",
+      "merge_risk": "{percent} % risk of something at the merge"
     },
     "criteria": {
       "reviewed": {

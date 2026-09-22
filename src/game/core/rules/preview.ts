@@ -7,7 +7,7 @@ import {
   commitChance,
   conflictChance,
   gatherEffects,
-  mergeConflictChance,
+  mergeEventChance,
   nodeEnergyCost,
   reviewCleanCount,
   reviewEnergyCost,
@@ -112,8 +112,8 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const cost = nodeEnergyCost(state, "feature_merge", undefined);
       const notes: I18nText[] = [...cost.notes];
       if (ticket !== null) {
-        const conflict = mergeConflictChance(state, ticket);
-        if (conflict > 0) notes.push(text("notes.conflict_risk", { percent: conflict }));
+        const risk = mergeEventChance(state, ticket);
+        if (risk > 0) notes.push(text("notes.merge_risk", { percent: risk }));
         const behind = behindOf(state, ticket);
         if (behind > 0) notes.push(text("notes.behind_dev", { count: behind }));
       }

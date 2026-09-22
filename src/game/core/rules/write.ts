@@ -205,7 +205,7 @@ function writeDocs(context: RuleContext): void {
 export function completeMerge(
   context: RuleContext,
   ticket: Ticket,
-  options: { hiddenBug?: boolean } = {},
+  options: { hiddenBug?: boolean; noRegen?: boolean } = {},
 ): MapNode {
   const { state } = context;
 
@@ -243,11 +243,13 @@ export function completeMerge(
 
   if (ticket.kind === "refactor") repayDebt(context, BALANCE.debt.explosionRepay);
 
-  gainEnergy(
-    context,
-    BALANCE.energy.featureMergeRegen + context.effects.mergeRegenBonus,
-    "merge_regen",
-  );
+  if (options.noRegen !== true) {
+    gainEnergy(
+      context,
+      BALANCE.energy.featureMergeRegen + context.effects.mergeRegenBonus,
+      "merge_regen",
+    );
+  }
 
   emit(context, {
     type: "ticket_merged",

@@ -339,6 +339,9 @@ function WrittenAsButton({
       hint={game(`nodes.${action.kind}.desc` as never)}
       preview={snapshot.previews[actionKey(action)]}
       busy={busy}
+      // Five detours in two hands is ten cards: the description waits in the
+      // tooltip so the list stays readable at a glance.
+      compact
       onAct={() => onAct(action)}
     />
   );
@@ -367,6 +370,7 @@ function ActionButton({
   preview,
   busy,
   emphasis = false,
+  compact = false,
   onAct,
 }: {
   label: string;
@@ -374,6 +378,8 @@ function ActionButton({
   preview: ActionPreview | undefined;
   busy: boolean;
   emphasis?: boolean;
+  /** Hint in the tooltip only, numbers on one line: for the long lists. */
+  compact?: boolean;
   onAct: () => void;
 }) {
   const t = useTranslations("hud");
@@ -383,28 +389,33 @@ function ActionButton({
       <TooltipTrigger asChild>
         <Button
           variant={emphasis ? "default" : "outline"}
-          className="h-auto justify-between px-3 py-2 text-left"
+          className={cn("h-auto justify-between px-3 text-left", compact ? "py-1.5" : "py-2")}
           disabled={busy || preview === undefined || preview.blocked !== undefined}
           onClick={onAct}
         >
           <span className="flex min-w-0 flex-col items-start gap-0.5">
-            <span>{label}</span>
-            <span
-              className={cn(
-                "whitespace-normal text-left font-normal text-xs",
-                emphasis ? "opacity-80" : "text-muted-foreground",
-              )}
-            >
-              {hint}
-            </span>
+            <span className="max-w-full truncate">{label}</span>
+            {compact ? null : (
+              <span
+                className={cn(
+                  "whitespace-normal text-left font-normal text-xs",
+                  emphasis ? "opacity-80" : "text-muted-foreground",
+                )}
+              >
+                {hint}
+              </span>
+            )}
           </span>
 
-          {preview === undefined ? null : <PreviewFace preview={preview} emphasis={emphasis} />}
+          {preview === undefined ? null : (
+            <PreviewFace preview={preview} emphasis={emphasis} compact={compact} />
+          )}
         </Button>
       </TooltipTrigger>
 
       {preview === undefined ? null : (
         <TooltipContent className="max-w-64" side="left">
+          {compact ? <p className="text-muted-foreground">{hint}</p> : null}
           <PreviewDetail preview={preview} />
           {preview.notes.length === 0 ? null : (
             <>
@@ -423,10 +434,61 @@ function ActionButton({
  * debt. Everything the action costs or gives is here, because a price you
  * have to hover to read is a price you did not agree to.
  */
-function PreviewFace({ preview, emphasis }: { preview: ActionPreview; emphasis: boolean }) {
+function PreviewFace({
+  preview,
+  emphasis,
+  compact,
+}: {
+  preview: ActionPreview;
+  emphasis: boolean;
+  compact: boolean;
+}) {
   const debtMin = preview.debtDelta?.[0] ?? 0;
   const debtMax = preview.debtDelta?.[1] ?? 0;
   const points = preview.points?.[1] ?? 0;
+
+  const odds =
+    preview.successPct === undefined ? null : (
+      <span className={cn(preview.successPct < 60 && !emphasis && "text-debt")}>
+        {preview.successPct} %
+      </span>
+    );
+  const energy = <span className={cn(!emphasis && "text-energy")}>−{preview.energyCost} ⚡</span>;
+  const gained =
+    points > 0 ? (
+      <span className={cn(!emphasis && "text-branch-feature")}>+{points} pts</span>
+    ) : null;
+  const debt =
+    debtMax > 0 ? (
+      <span className={cn(!emphasis && "text-debt")}>
+        +{debtMin === debtMax ? debtMax : `${debtMin}–${debtMax}`} dette
+      </span>
+    ) : debtMin < 0 ? (
+      <span className={cn(!emphasis && "text-branch-main")}>{debtMin} dette</span>
+    ) : null;
+
+  // Compact cards get two lines: the roll and its price, then what it does.
+  if (compact) {
+    return (
+      <span
+        className={cn(
+          "flex shrink-0 flex-col items-end text-xs tabular-nums leading-tight",
+          emphasis && "opacity-90",
+        )}
+      >
+        <span className="flex gap-x-2">
+          {odds}
+          {energy}
+        </span>
+        {gained === null && debt === null ? null : (
+          <span className="flex gap-x-2">
+            {gained}
+            {debt}
+          </span>
+        )}
+      </span>
+    );
+  }
 
   return (
     <span
@@ -435,22 +497,10 @@ function PreviewFace({ preview, emphasis }: { preview: ActionPreview; emphasis: 
         emphasis && "opacity-90",
       )}
     >
-      {preview.successPct === undefined ? null : (
-        <span className={cn(preview.successPct < 60 && !emphasis && "text-debt")}>
-          {preview.successPct} %
-        </span>
-      )}
-      <span className={cn(!emphasis && "text-energy")}>−{preview.energyCost} ⚡</span>
-      {points > 0 ? (
-        <span className={cn(!emphasis && "text-branch-feature")}>+{points} pts</span>
-      ) : null}
-      {debtMax > 0 ? (
-        <span className={cn(!emphasis && "text-debt")}>
-          +{debtMin === debtMax ? debtMax : `${debtMin}–${debtMax}`} dette
-        </span>
-      ) : debtMin < 0 ? (
-        <span className={cn(!emphasis && "text-branch-main")}>{debtMin} dette</span>
-      ) : null}
+      {odds}
+      {energy}
+      {gained}
+      {debt}
     </span>
   );
 }

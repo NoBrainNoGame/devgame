@@ -168,17 +168,18 @@ export const BALANCE = {
 
   failure: {
     /**
-     * A merge is where conflicts come from, in git and here. These are the
-     * odds of one when a ticket lands: a floor, plus what the debt, the unread
-     * machine-written work in the ticket and every merge landed on `dev` since
-     * it was opened each add.
+     * A merge is where things happen, in git and here. These are the odds
+     * that *something* does when a ticket lands — a conflict, a migration, a
+     * red CI — a floor, plus what the debt, the unread machine-written work in
+     * the ticket and every merge landed on `dev` since it was opened each add.
+     * Which thing it is comes from `MERGE_EVENTS`.
      */
-    mergeConflictBase: 12,
-    mergeConflictDebtDivisor: 6,
-    mergeConflictPerUnread: 4,
-    mergeConflictPerBehind: 8,
+    mergeEventBase: 12,
+    mergeEventDebtDivisor: 6,
+    mergeEventPerUnread: 4,
+    mergeEventPerBehind: 8,
     /** However bad it gets, landing a ticket is not a coin flip. */
-    mergeConflictMax: 55,
+    mergeEventMax: 55,
     /** Energy lost resolving a merge conflict by hand. */
     conflictManualEnergy: 3,
     /** Base chance in percent of resolving a conflict by hand. */

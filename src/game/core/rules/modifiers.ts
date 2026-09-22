@@ -99,23 +99,23 @@ export function reviewedRatio(state: RunState): number {
 }
 
 /**
- * The odds that landing a ticket tangles.
+ * The odds that something happens when a ticket lands.
  *
  * A conflict is not something that happens while you write a commit — it is
  * what happens when two histories meet. So it is priced by what you are
  * bringing to the merge: how much debt, how much machine-written work nobody
  * has read, and how far `dev` has moved since you left it.
  */
-export function mergeConflictChance(state: RunState, ticket: Ticket): number {
+export function mergeEventChance(state: RunState, ticket: Ticket): number {
   const { failure } = BALANCE;
 
   const value =
-    failure.mergeConflictBase +
-    Math.floor(state.debt / failure.mergeConflictDebtDivisor) +
-    unreadAiOn(state, ticket).length * failure.mergeConflictPerUnread +
-    behindOf(state, ticket) * failure.mergeConflictPerBehind;
+    failure.mergeEventBase +
+    Math.floor(state.debt / failure.mergeEventDebtDivisor) +
+    unreadAiOn(state, ticket).length * failure.mergeEventPerUnread +
+    behindOf(state, ticket) * failure.mergeEventPerBehind;
 
-  return Math.max(0, Math.min(failure.mergeConflictMax, value));
+  return Math.max(0, Math.min(failure.mergeEventMax, value));
 }
 
 /**

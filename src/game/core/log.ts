@@ -61,6 +61,9 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
     case "failure_event":
       return { seq, turn, kind: "fix", text: text(`events.${event.eventId}.log`) };
 
+    case "merge_event":
+      return { seq, turn, kind: "fix", text: text(`events.${event.eventId}.log`) };
+
     case "monitoring_warning":
       return { seq, turn, kind: "chore", text: text("log.monitoring_warning") };
 

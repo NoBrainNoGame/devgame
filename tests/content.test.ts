@@ -9,6 +9,8 @@ import {
   EFFECT_KEYS,
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
+  MERGE_EVENT_IDS,
+  MERGE_EVENTS,
   NO_EFFECTS,
   PROFILE_IDS,
   PROFILES,
@@ -32,6 +34,7 @@ describe("content tables", () => {
       DEVOPS_IDS,
       PROFILE_IDS,
       FAILURE_EVENT_IDS,
+      MERGE_EVENT_IDS,
       AMBIENT_EVENT_IDS,
     ]) {
       expect(new Set(ids).size).toBe(ids.length);
@@ -44,6 +47,7 @@ describe("content tables", () => {
     for (const id of DEVOPS_IDS) expect(DEVOPS[id].id).toBe(id);
     for (const id of PROFILE_IDS) expect(PROFILES[id].id).toBe(id);
     for (const id of FAILURE_EVENT_IDS) expect(FAILURE_EVENTS[id].id).toBe(id);
+    for (const id of MERGE_EVENT_IDS) expect(MERGE_EVENTS[id].id).toBe(id);
     for (const id of AMBIENT_EVENT_IDS) expect(AMBIENT_EVENTS[id].id).toBe(id);
   });
 
@@ -117,7 +121,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("7a0e6209");
+    expect(RULES_FINGERPRINT).toBe("04903c11");
   });
 
   test("the save version and the epoch are positive integers", () => {

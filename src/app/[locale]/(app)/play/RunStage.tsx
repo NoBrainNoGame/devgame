@@ -81,7 +81,7 @@ export function RunStage({
           )}
         </div>
 
-        <aside className="flex w-full shrink-0 flex-col gap-5 overflow-hidden border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
+        <aside className="flex w-full shrink-0 min-w-0 flex-col gap-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
           {snapshot === null ? null : <ActionPanel snapshot={snapshot} busy={busy} onAct={onAct} />}
           <CommitLog log={log} />
         </aside>

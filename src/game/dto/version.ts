@@ -3,6 +3,7 @@ import {
   CRITERION_KINDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
+  MERGE_EVENT_IDS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
@@ -62,6 +63,7 @@ export function fingerprintFor(epoch: number): string {
       profiles: PROFILE_IDS,
       criteria: CRITERION_KINDS,
       failures: FAILURE_EVENT_IDS,
+      merges: MERGE_EVENT_IDS,
       ambient: AMBIENT_EVENT_IDS,
     }),
   );

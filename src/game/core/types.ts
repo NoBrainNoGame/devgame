@@ -4,6 +4,7 @@ import type {
   DevopsId,
   EventId,
   FailureEventId,
+  MergeEventId,
   ProfileId,
   RelicId,
   SkillId,
@@ -279,6 +280,8 @@ export type GameEvent =
   | { type: "pr_rejected"; countered: boolean }
   | { type: "debt_explosion"; ticketId: TicketId }
   | { type: "failure_event"; eventId: FailureEventId }
+  /** Something happened as the ticket landed. A conflict follows as its own event. */
+  | { type: "merge_event"; eventId: MergeEventId }
   | { type: "monitoring_warning" }
   | { type: "ambient_event"; eventId: AmbientEventId }
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
@@ -327,4 +330,12 @@ export class InvalidActionError extends Error {
   }
 }
 
-export type { AmbientEventId, CriterionKind, EventId, FailureEventId, I18nText, RngState };
+export type {
+  AmbientEventId,
+  CriterionKind,
+  EventId,
+  FailureEventId,
+  I18nText,
+  MergeEventId,
+  RngState,
+};
