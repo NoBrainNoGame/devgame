@@ -15,6 +15,14 @@ export function computeScore(state: RunState): number {
   );
 }
 
+/**
+ * Skill points an account of this level starts every run with. One place,
+ * because the session credits it and the server checks the claim against it.
+ */
+export function accountSkillPoints(level: number): number {
+  return Math.max(0, level - 1) * BALANCE.tree.perAccountLevel;
+}
+
 /** XP needed to reach `level` from level 1, cumulative. */
 export function xpForLevel(level: number): number {
   if (level <= 1) return 0;

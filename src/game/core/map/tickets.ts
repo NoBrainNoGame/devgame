@@ -62,6 +62,11 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     points += rng.int(tickets.skillExtraPoints.min, tickets.skillExtraPoints.max);
   }
 
+  // What it will earn every month once shipped: the bigger the feature, the
+  // more it pays, with a jitter so two tickets of a size are not the same.
+  const { economy } = BALANCE;
+  const mrr = points * economy.mrrPerPoint + rng.int(economy.mrrJitter.min, economy.mrrJitter.max);
+
   const id: TicketId = `t${state.nextTicketSerial}`;
   state.nextTicketSerial += 1;
 
@@ -75,6 +80,7 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     debtAdded: 0,
     rejections: 0,
     ...(skillId === undefined ? {} : { skillId }),
+    mrr,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
     nodeIds: [],

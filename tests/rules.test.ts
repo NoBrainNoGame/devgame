@@ -15,6 +15,8 @@ import {
 import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
 import { behindOf, offersOf } from "@/game/core/rules/tickets";
+import { createRun } from "@/game/core/run";
+import { SAVE_VERSION } from "@/game/dto/version";
 
 import {
   committedAs,
@@ -167,7 +169,7 @@ describe("commit", () => {
     );
 
     const blessed = structuredClone(state);
-    blessed.statPoints.luck = 500;
+    blessed.tree.luck = 500;
     expect(commitChance(blessed, "craft", "commit").value).toBeLessThanOrEqual(
       BALANCE.commit.clamp.max,
     );
@@ -416,7 +418,7 @@ describe("review", () => {
   test("the automatic review is free, and reads what has already shipped", () => {
     const state = makeReviewable(inHand("free-review"));
     const automated = structuredClone(state);
-    automated.devops.review_bot = 1;
+    automated.tree.review_bot = 1;
     automated.player.turnsSinceFreeReview = BALANCE.review.botCadence - 1;
     // Something shipped unread, which only the automatic review can reach.
     const shippedId = plantAiCommit(automated);
@@ -446,21 +448,37 @@ describe("free actions", () => {
     expect(getActionPreview(state, start).consumesTurn).toBe(false);
   });
 
-  test("placing a DevOps point does not either", () => {
-    const state = inHand("free-devops");
+  test("placing a skill point does not either", () => {
+    const state = inHand("free-tree");
     const rich = structuredClone(state);
-    rich.devopsPoints = 3;
+    rich.skillPoints = 3;
 
-    const after = applyAction(rich, { type: "devops", id: "ci" }).state;
+    const after = applyAction(rich, { type: "tree", id: "ci" }).state;
     expect(after.turn).toBe(rich.turn);
-    expect(after.devops.ci).toBe(1);
-    expect(after.devopsPoints).toBe(2);
+    expect(after.tree.ci).toBe(1);
+    expect(after.skillPoints).toBe(2);
+  });
+
+  test("the account's level is a head start in the tree, not a permanent stat", () => {
+    const fresh = createRun({
+      seed: "head-start",
+      mode: "classic",
+      profileId: "junior",
+      version: SAVE_VERSION,
+      meta: { startingSkillPoints: 4 },
+    });
+    expect(fresh.skillPoints).toBe(4);
+    expect(fresh.startingSkillPoints).toBe(4);
+    expect(gatherEffects(fresh)).toEqual(gatherEffects(newRun("head-start")));
+
+    const placed = applyAction(fresh, { type: "tree", id: "stamina" }).state;
+    expect(placed.player.energyMax).toBe(fresh.player.energyMax + 2);
   });
 
   test("CI makes every roll better", () => {
     const state = inHand("ci");
     const withCi = structuredClone(state);
-    withCi.devops.ci = 2;
+    withCi.tree.ci = 2;
 
     expect(commitChance(withCi, "ai", "commit").value).toBe(
       commitChance(state, "ai", "commit").value + 10,
@@ -470,7 +488,7 @@ describe("free actions", () => {
   test("CD makes a merge a bigger rest", () => {
     const state = inHand("cd");
     const automated = structuredClone(state);
-    automated.devops.cd = 1;
+    automated.tree.cd = 1;
 
     expect(gatherEffects(automated).mergeRegenBonus).toBeGreaterThan(
       gatherEffects(state).mergeRegenBonus,

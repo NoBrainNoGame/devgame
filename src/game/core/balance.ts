@@ -229,7 +229,7 @@ export const BALANCE = {
     /** Tickets arriving at sprint 1, and one more every `growEvery` sprints. */
     base: 2,
     growEvery: 4,
-    maxPerSprint: 4,
+    maxPerSprint: 8,
     /** Sprints a ticket may sit in the backlog before the board assigns it. */
     graceSprints: 1,
     /** Chance in percent that a ticket carries a skill, beyond the guaranteed one. */
@@ -271,6 +271,11 @@ export const BALANCE = {
     perStaleTicket: 10,
     /** Patience lost when a review sends a pull request back. */
     perRejection: 15,
+    /**
+     * Patience lost when you landed nothing yourself all sprint. A hired team
+     * can clear the board without you; production still expects to see you.
+     */
+    perIdleSprint: 15,
     decayPerCleanSprint: 20,
   },
 
@@ -284,11 +289,48 @@ export const BALANCE = {
     perPoint: 10,
   },
 
-  devops: {
+  /** The skill tree's currency. */
+  tree: {
     /** Points awarded when a sprint closes. */
     perSprint: 1,
-    /** Points awarded per level gained. */
-    perLevel: 1,
+    /**
+     * Points a run starts with per account level above the first. The
+     * account's levels used to buy permanent stats; now they buy a head start
+     * in the same tree everything else is placed in.
+     */
+    perAccountLevel: 1,
+  },
+
+  /** The management game: revenue, servers, the shop. */
+  economy: {
+    /** Paydays per sprint. `sprint.turns` must divide by it. */
+    monthsPerSprint: 3,
+    startingMoney: 30,
+    /** Monthly revenue of a shipped feature: this per story point, plus a jitter. */
+    mrrPerPoint: 2,
+    mrrJitter: { min: 0, max: 3 },
+    infra: {
+      /** Features production serves before anything has been bought. */
+      baseCapacity: 4,
+      /**
+       * Patience lost every month, per feature over the capacity. One over
+       * the line is a slow bleed a clean sprint outpaces; five over is the
+       * end of the run in a sprint or two. The backlog never stops growing,
+       * so this is what ends a run the team would otherwise carry forever.
+       */
+      outageQuality: 4,
+    },
+    /** A skill point bought outright: this, times `growth` per point already bought. */
+    skillPoint: { price: 60, growth: 1.5 },
+  },
+
+  /** The hired team. Ranks are priced in `content/team.ts`. */
+  team: {
+    maxDevs: 3,
+    /** Story points a developer fills per turn on each ticket held. */
+    pointsPerTurn: 1,
+    /** Tickets delivered before a developer is promoted a rank. */
+    promoteEvery: 4,
   },
 
   meta: {

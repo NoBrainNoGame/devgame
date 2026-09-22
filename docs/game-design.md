@@ -98,9 +98,8 @@ dedans ; un hotfix, non : le ticket forcé est déjà la punition.
 grâce est ouvert d'office au sprint suivant. C'est la pression du jeu : plus on
 reste sur le projet, plus il arrive de tickets, et plus on en tient à la fois.
 
-Plus tard : embaucher des développeurs avec les revenus du programme, qui
-prendront les tickets en trop — un à la fois pour un junior, deux pour un
-intermédiaire, trois pour un senior.
+Les tickets en trop, c'est aussi ce qu'une **équipe** prend en charge — voir
+[L'entreprise](#lentreprise).
 
 ### Le commit
 
@@ -150,7 +149,7 @@ n'accepte qu'un seul type de commit tant que ses points ne sont
 pas pleins.
 
 Le commit, la review, le merge et **souffler** consomment un tour. Démarrer
-un ticket, basculer, placer un point DevOps, choisir une relique et résoudre
+un ticket, basculer, placer un point de compétence, acheter, embaucher, choisir une relique et résoudre
 un conflit sont gratuits en temps.
 
 **Souffler** est le tour sans code : de l'énergie revient, moins un par ticket
@@ -194,15 +193,21 @@ IA ; plus elle est haute, plus les jets sont mauvais et les merges risqués. Au
 delà d'un seuil, elle explose : une **refacto imposée** s'ouvre, une à la fois,
 et la dette retombe quand elle merge. Elle est affichée sous forme de
 **fourchette floue** — assez pour décider, pas assez pour optimiser au point
-près. Le Linter, Œil de lynx et le point DevOps correspondant la rendent exacte.
+près. Le Linter, Œil de lynx et le linter automatique de l'arbre la rendent exacte.
 
 **Production.** Une jauge de patience, visible en permanence, et pleine, c'est
-le licenciement. Trois choses la remplissent : un **incident** en production,
-une **PR refusée**, et chaque **ticket du backlog que le sprint a dû imposer**
-parce qu'il a traîné. Un sprint propre — sans incident et sans ticket imposé —
-la fait baisser. C'est la fin du joueur trop lent ou trop sale ; le burnout est
+le licenciement. Cinq choses la remplissent : un **incident** en production,
+une **PR refusée**, chaque **ticket du backlog que le sprint a dû imposer**
+parce qu'il a traîné, chaque **mois où les serveurs sont saturés**, et un
+**sprint où vous n'avez rien livré vous-même** — une équipe peut vider le
+tableau, la prod attend quand même de vous voir. Un sprint propre — sans
+incident, sans ticket imposé, et avec au moins un merge de votre main — la
+fait baisser. C'est la fin du joueur trop lent ou trop sale ; le burnout est
 celle du joueur qui a tenu trop de choses à la fois. Personne ne doit être
 surpris.
+
+**Argent.** La monnaie de l'entreprise, décrite dans sa propre section. Elle ne
+descend jamais sous zéro : ce qu'on ne peut pas payer, on ne l'a plus.
 
 ## Compétences
 
@@ -213,26 +218,73 @@ augmentée, dette IA remisée, et ainsi de suite. Le catalogue vit dans
 `src/game/content/`. Une compétence n'est jamais promise par deux tickets à la
 fois, et le premier ticket de chaque sprint en porte une tant qu'il en reste.
 
-## Arbre DevOps
+## Arbre de compétences
 
-Une feature spéciale, toujours disponible, qui ne coûte aucun tour mais des
-**points DevOps**, gagnés en fin de sprint et par les niveaux d'XP. Chaque
-point rend une action automatique, donc gratuite ou passive :
+Un écran à part, toujours disponible, qui ne coûte aucun tour mais des
+**points de compétence** : un par sprint tenu, un par niveau du compte au
+départ de chaque run, et ceux que la boutique vend. Quatre branches, et des
+nœuds qui en exigent d'autres — la forme de la branche est la forme de la
+décision. Le catalogue vit dans `src/game/content/tree.ts`.
 
-- **CI** — tests lancés à chaque commit, tous les jets s'améliorent.
-- **CD** — les merges rendent plus d'énergie.
-- **Linter auto** — la dette technique devient visible et décroît toute seule.
-- **Dependabot** — les événements « lib obsolète », « montée de version » et
-  « migration de lib » sont annulés.
-- **Auto-rebase** — un rebase raté ne coûte plus de dette.
-- **Bot de review** — une review gratuite tous les N tours, qui relit aussi ce
-  qui est déjà sur `dev`. C'est la seconde route vers la relecture.
-- **Monitoring** — le premier bug d'une run est un avertissement plutôt qu'un
-  incident, et les hotfixes sont plus courts.
+- **CI/CD** — l'automatisation du cycle : la CI améliore tous les jets et
+  ouvre le reste de la branche (CD, auto-rebase, bot de review).
+- **DevOps** — l'exploitation : monitoring, Dependabot, linter automatique, et
+  le SRE qui fait tenir plus de features aux serveurs sans un euro
+  d'hébergement.
+- **Management** — ce qui rend l'équipe rentable : coach agile (les devs
+  remplissent plus vite), recruteur (embauches moins chères), growth hacking
+  (revenus majorés), mentorat (chaque dev tient un ticket de plus).
+- **Profil** — les trois statistiques de base que le compte tenait autrefois à
+  vie : endurance (énergie maximale), chance (tous les jets), sang-froid
+  (résolution de conflit à la main).
 
 La tension de design est là : l'arbre est puissant, mais il se construit
 pendant que le backlog grossit. Investir tôt vous ralentit ; investir tard
 laisse la dette exploser.
+
+## L'entreprise
+
+Le dépôt est à vous, et le produit aussi. Chaque **feature livrée rapporte un
+revenu mensuel** pour le reste de la run — d'autant plus qu'elle était grosse,
+avec un peu d'aléa tiré à l'arrivée du ticket et affiché sur sa carte. Un
+hotfix ou une refacto imposée ne rapporte rien. Un **mois** est un tiers de
+sprint : trois paies par sprint, et un sprint qui se termine tôt paie quand
+même ses trois mois.
+
+À chaque paie : les revenus rentrent, les **abonnements** de la boutique et
+les **salaires** sortent. La production ne sert qu'un certain nombre de
+features ; au-delà de la **capacité**, le surplus ne rapporte rien et la prod
+perd patience chaque mois. C'est toute la scalabilité : grandir oblige à payer
+des serveurs.
+
+**La boutique** (`src/game/content/upgrades.ts`) vend en argent, sans coûter
+de tour : de l'infra (serveurs, autoscaling), de la croissance (marketing,
+offre premium), de l'outillage (abonnement IA, licence IDE, machine à café,
+outillage pour l'équipe, superviseur IA), et des **points de compétence** dont
+le prix monte à chaque achat. Certains achats sont des abonnements et se
+paient tous les mois.
+
+**L'équipe** (`src/game/content/team.ts`). Un développeur s'embauche contre
+un coût fixe et un salaire mensuel. Il prend seul les tickets *feature* les
+plus anciens du backlog — jamais un hotfix ni une refacto imposée — en tient
+un à la fois pour un junior, deux pour un confirmé, trois pour un senior, et
+monte d'un rang tous les quelques tickets livrés. Chaque tour, il écrit un
+commit sur chacun de ses tickets, à la main, relu, sans dette ; ticket plein,
+il le merge lui-même, sans review ni merge de votre part, et vous en gardez la
+compétence, les points et l'XP. Ses tickets ne sont pas les vôtres : ils ne
+comptent pas dans le WIP, ne se basculent pas, et ses merges ne font pas
+bouger `dev` sous vos tickets — l'équipe rebase son travail sous le vôtre, sinon
+embaucher renchérirait chacun de vos merges. En début de sprint, l'équipe
+ramasse le backlog avant que le tableau ne vous l'impose. Un dev qu'on ne peut
+pas payer s'en va, et ses tickets vous reviennent tels quels, ouverts, dans
+leur colonne.
+
+**Le jeu tourne sans vous.** Le bouton Souffler porte une horloge : laissée
+seule une trentaine de secondes, elle presse le bouton. Avec le superviseur IA
+acheté, elle joue le coup évident à la place — merger ce qui est accepté,
+ouvrir la PR d'un ticket plein, relire, coder à la main tant que l'énergie
+tient. Ce sont des actions comme les autres, enregistrées dans le journal de
+la run ; rien dans le moteur ne lit l'horloge.
 
 ## Événements et obstacles
 
@@ -280,7 +332,7 @@ joueur.
 Un sprint est une **boîte de tours** (le nombre est dans `balance.ts`). Quand
 elle est vide — ou quand plus rien n'est ouvert ni en attente — le travail
 part : `dev` mergée dans `main`, la release taguée, les bugs remontés. Puis le
-week-end : régénération partielle d'énergie, un point DevOps, le choix d'une
+week-end : régénération partielle d'énergie, un point de compétence, le choix d'une
 **relique** (amélioration de projet), l'assignation des tickets restés en
 attente, et l'arrivée des tickets du sprint suivant — un peu plus nombreux
 tous les quelques sprints, jusqu'à un plafond.
@@ -290,7 +342,8 @@ sur `dev`.
 
 Il n'y a pas de fin. La difficulté monte indéfiniment, comme les ascensions de
 Slay the Spire : la run s'arrête sur un burnout ou un licenciement, et le score
-est ce que vous avez tenu.
+est ce que vous avez tenu. L'argent n'entre pas dans le score : il sert à
+tenir plus longtemps.
 
 ## Méta-progression
 
@@ -302,9 +355,11 @@ lent et sûr ; le Vibe Coder, tout en IA avec une dette masquée ; le DevOps, qu
 démarre avec de la CI/CD. Ils débloquent aussi de nouvelles compétences dans le
 pool et de nouveaux événements.
 
-**L'XP** fait monter un niveau de développeur qui donne, à chaque palier, un
-point à placer — dans les statistiques de base (énergie maximale, chance,
-résistance au conflit) ou dans les automatisations DevOps.
+**L'XP** fait monter un niveau de développeur. Chaque niveau au-dessus du
+premier est un **point de compétence de plus au départ de chaque run**, à
+placer dans l'arbre — dans la branche Profil (énergie maximale, chance,
+sang-froid) ou ailleurs. Rien n'est permanent : un niveau est une décision à
+chaque run, pas un chiffre posé une fois.
 
 Deux modes de jeu partagent cette méta-progression :
 

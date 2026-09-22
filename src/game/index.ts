@@ -10,15 +10,22 @@
  * and is browser-only — import it through a `next/dynamic` chunk.
  */
 
+export { chooseAutopilot } from "@/game/bridge/autopilot";
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
 export { mountGame } from "@/game/bridge/mount";
-export type { PlayerView, RunSnapshot, TicketView } from "@/game/bridge/snapshot";
+export type {
+  DevView,
+  EconomyView,
+  PlayerView,
+  RunSnapshot,
+  TicketView,
+} from "@/game/bridge/snapshot";
 export type { GameStore, ReviewEvent } from "@/game/bridge/store";
 export { gameStore, resetGameStore, useGameStore } from "@/game/bridge/store";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";
-export { levelForXp, xpForLevel } from "@/game/core/score";
+export { accountSkillPoints, levelForXp, xpForLevel } from "@/game/core/score";
 export type {
   ActionPreview,
   CommitMode,
@@ -31,7 +38,7 @@ export type {
   RunMode,
   TicketId,
 } from "@/game/core/types";
-export type { MetaProgressDto, SettingsDto, StatPointsDto } from "@/game/dto/meta";
+export type { MetaProgressDto, SettingsDto } from "@/game/dto/meta";
 export { emptyMeta, META_VERSION, MetaProgressSchema } from "@/game/dto/meta";
 export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
 export { isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";

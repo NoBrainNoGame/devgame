@@ -12,8 +12,11 @@ export function raiseQuality(context: RuleContext, amount: number): void {
   const { state } = context;
   const before = state.quality;
   state.quality = Math.min(BALANCE.quality.max, before + amount);
-  if (state.quality === before) return;
 
-  emit(context, { type: "quality", delta: state.quality - before, value: state.quality });
+  if (state.quality !== before) {
+    emit(context, { type: "quality", delta: state.quality - before, value: state.quality });
+  }
+  // Checked even when nothing moved: a gauge already full is a run already
+  // over, whatever overwrote the phase since.
   if (state.quality >= BALANCE.quality.max) gameOver(context, "fired");
 }

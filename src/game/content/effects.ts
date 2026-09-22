@@ -53,6 +53,22 @@ export interface Effects {
   monitoring: boolean;
   /** A free review happens automatically every N turns. 0 disables it. */
   freeReviewEvery: number;
+
+  /** Features production can serve before the servers saturate. */
+  infraCapacity: number;
+  /** Percent added to the monthly recurring revenue. */
+  mrrBonusPct: number;
+  /** Story points a hired developer fills per turn, on top of the base rate. */
+  devSpeedBonus: number;
+  /** Tickets every hired developer can hold at once, on top of their rank. */
+  devCapacityBonus: number;
+  /** Percent taken off a hiring fee. */
+  hiringDiscountPct: number;
+  /**
+   * The idle timer plays a sensible move instead of resting. A rendering
+   * concern read by the HUD, but bought in the run, so it is an effect.
+   */
+  autopilot: boolean;
   /**
    * Unlocks the review action.
    *
@@ -88,6 +104,12 @@ export const NO_EFFECTS: Effects = {
   cancelObsoleteLib: false,
   monitoring: false,
   freeReviewEvery: 0,
+  infraCapacity: 0,
+  mrrBonusPct: 0,
+  devSpeedBonus: 0,
+  devCapacityBonus: 0,
+  hiringDiscountPct: 0,
+  autopilot: false,
   canReview: true,
 };
 

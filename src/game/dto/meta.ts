@@ -13,19 +13,10 @@ export const SettingsSchema = z.object({
   reducedMotion: z.boolean().default(false),
 });
 
-export const StatPointsSchema = z.object({
-  energyMax: z.number().int().min(0).max(999),
-  luck: z.number().int().min(0).max(999),
-  conflictRes: z.number().int().min(0).max(999),
-});
-
 export const MetaProgressSchema = z.object({
   version: z.number().int().positive(),
   level: z.number().int().min(1).max(999),
   xp: z.number().int().min(0),
-  /** Unspent points from levelling. */
-  statPoints: StatPointsSchema,
-  unspentStatPoints: z.number().int().min(0).max(999),
   /** Currency for unlocks. Spent, so it is not the same as `totalCommits`. */
   commitsBank: z.number().int().min(0),
   totalCommits: z.number().int().min(0),
@@ -41,7 +32,6 @@ export const MetaProgressSchema = z.object({
 });
 
 export type SettingsDto = z.infer<typeof SettingsSchema>;
-export type StatPointsDto = z.infer<typeof StatPointsSchema>;
 export type MetaProgressDto = z.infer<typeof MetaProgressSchema>;
 
 export const META_VERSION = 1;
@@ -52,8 +42,6 @@ export function emptyMeta(now: string): MetaProgressDto {
     version: META_VERSION,
     level: 1,
     xp: 0,
-    statPoints: { energyMax: 0, luck: 0, conflictRes: 0 },
-    unspentStatPoints: 0,
     commitsBank: 0,
     totalCommits: 0,
     ticketsDelivered: 0,

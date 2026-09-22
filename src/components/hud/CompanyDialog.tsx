@@ -1,0 +1,416 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+import { useGameText } from "@/components/hud/useGameText";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import type { DevView, PlayerAction, RunSnapshot } from "@/game";
+import { actionKey } from "@/game";
+import {
+  DEV_RANK,
+  DEV_RANKS,
+  UPGRADE_CATEGORIES,
+  UPGRADES,
+  type UpgradeId,
+  upgradesIn,
+} from "@/game/content";
+import { cn } from "@/lib/utils";
+
+/**
+ * The company: what it earns, what it can buy, who works there.
+ *
+ * Three tabs. Finances is the payday read out in advance — revenue, what the
+ * servers can carry, what the subscriptions and the team cost — so the number
+ * at the end of the month is never a surprise. The shop and the team are the
+ * two things that number buys. Everything here is free in time, so the
+ * dialog stays open across purchases.
+ */
+export function CompanyDialog({
+  open,
+  onOpenChange,
+  snapshot,
+  busy,
+  onAct,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const { economy } = snapshot;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{t("company")}</DialogTitle>
+          <DialogDescription>
+            <span className="text-foreground tabular-nums">
+              {t("money", { money: economy.money })}
+            </span>
+            {" · "}
+            {t("mrr", { money: economy.mrr })}
+            {" · "}
+            {t("paydayIn", { count: economy.paydayIn })}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue="finances">
+          <TabsList variant="line">
+            <TabsTrigger value="finances">{t("finances")}</TabsTrigger>
+            <TabsTrigger value="shop">{t("shop")}</TabsTrigger>
+            <TabsTrigger value="team">
+              {t("team")}
+              {snapshot.devs.length > 0 ? (
+                <span className="ml-1 tabular-nums text-muted-foreground">
+                  {snapshot.devs.length}
+                </span>
+              ) : null}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="finances" className="pt-3">
+            <Finances snapshot={snapshot} />
+          </TabsContent>
+          <TabsContent value="shop" className="pt-3">
+            <Shop snapshot={snapshot} busy={busy} onAct={onAct} />
+          </TabsContent>
+          <TabsContent value="team" className="pt-3">
+            <Team snapshot={snapshot} busy={busy} onAct={onAct} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Finances({ snapshot }: { snapshot: RunSnapshot }) {
+  const t = useTranslations("hud");
+  const { economy } = snapshot;
+  const saturated = economy.load > economy.capacity;
+  const loadPct = Math.min(100, (economy.load / Math.max(1, economy.capacity)) * 100);
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("nextPayday")}
+        </h3>
+        <dl className="space-y-1">
+          <Line label={t("lineRevenue")} value={economy.revenue} tone="text-branch-main" />
+          {economy.mrr > economy.revenue ? (
+            <Line
+              label={t("lineLost")}
+              value={-(economy.mrr - economy.revenue)}
+              tone="text-branch-hotfix"
+            />
+          ) : null}
+          <Line label={t("lineUpkeep")} value={-economy.upkeep} />
+          <Line label={t("lineSalaries")} value={-economy.salaries} />
+          <div className="flex items-baseline justify-between border-line border-t pt-1 font-medium">
+            <dt>{t("lineNet")}</dt>
+            <dd
+              className={cn(
+                "tabular-nums",
+                economy.net < 0 ? "text-branch-hotfix" : "text-branch-main",
+              )}
+            >
+              {signed(economy.net)} €
+            </dd>
+          </div>
+        </dl>
+        <p className="text-muted-foreground text-xs">
+          {t("monthCount", { month: economy.month })} · {t("paydayIn", { count: economy.paydayIn })}
+        </p>
+      </section>
+
+      <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("infra")}
+        </h3>
+        <div className="flex items-baseline justify-between">
+          <span>{t("capacity")}</span>
+          <span className={cn("tabular-nums", saturated && "text-branch-hotfix")}>
+            {economy.load} / {economy.capacity}
+          </span>
+        </div>
+        <Progress value={loadPct} className={cn(saturated && "[&>*]:bg-branch-hotfix")} />
+        <p className={cn("text-xs", saturated ? "text-branch-hotfix" : "text-muted-foreground")}>
+          {saturated ? t("saturated") : t("capacityHint")}
+        </p>
+        <p className="text-muted-foreground text-xs">
+          {t("moneyEarned", { money: economy.moneyEarned })}
+        </p>
+      </section>
+    </div>
+  );
+}
+
+function Line({ label, value, tone }: { label: string; value: number; tone?: string }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className={cn("tabular-nums", tone)}>{signed(value)} €</dd>
+    </div>
+  );
+}
+
+function signed(value: number): string {
+  return value > 0 ? `+${value}` : `${value}`;
+}
+
+function Shop({
+  snapshot,
+  busy,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const point: PlayerAction = { type: "buy_point" };
+  const pointOffered = snapshot.actions.some((a) => a.type === "buy_point");
+
+  return (
+    <div className="space-y-4">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panel/60 p-3 text-sm">
+        <div>
+          <p className="font-medium">{t("buyPoint")}</p>
+          <p className="text-muted-foreground text-xs">{t("buyPointHint")}</p>
+        </div>
+        <Button
+          size="sm"
+          variant={pointOffered ? "default" : "outline"}
+          disabled={busy || !pointOffered}
+          onClick={() => onAct(point)}
+        >
+          {t("buyFor", { money: snapshot.economy.skillPointPrice })}
+        </Button>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        {UPGRADE_CATEGORIES.map((category) => (
+          <section key={category} className="min-w-0 space-y-2">
+            <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              {t(`category.${category}`)}
+            </h3>
+            <div className="space-y-2">
+              {upgradesIn(category).map((id) => (
+                <UpgradeCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function UpgradeCard({
+  id,
+  snapshot,
+  busy,
+  onAct,
+}: {
+  id: UpgradeId;
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+  const render = useGameText();
+
+  const def = UPGRADES[id];
+  const level = snapshot.upgrades[id] ?? 0;
+  const maxed = level >= def.maxLevel;
+  const cost = def.cost[level];
+  const action: PlayerAction = { type: "buy", id };
+  const offered = snapshot.actions.some((a) => a.type === "buy" && a.id === id);
+  const preview = snapshot.previews[actionKey(action)];
+
+  return (
+    <article
+      className={cn(
+        "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
+        maxed && "border-branch-main/60",
+      )}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="truncate font-medium">{game(`upgrades.${id}.name` as never)}</span>
+        {def.maxLevel > 1 ? (
+          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+            {level}/{def.maxLevel}
+          </span>
+        ) : null}
+      </div>
+      <p className="text-muted-foreground text-xs leading-relaxed">
+        {game(`upgrades.${id}.desc` as never)}
+      </p>
+      {def.upkeep > 0 ? (
+        <p className="text-muted-foreground text-xs">
+          {t("upkeepPerLevel", { money: def.upkeep })}
+          {level > 0 ? ` · ${t("upkeepNow", { money: def.upkeep * level })}` : ""}
+        </p>
+      ) : null}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block">
+            <Button
+              size="sm"
+              variant={offered ? "default" : "outline"}
+              className="w-full"
+              disabled={busy || !offered}
+              onClick={() => onAct(action)}
+            >
+              {maxed ? t("treeMaxed") : t("buyFor", { money: cost ?? 0 })}
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {preview?.notes.length ? (
+          <TooltipContent side="bottom">
+            {preview.notes.map((note) => (
+              <p key={note.key}>{render(note)}</p>
+            ))}
+          </TooltipContent>
+        ) : null}
+      </Tooltip>
+    </article>
+  );
+}
+
+function Team({
+  snapshot,
+  busy,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+  const render = useGameText();
+
+  return (
+    <div className="space-y-4">
+      <section className="space-y-2">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("hire")}
+        </h3>
+        <p className="text-muted-foreground text-xs">{t("hireHint")}</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {DEV_RANKS.map((rank) => {
+            const action: PlayerAction = { type: "hire", rank };
+            const offered = snapshot.actions.some((a) => a.type === "hire" && a.rank === rank);
+            const preview = snapshot.previews[actionKey(action)];
+            return (
+              <article
+                key={rank}
+                className="space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm"
+              >
+                <p className="font-medium">{game(`ranks.${rank}.name` as never)}</p>
+                <p className="text-muted-foreground text-xs">
+                  {t("rankCapacity", { count: DEV_RANK[rank].capacity })}
+                  {" · "}
+                  {t("rankSalary", { money: DEV_RANK[rank].salary })}
+                </p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="block">
+                      <Button
+                        size="sm"
+                        variant={offered ? "default" : "outline"}
+                        className="w-full"
+                        disabled={busy || !offered}
+                        onClick={() => onAct(action)}
+                      >
+                        {t("buyFor", { money: DEV_RANK[rank].hireCost })}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {preview?.notes.length ? (
+                    <TooltipContent side="bottom">
+                      {preview.notes.map((note) => (
+                        <p key={note.key}>{render(note)}</p>
+                      ))}
+                    </TooltipContent>
+                  ) : null}
+                </Tooltip>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("roster")}
+        </h3>
+        {snapshot.devs.length === 0 ? (
+          <p className="text-muted-foreground text-xs">{t("rosterEmpty")}</p>
+        ) : (
+          <div className="grid gap-2 sm:grid-cols-3">
+            {snapshot.devs.map((dev) => (
+              <DevCard key={dev.id} dev={dev} snapshot={snapshot} />
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+  const held = snapshot.tickets.filter((ticket) => ticket.assignee === dev.id);
+
+  return (
+    <article className="space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-medium">
+          {dev.id} · {game(`ranks.${dev.rank}.name` as never)}
+        </span>
+        <span className="text-muted-foreground text-xs tabular-nums">
+          {t("rankSalary", { money: dev.salary })}
+        </span>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        {t("devHolds", { count: held.length, max: dev.capacity })}
+        {" · "}
+        {t("devDelivered", { count: dev.delivered })}
+        {dev.promotionIn === null ? "" : ` · ${t("promotionIn", { count: dev.promotionIn })}`}
+      </p>
+      {held.map((ticket) => (
+        <div key={ticket.id} className="space-y-1">
+          <div className="flex items-baseline justify-between text-xs">
+            <span>
+              #{ticket.id.slice(1)}{" "}
+              {ticket.skillId === undefined
+                ? game(`tickets.${ticket.kind}.name` as never)
+                : game(`skills.${ticket.skillId}.name` as never)}
+            </span>
+            <span className="tabular-nums">
+              {ticket.filled}/{ticket.points}
+            </span>
+          </div>
+          <Progress value={(ticket.filled / Math.max(1, ticket.points)) * 100} className="h-1.5" />
+        </div>
+      ))}
+    </article>
+  );
+}

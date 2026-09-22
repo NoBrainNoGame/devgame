@@ -24,7 +24,7 @@ export interface RelicDef {
   /** Permanent, recomputed every turn. */
   effects: PartialEffects;
   /** Applied once, the moment the relic is picked. */
-  grant?: { devopsPoints?: number; energy?: number; debt?: number };
+  grant?: { skillPoints?: number; energy?: number; debt?: number };
   /** A relic may only be offered once per run. */
   unique: true;
 }
@@ -49,7 +49,7 @@ export const RELICS: Record<RelicId, RelicDef> = {
   onboarding: {
     id: "onboarding",
     effects: {},
-    grant: { devopsPoints: 2 },
+    grant: { skillPoints: 2 },
     unique: true,
   },
   retrospective: {

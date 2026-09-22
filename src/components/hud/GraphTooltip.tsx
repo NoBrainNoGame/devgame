@@ -49,7 +49,11 @@ export function GraphTooltip(): React.JSX.Element | null {
           {mode === undefined ? null : (
             <Row label={t("tooltipAuthor")}>
               <span className={cn(mode === "ai" ? "text-ai" : "text-branch-main")}>
-                {mode === "ai" ? t("tooltipByMachine") : t("tooltipByHand")}
+                {node.commit?.author !== undefined
+                  ? t("tooltipByDev", { dev: node.commit.author })
+                  : mode === "ai"
+                    ? t("tooltipByMachine")
+                    : t("tooltipByHand")}
               </span>
             </Row>
           )}

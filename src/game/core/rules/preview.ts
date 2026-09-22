@@ -1,6 +1,6 @@
-import { DEVOPS, devopsCost } from "@/game/content";
+import { DEV_RANK, TREE, treeCost, UPGRADES, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { type I18nText, text } from "@/game/core/i18n";
+import { type I18nText, ref, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
 import {
   commitChance,
@@ -13,6 +13,8 @@ import {
   reviewEnergyCost,
   wipExtra,
 } from "@/game/core/rules/modifiers";
+import { canBuySkillPoint, skillPointPrice } from "@/game/core/rules/shop";
+import { devCapacity, hireCostFor } from "@/game/core/rules/team";
 import {
   behindOf,
   currentTicket,
@@ -20,6 +22,7 @@ import {
   mostIndebtedOn,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
+import { treeUnlocked } from "@/game/core/rules/tree";
 import { pointsFor } from "@/game/core/rules/write";
 import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
 
@@ -167,19 +170,85 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return { action, energyCost: 0, consumesTurn: true, notes };
     }
 
-    case "devops": {
-      const level = state.devops[action.id] ?? 0;
-      const cost = devopsCost(action.id, level);
+    case "tree": {
+      const level = state.tree[action.id] ?? 0;
+      const cost = treeCost(action.id, level);
+      const missing = (TREE[action.id].requires ?? []).find(
+        (req) => (state.tree[req.id] ?? 0) < req.level,
+      );
 
       return {
         action,
         energyCost: 0,
         consumesTurn: false,
-        notes: [text("notes.devops_cost", { points: cost ?? 0 })],
+        notes: [text("notes.tree_cost", { points: cost ?? 0 })],
         ...(cost === undefined
-          ? { blocked: text("notes.devops_maxed", { max: DEVOPS[action.id].maxLevel }) }
-          : cost > state.devopsPoints
-            ? { blocked: text("notes.devops_too_expensive", { points: cost }) }
+          ? { blocked: text("notes.tree_maxed", { max: TREE[action.id].maxLevel }) }
+          : !treeUnlocked(state, action.id) && missing !== undefined
+            ? {
+                blocked: text("notes.tree_requires", {
+                  node: ref(`tree.${missing.id}.name`),
+                  level: missing.level,
+                }),
+              }
+            : cost > state.skillPoints
+              ? { blocked: text("notes.tree_too_expensive", { points: cost }) }
+              : {}),
+      };
+    }
+
+    case "buy": {
+      const def = UPGRADES[action.id];
+      const level = state.upgrades[action.id] ?? 0;
+      const cost = upgradeCost(action.id, level);
+      const notes: I18nText[] = [text("notes.price", { money: cost ?? 0 })];
+      if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: def.upkeep }));
+
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes,
+        ...(cost === undefined
+          ? { blocked: text("notes.tree_maxed", { max: def.maxLevel }) }
+          : cost > state.money
+            ? { blocked: text("notes.too_expensive", { money: cost }) }
+            : {}),
+      };
+    }
+
+    case "buy_point": {
+      const price = skillPointPrice(state);
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes: [text("notes.price", { money: price })],
+        ...(canBuySkillPoint(state)
+          ? {}
+          : { blocked: text("notes.too_expensive", { money: price }) }),
+      };
+    }
+
+    case "hire": {
+      const cost = hireCostFor(effects, action.rank);
+      const capacity = devCapacity(
+        { id: "", rank: action.rank, hiredRank: action.rank, delivered: 0, hiredSprint: 0 },
+        effects,
+      );
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes: [
+          text("notes.price", { money: cost }),
+          text("notes.salary", { money: DEV_RANK[action.rank].salary }),
+          text("notes.capacity", { count: capacity }),
+        ],
+        ...(state.devs.length >= BALANCE.team.maxDevs
+          ? { blocked: text("notes.team_full", { max: BALANCE.team.maxDevs }) }
+          : cost > state.money
+            ? { blocked: text("notes.too_expensive", { money: cost }) }
             : {}),
       };
     }
@@ -231,8 +300,12 @@ export function actionKey(action: PlayerAction): string {
       return action.kind === undefined
         ? `commit:${action.mode}`
         : `commit:${action.mode}:${action.kind}`;
-    case "devops":
-      return `devops:${action.id}`;
+    case "tree":
+      return `tree:${action.id}`;
+    case "buy":
+      return `buy:${action.id}`;
+    case "hire":
+      return `hire:${action.rank}`;
     case "resolve_conflict":
       return `conflict:${action.how}`;
     case "choose_relic":
@@ -243,6 +316,7 @@ export function actionKey(action: PlayerAction): string {
     case "merge":
     case "restart":
     case "resume":
+    case "buy_point":
       return action.type;
   }
 }

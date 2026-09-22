@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { energyMax } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import { backlogTickets, openTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
@@ -99,8 +100,12 @@ describe("the backlog", () => {
       mode: "classic",
       profileId: "junior",
       version: SAVE_VERSION,
-      meta: { statPoints: { energyMax: 200 } },
     });
+    // Enough energy to sit through a whole sprint without burning out: the
+    // test is about the board's patience, not the player's.
+    deep.tree.stamina = 100;
+    deep.player.energyMax = energyMax(deep);
+    deep.player.energy = deep.player.energyMax;
     let started = false;
     const idle = play(deep, {
       pick: (state, actions) => {
@@ -135,9 +140,10 @@ describe("the backlog", () => {
   });
 
   test("tickets are ordered by number, not by spelling, past the tenth", () => {
+    // A careful hand: the machine-only policy is fired before its twelfth ticket.
     const { state } = findSeed((r) => r.state.nextTicketSerial > 12, {
       prefix: "serial",
-      pick: policy("ai"),
+      pick: policy("craft"),
       limit: 600,
     });
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  accountSkillPoints,
   emptyMeta,
   type MetaProgressDto,
   RULES_FINGERPRINT,
@@ -19,7 +20,7 @@ function save(overrides: Partial<RunSaveDto> = {}): RunSaveDto {
     mode: "classic",
     profileId: "junior",
     unlockedSkills: ["linter"],
-    statPoints: { energyMax: 0, luck: 0, conflictRes: 0 },
+    startingSkillPoints: 0,
     actions: [],
     clientRunId: "11111111-2222-4333-8444-555555555555",
     createdAt: NOW,
@@ -44,24 +45,21 @@ describe("overclaims", () => {
   test("accepts a save claiming less than the account has", () => {
     const account = meta({
       unlockedSkills: ["linter", "coffee", "ci_cd"],
-      statPoints: { energyMax: 5, luck: 2, conflictRes: 1 },
+      level: 6,
     });
     expect(overclaims(save(), account)).toBeNull();
   });
 
-  test("refuses stat points the account never earned", () => {
-    const forged = save({ statPoints: { energyMax: 999, luck: 999, conflictRes: 999 } });
-    expect(overclaims(forged, meta())).toContain("energyMax");
+  test("refuses starting skill points the account's level never granted", () => {
+    const forged = save({ startingSkillPoints: 999 });
+    expect(overclaims(forged, meta())).toContain("skill points");
   });
 
   test("refuses a single point too many", () => {
-    const account = meta({ statPoints: { energyMax: 3, luck: 0, conflictRes: 0 } });
-    expect(
-      overclaims(save({ statPoints: { energyMax: 4, luck: 0, conflictRes: 0 } }), account),
-    ).not.toBeNull();
-    expect(
-      overclaims(save({ statPoints: { energyMax: 3, luck: 0, conflictRes: 0 } }), account),
-    ).toBeNull();
+    const account = meta({ level: 4 });
+    const held = accountSkillPoints(4);
+    expect(overclaims(save({ startingSkillPoints: held + 1 }), account)).not.toBeNull();
+    expect(overclaims(save({ startingSkillPoints: held }), account)).toBeNull();
   });
 
   test("refuses skills the account has not unlocked, and names them", () => {

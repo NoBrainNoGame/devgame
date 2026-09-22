@@ -2,11 +2,14 @@ import { RELIC_IDS, type RelicId, type SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { closeMonth } from "@/game/core/rules/economy";
 import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
-import { grantDevopsPoints } from "@/game/core/rules/grants";
+import { grantSkillPoints } from "@/game/core/rules/grants";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { isOver } from "@/game/core/rules/over";
+import { raiseQuality } from "@/game/core/rules/quality";
+import { pullTeam } from "@/game/core/rules/team";
 import { assignStaleTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { writeRelease, writeSprintStart } from "@/game/core/rules/write";
 import type { RunState } from "@/game/core/types";
@@ -30,14 +33,31 @@ export function endSprint(context: RuleContext): void {
   shipBugs(context);
   if (isOver(context)) return;
 
-  // A clean sprint earns patience back: nothing broke, and nothing had to be
-  // forced on you. The forced tickets are counted when the next sprint opens,
-  // so the flag is read here and reset there.
-  if (state.sprintIncidents === 0 && !state.sprintForced) {
+  // Every payday the sprint did not reach — all three, when the board
+  // emptied early — falls due now.
+  while (state.sprintMonths < BALANCE.economy.monthsPerSprint) {
+    closeMonth(context);
+    if (isOver(context)) return;
+  }
+
+  // A sprint you sat out is one production notices, however busy the team
+  // was: without this, a full team and a resting player is a run that never
+  // ends.
+  const idle = state.sprintPlayerDelivered === 0;
+  if (idle) {
+    raiseQuality(context, BALANCE.quality.perIdleSprint);
+    if (isOver(context)) return;
+  }
+
+  // A clean sprint earns patience back: nothing broke, nothing had to be
+  // forced on you, and you landed something yourself. The forced tickets are
+  // counted when the next sprint opens, so the flag is read here and reset
+  // there.
+  if (state.sprintIncidents === 0 && !state.sprintForced && !idle) {
     state.quality = Math.max(0, state.quality - BALANCE.quality.decayPerCleanSprint);
   }
 
-  grantDevopsPoints(context, BALANCE.devops.perSprint);
+  grantSkillPoints(context, BALANCE.tree.perSprint);
 
   const regen = Math.round(energyMax(state, context.effects) * BALANCE.energy.sprintEndRegenRatio);
   gainEnergy(context, regen, "sprint_end");
@@ -98,12 +118,17 @@ export function startNextSprint(context: RuleContext): void {
   state.sprintTurn = 0;
   state.sprintIncidents = 0;
   state.sprintForced = false;
+  state.sprintMonths = 0;
+  state.sprintPlayerDelivered = 0;
   state.player.rerollUsed = false;
   state.phase = { kind: "choose_action" };
 
   writeSprintStart(context);
 
-  // What was left waiting is yours now, then the new work arrives on top.
+  // The team picks up what is waiting before the board forces it on you —
+  // that is what a team is for. Then what is left is yours, then the new work
+  // arrives on top.
+  pullTeam(context);
   assignStaleTickets(context);
   arriveTickets(context, availableSkills(state));
 

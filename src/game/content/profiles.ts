@@ -1,6 +1,6 @@
-import type { DevopsId } from "@/game/content/devops";
 import type { PartialEffects } from "@/game/content/effects";
 import type { SkillId } from "@/game/content/skills";
+import type { TreeNodeId } from "@/game/content/tree";
 
 /**
  * Starters. Each one is a different answer to the game's central question —
@@ -15,7 +15,7 @@ export interface ProfileDef {
   id: ProfileId;
   effects: PartialEffects;
   startingSkills: readonly SkillId[];
-  startingDevops: Readonly<Partial<Record<DevopsId, number>>>;
+  startingTree: Readonly<Partial<Record<TreeNodeId, number>>>;
   /** Banked commits needed to play it. The Junior is always available. */
   unlockCost: number;
 }
@@ -26,14 +26,14 @@ export const PROFILES: Record<ProfileId, ProfileDef> = {
     // Boundless energy, no instinct for when the machine is lying.
     effects: { energyMaxBonus: 2, aiSuccessPoints: -8 },
     startingSkills: [],
-    startingDevops: {},
+    startingTree: {},
     unlockCost: 0,
   },
   senior: {
     id: "senior",
     effects: { craftSuccessPoints: 10, conflictResistancePoints: 6, aiSuccessPoints: -4 },
     startingSkills: [],
-    startingDevops: {},
+    startingTree: {},
     unlockCost: 300,
   },
   vibe_coder: {
@@ -41,14 +41,14 @@ export const PROFILES: Record<ProfileId, ProfileDef> = {
     // Fast and confident, and the debt gauge is a rumour.
     effects: { aiSuccessPoints: 15, craftSuccessPoints: -6, debtFuzzBonus: 10 },
     startingSkills: ["copilot_v2"],
-    startingDevops: {},
+    startingTree: {},
     unlockCost: 600,
   },
   devops: {
     id: "devops",
     effects: {},
     startingSkills: [],
-    startingDevops: { ci: 1 },
+    startingTree: { ci: 1 },
     unlockCost: 1000,
   },
 };

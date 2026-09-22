@@ -26,8 +26,21 @@ function shippingUnread(seed: string, count: number) {
   return state;
 }
 
-/** Runs the sprint clock out so the release ships what was merged. */
+/**
+ * Runs the sprint clock out so the release ships what the ticket holds. The
+ * commits are put on `dev` directly rather than through the review: with six
+ * unread machine-written commits the review says no on nearly every seed, and
+ * the rule under test is the release's, not the review's.
+ */
 function closeSprint(state: ReturnType<typeof inHand>) {
+  const forced = structuredClone(state);
+  forced.shipped.push(...ticketInHand(forced).nodeIds);
+  forced.sprintTurn = BALANCE.sprint.turns - 1;
+  return applyAction(forced, { type: "rest" });
+}
+
+/** Lands the ticket in hand on the sprint's last turn: a sprint you delivered in. */
+function mergeAndClose(state: ReturnType<typeof inHand>) {
   const forced = structuredClone(state);
   forced.sprintTurn = BALANCE.sprint.turns - 1;
   return submitAndMerge(forced);
@@ -40,7 +53,6 @@ describe("production", () => {
 
     for (let i = 0; i < 60; i += 1) {
       const result = closeSprint(shippingUnread(`ship-${i}`, 6));
-      if (result.state.phase.kind === "resolve_conflict") continue;
       releases += 1;
       incidents += eventsOfType(result.events, "incident").filter(
         (e) => e.source === "release",
@@ -82,8 +94,9 @@ describe("production", () => {
     const state = makeReady(inHand("decay"));
     state.quality = 40;
     state.sprintIncidents = 0;
-    const result = closeSprint(state);
+    const result = mergeAndClose(state);
     if (result.state.phase.kind === "resolve_conflict") return;
+    expect(result.state.phase.kind).not.toBe("ticket_rejected");
     if (eventsOfType(result.events, "incident").length > 0) return;
 
     expect(result.state.quality).toBe(40 - BALANCE.quality.decayPerCleanSprint);

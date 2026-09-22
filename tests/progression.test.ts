@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { emptyMeta, levelForXp, xpForLevel } from "@/game";
+import { accountSkillPoints, emptyMeta, levelForXp, xpForLevel } from "@/game";
 import { PROFILES } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
 import { applyRunToMeta, levelProgress } from "@/lib/profile/progression";
 
 const NOW = "2026-09-21T10:00:00.000Z";
@@ -25,14 +26,14 @@ describe("applyRunToMeta", () => {
     expect(meta.commitsBank).toBe(42);
   });
 
-  test("XP raises the level and hands out a point to spend", () => {
+  test("XP raises the level, which is the run's head start", () => {
     const xp = xpForLevel(3);
     const { meta, levelsGained } = applyRunToMeta(emptyMeta(NOW), { ...nothing, xp }, LATER);
 
     expect(meta.level).toBe(levelForXp(xp));
     expect(meta.level).toBeGreaterThan(1);
     expect(levelsGained).toBe(meta.level - 1);
-    expect(meta.unspentStatPoints).toBe(levelsGained);
+    expect(accountSkillPoints(meta.level)).toBe(levelsGained * BALANCE.tree.perAccountLevel);
   });
 
   test("banked commits unlock the starters that cost that much", () => {

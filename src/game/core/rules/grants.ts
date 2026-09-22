@@ -33,18 +33,18 @@ export function grantRelic(context: RuleContext, relicId: RelicId): void {
   const grant = RELICS[relicId].grant;
   if (grant === undefined) return;
 
-  if (grant.devopsPoints !== undefined) grantDevopsPoints(context, grant.devopsPoints);
+  if (grant.skillPoints !== undefined) grantSkillPoints(context, grant.skillPoints);
   if (grant.energy !== undefined) gainEnergy(context, grant.energy, "relic");
   if (grant.debt !== undefined) addDebt(context, grant.debt);
 }
 
-export function grantDevopsPoints(context: RuleContext, amount: number): void {
+export function grantSkillPoints(context: RuleContext, amount: number): void {
   if (amount === 0) return;
 
-  context.state.devopsPoints = Math.max(0, context.state.devopsPoints + amount);
+  context.state.skillPoints = Math.max(0, context.state.skillPoints + amount);
   emit(context, {
-    type: "devops_points",
+    type: "skill_points",
     delta: amount,
-    value: context.state.devopsPoints,
+    value: context.state.skillPoints,
   });
 }

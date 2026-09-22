@@ -99,25 +99,44 @@ describe("getAvailableActions", () => {
     expect(() => applyAction(state, { type: "review" })).toThrow(InvalidActionError);
   });
 
-  test("DevOps points only appear once they can be spent", () => {
+  test("skill points only appear once they can be spent", () => {
     const state = inHand("actions-6");
-    expect(getAvailableActions(state).some(isType("devops"))).toBe(false);
+    expect(getAvailableActions(state).some(isType("tree"))).toBe(false);
 
     const rich = structuredClone(state);
-    rich.devopsPoints = 5;
-    expect(getAvailableActions(rich).some(isType("devops"))).toBe(true);
+    rich.skillPoints = 5;
+    expect(getAvailableActions(rich).some(isType("tree"))).toBe(true);
   });
 
-  test("a maxed DevOps node stops being offered", () => {
+  test("a maxed tree node stops being offered", () => {
     const state = inHand("actions-7");
     const maxed = structuredClone(state);
-    maxed.devopsPoints = 9;
-    maxed.devops.cd = 1;
+    maxed.skillPoints = 9;
+    maxed.tree.ci = 1;
+    maxed.tree.cd = 1;
 
     const offered = getAvailableActions(maxed)
-      .filter(isType("devops"))
-      .map((a) => (a.type === "devops" ? a.id : ""));
+      .filter(isType("tree"))
+      .map((a) => (a.type === "tree" ? a.id : ""));
     expect(offered).not.toContain("cd");
     expect(offered).toContain("ci");
+  });
+
+  test("a node is not offered before its prerequisites, and is once they hold", () => {
+    const state = inHand("actions-8");
+    const rich = structuredClone(state);
+    rich.skillPoints = 9;
+
+    const locked = getAvailableActions(rich)
+      .filter(isType("tree"))
+      .map((a) => (a.type === "tree" ? a.id : ""));
+    expect(locked).not.toContain("cd");
+    expect(() => applyAction(rich, { type: "tree", id: "cd" })).toThrow(InvalidActionError);
+
+    const unlocked = applyAction(rich, { type: "tree", id: "ci" }).state;
+    const offered = getAvailableActions(unlocked)
+      .filter(isType("tree"))
+      .map((a) => (a.type === "tree" ? a.id : ""));
+    expect(offered).toContain("cd");
   });
 });

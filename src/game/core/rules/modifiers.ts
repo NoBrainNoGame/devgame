@@ -1,16 +1,18 @@
 import {
   addEffects,
-  DEVOPS,
-  DEVOPS_IDS,
   type Effects,
   NO_EFFECTS,
   PROFILES,
   RELICS,
   SKILLS,
+  TREE,
+  TREE_IDS,
+  UPGRADE_IDS,
+  UPGRADES,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import { behindOf, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
+import { behindOf, openTickets, playerTickets, unreadAiOn } from "@/game/core/rules/tickets";
 import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
 
 /**
@@ -34,23 +36,19 @@ export function gatherEffects(state: RunState): Effects {
 
   addEffects(effects, PROFILES[state.profileId].effects);
 
-  // Levels bought between runs. They are effects like any other, so nothing
-  // downstream has to know the meta-progression exists.
-  addEffects(effects, {
-    energyMaxBonus: state.statPoints.energyMax,
-    allSuccessPoints: state.statPoints.luck,
-    conflictResistancePoints: state.statPoints.conflictRes,
-  });
-
   for (const skillId of [...state.skills].sort()) {
     addEffects(effects, SKILLS[skillId].effects);
   }
   for (const relicId of [...state.relics].sort()) {
     addEffects(effects, RELICS[relicId].effects);
   }
-  for (const devopsId of DEVOPS_IDS) {
-    const level = state.devops[devopsId] ?? 0;
-    for (let i = 0; i < level; i++) addEffects(effects, DEVOPS[devopsId].perLevel);
+  for (const nodeId of TREE_IDS) {
+    const level = state.tree[nodeId] ?? 0;
+    for (let i = 0; i < level; i++) addEffects(effects, TREE[nodeId].perLevel);
+  }
+  for (const upgradeId of UPGRADE_IDS) {
+    const level = state.upgrades[upgradeId] ?? 0;
+    for (let i = 0; i < level; i++) addEffects(effects, UPGRADES[upgradeId].perLevel);
   }
 
   return effects;
@@ -67,10 +65,11 @@ export function isCrunch(state: RunState): boolean {
 
 /**
  * Open tickets beyond the first. Each one is something else you are holding
- * in your head, and every commit and every roll pays for it.
+ * in your head, and every commit and every roll pays for it. What the team
+ * holds is not in your head.
  */
 export function wipExtra(state: RunState): number {
-  const features = openTickets(state).filter((ticket) => ticket.kind !== "hotfix").length;
+  const features = playerTickets(state).filter((ticket) => ticket.kind !== "hotfix").length;
   return Math.max(0, features - 1);
 }
 

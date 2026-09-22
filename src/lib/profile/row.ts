@@ -56,10 +56,10 @@ export function toColumns(meta: MetaProgressDto) {
       unlockedProfiles: meta.unlockedProfiles,
       unlockedSkills: meta.unlockedSkills,
     },
+    // Rows written before the skill tree still carry `statPoints` in here;
+    // the schema drops them on the way out.
     settings: {
       settings: meta.settings,
-      statPoints: meta.statPoints,
-      unspentStatPoints: meta.unspentStatPoints,
       version: meta.version,
     },
   };

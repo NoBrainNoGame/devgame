@@ -1,16 +1,19 @@
 "use client";
 
+import { Pause, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import { useGameText } from "@/components/hud/useGameText";
+import { IDLE_SPEEDS, useIdleSettings } from "@/components/hud/useIdleSettings";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   type ActionPreview,
   actionKey,
+  chooseAutopilot,
   type PlayerAction,
   type RunSnapshot,
-  type TicketView,
 } from "@/game";
 import { cn } from "@/lib/utils";
 
@@ -20,15 +23,21 @@ import { cn } from "@/lib/utils";
  * design: a hidden roll reads as unfairness, a visible one reads as a gamble.
  *
  * Only what costs a turn lives here: commit, review, submit. Starting and
- * switching tickets are free and sit with the board and the ticket bar.
+ * switching tickets are free and sit with the board and the ticket bar; the
+ * shop and the tree have their own screens.
+ *
+ * The rest button carries the idle clock: left alone, the run keeps moving.
  */
 export function ActionPanel({
   snapshot,
   busy,
+  paused,
   onAct,
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
+  /** A dialog has the floor: the idle clock waits. */
+  paused: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -44,9 +53,6 @@ export function ActionPanel({
   const review = snapshot.actions.find((action) => action.type === "review");
   const rest = snapshot.actions.find((action) => action.type === "rest");
   const submit = snapshot.actions.find((action) => action.type === "submit");
-  const devops = snapshot.actions.filter(
-    (action): action is Extract<PlayerAction, { type: "devops" }> => action.type === "devops",
-  );
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
 
@@ -58,9 +64,7 @@ export function ActionPanel({
 
       {current === undefined ? (
         <p className="text-muted-foreground text-sm">{t("noTicket")}</p>
-      ) : (
-        <TicketHeader ticket={current} />
-      )}
+      ) : null}
 
       <div className="grid gap-2">
         {current?.mustWrite === undefined ? null : (
@@ -100,13 +104,7 @@ export function ActionPanel({
         )}
 
         {rest === undefined ? null : (
-          <ActionButton
-            label={t("rest")}
-            hint={t("restHint")}
-            preview={snapshot.previews[actionKey(rest)]}
-            busy={busy}
-            onAct={() => onAct(rest)}
-          />
+          <IdleRest snapshot={snapshot} rest={rest} busy={busy} paused={paused} onAct={onAct} />
         )}
 
         {written.length === 0 ? null : (
@@ -124,61 +122,126 @@ export function ActionPanel({
           </>
         )}
       </div>
-
-      {devops.length === 0 ? null : (
-        <div className="space-y-2 border-line border-t pt-3">
-          <p className="text-muted-foreground text-xs">
-            {t("devopsPoints", { count: snapshot.devopsPoints })}
-            {" "}· {t("devopsHint")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {devops.map((action) => (
-              <Button
-                key={actionKey(action)}
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={() => onAct(action)}
-              >
-                <DevopsLabel id={action.id} snapshot={snapshot} />
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
     </section>
   );
 }
 
-/** The ticket in hand: what it asks for, and how far along it is. */
-function TicketHeader({ ticket }: { ticket: TicketView }) {
+/** Seconds the idle clock takes to press rest on its own, at normal speed. Rendering, not rules. */
+const IDLE_SECONDS = 30;
+const IDLE_TICK_MS = 250;
+
+/**
+ * The rest button with the idle clock under it, and the clock's controls.
+ *
+ * Every turn the clock starts again; when it runs out, the run plays on
+ * without you — a rest, or the supervisor's move once it is bought. It waits
+ * while the canvas animates or a dialog is open, and it starts over whenever
+ * you act yourself, so the bar is always "time since your last decision".
+ * Switched off, nothing plays for you; sped up, the same clock runs two, five
+ * or ten times faster for a player who trusts their build.
+ */
+function IdleRest({
+  snapshot,
+  rest,
+  busy,
+  paused,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  rest: PlayerAction;
+  busy: boolean;
+  paused: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
   const t = useTranslations("hud");
-  const game = useTranslations("game");
+  const [idle, setIdle] = useIdleSettings();
+  const [clock, setClock] = useState({ turn: snapshot.turn, elapsed: 0 });
+  const running = idle.enabled && !busy && !paused;
+  const seconds = IDLE_SECONDS / idle.speed;
+
+  // A new turn is a new clock: the state is adjusted during render, the way
+  // React asks for a value that resets when a prop changes.
+  if (clock.turn !== snapshot.turn) setClock({ turn: snapshot.turn, elapsed: 0 });
+
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(
+      () => setClock((value) => ({ ...value, elapsed: value.elapsed + IDLE_TICK_MS / 1000 })),
+      IDLE_TICK_MS,
+    );
+    return () => clearInterval(timer);
+  }, [running]);
+
+  const due = clock.elapsed >= seconds;
+  useEffect(() => {
+    if (!due || !running) return;
+    setClock((value) => ({ ...value, elapsed: 0 }));
+    const move = snapshot.autopilot ? chooseAutopilot(snapshot) : undefined;
+    onAct(move ?? rest);
+  }, [due, running, snapshot, rest, onAct]);
+
+  const pct = idle.enabled ? Math.min(100, (clock.elapsed / seconds) * 100) : 0;
 
   return (
-    <div className="space-y-1 rounded-md border border-line bg-panel/60 px-3 py-2 text-sm">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className={cn("truncate", ticket.kind === "hotfix" && "text-branch-hotfix")}>
-          #{ticket.id.slice(1)}
-          {" "}
-          {ticket.skillId === undefined
-            ? game(`tickets.${ticket.kind}.name` as never)
-            : game(`skills.${ticket.skillId}.name` as never)}
-        </span>
-        <span className="shrink-0 text-xs tabular-nums">
-          {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
-        </span>
+    <div className="space-y-1.5">
+      <div className="relative">
+        <ActionButton
+          label={t("rest")}
+          hint={snapshot.autopilot ? t("restHintAutopilot") : t("restHint")}
+          preview={snapshot.previews[actionKey(rest)]}
+          busy={busy}
+          onAct={() => onAct(rest)}
+        />
+        {idle.enabled ? (
+          <div
+            className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5 overflow-hidden rounded-full bg-line"
+            aria-hidden
+          >
+            <div
+              className={cn(
+                "h-full transition-[width] duration-200 ease-linear",
+                snapshot.autopilot ? "bg-branch-feature" : "bg-energy",
+                !running && "opacity-40",
+              )}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        ) : null}
       </div>
-      <p className="text-muted-foreground text-xs">{t("storyPointsHint")}</p>
-      {ticket.unread > 0 ? (
-        <p className="text-debt text-xs">{t("unreadOn", { count: ticket.unread })}</p>
-      ) : null}
-      {ticket.bugs > 0 ? (
-        <p className="text-branch-hotfix text-xs">{t("bugsOn", { count: ticket.bugs })}</p>
-      ) : null}
-      {ticket.behind > 0 ? (
-        <p className="text-muted-foreground text-xs">{t("behindDev", { count: ticket.behind })}</p>
-      ) : null}
+
+      <div className="flex items-center gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="xs"
+              variant={idle.enabled ? "secondary" : "outline"}
+              aria-pressed={idle.enabled}
+              onClick={() => setIdle({ enabled: !idle.enabled })}
+            >
+              {idle.enabled ? <Pause /> : <Play />}
+              {t("idleAuto")}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-64">
+            {idle.enabled ? t("idleOnHint", { seconds }) : t("idleOffHint")}
+          </TooltipContent>
+        </Tooltip>
+        <fieldset className="ml-auto flex gap-0.5 border-0 p-0" aria-label={t("idleSpeed")}>
+          {IDLE_SPEEDS.map((speed) => (
+            <Button
+              key={speed}
+              size="xs"
+              variant={idle.speed === speed ? "secondary" : "ghost"}
+              aria-pressed={idle.speed === speed}
+              disabled={!idle.enabled}
+              className="px-1.5 tabular-nums"
+              onClick={() => setIdle({ speed })}
+            >
+              ×{speed}
+            </Button>
+          ))}
+        </fieldset>
+      </div>
     </div>
   );
 }
@@ -217,23 +280,6 @@ function WrittenAsButton({
       compact
       onAct={() => onAct(action)}
     />
-  );
-}
-
-function DevopsLabel({
-  id,
-  snapshot,
-}: {
-  id: Extract<PlayerAction, { type: "devops" }>["id"];
-  snapshot: RunSnapshot;
-}) {
-  const game = useTranslations("game");
-  const level = snapshot.devops[id] ?? 0;
-  return (
-    <span>
-      {game(`devops.${id}.name` as never)}
-      {level > 0 ? ` ${level + 1}` : ""}
-    </span>
   );
 }
 

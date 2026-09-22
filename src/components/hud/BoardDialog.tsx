@@ -154,6 +154,16 @@ function TicketCard({
             {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
           </p>
         )}
+        {ticket.mrr > 0 ? (
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {t("ticketMrr", { money: ticket.mrr })}
+          </p>
+        ) : null}
+        {ticket.assignee === undefined ? null : (
+          <p className="text-muted-foreground text-xs">
+            {t("assignedTo", { dev: ticket.assignee })}
+          </p>
+        )}
 
         {ticket.status === "backlog" ? null : (
           <>
@@ -179,7 +189,7 @@ function TicketCard({
         >
           {t("startTicket")}
         </Button>
-      ) : ticket.status === "open" && !current ? (
+      ) : ticket.status === "open" && !current && ticket.assignee === undefined ? (
         <Button
           size="sm"
           variant="outline"

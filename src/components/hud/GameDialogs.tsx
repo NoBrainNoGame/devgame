@@ -169,6 +169,8 @@ export function RunOverDialog({
           <dd className="text-right tabular-nums">{Math.max(0, snapshot.sprint - 1)}</dd>
           <dt className="text-muted-foreground">{t("ticketsDelivered")}</dt>
           <dd className="text-right tabular-nums">{snapshot.ticketsDelivered}</dd>
+          <dt className="text-muted-foreground">{t("moneyEarned")}</dt>
+          <dd className="text-right tabular-nums">{snapshot.economy.moneyEarned} €</dd>
         </dl>
 
         <DialogFooter className="sm:justify-between">

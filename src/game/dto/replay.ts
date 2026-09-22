@@ -26,6 +26,8 @@ export interface ReplayStats {
   commits: number;
   /** XP the run earned. */
   xp: number;
+  /** Money collected over the run, for the score screen. Never a score. */
+  moneyEarned: number;
   /** Fingerprint of the final state, for comparing a replay against a session. */
   hash: string;
 }
@@ -71,7 +73,7 @@ export function replayRun(input: unknown): ReplayResult {
     mode: save.mode,
     profileId: save.profileId,
     version: save.version,
-    meta: { unlockedSkills: save.unlockedSkills, statPoints: save.statPoints },
+    meta: { unlockedSkills: save.unlockedSkills, startingSkillPoints: save.startingSkillPoints },
   });
 
   for (let i = 0; i < save.actions.length; i++) {
@@ -104,6 +106,7 @@ export function replayRun(input: unknown): ReplayResult {
       ticketsDelivered: state.ticketsDelivered,
       commits: state.player.totalCommits,
       xp: state.xpEarned,
+      moneyEarned: state.moneyEarned,
       hash: hashState(state),
     },
     state,

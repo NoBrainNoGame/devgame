@@ -121,6 +121,22 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
     }
   }
 
+  // The team's tickets are open, held by someone on the roster, and never
+  // the one in your hand. A merged ticket belongs to nobody.
+  const roster = new Set(state.devs.map((dev) => dev.id));
+  for (const ticket of Object.values(state.tickets)) {
+    if (ticket.assignee === undefined) continue;
+    if (!roster.has(ticket.assignee)) {
+      failures.push({ rule: "assignee-on-roster", detail: `${ticket.id} -> ${ticket.assignee}` });
+    }
+    if (ticket.status !== "open") {
+      failures.push({ rule: "assigned-is-open", detail: `${ticket.id} is ${ticket.status}` });
+    }
+    if (state.player.ticketId === ticket.id) {
+      failures.push({ rule: "assigned-is-not-in-hand", detail: ticket.id });
+    }
+  }
+
   // A ticket is a chain: each commit's first parent is the previous one, and
   // the first commit forks off `dev`. Two open tickets never share a column.
   const lanes = new Map<number, string>();

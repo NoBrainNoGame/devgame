@@ -4,7 +4,17 @@ import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
 import { openTickets } from "@/game/core/rules/tickets";
 
-import { findSeed, isCommit, isType, newRun, play, policy, prefer } from "./helpers";
+import {
+  findSeed,
+  funded,
+  hiringPolicy,
+  isCommit,
+  isType,
+  newRun,
+  play,
+  policy,
+  prefer,
+} from "./helpers";
 
 /**
  * There is no map to generate any more: the graph is written as the run is
@@ -23,6 +33,24 @@ describe("the written graph", () => {
     expect(broken).toEqual([]);
   });
 
+  test("300 seeds played with a hired team satisfy them too", () => {
+    const broken: string[] = [];
+    let teamCommits = 0;
+    for (let i = 0; i < 300; i++) {
+      const { state } = play(funded(`team-map-${i}`), { pick: hiringPolicy("ai"), limit: 60 });
+      const failures = checkInvariants(state);
+      if (failures.length > 0) {
+        broken.push(`team-map-${i}: ${failures[0]?.rule} ${failures[0]?.detail}`);
+      }
+      for (const node of Object.values(state.nodes)) {
+        if (node.commit.author !== undefined) teamCommits += 1;
+      }
+    }
+    expect(broken).toEqual([]);
+    // The policy has to have actually exercised the team, or this proves nothing.
+    expect(teamCommits).toBeGreaterThan(300);
+  });
+
   test("a fresh run has exactly one commit: dev, opened from nothing", () => {
     for (let i = 0; i < 50; i++) {
       const state = newRun(`fresh-${i}`);
@@ -36,7 +64,9 @@ describe("the written graph", () => {
   });
 
   test("main ships sprints, dev integrates tickets, and nothing is written on either", () => {
-    const { state } = findSeed((r) => r.state.sprint >= 3, {
+    // A run that reached its third sprint with something actually landed: a
+    // player who restarted every rejected ticket leaves no work to inspect.
+    const { state } = findSeed((r) => r.state.sprint >= 3 && r.state.ticketsDelivered > 0, {
       prefix: "trunk",
       pick: policy("ai"),
       limit: 400,
