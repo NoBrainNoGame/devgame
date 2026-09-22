@@ -48,7 +48,7 @@ export function ConflictDialog({
           >
             <span>
               {t("conflictManual")}
-              {manual?.successPct === undefined ? "" : ` — ${manual.successPct} %`}
+              {manual?.successPct === undefined ? "" : `\u00a0— ${manual.successPct}\u00a0%`}
             </span>
             <span className="whitespace-normal font-normal text-muted-foreground text-xs">
               {t("conflictManualHint")}

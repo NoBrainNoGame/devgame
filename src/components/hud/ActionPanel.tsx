@@ -114,7 +114,8 @@ export function ActionPanel({
       {devops.length === 0 ? null : (
         <div className="space-y-2 border-line border-t pt-3">
           <p className="text-muted-foreground text-xs">
-            {t("devopsPoints", { count: snapshot.devopsPoints })} · {t("devopsHint")}
+            {t("devopsPoints", { count: snapshot.devopsPoints })}
+            {"\u00a0"}· {t("devopsHint")}
           </p>
           <div className="flex flex-wrap gap-2">
             {devops.map((action) => (
@@ -245,7 +246,8 @@ function MoveButton({
                 <ul className="text-muted-foreground">
                   {offers.map((kind) => (
                     <li key={kind}>
-                      {game(`nodes.${kind}.name` as never)} — {game(`nodes.${kind}.desc` as never)}
+                      {game(`nodes.${kind}.name` as never)}
+                      {"\u00a0"}— {game(`nodes.${kind}.desc` as never)}
                     </li>
                   ))}
                 </ul>
@@ -293,7 +295,7 @@ function WrittenAsButton({
 
   return (
     <ActionButton
-      label={`${game(`nodes.${action.kind}.name` as never)} · ${
+      label={`${game(`nodes.${action.kind}.name` as never)}\u00a0· ${
         action.mode === "craft" ? t("byHand") : t("byMachine")
       }`}
       hint={game(`nodes.${action.kind}.desc` as never)}

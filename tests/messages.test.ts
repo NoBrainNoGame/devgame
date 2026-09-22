@@ -119,3 +119,20 @@ describe("game content is fully named", () => {
     expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
   });
 });
+
+describe("french typography", () => {
+  test("double punctuation is preceded by a non-breaking space", () => {
+    // `:` `;` `!` `?` `%` and `»` take an unbreakable space in French. With an
+    // ordinary one the mark wraps onto a line of its own, which in a narrow
+    // tooltip reads as a stray ":" hanging under the sentence it belongs to.
+    const offenders: string[] = [];
+
+    for (const [key, value] of frFlat) {
+      if (typeof value !== "string") continue;
+      if (/ [:;!?%»]/.test(value)) offenders.push(`${key}: ${value}`);
+      if (/« /.test(value)) offenders.push(`${key}: ${value}`);
+    }
+
+    expect(offenders).toEqual([]);
+  });
+});
