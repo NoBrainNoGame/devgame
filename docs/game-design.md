@@ -25,10 +25,10 @@ Le dépôt est à vous. Le backlog, non. Chaque sprint apporte des **tickets** �
 des features à livrer, avec des points de story à remplir — et le projet en
 apporte de plus en plus. Un ticket plein part en **review**, et la review
 trouve ce que la machine a écrit sans relecture. Un ticket laissé en attente
-finit par vous être assigné ; un ticket refusé en fait arriver un autre en
-parallèle ; un ticket ouvert de plus, c'est chaque commit plus cher et chaque
-jet plus mauvais. Et ce qui part en production sans avoir été relu finit par y
-casser quelque chose.
+finit par vous être assigné ; un ticket refusé fait ouvrir le suivant du
+backlog en parallèle ; un ticket ouvert de plus, c'est chaque commit plus cher
+et chaque jet plus mauvais. Et ce qui part en production sans avoir été relu
+finit par y casser quelque chose.
 
 Une run se termine de deux façons : **burnout** (vous n'avez plus d'énergie) ou
 **licenciement** (la production a perdu patience). Le score est fait des
@@ -53,9 +53,10 @@ vers ce sur quoi il a été construit. C'est un DAG lu par les parents, comme
   donc l'histoire des sprints, pas celle des commits.
 
 Tout le travail se fait dans la colonne d'un ticket, qui part de `dev` et y
-revient. Un ticket prend la colonne libre la plus à gauche quand on l'ouvre et
-la rend quand il merge. **Un merge est la fin d'un ticket, jamais un commit de
-plus.**
+revient. Un ticket prend la colonne libre la plus à gauche **à son premier
+commit** — un ticket ouvert mais pas encore écrit n'a pas de colonne, donc pas
+de trou dans le graphe — et la rend quand il merge ou quand on le recommence.
+**Un merge est la fin d'un ticket, jamais un commit de plus.**
 
 ### Le ticket
 
@@ -65,7 +66,10 @@ Un ticket, c'est :
   un à la main, trois par la machine ;
 - parfois une **compétence**, payée en points de story supplémentaires : le
   ticket qui donne quelque chose coûte strictement plus que celui qui ne donne
-  rien, sinon il n'y a pas de décision.
+  rien, sinon il n'y a pas de décision. Un tel ticket est **une offre pour un
+  sprint** : personne ne l'a démarré quand le sprint se ferme, il expire, et
+  sa compétence retourne dans le pool. Il est rare ; le nœud Product owner de
+  l'arbre et la compétence Sens produit en font arriver davantage.
 
 Points pleins, le ticket n'est pas livré : il est **soumis**. Quelqu'un lit la
 pull request, et ce qu'il trouve est exactement ce que le jeu punit : chaque
@@ -95,8 +99,10 @@ entre les deux mains reste celui des taux de base. Une refacto imposée compte
 dedans ; un hotfix, non : le ticket forcé est déjà la punition.
 
 **Le backlog s'impose.** Un ticket resté en attente au-delà d'un sprint de
-grâce est ouvert d'office au sprint suivant. C'est la pression du jeu : plus on
-reste sur le projet, plus il arrive de tickets, et plus on en tient à la fois.
+grâce est ouvert d'office au sprint suivant, et coûte de la patience à la
+production au passage. C'est la pression du jeu : plus on reste sur le projet,
+plus il arrive de tickets, et plus on en tient à la fois. Un ticket à
+compétence n'est jamais imposé : il a expiré avant.
 
 Les tickets en trop, c'est aussi ce qu'une **équipe** prend en charge — voir
 [L'entreprise](#lentreprise).
@@ -204,7 +210,9 @@ tableau, la prod attend quand même de vous voir. Un sprint propre — sans
 incident, sans ticket imposé, et avec au moins un merge de votre main — la
 fait baisser. C'est la fin du joueur trop lent ou trop sale ; le burnout est
 celle du joueur qui a tenu trop de choses à la fois. Personne ne doit être
-surpris.
+surpris : **chaque variation de la jauge est une ligne du journal qui dit
+pourquoi**, et l'écran de fin nomme ce qui l'a remplie en dernier et détaille
+ce qui l'a remplie en tout.
 
 **Argent.** La monnaie de l'entreprise, décrite dans sa propre section. Elle ne
 descend jamais sous zéro : ce qu'on ne peut pas payer, on ne l'a plus.
@@ -216,7 +224,8 @@ de la run : réduction du risque des commits IA, merges qui rendent plus
 d'énergie, dette rendue visible, relance d'un jet raté, énergie maximale
 augmentée, dette IA remisée, et ainsi de suite. Le catalogue vit dans
 `src/game/content/`. Une compétence n'est jamais promise par deux tickets à la
-fois, et le premier ticket de chaque sprint en porte une tant qu'il en reste.
+fois, le premier ticket de chaque sprint en porte une tant qu'il en reste, et
+un ticket à compétence laissé au backlog expire avec son sprint.
 
 ## Arbre de compétences
 
@@ -279,11 +288,18 @@ ramasse le backlog avant que le tableau ne vous l'impose. Un dev qu'on ne peut
 pas payer s'en va, et ses tickets vous reviennent tels quels, ouverts, dans
 leur colonne.
 
-**Le jeu tourne sans vous.** Le bouton Souffler porte une horloge : laissée
-seule une trentaine de secondes, elle presse le bouton. Avec le superviseur IA
-acheté, elle joue le coup évident à la place — merger ce qui est accepté,
-ouvrir la PR d'un ticket plein, relire, coder à la main tant que l'énergie
-tient. Ce sont des actions comme les autres, enregistrées dans le journal de
+**Le jeu tourne sans vous.** Une horloge tourne sous **le coup prévu**, et sa
+barre le désigne : laissée seule une trentaine de secondes, elle le presse.
+Sans superviseur, le coup prévu est de démarrer le plus ancien ticket quand
+rien n'est en main, et de souffler sinon ; dans les autres phases, c'est la
+réponse évidente — merger ce qui est accepté, continuer après un refus,
+résoudre un conflit à la main, prendre la première relique — pour qu'une run
+laissée seule ne cale jamais sur une question. Avec le superviseur IA acheté,
+elle joue le coup évident à la place — ouvrir la PR d'un ticket plein, relire,
+coder à la main tant que l'énergie tient. L'horloge attend pendant qu'une
+fenêtre ouverte à la main a la parole et pendant que la review lit son
+verdict. Elle va à ×1, puis ×10 et ×100 quand l'arbre les débloque (Avance
+rapide). Ce sont des actions comme les autres, enregistrées dans le journal de
 la run ; rien dans le moteur ne lit l'horloge.
 
 ## Événements et obstacles
@@ -412,11 +428,20 @@ que le moteur sait.
 4. **Le graphe ne se clique pas.** On n'agit pas sur le passé : toute décision
    se prend dans le panneau, qui a la place de dire ce que chaque option coûte.
 5. **Rien n'est dessiné au-dessus de la tête.** Pas de nœud à venir, pas même
-   un moignon de lane. La colonne d'un ticket apparaît avec son premier commit.
-6. **Un ticket est une colonne le temps qu'il est ouvert.** Il la prend en
-   s'ouvrant, la rend en mergeant, et le suivant la reprend. Les rangées sont
-   globales : chaque commit prend la suivante, quel que soit le ticket, et le
-   graphe se lit dans l'ordre où il a été écrit.
+   un moignon de lane : un trait ne relie que les commits d'une même branche.
+   `main` et `dev` continuent en pointillé jusqu'au rang du haut, pour dire
+   qu'elles sont là ; la colonne d'un ticket apparaît avec son premier commit
+   et s'arrête à son dernier.
+6. **Un ticket est une colonne le temps qu'il est écrit.** Il la prend à son
+   premier commit, la rend en mergeant ou en recommençant, et le suivant la
+   reprend. Deux tickets qui ont utilisé une colonne l'un après l'autre sont
+   deux traits séparés. Les rangées sont globales : chaque commit prend la
+   suivante, quel que soit le ticket, et le graphe se lit dans l'ordre où il a
+   été écrit.
+7. **Une fourche part à angle droit, un merge arrive à angle droit.** Entre
+   deux colonnes, l'horizontale est sur le rang de la branche de tronc et la
+   verticale dans la colonne de la branche, un seul coin arrondi entre les
+   deux — la forme qu'un client git dessine.
 
 Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
 nœud : ouvrir un ticket est « Démarrer », soumettre est « Ouvrir la PR », et

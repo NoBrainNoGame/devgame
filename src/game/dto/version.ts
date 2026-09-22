@@ -44,6 +44,12 @@ export const SAVE_VERSION = 3;
  * protected nothing and are not worth carrying — the first number that will
  * ever mean anything is the one in force when scores start being submitted.
  * Everything before that is a game nobody played.
+ *
+ * For the record, what would have been epoch 2 had anyone been playing: a
+ * ticket's column taken at its first commit rather than at its opening, a
+ * refused review pulling the next backlog ticket rather than inventing one,
+ * skill tickets expiring with their sprint, and the skill-ticket chance moved
+ * by a tree node.
  */
 export const RULES_EPOCH = 1;
 

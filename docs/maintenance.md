@@ -267,15 +267,33 @@ is the one with the most places to touch and the least help from the compiler.
    `refactor`, `fix`, `squash`, `docs` and `rebase`. **A new kind falls
    through silently** and behaves like an ordinary commit — no typecheck
    error, no test failure.
-6. Two message entries under `game.nodes.<kind>` — the log renders
-   `nodes.<kind>.name` as a parameter of `log.node_done`.
+6. Three message entries under `game.nodes.<kind>`: `name`, `desc` and
+   `aiName`, the card's label when the machine writes it ("Rebase IA"). The
+   log renders `nodes.<kind>.name` as a parameter of `log.node_done`;
+   `tests/messages.test.ts` checks `aiName` for every `DETOUR_KINDS` entry.
 7. It changes what a rule writes, so **it moves the epoch**.
 
 **What to verify.** `bun test tests/map.test.ts` — it plays 500 seeds and runs
 `checkInvariants` on each, and will catch a parent that does not exist, a row
-that does not increase, two commits on one spot, or work outside a ticket's
-column. Then `bun run sim` and read the `generation` block: `invariant
+that does not increase, two commits on one spot, work outside a ticket's
+column, an open ticket holding a column before its first commit (or writing
+without one), a ticket's nodes outside its column, or a cancelled ticket that
+kept anything. Then `bun run sim` and read the `generation` block: `invariant
 failures 0`.
+
+**A rule that spends production's patience** goes through `raiseQuality` in
+`src/game/core/rules/quality.ts` with a `QualitySource`, never by writing
+`state.quality`. The source is what the log line, the canvas pop and the
+run-over screen are made of, and `RunStats` counts the occurrence in the same
+rule — counters increment in rules, never in the HUD. A new source means a
+new member of `QualitySource`, a `log.quality.<source>` line, a
+`play.firedBy.<source>` and a `play.qualitySource.<source>` label in both
+catalogues.
+
+**A phase the idle clock can be in** needs a branch in `idleTarget`
+(`src/game/bridge/idle.ts`): the clock presses that move, and the bar shows
+under the button that plays it. A phase it cannot answer is a run that stalls
+when left alone; `tests/autopilot.test.ts` plays every phase.
 
 ### A starter profile
 
