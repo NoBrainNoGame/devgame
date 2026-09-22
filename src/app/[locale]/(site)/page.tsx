@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 
-import { GitGraph } from "@/components/landing/GitGraph";
+import { GitGraph, GRAPH_ROWS } from "@/components/landing/GitGraph";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { env } from "@/lib/env";
@@ -11,9 +11,11 @@ import { alternatesFor, siteUrl } from "@/lib/seo";
  * The landing page.
  *
  * It has one job: make someone who has never heard of this understand the
- * central choice — write it yourself, or let the machine write it — and press
- * play. Everything on the page earns its place against that, which is why
- * there is no feature grid and no screenshot carousel.
+ * loop — tickets to fill, two hands to write them, a review that decides, a
+ * company that grows, two ways to lose — and press play. Everything on the
+ * page earns its place against that, which is why there is no feature grid
+ * and no screenshot carousel; the graph beside the headline is the game's own
+ * rendering, redrawn in SVG.
  *
  * Static: nothing here reads the session or the database, so it can be cached
  * and served fast, which is also the single biggest thing search ranking cares
@@ -38,7 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const HOW_IT_WORKS = ["howItWorks1", "howItWorks2", "howItWorks3"] as const;
-const PILLARS = ["pillarCraft", "pillarAi", "pillarDebt"] as const;
+const PILLARS = ["pillarCraft", "pillarAi", "pillarReview", "pillarCompany"] as const;
 
 export default async function HomePage(): Promise<React.JSX.Element> {
   const locale = await getLocale();
@@ -81,11 +83,14 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             <p className="mt-4 text-muted-foreground text-xs">{t("ctaNote")}</p>
           </div>
 
-          <GitGraph className="mx-auto w-full max-w-[280px] lg:max-w-none" />
+          <GitGraph
+            subjects={Array.from({ length: GRAPH_ROWS }, (_, row) => t(`graph${row + 1}` as never))}
+            className="mx-auto w-full max-w-[360px] lg:max-w-none"
+          />
         </section>
 
         {/* The three ideas the game rests on -------------------------------- */}
-        <section className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
+        <section className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-2 lg:grid-cols-4">
           {PILLARS.map((key) => (
             <article key={key} className="bg-panel/60 p-5">
               <h2 className="font-medium text-sm">{t(`${key}Title`)}</h2>
@@ -110,6 +115,14 @@ export default async function HomePage(): Promise<React.JSX.Element> {
               </li>
             ))}
           </ol>
+        </section>
+
+        {/* The two endings -------------------------------------------------- */}
+        <section className="mt-16 grid gap-6 rounded-lg border border-line bg-panel/40 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
+          <h2 className="font-medium text-base sm:w-40">{t("endingsTitle")}</h2>
+          <p className="max-w-prose text-muted-foreground text-sm leading-relaxed">
+            {t("endings")}
+          </p>
         </section>
 
         {/* Daily seed ------------------------------------------------------- */}
