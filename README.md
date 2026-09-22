@@ -11,6 +11,8 @@ anyway, a rejected one brings another alongside, and every ticket you hold
 beyond the first taxes every commit. Tickets you deliver become permanent skills, a turn spent on code
 review repays debt, and DevOps points automate away whole mechanics.
 
+<img width="2512" height="1838" alt="image" src="https://github.com/user-attachments/assets/ee8e9f08-fefd-4004-8275-7fe178f36d4f" />
+
 Runs are infinite sprints. They end in burnout, or with production firing you.
 
 ## Stack
