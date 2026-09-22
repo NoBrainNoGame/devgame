@@ -64,7 +64,15 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             </p>
 
             <h1 className="mt-4 text-balance font-semibold text-4xl leading-[1.1] tracking-tight sm:text-5xl">
-              {t("headline")}
+              {t("headline1")}{" "}
+              {/* The period is the only thing to hover; the mark takes no room until it appears. */}
+              <span className="glitch-host">
+                {t("headline2")}
+                <span className="glitch-dot">.</span>
+                <span className="glitch-mark" aria-hidden="true">
+                  ?
+                </span>
+              </span>
             </h1>
 
             <p className="mt-5 max-w-prose text-pretty text-muted-foreground leading-relaxed">

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { STORAGE_KEYS } from "@/lib/storage/keys";
+
 import en from "../messages/en.json";
 import fr from "../messages/fr.json";
 
@@ -37,5 +39,16 @@ describe("legal identity fields", () => {
     expect(PLACEHOLDER.test("TODO_PUBLISHER_NAME")).toBe(true);
     expect(PLACEHOLDER.test("Sociétée TODO")).toBe(false);
     expect(PLACEHOLDER.test("contact@example.com")).toBe(false);
+  });
+});
+
+describe("the privacy page", () => {
+  test("names every localStorage key the app writes, in both languages", () => {
+    // The page went stale twice on renamed keys; this is the drift it catches.
+    for (const catalogue of [fr, en]) {
+      const text = (catalogue as { legal: { privacy: { offlineP1: string } } }).legal.privacy
+        .offlineP1;
+      for (const key of Object.values(STORAGE_KEYS)) expect(text).toContain(key);
+    }
   });
 });

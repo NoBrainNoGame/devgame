@@ -197,3 +197,59 @@
   --sidebar: #1b1e25;
   --sidebar-border: #2f343f;
 }
+
+/*
+ * The landing headline's question mark. It sits after the period, takes no
+ * room until the period is hovered, then fades in slightly out of place and
+ * out of colour — a glitch, not a flourish. Reduced motion keeps the fade
+ * and drops the jitter.
+ */
+.glitch-host {
+  position: relative;
+  display: inline-block;
+}
+.glitch-dot {
+  cursor: help;
+}
+.glitch-mark {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  opacity: 0;
+  color: var(--color-branch-hotfix);
+  transition: opacity 260ms ease-out;
+  pointer-events: none;
+}
+.glitch-host:has(.glitch-dot:hover) .glitch-mark,
+.glitch-dot:hover + .glitch-mark {
+  opacity: 1;
+  animation: glitch-jitter 700ms steps(3) infinite;
+}
+@keyframes glitch-jitter {
+  0% {
+    transform: translate(0, 0);
+    color: var(--color-branch-hotfix);
+    text-shadow: none;
+  }
+  33% {
+    transform: translate(1px, -1px);
+    color: var(--color-branch-feature);
+    text-shadow: 1px 0 var(--color-branch-hotfix), -1px 0 var(--color-branch-dev);
+  }
+  66% {
+    transform: translate(-1px, 1px);
+    color: var(--color-foreground);
+    text-shadow: -1px 0 var(--color-branch-hotfix), 1px 0 var(--color-branch-dev);
+  }
+  100% {
+    transform: translate(0, 0);
+    color: var(--color-branch-hotfix);
+    text-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark,
+  .glitch-dot:hover + .glitch-mark {
+    animation: none;
+  }
+}
