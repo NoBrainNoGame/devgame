@@ -4,6 +4,7 @@ import { gameStore } from "@/game/bridge/store";
 import { isActionAvailable } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
+import { accountSkillPoints } from "@/game/core/score";
 import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import type { MetaProgressDto } from "@/game/dto/meta";
 import type { RunSaveDto } from "@/game/dto/run";
@@ -48,7 +49,7 @@ export class GameSession extends Emitter {
       version: SAVE_VERSION,
       meta: {
         unlockedSkills: options.meta.unlockedSkills,
-        statPoints: options.meta.statPoints,
+        startingSkillPoints: accountSkillPoints(options.meta.level),
       },
     });
 
@@ -105,8 +106,10 @@ export class GameSession extends Emitter {
       seed: this.options.seed,
       mode: this.options.mode,
       profileId: this.options.profileId,
+      // Read back from the state, not from `options.meta`: a profile merged
+      // from another tab mid-run must not change what this run claims.
       unlockedSkills: [...this.state.unlockedSkills],
-      statPoints: { ...this.state.statPoints },
+      startingSkillPoints: this.state.startingSkillPoints,
       actions: this.getActions(),
       clientRunId: this.options.clientRunId,
       createdAt: this.options.createdAt,

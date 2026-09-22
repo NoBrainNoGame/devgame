@@ -26,7 +26,13 @@ export function TicketBar({
   onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
-  const open = snapshot.tickets.filter((ticket) => ticket.status === "open");
+  const game = useTranslations("game");
+  const open = snapshot.tickets.filter(
+    (ticket) => ticket.status === "open" && ticket.assignee === undefined,
+  );
+  const team = snapshot.tickets.filter(
+    (ticket) => ticket.status === "open" && ticket.assignee !== undefined,
+  );
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
 
   return (
@@ -58,6 +64,32 @@ export function TicketBar({
             onAct={onAct}
           />
         ))
+      )}
+
+      {team.length === 0 ? null : (
+        <div className="ml-auto flex shrink-0 items-center gap-2 border-line border-l pl-3">
+          <span className="text-muted-foreground text-xs">{t("team")}</span>
+          {team.map((ticket) => {
+            const dev = snapshot.devs.find((d) => d.id === ticket.assignee);
+            return (
+              <Tooltip key={ticket.id}>
+                <TooltipTrigger asChild>
+                  <span className="flex shrink-0 items-center gap-1.5 rounded-md border border-line/60 border-dashed px-2 py-1 text-muted-foreground text-xs">
+                    <span className="tabular-nums opacity-70">#{ticket.id.slice(1)}</span>
+                    <span className="tabular-nums">
+                      {ticket.filled}/{ticket.points}
+                    </span>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {dev === undefined
+                    ? null
+                    : `${dev.id} · ${game(`ranks.${dev.rank}.name` as never)}`}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
       )}
     </div>
   );

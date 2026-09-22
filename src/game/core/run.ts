@@ -1,23 +1,27 @@
 import {
-  DEVOPS_IDS,
-  type DevopsId,
   freeFeatureSkills,
   PROFILES,
   type ProfileId,
   type SkillId,
+  TREE_IDS,
+  type TreeNodeId,
+  UPGRADE_IDS,
+  type UpgradeId,
 } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { availableSkills } from "@/game/core/rules/sprint";
 import { writeSprintStart } from "@/game/core/rules/write";
-import type { RunMode, RunState, StatPoints } from "@/game/core/types";
+import type { RunMode, RunState } from "@/game/core/types";
 
 export interface RunMeta {
   /** Skills this account has unlocked. Defaults to the starter set. */
   unlockedSkills?: readonly SkillId[];
-  statPoints?: Partial<StatPoints>;
+  /** Skill points the account's level grants at the start. Defaults to none. */
+  startingSkillPoints?: number;
 }
 
 export interface CreateRunOptions {
@@ -46,16 +50,12 @@ export function createRun(options: CreateRunOptions): RunState {
   const { seed, mode, profileId, version } = options;
   const profile = PROFILES[profileId];
 
-  const devops = Object.fromEntries(DEVOPS_IDS.map((id) => [id, 0])) as Record<DevopsId, number>;
-  for (const [id, level] of Object.entries(profile.startingDevops)) {
-    if (level !== undefined) devops[id as DevopsId] = level;
+  const tree = Object.fromEntries(TREE_IDS.map((id) => [id, 0])) as Record<TreeNodeId, number>;
+  for (const [id, level] of Object.entries(profile.startingTree)) {
+    if (level !== undefined) tree[id as TreeNodeId] = level;
   }
 
-  const statPoints: StatPoints = {
-    energyMax: options.meta?.statPoints?.energyMax ?? 0,
-    luck: options.meta?.statPoints?.luck ?? 0,
-    conflictRes: options.meta?.statPoints?.conflictRes ?? 0,
-  };
+  const startingSkillPoints = Math.max(0, Math.floor(options.meta?.startingSkillPoints ?? 0));
 
   const state: RunState = {
     version,
@@ -92,10 +92,20 @@ export function createRun(options: CreateRunOptions): RunState {
 
     skills: [...profile.startingSkills].sort(),
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),
-    statPoints,
+    startingSkillPoints,
     relics: [],
-    devops,
-    devopsPoints: 0,
+    tree,
+    skillPoints: startingSkillPoints,
+    skillPointsBought: 0,
+
+    money: BALANCE.economy.startingMoney,
+    moneyEarned: 0,
+    upgrades: Object.fromEntries(UPGRADE_IDS.map((id) => [id, 0])) as Record<UpgradeId, number>,
+    devs: [],
+    nextDevSerial: 1,
+    months: 0,
+    sprintMonths: 0,
+    sprintPlayerDelivered: 0,
 
     debt: 0,
     debtNoise: 0,

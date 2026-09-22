@@ -6,6 +6,8 @@
  */
 export const STORAGE_KEYS = {
   meta: "devgame:meta:v1",
-  run: "devgame:run:v2",
-  pendingSubmit: "devgame:pending-submit:v1",
+  run: "devgame:run:v3",
+  pendingSubmit: "devgame:pending-submit:v3",
+  /** The idle clock: on or off, and how fast. A viewer preference, never synced. */
+  idle: "devgame:idle:v1",
 } as const;

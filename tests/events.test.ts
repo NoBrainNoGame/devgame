@@ -210,7 +210,7 @@ describe("debt explosion", () => {
 describe("ambient events", () => {
   test("Dependabot removes the obsolete-dependency event from the table", () => {
     const armed = inHand("dependabot");
-    armed.devops.dependabot = 1;
+    armed.tree.dependabot = 1;
 
     const run = play(armed, { pick: policy("ai"), limit: 300 });
     const obsolete = eventsOfType(run.events, "ambient_event").filter(
@@ -269,7 +269,7 @@ describe("merge events", () => {
 
   test("Dependabot removes the library migration from the merge table", () => {
     const armed = inHand("no-migration");
-    armed.devops.dependabot = 1;
+    armed.tree.dependabot = 1;
     const run = play(armed, { pick: policy("ai"), limit: 400 });
     const migrations = eventsOfType(run.events, "merge_event").filter(
       (e) => e.eventId === "new_lib_migration",

@@ -15,19 +15,12 @@ import type { MetaProgressDto } from "@/game";
  * before writing. A single implementation is the only way those two agree.
  */
 export function mergeMeta(a: MetaProgressDto, b: MetaProgressDto): MetaProgressDto {
-  // XP is cumulative and level is derived from it, so XP alone decides which
-  // side's progression is further along.
-  const further = a.xp >= b.xp ? a : b;
   const newer = Date.parse(a.updatedAt) >= Date.parse(b.updatedAt) ? a : b;
 
   return {
     version: Math.max(a.version, b.version),
     level: Math.max(a.level, b.level),
     xp: Math.max(a.xp, b.xp),
-
-    // Spent points belong with the XP they were earned from.
-    statPoints: { ...further.statPoints },
-    unspentStatPoints: Math.max(a.unspentStatPoints, b.unspentStatPoints),
 
     commitsBank: Math.max(a.commitsBank, b.commitsBank),
     totalCommits: Math.max(a.totalCommits, b.totalCommits),

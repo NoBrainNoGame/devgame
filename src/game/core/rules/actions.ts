@@ -1,14 +1,16 @@
-import { DEVOPS_IDS } from "@/game/content";
-import { canPlaceDevops } from "@/game/core/rules/devops";
+import { DEV_RANKS, TREE_IDS, UPGRADE_IDS } from "@/game/content";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { canReview } from "@/game/core/rules/review";
+import { canBuySkillPoint, canBuyUpgrade } from "@/game/core/rules/shop";
+import { canHire } from "@/game/core/rules/team";
 import {
   backlogTickets,
   currentTicket,
   isReady,
   offersOf,
-  openTickets,
+  playerTickets,
 } from "@/game/core/rules/tickets";
+import { canPlaceTree } from "@/game/core/rules/tree";
 import type { PlayerAction, RunState } from "@/game/core/types";
 
 /**
@@ -38,7 +40,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       for (const waiting of backlogTickets(state)) {
         actions.push({ type: "start", ticketId: waiting.id });
       }
-      for (const open of openTickets(state)) {
+      for (const open of playerTickets(state)) {
         if (open.id !== ticket?.id) actions.push({ type: "checkout", ticketId: open.id });
       }
 
@@ -57,8 +59,19 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       }
       actions.push({ type: "rest" });
 
-      for (const id of DEVOPS_IDS) {
-        if (canPlaceDevops(state, id)) actions.push({ type: "devops", id });
+      for (const id of TREE_IDS) {
+        if (canPlaceTree(state, id)) actions.push({ type: "tree", id });
+      }
+
+      // The shop, gated on affordability here rather than refused later: a
+      // free action that changes nothing would read as a stuck run.
+      const effects = gatherEffects(state);
+      for (const id of UPGRADE_IDS) {
+        if (canBuyUpgrade(state, id)) actions.push({ type: "buy", id });
+      }
+      if (canBuySkillPoint(state)) actions.push({ type: "buy_point" });
+      for (const rank of DEV_RANKS) {
+        if (canHire(state, effects, rank)) actions.push({ type: "hire", rank });
       }
       return actions;
     }
@@ -94,8 +107,12 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
       return b.type === "checkout" && a.ticketId === b.ticketId;
     case "commit":
       return b.type === "commit" && a.mode === b.mode && a.kind === b.kind;
-    case "devops":
-      return b.type === "devops" && a.id === b.id;
+    case "tree":
+      return b.type === "tree" && a.id === b.id;
+    case "buy":
+      return b.type === "buy" && a.id === b.id;
+    case "hire":
+      return b.type === "hire" && a.rank === b.rank;
     case "resolve_conflict":
       return b.type === "resolve_conflict" && a.how === b.how;
     case "choose_relic":
@@ -106,6 +123,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "merge":
     case "restart":
     case "resume":
+    case "buy_point":
       return true;
   }
 }

@@ -48,10 +48,9 @@ export function applyRunToMeta(meta: MetaProgressDto, outcome: RunOutcome, now: 
     meta: {
       ...meta,
       xp,
+      // A level buys nothing here: every run starts with a skill point per
+      // level, credited by the session from `accountSkillPoints`.
       level,
-      // A level buys a point; spending it is a separate decision on the
-      // profile page, so it lands unspent.
-      unspentStatPoints: meta.unspentStatPoints + levelsGained * BALANCE.devops.perLevel,
       commitsBank,
       totalCommits: meta.totalCommits + Math.max(0, outcome.commits),
       ticketsDelivered: meta.ticketsDelivered + Math.max(0, outcome.ticketsDelivered),

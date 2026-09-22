@@ -7,7 +7,15 @@ import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { grantSkill } from "@/game/core/rules/grants";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
-import type { CommitMode, MapNode, NodeCommit, NodeId, NodeKind, Ticket } from "@/game/core/types";
+import type {
+  CommitMode,
+  DevId,
+  MapNode,
+  NodeCommit,
+  NodeId,
+  NodeKind,
+  Ticket,
+} from "@/game/core/types";
 
 /**
  * Writing the graph.
@@ -238,21 +246,62 @@ function writeDocs(context: RuleContext): void {
 }
 
 /**
+ * A commit a hired developer wrote on the ticket they hold.
+ *
+ * Not `writeCommit`: that one is your hand, and it moves your chain bonus,
+ * your debt and your commit count. The team's commit is a node in the
+ * ticket's column that fills points, and nothing else.
+ */
+export function writeTeamCommit(
+  context: RuleContext,
+  ticket: Ticket,
+  author: DevId,
+  points: number,
+): MapNode {
+  const { state } = context;
+  const previous = tipOfTicket(state, ticket) ?? tipOfLane(state, DEV_LANE);
+  if (previous === undefined || previous === null) {
+    throw new Error("writeTeamCommit: nothing on dev to fork from");
+  }
+  if (ticket.lane === undefined) throw new Error(`writeTeamCommit: ${ticket.id} has no column`);
+
+  const node = writeNode(context, {
+    kind: "commit",
+    lane: ticket.lane,
+    parents: [previous.id],
+    ticketId: ticket.id,
+    commit: { mode: "craft", reviewed: true, author },
+  });
+  ticket.nodeIds.push(node.id);
+  fillPoints(context, ticket, points);
+
+  emit(context, { type: "node_done", nodeId: node.id, mode: "craft", kind: "commit" });
+  return node;
+}
+
+/**
  * The ticket lands on `dev`: it costs, it pays back energy, and it hands over
  * what it promised.
  *
  * A merge is the end of a ticket — that is the whole reason `dev` carries
  * nothing else. Its two parents are what the ticket wrote and the `dev` it
  * landed on, the way git records it.
+ *
+ * Landed by the team (`byTeam`), it costs you nothing and rests you nothing,
+ * does not count as one of your commits, and does not move `dev` under the
+ * tickets you hold — but it delivers, earns, and grants like any other.
  */
 export function completeMerge(
   context: RuleContext,
   ticket: Ticket,
-  options: { hiddenBug?: boolean; noRegen?: boolean } = {},
+  options: { hiddenBug?: boolean; noRegen?: boolean; byTeam?: DevId } = {},
 ): MapNode {
   const { state } = context;
+  const byTeam = options.byTeam;
 
-  spendEnergy(context, nodeEnergyCost(state, "feature_merge", undefined).value, "merge");
+  if (byTeam === undefined) {
+    spendEnergy(context, nodeEnergyCost(state, "feature_merge", undefined).value, "merge");
+  }
 
   const tip = tipOfTicket(state, ticket);
   const dev = tipOfLane(state, DEV_LANE);
@@ -270,15 +319,20 @@ export function completeMerge(
       mode: "craft",
       reviewed: true,
       ...(options.hiddenBug === true ? { hiddenBug: true } : {}),
+      ...(byTeam === undefined ? {} : { author: byTeam }),
     },
   });
 
   ticket.status = "merged";
   ticket.mergeNodeId = node.id;
   ticket.lane = undefined;
+  delete ticket.assignee;
 
-  state.player.totalCommits += 1;
-  state.devMerges += 1;
+  if (byTeam === undefined) {
+    state.player.totalCommits += 1;
+    state.devMerges += 1;
+    state.sprintPlayerDelivered += 1;
+  }
   state.shipped.push(...ticket.nodeIds, node.id);
   state.pointsDelivered += ticket.points;
   state.ticketsDelivered += 1;
@@ -286,7 +340,7 @@ export function completeMerge(
 
   if (ticket.kind === "refactor") repayDebt(context, BALANCE.debt.explosionRepay);
 
-  if (options.noRegen !== true) {
+  if (options.noRegen !== true && byTeam === undefined) {
     gainEnergy(
       context,
       BALANCE.energy.featureMergeRegen + context.effects.mergeRegenBonus,
@@ -299,6 +353,7 @@ export function completeMerge(
     ticketId: ticket.id,
     nodeId: node.id,
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
+    ...(byTeam === undefined ? {} : { devId: byTeam }),
   });
   if (ticket.skillId !== undefined) grantSkill(context, ticket.skillId);
 

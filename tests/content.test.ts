@@ -3,9 +3,6 @@ import { describe, expect, test } from "bun:test";
 import {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
-  DEVOPS,
-  DEVOPS_IDS,
-  devopsCost,
   EFFECT_KEYS,
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
@@ -18,6 +15,14 @@ import {
   RELICS,
   SKILL_IDS,
   SKILLS,
+  TREE,
+  TREE_BRANCHES,
+  TREE_IDS,
+  treeCost,
+  UPGRADE_CATEGORIES,
+  UPGRADE_IDS,
+  UPGRADES,
+  upgradeCost,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { fingerprintFor, RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
@@ -31,7 +36,8 @@ describe("content tables", () => {
     for (const ids of [
       SKILL_IDS,
       RELIC_IDS,
-      DEVOPS_IDS,
+      TREE_IDS,
+      UPGRADE_IDS,
       PROFILE_IDS,
       FAILURE_EVENT_IDS,
       MERGE_EVENT_IDS,
@@ -44,7 +50,8 @@ describe("content tables", () => {
   test("every entry's id matches its key", () => {
     for (const id of SKILL_IDS) expect(SKILLS[id].id).toBe(id);
     for (const id of RELIC_IDS) expect(RELICS[id].id).toBe(id);
-    for (const id of DEVOPS_IDS) expect(DEVOPS[id].id).toBe(id);
+    for (const id of TREE_IDS) expect(TREE[id].id).toBe(id);
+    for (const id of UPGRADE_IDS) expect(UPGRADES[id].id).toBe(id);
     for (const id of PROFILE_IDS) expect(PROFILES[id].id).toBe(id);
     for (const id of FAILURE_EVENT_IDS) expect(FAILURE_EVENTS[id].id).toBe(id);
     for (const id of MERGE_EVENT_IDS) expect(MERGE_EVENTS[id].id).toBe(id);
@@ -56,7 +63,8 @@ describe("content tables", () => {
     const sources = [
       ...SKILL_IDS.map((id) => SKILLS[id].effects),
       ...RELIC_IDS.map((id) => RELICS[id].effects),
-      ...DEVOPS_IDS.map((id) => DEVOPS[id].perLevel),
+      ...TREE_IDS.map((id) => TREE[id].perLevel),
+      ...UPGRADE_IDS.map((id) => UPGRADES[id].perLevel),
       ...PROFILE_IDS.map((id) => PROFILES[id].effects),
     ];
 
@@ -69,7 +77,8 @@ describe("content tables", () => {
     const sources = [
       ...SKILL_IDS.map((id) => SKILLS[id].effects),
       ...RELIC_IDS.map((id) => RELICS[id].effects),
-      ...DEVOPS_IDS.map((id) => DEVOPS[id].perLevel),
+      ...TREE_IDS.map((id) => TREE[id].perLevel),
+      ...UPGRADE_IDS.map((id) => UPGRADES[id].perLevel),
       ...PROFILE_IDS.map((id) => PROFILES[id].effects),
     ];
 
@@ -81,15 +90,58 @@ describe("content tables", () => {
     }
   });
 
-  test("every DevOps node has a price for each of its levels", () => {
-    for (const id of DEVOPS_IDS) {
-      const def = DEVOPS[id];
+  test("every tree node has a price for each of its levels", () => {
+    for (const id of TREE_IDS) {
+      const def = TREE[id];
       expect(def.cost.length).toBe(def.maxLevel);
       for (let level = 0; level < def.maxLevel; level++) {
-        expect(devopsCost(id, level)).toBeGreaterThan(0);
+        expect(treeCost(id, level)).toBeGreaterThan(0);
       }
-      expect(devopsCost(id, def.maxLevel)).toBeUndefined();
+      expect(treeCost(id, def.maxLevel)).toBeUndefined();
     }
+  });
+
+  test("every tree node sits on a branch and its prerequisites are reachable", () => {
+    for (const id of TREE_IDS) {
+      const def = TREE[id];
+      expect(TREE_BRANCHES).toContain(def.branch);
+      for (const req of def.requires ?? []) {
+        expect(req.id).not.toBe(id);
+        expect(TREE_IDS).toContain(req.id);
+        expect(req.level).toBeGreaterThan(0);
+        expect(req.level).toBeLessThanOrEqual(TREE[req.id].maxLevel);
+        // A prerequisite is drawn above the node it gates, so it has to live
+        // on the same branch or the tree screen cannot show the line.
+        expect(TREE[req.id].branch).toBe(def.branch);
+      }
+    }
+  });
+
+  test("every upgrade has a price for each of its levels and a category", () => {
+    for (const id of UPGRADE_IDS) {
+      const def = UPGRADES[id];
+      expect(UPGRADE_CATEGORIES).toContain(def.category);
+      expect(def.cost.length).toBe(def.maxLevel);
+      expect(def.upkeep).toBeGreaterThanOrEqual(0);
+      for (let level = 0; level < def.maxLevel; level++) {
+        expect(upgradeCost(id, level)).toBeGreaterThan(0);
+      }
+      expect(upgradeCost(id, def.maxLevel)).toBeUndefined();
+    }
+  });
+
+  test("the tree has no cycle", () => {
+    const visiting = new Set<string>();
+    const done = new Set<string>();
+    const visit = (id: (typeof TREE_IDS)[number]): void => {
+      if (done.has(id)) return;
+      expect(visiting.has(id)).toBe(false);
+      visiting.add(id);
+      for (const req of TREE[id].requires ?? []) visit(req.id);
+      visiting.delete(id);
+      done.add(id);
+    };
+    for (const id of TREE_IDS) visit(id);
   });
 
   test("the starter profile is free and the rest are earned", () => {
@@ -121,7 +173,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("1c61dfb5");
+    expect(RULES_FINGERPRINT).toBe("ee1a3e74");
   });
 
   test("the save version and the epoch are positive integers", () => {

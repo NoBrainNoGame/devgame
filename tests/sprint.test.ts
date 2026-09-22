@@ -29,7 +29,7 @@ describe("sprint boundary", () => {
     expect(ended.length).toBeGreaterThan(0);
   });
 
-  test("the boundary is a rest: energy back, a DevOps point", () => {
+  test("the boundary is a rest: energy back, a skill point", () => {
     const { state } = findSeed((r) => r.state.phase.kind === "choose_relic", {
       prefix: "rest",
       pick: policy("ai"),
@@ -37,7 +37,7 @@ describe("sprint boundary", () => {
       stop: (s) => s.phase.kind === "choose_relic",
     });
 
-    expect(state.devopsPoints).toBeGreaterThanOrEqual(BALANCE.devops.perSprint);
+    expect(state.skillPoints).toBeGreaterThanOrEqual(BALANCE.tree.perSprint);
     expect(state.player.energy).toBeGreaterThan(0);
   });
 

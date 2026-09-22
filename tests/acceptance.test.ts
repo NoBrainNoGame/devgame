@@ -72,6 +72,48 @@ describe("the pull request review", () => {
     expect(rejectedOnce).toBe(true);
   });
 
+  test("a refusal that fills production's gauge is the sack, not a question", () => {
+    let seen = false;
+    for (let i = 0; i < 30 && !seen; i += 1) {
+      const state = makeReady(inHand(`pr-sack-${i}`));
+      for (let n = 0; n < 4; n += 1) plantAiCommit(state);
+      state.quality = BALANCE.quality.max - BALANCE.quality.perRejection;
+
+      const result = applyAction(state, { type: "submit" });
+      const review = eventsOfType(result.events, "pr_reviewed")[0];
+      if (review === undefined || review.accepted) continue;
+      seen = true;
+
+      expect(result.state.phase).toEqual({ kind: "game_over", reason: "fired" });
+      expect(getAvailableActions(result.state)).toEqual([]);
+    }
+    expect(seen).toBe(true);
+  });
+
+  test("a hotfix whose commit the review flagged can still be fixed", () => {
+    const state = makeReady(inHand("hotfix-fix"));
+    const ticket = ticketInHand(state);
+    ticket.kind = "hotfix";
+    ticket.mustWrite = "hotfix";
+    const bugged = plantAiCommit(state);
+    const node = state.nodes[bugged];
+    if (node !== undefined) node.commit.bugged = true;
+
+    expect(offersOf(state, ticket)).toEqual(["fix"]);
+    expect(getAvailableActions(state).some((a) => a.type === "submit")).toBe(false);
+
+    const fixed = applyAction(state, { type: "commit", mode: "craft", kind: "fix" }).state;
+    const after = fixed.tickets[ticket.id];
+    if (after === undefined) throw new Error("ticket vanished");
+    const rolled = fixed.nodes[after.nodeIds[after.nodeIds.length - 1] ?? ""];
+    // The roll may have missed; when it landed, the bug is gone and the
+    // ticket can go back to review.
+    if (rolled?.kind === "fix") {
+      expect(buggedOn(fixed, after)).toEqual([]);
+      expect(getAvailableActions(fixed).some((a) => a.type === "submit")).toBe(true);
+    }
+  });
+
   test("restarting throws the commits away and the ticket starts from dev", () => {
     const state = makeReady(inHand("pr-restart"));
     state.debt = BALANCE.acceptance.maxDebt + 10;

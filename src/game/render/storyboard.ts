@@ -97,8 +97,11 @@ export function planBatch(
         const at = positionOf(event.nodeId);
         if (at === null) break;
         const node = state.nodes[event.nodeId];
-        // A release is not somewhere you stand: `main` is shipped, not written.
-        const asHead = node !== undefined && node.lane !== MAIN_LANE;
+        // A release is not somewhere you stand: `main` is shipped, not
+        // written. Nor is a colleague's commit: the team writes beside you,
+        // and the camera stays with you.
+        const asHead =
+          node !== undefined && node.lane !== MAIN_LANE && node.commit.author === undefined;
         revealed.add(event.nodeId);
         cursor = event.nodeId;
         away = false;
@@ -248,8 +251,17 @@ export function planBatch(
       case "rebased":
       case "debt_explosion":
       case "relic_chosen":
-      case "devops_placed":
-      case "devops_points":
+      case "tree_placed":
+      case "skill_points":
+      case "money":
+      case "month_closed":
+      case "outage":
+      case "upgrade_bought":
+      case "skill_point_bought":
+      case "hired":
+      case "dev_left":
+      case "dev_promoted":
+      case "ticket_assigned":
       case "crunch":
         break;
     }

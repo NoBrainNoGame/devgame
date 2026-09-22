@@ -73,9 +73,11 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         turn,
         kind: "merge",
         text:
-          event.skillId === undefined
-            ? text("log.ticket_merged")
-            : text("log.ticket_merged_skill", { skill: ref(`skills.${event.skillId}.name`) }),
+          event.devId !== undefined
+            ? text("log.ticket_merged_dev", { dev: event.devId })
+            : event.skillId === undefined
+              ? text("log.ticket_merged")
+              : text("log.ticket_merged_skill", { skill: ref(`skills.${event.skillId}.name`) }),
       };
 
     case "skill_gained":
@@ -164,15 +166,90 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text("log.relic_chosen", { relic: ref(`relics.${event.relicId}.name`) }),
       };
 
-    case "devops_placed":
+    case "tree_placed":
       return {
         seq,
         turn,
         kind: "chore",
-        text: text("log.devops_placed", {
-          devops: ref(`devops.${event.id}.name`),
+        text: text("log.tree_placed", {
+          node: ref(`tree.${event.id}.name`),
           level: event.level,
         }),
+      };
+
+    case "month_closed":
+      return {
+        seq,
+        turn,
+        kind: "chore",
+        text: text("log.month_closed", {
+          month: event.month,
+          revenue: event.revenue,
+          costs: event.upkeep + event.salaries,
+          money: event.money,
+        }),
+      };
+
+    case "outage":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.outage", { load: event.load, capacity: event.capacity }),
+      };
+
+    case "upgrade_bought":
+      return {
+        seq,
+        turn,
+        kind: "chore",
+        text: text("log.upgrade_bought", {
+          upgrade: ref(`upgrades.${event.id}.name`),
+          level: event.level,
+        }),
+      };
+
+    case "skill_point_bought":
+      return {
+        seq,
+        turn,
+        kind: "chore",
+        text: text("log.skill_point_bought", { money: event.price }),
+      };
+
+    case "hired":
+      return {
+        seq,
+        turn,
+        kind: "feat",
+        text: text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) }),
+      };
+
+    case "dev_left":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.dev_left", { dev: event.devId, count: event.ticketIds.length }),
+      };
+
+    case "dev_promoted":
+      return {
+        seq,
+        turn,
+        kind: "feat",
+        text: text("log.dev_promoted", {
+          dev: event.devId,
+          rank: ref(`ranks.${event.rank}.name`),
+        }),
+      };
+
+    case "ticket_assigned":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.ticket_assigned_dev", { dev: event.devId }),
       };
 
     case "game_over":
@@ -193,7 +270,8 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
     case "checkout":
     case "docs_used":
     case "quality":
-    case "devops_points":
+    case "skill_points":
+    case "money":
     case "crunch":
       return null;
   }

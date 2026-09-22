@@ -12,6 +12,8 @@ import { NODE_RADIUS, THEME } from "@/game/render/theme";
  * asks for those to be visible on the graph, because it is the only way to see
  * what a review would clean up before spending a turn on it. Merges and trunk
  * commits are hollow, as `git log --graph` draws the ones that carry no work.
+ * A colleague's commit is hollow too, in the craft colour: work on the graph
+ * that is not yours to stand on.
  */
 export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean): void {
   graphics.clear();
@@ -25,7 +27,12 @@ export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean):
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: THEME.node.unreviewed });
   }
 
-  if (work) {
+  if (work && node.commit.author !== undefined) {
+    graphics
+      .circle(0, 0, NODE_RADIUS - 1)
+      .fill(THEME.background)
+      .stroke({ width: 2, color: THEME.node.craft });
+  } else if (work) {
     graphics.circle(0, 0, NODE_RADIUS).fill(fill).stroke({ width: 2, color: THEME.background });
   } else {
     graphics

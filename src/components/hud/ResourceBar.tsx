@@ -1,8 +1,9 @@
 "use client";
 
+import { Building2, GitBranchPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RunSnapshot } from "@/game";
@@ -15,11 +16,20 @@ import { cn } from "@/lib/utils";
  * design's answer to a gauge that used to be invisible: hidden enough to be a
  * risk, visible enough to be a decision.
  */
-export function ResourceBar({ snapshot }: { snapshot: RunSnapshot }) {
+export function ResourceBar({
+  snapshot,
+  onOpenCompany,
+  onOpenTree,
+}: {
+  snapshot: RunSnapshot;
+  onOpenCompany: () => void;
+  onOpenTree: () => void;
+}) {
   const t = useTranslations("hud");
   const common = useTranslations("common");
 
-  const { player, debt } = snapshot;
+  const { player, debt, economy } = snapshot;
+  const saturated = economy.load > economy.capacity;
   const energyPct = player.energyMax === 0 ? 0 : (player.energy / player.energyMax) * 100;
 
   return (
@@ -99,21 +109,44 @@ export function ResourceBar({ snapshot }: { snapshot: RunSnapshot }) {
         <TooltipContent>{t("sprintHint")}</TooltipContent>
       </Tooltip>
 
-      <div className="flex flex-1 flex-wrap items-center justify-end gap-3 text-muted-foreground">
-        <span>
-          {common("commits")}{" "}
-          <span className="text-foreground tabular-nums">{player.totalCommits}</span>
-        </span>
-        <span>
-          {t("delivered")}{" "}
-          <span className="text-foreground tabular-nums">{snapshot.ticketsDelivered}</span>
-        </span>
-        {player.wip > 0 ? (
-          <Badge variant="outline" className="border-branch-hotfix text-branch-hotfix">
-            {t("wip", { count: player.wip })}
-          </Badge>
-        ) : null}
-      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenCompany}>
+            <Building2 className="size-4" />
+            <span className="tabular-nums">{t("money", { money: economy.money })}</span>
+            <span
+              className={cn(
+                "text-xs tabular-nums",
+                economy.net < 0 ? "text-branch-hotfix" : "text-branch-main",
+              )}
+            >
+              {economy.net >= 0 ? "+" : ""}
+              {economy.net}/{t("monthShort")}
+            </span>
+            {saturated ? (
+              <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs">
+                {t("saturatedShort")}
+              </span>
+            ) : null}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("companyHint", { count: economy.paydayIn })}</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size="sm"
+            variant={snapshot.actions.some((a) => a.type === "tree") ? "default" : "outline"}
+            className="shrink-0"
+            onClick={onOpenTree}
+          >
+            <GitBranchPlus className="size-4" />
+            {t("treePoints", { count: snapshot.skillPoints })}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("treeHint")}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

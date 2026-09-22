@@ -17,7 +17,7 @@ function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
     mode: "classic" as const,
     profileId: "junior" as const,
     unlockedSkills: live.state.unlockedSkills,
-    statPoints: live.state.statPoints,
+    startingSkillPoints: live.state.startingSkillPoints,
     actions: live.actions,
     clientRunId: "11111111-2222-4333-8444-555555555555",
     createdAt: "2026-09-21T10:00:00.000Z",
@@ -48,7 +48,7 @@ describe("PlayerActionSchema", () => {
   });
 
   test("rejects an unknown DevOps or relic id", () => {
-    expect(PlayerActionSchema.safeParse({ type: "devops", id: "kubernetes" }).success).toBe(false);
+    expect(PlayerActionSchema.safeParse({ type: "tree", id: "kubernetes" }).success).toBe(false);
     expect(PlayerActionSchema.safeParse({ type: "choose_relic", relicId: "beanbag" }).success).toBe(
       false,
     );
@@ -125,7 +125,7 @@ describe("replayRun", () => {
         seed: "dto-past-end",
         actions: [...live.actions, { type: "review" }],
         unlockedSkills: live.state.unlockedSkills,
-        statPoints: live.state.statPoints,
+        startingSkillPoints: live.state.startingSkillPoints,
       }),
     );
     expect(result.valid).toBe(false);
@@ -143,7 +143,7 @@ describe("replayRun", () => {
         seed: "dto-xp",
         actions: live.actions,
         unlockedSkills: live.state.unlockedSkills,
-        statPoints: live.state.statPoints,
+        startingSkillPoints: live.state.startingSkillPoints,
       }),
     );
 

@@ -73,7 +73,9 @@
     "playAgain": "Play again",
     "levelUp": "Reached level {level}",
     "unlocked": "Unlocked: {name}",
-    "ticketsDelivered": "Tickets delivered"
+    "ticketsDelivered": "Tickets delivered",
+    "moneyEarned": "Collected",
+    "startingPoints": "{count, plural, one {# skill point} other {# skill points}} at the start of every run"
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -94,11 +96,11 @@
     "aiCommitHint": "Cheap, goes further, adds debt.",
     "review": "Review",
     "reviewHint": "Reads back AI commits and repays debt.",
-    "devops": "DevOps",
-    "devopsTitle": "DevOps tree",
-    "devopsHint": "Automating costs no turn, only points.",
-    "devopsPoints": "{count, plural, one {# DevOps point} other {# DevOps points}}",
-    "devopsLevel": "Level {level} / {max}",
+    "tree": "Skills",
+    "treeTitle": "Skill tree",
+    "treeHint": "Placing a point costs no turn, only points.",
+    "treePoints": "{count, plural, one {# skill point} other {# skill points}}",
+    "treeLevel": "Level {level} / {max}",
     "logTitle": "Log",
     "logEmpty": "Nothing to tell yet.",
     "logTurn": "turn {turn}",
@@ -207,7 +209,63 @@
     "ticketCost": "+{debt} debt",
     "reviewMergeHint": "The merge costs the turn; the review did not.",
     "rest": "Take a breath",
-    "restHint": "A turn without code: energy comes back, minus one per extra open ticket."
+    "restHint": "A turn without code: energy comes back, minus one per extra open ticket.",
+    "company": "Company",
+    "companyHint": "Finances, shop and team. Next payday in {count, plural, one {# turn} other {# turns}}.",
+    "money": "{money} €",
+    "monthShort": "month",
+    "mrr": "{money} € revenue per month",
+    "paydayIn": "payday in {count, plural, one {# turn} other {# turns}}",
+    "saturatedShort": "saturated",
+    "finances": "Finances",
+    "shop": "Shop",
+    "team": "Team",
+    "nextPayday": "Next payday",
+    "lineRevenue": "Revenue collected",
+    "lineLost": "Lost (servers saturated)",
+    "lineUpkeep": "Subscriptions",
+    "lineSalaries": "Salaries",
+    "lineNet": "Net",
+    "monthCount": "Month {month}",
+    "infra": "Infrastructure",
+    "capacity": "Features served",
+    "capacityHint": "Every shipped feature sits on the servers. Past the capacity the excess earns nothing and production loses patience every month.",
+    "saturated": "Servers saturated: the excess earns nothing and production loses patience at every payday.",
+    "moneyEarned": "{money} € collected so far",
+    "buyPoint": "Skill point",
+    "buyPointHint": "A point to place in the tree, right now. Each one makes the next dearer.",
+    "buyFor": "{money} €",
+    "category": {
+      "infra": "Infra",
+      "growth": "Growth",
+      "tooling": "Tooling"
+    },
+    "upkeepPerLevel": "{money} € per month per level",
+    "upkeepNow": "{money} € per month currently",
+    "hire": "Hire",
+    "hireHint": "A developer takes tickets from the backlog, codes alone and merges alone. They cost their salary at every payday; unpaid, they leave and hand their tickets back.",
+    "rankCapacity": "{count, plural, one {# ticket at a time} other {# tickets at a time}}",
+    "rankSalary": "{money} € per month",
+    "roster": "The team",
+    "rosterEmpty": "Nobody yet. The revenue of shipped features pays for hiring.",
+    "devHolds": "{count}/{max} tickets",
+    "devDelivered": "{count, plural, one {# delivered} other {# delivered}}",
+    "promotionIn": "promotion in {count, plural, one {# ticket} other {# tickets}}",
+    "ticketMrr": "+{money} €/month once shipped",
+    "assignedTo": "Held by {dev}",
+    "tooltipByDev": "by {dev}",
+    "restHintAutopilot": "The supervisor plays the obvious move if you let the run idle.",
+    "treeBuy": "Level {level} · {points, plural, one {# point} other {# points}}",
+    "treeMaxed": "Maxed out",
+    "treeRequires": "{node} level {level}",
+    "idleAuto": "Auto",
+    "idleOnHint": "With no action from you for {seconds} s, the game plays on its own. Turn it off to manage every turn yourself or take a break.",
+    "idleOffHint": "The game waits for your decisions. Turn it on to let it play while you do nothing.",
+    "idleSpeed": "Clock speed",
+    "currentTicket": "Ticket in hand",
+    "runStats": "The run",
+    "skillsEarned": "Earned this run",
+    "nothingYet": "Nothing yet."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -247,7 +305,8 @@
       "rejected": "Rejected"
     },
     "empty": "No runs recorded.",
-    "displayName": "Display name"
+    "displayName": "Display name",
+    "startingPoints": "{count, plural, one {# skill point} other {# skill points}} at the start of every run"
   },
   "login": {
     "title": "Sign in",
@@ -494,7 +553,7 @@
       },
       "onboarding": {
         "name": "Onboarding",
-        "desc": "Grants DevOps points immediately."
+        "desc": "Grants skill points immediately."
       },
       "retrospective": {
         "name": "Retrospective",
@@ -513,7 +572,7 @@
         "desc": "Lowers the risk of AI commits."
       }
     },
-    "devops": {
+    "tree": {
       "ci": {
         "name": "CI",
         "desc": "Tests on every commit: each level improves every roll."
@@ -541,6 +600,101 @@
       "monitoring": {
         "name": "Monitoring",
         "desc": "Warns a node ahead of a production bug, and shortens the hotfix."
+      },
+      "sre": {
+        "name": "SRE",
+        "desc": "Each level lets the servers carry two more features, without a cent of hosting."
+      },
+      "agile_coach": {
+        "name": "Agile coach",
+        "desc": "Each level makes every developer fill one more story point per turn."
+      },
+      "recruiter": {
+        "name": "Recruiter",
+        "desc": "Hiring costs a third less."
+      },
+      "growth_hacking": {
+        "name": "Growth hacking",
+        "desc": "Each level adds ten percent to the monthly revenue."
+      },
+      "mentoring": {
+        "name": "Mentoring",
+        "desc": "Every developer holds one more ticket at a time."
+      },
+      "stamina": {
+        "name": "Stamina",
+        "desc": "Each level adds two points of maximum energy."
+      },
+      "luck": {
+        "name": "Luck",
+        "desc": "Each level improves every roll by two points."
+      },
+      "calm": {
+        "name": "Composure",
+        "desc": "Each level adds five points to resolving a conflict by hand."
+      }
+    },
+    "branches": {
+      "cicd": {
+        "name": "CI/CD"
+      },
+      "devops": {
+        "name": "DevOps"
+      },
+      "management": {
+        "name": "Management"
+      },
+      "profile": {
+        "name": "Profile"
+      }
+    },
+    "upgrades": {
+      "servers": {
+        "name": "Servers",
+        "desc": "Each level carries three more features in production. Billed monthly."
+      },
+      "autoscaling": {
+        "name": "Autoscaling",
+        "desc": "Six more features at once, with a monthly bill to match."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "desc": "Each level adds fifteen percent to the monthly revenue. Subscription."
+      },
+      "premium_plan": {
+        "name": "Premium plan",
+        "desc": "A quarter more revenue, once and for all."
+      },
+      "ai_subscription": {
+        "name": "AI subscription",
+        "desc": "Each level improves the machine's rolls. Subscription."
+      },
+      "ide_licence": {
+        "name": "IDE licence",
+        "desc": "Commits by hand land more often."
+      },
+      "coffee_machine": {
+        "name": "Coffee machine",
+        "desc": "Three points of maximum energy, once and for all."
+      },
+      "dev_tooling": {
+        "name": "Tooling",
+        "desc": "Each level makes every developer fill one more point per turn. Subscription."
+      },
+      "ai_supervisor": {
+        "name": "AI supervisor",
+        "desc": "When you let the run idle, it plays the obvious move for you instead of resting. Subscription."
+      }
+    },
+    "ranks": {
+      "junior": {
+        "name": "Junior"
+      },
+      "mid": {
+        "name": "Mid-level"
+      },
+      "senior": {
+        "name": "Senior"
       }
     },
     "profiles": {
@@ -665,7 +819,7 @@
       "squashed": "{count, plural, one {# commit squashed} other {# commits squashed}}, {lost, plural, one {# off the count} other {# off the count}}",
       "docs_written": "docs written, {count, plural, one {# AI commit covered} other {# AI commits covered}}",
       "rebased": "ticket rebased onto dev, history is current",
-      "_comment": "The node, skill, relic and devops parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
+      "_comment": "The node, skill, relic, node, upgrade and rank parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
       "node_done": {
         "craft": "{node} written by hand",
         "ai": "{node} generated by the machine, it compiles"
@@ -684,7 +838,16 @@
       "sprint_ended": "sprint {sprint} closed",
       "sprint_started": "sprint {sprint} opened",
       "relic_chosen": "{relic} added to the project",
-      "devops_placed": "{devops} moved up to level {level}",
+      "tree_placed": "{node} moved up to level {level}",
+      "dev_promoted": "{dev} is now {rank}",
+      "dev_left": "{dev} leaves unpaid, {count, plural, one {# ticket is} other {# tickets are}} back on your desk",
+      "hired": "{dev} joins the team ({rank})",
+      "skill_point_bought": "a skill point bought for {money} €",
+      "upgrade_bought": "{upgrade} moved up to level {level}",
+      "outage": "servers saturated: {load} features for {capacity} served",
+      "month_closed": "month {month}: +{revenue} € revenue, −{costs} € costs, {money} € in the bank",
+      "ticket_assigned_dev": "{dev} picks a ticket up from the backlog",
+      "ticket_merged_dev": "{dev} merged their ticket on dev",
       "game_over": {
         "burnout": "out of energy, the run stops at {score}",
         "fired": "fired, the run stops at {score}"
@@ -722,9 +885,16 @@
       "pair_programming": "Review made cheaper by pair programming",
       "fresh": "Reviewed while fresh: better repayment",
       "grants_skill": "Delivering this ticket grants a skill",
-      "devops_cost": "{points, plural, one {# DevOps point} other {# DevOps points}}",
-      "devops_maxed": "Maximum level reached ({max})",
-      "devops_too_expensive": "Not enough points: {points} needed",
+      "tree_cost": "{points, plural, one {# skill point} other {# skill points}}",
+      "tree_maxed": "Maximum level reached ({max})",
+      "tree_requires": "Needs {node} at level {level}",
+      "tree_too_expensive": "Not enough points: {points} needed",
+      "team_full": "Team is full ({max})",
+      "too_expensive": "Not enough money: {money} € needed",
+      "capacity": "{count, plural, one {# ticket at a time} other {# tickets at a time}}",
+      "salary": "Salary {money} € per month",
+      "upkeep": "{money} € per month",
+      "price": "{money} €",
       "hidden_bug_risk": "{percent} % chance of a hidden bug",
       "wip": "{count, plural, one {# extra ticket} other {# extra tickets}} {points}",
       "wip_cost": "Energy raised: {count, plural, one {# extra ticket} other {# extra tickets}}",

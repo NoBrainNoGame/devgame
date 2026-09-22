@@ -1,12 +1,14 @@
 import type {
   AmbientEventId,
-  DevopsId,
+  DevRank,
   EventId,
   FailureEventId,
   MergeEventId,
   ProfileId,
   RelicId,
   SkillId,
+  TreeNodeId,
+  UpgradeId,
 } from "@/game/content";
 import type { I18nText } from "@/game/core/i18n";
 import type { RngState } from "@/game/core/rng";
@@ -15,6 +17,8 @@ import type { RngState } from "@/game/core/rng";
 export type NodeId = string;
 /** `t${serial}`. Sorted numerically, never lexically — see `ticketSerial`. */
 export type TicketId = string;
+/** `d${serial}`. A hired developer, for the life of the run. */
+export type DevId = string;
 
 export type RunMode = "classic" | "daily";
 
@@ -72,6 +76,8 @@ export interface NodeCommit {
    * commit that cost the most and takes exactly that back.
    */
   debt?: number;
+  /** Written by a hired developer rather than by you. Never `HEAD`. */
+  author?: DevId;
 }
 
 /**
@@ -115,6 +121,10 @@ export interface Ticket {
   rejections: number;
   /** The reward, paid for with extra points. */
   skillId?: SkillId;
+  /** Monthly revenue it earns once shipped. Zero for a hotfix or a forced refactor. */
+  mrr: number;
+  /** The developer working it, when it is not you. */
+  assignee?: DevId;
   /** The sprint it arrived in, so a ticket left in the backlog can be assigned. */
   sprintArrived: number;
   /**
@@ -154,11 +164,15 @@ export interface Player {
 
 export type GameOverReason = "burnout" | "fired";
 
-/** Permanent stat investments from the meta-progression, carried into a run. */
-export interface StatPoints {
-  energyMax: number;
-  luck: number;
-  conflictRes: number;
+/** A hired developer. Their tickets are found by `Ticket.assignee`. */
+export interface Dev {
+  id: DevId;
+  rank: DevRank;
+  /** The rank they were hired at, for the roster. */
+  hiredRank: DevRank;
+  /** Tickets landed, which is what promotes them. */
+  delivered: number;
+  hiredSprint: number;
 }
 
 export type Phase =
@@ -221,11 +235,30 @@ export interface RunState {
   skills: SkillId[];
   /** Skills this account has unlocked; tickets draw their rewards from it. */
   unlockedSkills: SkillId[];
-  /** Points spent on the account's level-up stats, folded into the effects. */
-  statPoints: StatPoints;
+  /**
+   * Skill points the account's level granted when the run started. Part of
+   * the state so the save reads it back rather than recomputing it from a
+   * profile that may have levelled since.
+   */
+  startingSkillPoints: number;
   relics: RelicId[];
-  devops: Record<DevopsId, number>;
-  devopsPoints: number;
+  tree: Record<TreeNodeId, number>;
+  skillPoints: number;
+  /** Skill points bought outright, which sets the price of the next. */
+  skillPointsBought: number;
+
+  money: number;
+  /** Everything ever collected, for the score screen. */
+  moneyEarned: number;
+  upgrades: Record<UpgradeId, number>;
+  devs: Dev[];
+  nextDevSerial: number;
+  /** Months closed since the run started. */
+  months: number;
+  /** Months closed this sprint, so the sprint's end can close the rest. */
+  sprintMonths: number;
+  /** Tickets you landed yourself this sprint. None is a sprint production notices. */
+  sprintPlayerDelivered: number;
 
   /** 0 to 100. Only shown exactly when something reveals it. */
   debt: number;
@@ -272,7 +305,11 @@ export type PlayerAction =
   | { type: "restart" }
   /** After a rejection: keep the commits and fix what was found. */
   | { type: "resume" }
-  | { type: "devops"; id: DevopsId }
+  | { type: "tree"; id: TreeNodeId }
+  /** Shop purchases and hiring. Free in time, paid in money. */
+  | { type: "buy"; id: UpgradeId }
+  | { type: "buy_point" }
+  | { type: "hire"; rank: DevRank }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
 
@@ -317,7 +354,8 @@ export type GameEvent =
   | { type: "bug_fixed"; ticketId: TicketId; nodeId: NodeId }
   /** A refactor redid a commit and took back the debt it had cost. */
   | { type: "debt_refactored"; ticketId: TicketId; nodeId: NodeId; amount: number }
-  | { type: "ticket_merged"; ticketId: TicketId; nodeId: NodeId; skillId?: SkillId }
+  /** `devId` when a hired developer landed it. */
+  | { type: "ticket_merged"; ticketId: TicketId; nodeId: NodeId; skillId?: SkillId; devId?: DevId }
   | { type: "skill_gained"; skillId: SkillId }
   | { type: "conflict"; ticketId: TicketId }
   | { type: "conflict_resolved"; how: "manual" | "ai"; hiddenBug: boolean }
@@ -339,8 +377,29 @@ export type GameEvent =
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }
   | { type: "relic_chosen"; relicId: RelicId }
-  | { type: "devops_placed"; id: DevopsId; level: number }
-  | { type: "devops_points"; delta: number; value: number }
+  | { type: "tree_placed"; id: TreeNodeId; level: number }
+  | { type: "skill_points"; delta: number; value: number }
+  | { type: "money"; delta: number; value: number; reason: string }
+  /** Payday. `salaries` is what was actually paid. */
+  | {
+      type: "month_closed";
+      month: number;
+      revenue: number;
+      lost: number;
+      upkeep: number;
+      salaries: number;
+      money: number;
+    }
+  /** The servers saturated this month. */
+  | { type: "outage"; load: number; capacity: number }
+  | { type: "upgrade_bought"; id: UpgradeId; level: number }
+  | { type: "skill_point_bought"; price: number }
+  | { type: "hired"; devId: DevId; rank: DevRank }
+  /** Unpaid. The tickets are yours now. */
+  | { type: "dev_left"; devId: DevId; ticketIds: TicketId[] }
+  | { type: "dev_promoted"; devId: DevId; rank: DevRank }
+  /** A developer picked a ticket up from the backlog. */
+  | { type: "ticket_assigned"; ticketId: TicketId; devId: DevId }
   | { type: "crunch"; active: boolean }
   | { type: "game_over"; reason: GameOverReason; score: number };
 

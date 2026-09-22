@@ -2,12 +2,15 @@ import { describe, expect, test } from "bun:test";
 
 import {
   AMBIENT_EVENT_IDS,
-  DEVOPS_IDS,
+  DEV_RANKS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
+  TREE_BRANCHES,
+  TREE_IDS,
+  UPGRADE_IDS,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import type { NodeKind } from "@/game/core/types";
@@ -90,7 +93,8 @@ describe("game content is fully named", () => {
   const cases: ReadonlyArray<[string, readonly string[], string, string]> = [
     ["skills", SKILL_IDS, "name", "desc"],
     ["relics", RELIC_IDS, "name", "desc"],
-    ["devops", DEVOPS_IDS, "name", "desc"],
+    ["tree", TREE_IDS, "name", "desc"],
+    ["upgrades", UPGRADE_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
     ["events", FAILURE_EVENT_IDS, "title", "log"],
     ["events", MERGE_EVENT_IDS, "title", "log"],
@@ -104,6 +108,20 @@ describe("game content is fully named", () => {
         `game.${namespace}.${id}.${body}`,
       ]);
 
+      expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
+      expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
+    });
+  }
+
+  // Branches and ranks are labels, not things with a description.
+  const named: ReadonlyArray<[string, readonly string[]]> = [
+    ["branches", TREE_BRANCHES],
+    ["ranks", DEV_RANKS],
+  ];
+
+  for (const [namespace, ids] of named) {
+    test(`${namespace} are named: ${ids.join(", ")}`, () => {
+      const expected = ids.map((id) => `game.${namespace}.${id}.name`);
       expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
       expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
     });

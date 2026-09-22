@@ -23,8 +23,9 @@ import type { CommitMode, DetourKind, MapNode, NodeKind, Ticket } from "@/game/c
  * only partly.
  */
 
-/** What this commit is written as: the forced kind, the detour, or plain. */
+/** What this commit is written as: a fix, the forced kind, the detour, or plain. */
 export function commitKindFor(ticket: Ticket, kind: DetourKind | undefined): NodeKind {
+  if (kind === "fix") return "fix";
   return ticket.mustWrite ?? kind ?? "commit";
 }
 

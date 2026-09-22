@@ -72,6 +72,16 @@ export function TicketDialog({
           {ticket.mustWrite === undefined ? null : (
             <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
           )}
+          {ticket.mrr > 0 ? (
+            <p className="text-muted-foreground text-xs tabular-nums">
+              {t("ticketMrr", { money: ticket.mrr })}
+            </p>
+          ) : null}
+          {ticket.assignee === undefined ? null : (
+            <p className="text-muted-foreground text-xs">
+              {t("assignedTo", { dev: ticket.assignee })}
+            </p>
+          )}
         </section>
 
         {ticket.skillId === undefined ? null : (

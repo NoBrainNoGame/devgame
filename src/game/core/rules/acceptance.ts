@@ -73,6 +73,8 @@ export function performSubmit(context: RuleContext): void {
   }
   ticket.rejections += 1;
   raiseQuality(context, BALANCE.quality.perRejection);
+  // The refusal that fills the gauge is the sack, not a rejection to answer.
+  if (state.phase.kind === "game_over") return;
   ticket.rework += rework;
   ticket.points += rework;
   ticket.filled = Math.min(ticket.filled, ticket.points);

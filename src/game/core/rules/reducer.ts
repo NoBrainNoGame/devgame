@@ -10,19 +10,22 @@ import { isActionAvailable } from "@/game/core/rules/actions";
 import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
-import { placeDevops } from "@/game/core/rules/devops";
+import { closeMonth, monthTurns } from "@/game/core/rules/economy";
 import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { grantRelic } from "@/game/core/rules/grants";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
 import { gameOver, isOver } from "@/game/core/rules/over";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
+import { buySkillPoint, buyUpgrade } from "@/game/core/rules/shop";
 import { endSprint, startNextSprint } from "@/game/core/rules/sprint";
+import { hireDev, workTeam } from "@/game/core/rules/team";
 import {
   backlogTickets,
   checkoutTicket,
   openTickets,
   startTicket,
 } from "@/game/core/rules/tickets";
+import { placeTree } from "@/game/core/rules/tree";
 import type { ApplyResult, PlayerAction, RunState } from "@/game/core/types";
 import { InvalidActionError } from "@/game/core/types";
 
@@ -37,7 +40,7 @@ import { InvalidActionError } from "@/game/core/types";
  * Which actions cost a turn is a design decision, not an implementation one:
  * committing, reviewing and merging end the turn, and so does a submit that
  * comes back refused; starting a ticket, switching to one, answering a
- * rejection and spending DevOps points do not. A submit that is accepted
+ * rejection and spending skill points do not. A submit that is accepted
  * hands its turn to the merge that follows, and a merge conflict defers it
  * again to the choice that resolves it, so one review never costs two turns.
  */
@@ -118,8 +121,20 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       resumeTicket(context);
       return false;
 
-    case "devops":
-      placeDevops(context, action.id);
+    case "tree":
+      placeTree(context, action.id);
+      return false;
+
+    case "buy":
+      buyUpgrade(context, action.id);
+      return false;
+
+    case "buy_point":
+      buySkillPoint(context);
+      return false;
+
+    case "hire":
+      hireDev(context, action.rank);
       return false;
 
     case "resolve_conflict":
@@ -139,10 +154,20 @@ function endTurn(context: RuleContext): void {
   applyDebtDecay(context);
   runFreeReview(context, freeReviewCadence(context.effects));
   checkExplosion(context);
+  // The team works after you, on this turn's board, so a merge of theirs
+  // lands on `dev` before the release that might ship this turn.
+  workTeam(context);
 
   state.turn += 1;
   state.sprintTurn += 1;
   emit(context, { type: "turn_started", turn: state.turn });
+
+  // Payday falls on the month's last turn; the sprint's own end closes
+  // whatever months it cut short, so a payday is never paid twice.
+  if (state.sprintTurn % monthTurns() === 0 && state.sprintTurn < BALANCE.sprint.turns) {
+    closeMonth(context);
+  }
+  if (isOver(context)) return;
 
   // The box runs out before the burnout check: a player at zero for two turns
   // is saved by the release that ships this turn, not executed just before.

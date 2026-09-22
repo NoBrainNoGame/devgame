@@ -10,17 +10,20 @@
  * never fires, and a policy that dominates every other.
  */
 
-import { SKILLS } from "@/game/content";
+import { DEV_RANK, SKILLS, type TreeNodeId, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { monthlyReport, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
+import { skillPointPrice } from "@/game/core/rules/shop";
 import {
   buggedOn,
   currentTicket,
   getTicket,
   openTickets,
+  playerTickets,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
 import { createRun, hashState } from "@/game/core/run";
@@ -50,6 +53,15 @@ interface Outcome {
   maxDebt: number;
   reviews: number;
   failures: Record<string, number>;
+  /** The management game: what was earned, bought and hired. */
+  moneyEarned: number;
+  mrr: number;
+  hires: number;
+  devsLeft: number;
+  teamDelivered: number;
+  outages: number;
+  upgrades: number;
+  pointsBought: number;
 }
 
 function parseArgs(argv: string[]): {
@@ -113,7 +125,7 @@ function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | u
 /** The open ticket closest to landing, if it is not the one in hand. */
 function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
   const current = currentTicket(state);
-  const open = openTickets(state);
+  const open = playerTickets(state);
   if (current === null || open.length < 2) return undefined;
 
   const remaining = (ticket: Ticket): number =>
@@ -124,6 +136,57 @@ function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction 
   return actions.find((a) => a.type === "checkout" && a.ticketId === best.id);
 }
 
+/** Tree nodes in the order the manager buys them. */
+const TREE_ORDER: TreeNodeId[] = [
+  "ci",
+  "stamina",
+  "luck",
+  "monitoring",
+  "growth_hacking",
+  "recruiter",
+  "agile_coach",
+  "sre",
+  "cd",
+  "calm",
+  "review_bot",
+  "auto_linter",
+  "dependabot",
+  "auto_rebase",
+  "mentoring",
+];
+
+/**
+ * The manager: servers when production saturates, a junior when one can be
+ * afforded, a skill point when the money is plentiful, otherwise the cheapest
+ * upgrade going. Naive on purpose — it is the same for every policy.
+ */
+function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
+  const effects = gatherEffects(state);
+  const report = monthlyReport(state, effects);
+
+  if (report.load >= report.capacity) {
+    const servers = actions.find((a) => a.type === "buy" && a.id === "servers");
+    if (servers !== undefined) return servers;
+  }
+
+  const hire = actions.find((a) => a.type === "hire" && a.rank === "junior");
+  if (hire !== undefined && report.net - DEV_RANK.junior.salary >= 0) return hire;
+
+  if (state.money > 2 * skillPointPrice(state)) {
+    const point = actions.find((a) => a.type === "buy_point");
+    if (point !== undefined) return point;
+  }
+
+  const purchases = actions.filter(
+    (a): a is Extract<PlayerAction, { type: "buy" }> => a.type === "buy",
+  );
+  const affordable = purchases
+    .map((a) => ({ a, cost: upgradeCost(a.id, state.upgrades[a.id] ?? 0) ?? Infinity }))
+    .filter(({ cost }) => cost <= state.money / 2)
+    .sort((x, y) => x.cost - y.cost)[0];
+  return affordable?.a;
+}
+
 function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): PlayerAction {
   const isAi = (a: PlayerAction) => a.type === "commit" && a.mode === "ai" && a.kind === undefined;
   const isCraft = (a: PlayerAction) =>
@@ -131,7 +194,6 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const isReview = (a: PlayerAction) => a.type === "review";
   const isRest = (a: PlayerAction) => a.type === "rest";
   const isSubmit = (a: PlayerAction) => a.type === "submit";
-  const isDevops = (a: PlayerAction) => a.type === "devops";
   const writtenAs = (kind: string) => (a: PlayerAction) =>
     a.type === "commit" && a.kind === kind && a.mode === "craft";
 
@@ -141,9 +203,16 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const fallback: PlayerAction = { type: "review" };
 
   // A point costs no turn, so any policy that ignores them is leaving value on
-  // the table. Every policy takes them.
-  const devops = actions.find(isDevops);
-  if (devops !== undefined) return devops;
+  // the table. Every policy takes them, in a fixed order of preference.
+  const tree = TREE_ORDER.map((id) => actions.find((a) => a.type === "tree" && a.id === id)).find(
+    (a) => a !== undefined,
+  );
+  if (tree !== undefined) return tree;
+
+  // The shop is free in time too. One manager for every policy, so a policy
+  // is still about how it writes commits.
+  const bought = manage(state, actions);
+  if (bought !== undefined) return bought;
 
   const start = chooseStart(state, actions);
   if (start !== undefined) return start;
@@ -248,6 +317,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
   let forced = 0;
   let carriedOver = 0;
   let wipSum = 0;
+  let hires = 0;
+  let devsLeft = 0;
+  let teamDelivered = 0;
+  let outages = 0;
+  let upgrades = 0;
+  let pointsBought = 0;
 
   while (state.phase.kind !== "game_over" && turns < MAX_TURNS) {
     const actions = getAvailableActions(state);
@@ -261,6 +336,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
         forced,
         carriedOver,
         wipSum,
+        hires,
+        devsLeft,
+        teamDelivered,
+        outages,
+        upgrades,
+        pointsBought,
       });
     }
 
@@ -280,6 +361,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
         forced,
         carriedOver,
         wipSum,
+        hires,
+        devsLeft,
+        teamDelivered,
+        outages,
+        upgrades,
+        pointsBought,
       });
     }
 
@@ -288,7 +375,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
     for (const event of result.events) {
       if (event.type === "turn_started") {
         turns += 1;
-        wipSum += Math.max(0, openTickets(state).length - 1);
+        wipSum += Math.max(0, playerTickets(state).length - 1);
       }
       if (event.type === "failure_event") {
         failures[event.eventId] = (failures[event.eventId] ?? 0) + 1;
@@ -300,6 +387,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
       if (event.type === "sprint_ended") {
         carriedOver += openTickets(state).length;
       }
+      if (event.type === "hired") hires += 1;
+      if (event.type === "dev_left") devsLeft += 1;
+      if (event.type === "ticket_merged" && event.devId !== undefined) teamDelivered += 1;
+      if (event.type === "outage") outages += 1;
+      if (event.type === "upgrade_bought") upgrades += 1;
+      if (event.type === "skill_point_bought") pointsBought += 1;
     }
 
     if (verbose) {
@@ -311,7 +404,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
             : action.type;
       const ticket = currentTicket(state);
       console.log(
-        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${openTickets(state).length} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
+        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${playerTickets(state).length} $=${state.money} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
       );
     }
   }
@@ -326,6 +419,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
     forced,
     carriedOver,
     wipSum,
+    hires,
+    devsLeft,
+    teamDelivered,
+    outages,
+    upgrades,
+    pointsBought,
   });
 }
 
@@ -342,6 +441,8 @@ function summarise(
     | "ticketsDelivered"
     | "pointsDelivered"
     | "finalDebt"
+    | "moneyEarned"
+    | "mrr"
   >,
 ): Outcome {
   return {
@@ -353,6 +454,8 @@ function summarise(
     ticketsDelivered: state.ticketsDelivered,
     pointsDelivered: state.pointsDelivered,
     finalDebt: state.debt,
+    moneyEarned: state.moneyEarned,
+    mrr: mrrOf(state, gatherEffects(state)),
     ...extra,
   };
 }
@@ -408,6 +511,12 @@ function report(policy: string, outcomes: Outcome[]): void {
   );
   console.log(
     `  debt      final avg ${mean(outcomes.map((o) => o.finalDebt)).toFixed(0)}  peak avg ${mean(outcomes.map((o) => o.maxDebt)).toFixed(0)}`,
+  );
+  console.log(
+    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}`,
+  );
+  console.log(
+    `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,
   );
   console.log(
     `  failures  ${Object.entries(failures)

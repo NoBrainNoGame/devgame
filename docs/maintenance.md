@@ -60,7 +60,7 @@ by more than noise. Then the epoch question below.
 1. Add the id to `RELIC_IDS` and the entry to `RELICS` in
    `src/game/content/relics.ts`.
 2. `effects` is permanent and recomputed every turn; `grant` is applied once,
-   the moment the relic is picked, and only understands `devopsPoints`,
+   the moment the relic is picked, and only understands `skillPoints`,
    `energy` and `debt` (see `grantRelic` in `src/game/core/rules/grants.ts`).
    Anything else needs a new `Effects` field.
 3. Two message entries, `game.relics.<id>.name` and `.desc`, in both files.
@@ -74,28 +74,74 @@ by more than noise. Then the epoch question below.
 tests/sprint.test.ts` — the sprint test asserts the offer is exactly three
 distinct relics drawn from `RELIC_IDS`.
 
-### A DevOps node
+### A skill tree node
 
-1. Add the id to `DEVOPS_IDS` and the entry to `DEVOPS` in
-   `src/game/content/devops.ts`.
+1. Add the id to `TREE_IDS` and the entry to `TREE` in
+   `src/game/content/tree.ts`, with its `branch` (one of `TREE_BRANCHES`).
 2. `cost` is indexed from level 0 and **its length must equal `maxLevel`**;
    every price must be positive. `tests/content.test.ts` checks both, and that
-   `devopsCost(id, maxLevel)` is `undefined`.
+   `treeCost(id, maxLevel)` is `undefined`.
 3. `perLevel` is the effect of *one* level. Levels stack by summing, so a
    boolean field cannot be levelled meaningfully — that is why `review_bot`
    adds `freeReviewEvery: 1` per level and `freeReviewCadence()` in
    `rules/modifiers.ts` turns the sum into a cadence.
-4. Two message entries under `game.devops.<id>`.
-5. No action wiring: `getAvailableActions` and `gatherEffects` both iterate
-   `DEVOPS_IDS`, and `PlayerActionSchema` validates against `z.enum(DEVOPS_IDS)`.
-6. Map generation: none.
-7. A DevOps id draws no randomness, so adding one at the **end** of the array
+4. `requires` names the nodes that must be at a given level first. They must
+   be on the **same branch** (the tree screen draws the connector under the
+   parent) and must not form a cycle — `tests/content.test.ts` checks both.
+   `canPlaceTree` in `rules/tree.ts` refuses a locked node, so it is never
+   offered; the preview says which prerequisite is missing.
+5. Two message entries under `game.tree.<id>`. A new branch needs
+   `game.branches.<id>.name` and a column in `SkillTreeDialog.tsx`.
+6. No action wiring: `getAvailableActions` and `gatherEffects` both iterate
+   `TREE_IDS`, and `PlayerActionSchema` validates against `z.enum(TREE_IDS)`.
+7. A tree id draws no randomness, so adding one at the **end** of the array
    does not change what an old log replays to — but it does change
-   `RULES_FINGERPRINT` and the shape of `state.devops`, so the pinned hash in
+   `RULES_FINGERPRINT` and the shape of `state.tree`, so the pinned hash in
    `tests/content.test.ts` must be updated.
+
+Points come from three places: `BALANCE.tree.perSprint` at every sprint end,
+`accountSkillPoints(level)` (`src/game/core/score.ts`) at the start of every
+run, and the shop's `buy_point`. The starting points are declared by the save
+(`startingSkillPoints`) and checked by `overclaims` against `meta.level`.
 
 **What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
 tests/actions.test.ts tests/rules.test.ts`.
+
+### An upgrade
+
+1. Add the id to `UPGRADE_IDS` and the entry to `UPGRADES` in
+   `src/game/content/upgrades.ts`: `category`, `maxLevel`, `cost` (one price
+   per level, in money), `upkeep` (charged per level every month, 0 for a
+   one-off), `perLevel`.
+2. If no `Effects` field expresses what it does, see
+   [When no effect field fits](#when-no-effect-field-fits). The economy reads
+   `infraCapacity` and `mrrBonusPct` in `rules/economy.ts`, the team reads
+   `devSpeedBonus`, `devCapacityBonus` and `hiringDiscountPct` in
+   `rules/team.ts`, and the HUD reads `autopilot`.
+3. Two message entries under `game.upgrades.<id>`. The shop lists every id of
+   a category through `upgradesIn`, so nothing to add in `CompanyDialog.tsx`.
+4. No action wiring: `getAvailableActions` offers `buy` for every id that can
+   be paid for, `buyUpgrade` in `rules/shop.ts` refreshes the effects and the
+   energy ceiling.
+5. Draws no randomness. The fingerprint moves (`UPGRADE_IDS` is hashed), so
+   repin it.
+
+**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
+tests/economy.test.ts`, then `bun run sim --runs 200` and read the `money`
+line: `upgrades avg` says whether the manager ever buys it.
+
+### A developer rank
+
+Ranks live in `DEV_RANK` in `src/game/content/team.ts`: `capacity`,
+`hireCost`, `salary`. Adding one means appending it to `DEV_RANKS` (the order
+is the promotion ladder, `nextRank` walks it), a `game.ranks.<id>.name`
+message, and a repinned fingerprint. `hire` is offered for every rank the
+money allows; the rest of the team's rules read the rank through the table.
+
+What a developer does each turn — pick up, write, land — is `workTeam` in
+`rules/team.ts`, and it is deliberately a pure function of the board: no roll,
+no debt, no energy. Changing that is a rule change, and `tests/team.test.ts`
+is where the promises are written down.
 
 ### The pull request review
 
@@ -371,7 +417,7 @@ In practice:
 | Gating an action in `getAvailableActions` | Yes — an old log that took it no longer replays |
 | A new `DetourKind` | Not on its own — it is offered, not drawn — but its rule is |
 | A field added to `PlayerAction` | No on its own, but the rule reading it almost always is |
-| A DevOps id or a profile id appended to its array | No — no randomness is drawn from either |
+| A tree node, an upgrade, a rank or a profile id appended to its array | No — no randomness is drawn from any of them |
 | Renaming a message, a comment, a variable | No |
 
 When in doubt, bump it. The cost of bumping is a leaderboard that starts again.
@@ -626,7 +672,8 @@ translation layer in.
 `tests/messages.test.ts` enforces three things: identical key sets between the
 catalogues, no empty message, and identical ICU placeholder names per key. It
 also derives the expected content keys from the id arrays — skills, relics,
-devops and profiles need `name` and `desc`; failure, merge and ambient events
+tree nodes, upgrades and profiles need `name` and `desc`; branches and ranks a
+`name`; failure, merge and ambient events
 need `title` and `log`; node kinds need `name` and `desc`.
 
 **What it does not check**: keys the engine emits that are not derived from a

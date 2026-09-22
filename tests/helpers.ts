@@ -285,6 +285,26 @@ export function policy(
 }
 
 /**
+ * A player who hires whenever they can and otherwise plays like `policy`.
+ * The run is given the money to do it from the start, so the team is on the
+ * board within a few turns rather than a few sprints.
+ */
+export function hiringPolicy(
+  mode: CommitMode,
+): (state: RunState, actions: PlayerAction[]) => PlayerAction | undefined {
+  const base = policy(mode);
+  return (state, actions) =>
+    actions.find((a) => a.type === "hire" && a.rank === "junior") ?? base(state, actions);
+}
+
+/** A run that can afford a team at once. */
+export function funded(seed: string, money = 1000): RunState {
+  const state = newRun(seed);
+  state.money = money;
+  return state;
+}
+
+/**
  * Submits the ticket in hand and, if the review says yes, presses merge: the
  * two moves a landed ticket takes, with the events of both. A test about
  * what landing does starts here.

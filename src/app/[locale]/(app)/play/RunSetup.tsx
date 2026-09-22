@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { MetaProgressDto, RunMode } from "@/game";
+import { accountSkillPoints, type MetaProgressDto, type RunMode } from "@/game";
 import { PROFILE_IDS, PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,8 @@ export function RunSetup({ meta, dailyAvailable, resumable, onStart, onResume }:
       <h1 className="mb-1 font-medium text-xl">{t("title")}</h1>
       <p className="mb-8 text-muted-foreground text-sm">
         {common("commits")} {meta.commitsBank}
+        {" · "}
+        {t("startingPoints", { count: accountSkillPoints(meta.level) })}
       </p>
 
       {resumable ? (

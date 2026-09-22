@@ -1,7 +1,9 @@
-import type { DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
+import type { DevRank, ProfileId, RelicId, SkillId, TreeNodeId, UpgradeId } from "@/game/content";
+import { DEV_RANK } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { monthlyReport, paydayIn } from "@/game/core/rules/economy";
 import {
   type DebtView,
   debtView,
@@ -12,6 +14,8 @@ import {
   wipExtra,
 } from "@/game/core/rules/modifiers";
 import { previewAll } from "@/game/core/rules/preview";
+import { skillPointPrice } from "@/game/core/rules/shop";
+import { devCapacity, ticketsOf } from "@/game/core/rules/team";
 import {
   behindOf,
   buggedOn,
@@ -23,6 +27,7 @@ import {
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
+  DevId,
   MapNode,
   NodeId,
   Phase,
@@ -77,6 +82,10 @@ export interface TicketView {
   /** Commits the review flagged. A fix each, before it can go back. */
   bugs: number;
   skillId?: SkillId;
+  /** Monthly revenue once shipped. */
+  mrr: number;
+  /** The developer working it, when it is not you. */
+  assignee?: DevId;
   lane?: number;
   /** Merges landed on `dev` since it was opened. Its merge pays for each. */
   behind: number;
@@ -87,6 +96,37 @@ export interface TicketView {
   /** Debt this ticket's commits cost, repayments not credited. */
   debtAdded: number;
   mustWrite?: Ticket["mustWrite"];
+}
+
+/** A hired developer as the roster shows them. */
+export interface DevView {
+  id: DevId;
+  rank: DevRank;
+  /** Tickets they can hold at once, bonuses included. */
+  capacity: number;
+  ticketIds: TicketId[];
+  delivered: number;
+  /** Tickets to deliver before the next rank; null at the top. */
+  promotionIn: number | null;
+  salary: number;
+}
+
+/** The finances, as the company screen and the resource bar show them. */
+export interface EconomyView {
+  money: number;
+  moneyEarned: number;
+  mrr: number;
+  load: number;
+  capacity: number;
+  revenue: number;
+  upkeep: number;
+  salaries: number;
+  net: number;
+  month: number;
+  /** Turns until the next payday. */
+  paydayIn: number;
+  /** What the next skill point costs in the shop. */
+  skillPointPrice: number;
 }
 
 export interface RunSnapshot {
@@ -117,8 +157,14 @@ export interface RunSnapshot {
 
   skills: SkillId[];
   relics: RelicId[];
-  devops: Record<DevopsId, number>;
-  devopsPoints: number;
+  tree: Record<TreeNodeId, number>;
+  skillPoints: number;
+  upgrades: Record<UpgradeId, number>;
+  economy: EconomyView;
+  /** The roster, in hiring order. */
+  devs: DevView[];
+  /** The idle timer may play a move rather than rest: the supervisor is bought. */
+  autopilot: boolean;
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -165,11 +211,27 @@ export function toSnapshot(state: RunState): RunSnapshot {
     unread: unreadAiOn(state, ticket).length,
     bugs: buggedOn(state, ticket).length,
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
+    mrr: ticket.mrr,
+    ...(ticket.assignee === undefined ? {} : { assignee: ticket.assignee }),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     behind: behindOf(state, ticket),
     ready: ticket.status === "open" && isReady(state, ticket),
     commits: ticket.nodeIds.length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
+  }));
+
+  const report = monthlyReport(state, effects);
+  const devs: DevView[] = state.devs.map((dev) => ({
+    id: dev.id,
+    rank: dev.rank,
+    capacity: devCapacity(dev, effects),
+    ticketIds: ticketsOf(state, dev.id).map((ticket) => ticket.id),
+    delivered: dev.delivered,
+    promotionIn:
+      dev.rank === "senior"
+        ? null
+        : BALANCE.team.promoteEvery - (dev.delivered % BALANCE.team.promoteEvery),
+    salary: DEV_RANK[dev.rank].salary,
   }));
 
   return {
@@ -208,8 +270,25 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     skills: [...state.skills],
     relics: [...state.relics],
-    devops: { ...state.devops },
-    devopsPoints: state.devopsPoints,
+    tree: { ...state.tree },
+    skillPoints: state.skillPoints,
+    upgrades: { ...state.upgrades },
+    economy: {
+      money: state.money,
+      moneyEarned: state.moneyEarned,
+      mrr: report.mrr,
+      load: report.load,
+      capacity: report.capacity,
+      revenue: report.revenue,
+      upkeep: report.upkeep,
+      salaries: report.salaries,
+      net: report.net,
+      month: state.months,
+      paydayIn: paydayIn(state),
+      skillPointPrice: skillPointPrice(state),
+    },
+    devs,
+    autopilot: effects.autopilot,
 
     nodes,
     tickets,

@@ -29,6 +29,11 @@ export function backlogTickets(state: RunState): Ticket[] {
   return sortedTickets(state).filter((ticket) => ticket.status === "backlog");
 }
 
+/** Open tickets that are yours: what the team holds is not on your desk. */
+export function playerTickets(state: RunState): Ticket[] {
+  return openTickets(state).filter((ticket) => ticket.assignee === undefined);
+}
+
 export function currentTicket(state: RunState): Ticket | null {
   const id = state.player.ticketId;
   if (id === null) return null;
@@ -94,7 +99,12 @@ export function behindOf(state: RunState, ticket: Ticket): number {
  * A refactor of nothing is a commit with a nicer name.
  */
 export function offersOf(state: RunState, ticket: Ticket): DetourKind[] {
-  if (ticket.mustWrite !== undefined) return [];
+  // A forced ticket is one kind of commit until it is done — except a fix,
+  // because a review can flag a hotfix's commit too, and a ticket that can
+  // neither be fixed nor resubmitted is a run that cannot end.
+  if (ticket.mustWrite !== undefined) {
+    return buggedOn(state, ticket).length > 0 ? ["fix"] : [];
+  }
 
   const offers: DetourKind[] = ["docs", "risky"];
   if (buggedOn(state, ticket).length > 0) offers.push("fix");
@@ -136,6 +146,9 @@ export function forceTicket(
     rework: 0,
     debtAdded: 0,
     rejections: 0,
+    // Nothing is drawn here: a forced ticket earns nothing, and a draw that
+    // depended on whether production broke would move every seed's stream.
+    mrr: 0,
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
     nodeIds: [],
@@ -188,6 +201,6 @@ export function settleCurrent(context: RuleContext): void {
   const { state } = context;
   if (currentTicket(state) !== null) return;
 
-  const next = openTickets(state)[0];
+  const next = playerTickets(state)[0];
   state.player.ticketId = next === undefined ? null : next.id;
 }

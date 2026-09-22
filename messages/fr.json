@@ -73,7 +73,9 @@
     "playAgain": "Rejouer",
     "levelUp": "Niveau {level} atteint",
     "unlocked": "Débloqué : {name}",
-    "ticketsDelivered": "Tickets livrés"
+    "ticketsDelivered": "Tickets livrés",
+    "moneyEarned": "Encaissé",
+    "startingPoints": "{count, plural, one {# point de compétence} other {# points de compétence}} au départ de chaque run"
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -94,11 +96,11 @@
     "aiCommitHint": "Pas cher, avance plus loin, ajoute de la dette.",
     "review": "Review",
     "reviewHint": "Relit les commits IA et rembourse de la dette.",
-    "devops": "DevOps",
-    "devopsTitle": "Arbre DevOps",
-    "devopsHint": "Automatiser ne coûte pas de tour, seulement des points.",
-    "devopsPoints": "{count, plural, one {# point DevOps} other {# points DevOps}}",
-    "devopsLevel": "Niveau {level} / {max}",
+    "tree": "Compétences",
+    "treeTitle": "Arbre de compétences",
+    "treeHint": "Placer un point ne coûte pas de tour, seulement des points.",
+    "treePoints": "{count, plural, one {# point de compétence} other {# points de compétence}}",
+    "treeLevel": "Niveau {level} / {max}",
     "logTitle": "Journal",
     "logEmpty": "Rien à raconter pour l'instant.",
     "logTurn": "tour {turn}",
@@ -207,7 +209,63 @@
     "ticketCost": "+{debt} dette",
     "reviewMergeHint": "Le merge coûte le tour ; la review, non.",
     "rest": "Souffler",
-    "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus."
+    "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus.",
+    "company": "Entreprise",
+    "companyHint": "Finances, boutique et équipe. Prochaine paie dans {count, plural, one {# tour} other {# tours}}.",
+    "money": "{money} €",
+    "monthShort": "mois",
+    "mrr": "{money} € de revenus par mois",
+    "paydayIn": "paie dans {count, plural, one {# tour} other {# tours}}",
+    "saturatedShort": "saturé",
+    "finances": "Finances",
+    "shop": "Boutique",
+    "team": "Équipe",
+    "nextPayday": "Prochaine paie",
+    "lineRevenue": "Revenus encaissés",
+    "lineLost": "Perdus (serveurs saturés)",
+    "lineUpkeep": "Abonnements",
+    "lineSalaries": "Salaires",
+    "lineNet": "Net",
+    "monthCount": "Mois {month}",
+    "infra": "Infrastructure",
+    "capacity": "Features servies",
+    "capacityHint": "Chaque feature livrée occupe les serveurs. Au-delà de la capacité, le surplus ne rapporte rien et la prod perd patience chaque mois.",
+    "saturated": "Serveurs saturés : le surplus ne rapporte rien et la prod perd patience à chaque paie.",
+    "moneyEarned": "{money} € encaissés depuis le début",
+    "buyPoint": "Point de compétence",
+    "buyPointHint": "Un point à placer dans l'arbre, tout de suite. Chaque achat renchérit le suivant.",
+    "buyFor": "{money} €",
+    "category": {
+      "infra": "Infra",
+      "growth": "Croissance",
+      "tooling": "Outillage"
+    },
+    "upkeepPerLevel": "{money} € par mois et par niveau",
+    "upkeepNow": "{money} € par mois actuellement",
+    "hire": "Embaucher",
+    "hireHint": "Un développeur prend les tickets du backlog, code seul et merge seul. Il coûte son salaire à chaque paie ; impayé, il s'en va et vous rend ses tickets.",
+    "rankCapacity": "{count, plural, one {# ticket à la fois} other {# tickets à la fois}}",
+    "rankSalary": "{money} € par mois",
+    "roster": "L'équipe",
+    "rosterEmpty": "Personne pour l'instant. Les revenus des features livrées paient les embauches.",
+    "devHolds": "{count}/{max} tickets",
+    "devDelivered": "{count, plural, one {# livré} other {# livrés}}",
+    "promotionIn": "promotion dans {count, plural, one {# ticket} other {# tickets}}",
+    "ticketMrr": "+{money} €/mois une fois livré",
+    "assignedTo": "Tenu par {dev}",
+    "tooltipByDev": "par {dev}",
+    "restHintAutopilot": "Le superviseur joue le coup évident si vous laissez tourner.",
+    "treeBuy": "Niveau {level} · {points, plural, one {# point} other {# points}}",
+    "treeMaxed": "Au maximum",
+    "treeRequires": "{node} niveau {level}",
+    "idleAuto": "Auto",
+    "idleOnHint": "Sans action de votre part pendant {seconds} s, le jeu joue tout seul. Coupez-le pour tout gérer vous-même ou faire une pause.",
+    "idleOffHint": "Le jeu attend vos décisions. Activez pour qu'il joue tout seul quand vous ne faites rien.",
+    "idleSpeed": "Vitesse de l'horloge",
+    "currentTicket": "Ticket en main",
+    "runStats": "La run",
+    "skillsEarned": "Acquis cette run",
+    "nothingYet": "Rien pour l'instant."
   },
   "leaderboard": {
     "title": "Classement",
@@ -247,7 +305,8 @@
       "rejected": "Rejetée"
     },
     "empty": "Aucune run enregistrée.",
-    "displayName": "Nom affiché"
+    "displayName": "Nom affiché",
+    "startingPoints": "{count, plural, one {# point de compétence} other {# points de compétence}} au départ de chaque run"
   },
   "login": {
     "title": "Connexion",
@@ -494,7 +553,7 @@
       },
       "onboarding": {
         "name": "Onboarding",
-        "desc": "Donne des points DevOps immédiatement."
+        "desc": "Donne des points de compétence immédiatement."
       },
       "retrospective": {
         "name": "Rétrospective",
@@ -513,7 +572,7 @@
         "desc": "Réduit le risque des commits IA."
       }
     },
-    "devops": {
+    "tree": {
       "ci": {
         "name": "CI",
         "desc": "Des tests à chaque commit : chaque niveau améliore tous les jets."
@@ -541,6 +600,101 @@
       "monitoring": {
         "name": "Monitoring",
         "desc": "Prévient un nœud à l'avance d'un bug en production, et raccourcit le hotfix."
+      },
+      "sre": {
+        "name": "SRE",
+        "desc": "Chaque niveau fait tenir deux features de plus aux serveurs, sans un euro d'hébergement."
+      },
+      "agile_coach": {
+        "name": "Coach agile",
+        "desc": "Chaque niveau fait remplir un point de story de plus par tour à chaque développeur."
+      },
+      "recruiter": {
+        "name": "Recruteur",
+        "desc": "Les embauches coûtent un tiers de moins."
+      },
+      "growth_hacking": {
+        "name": "Growth hacking",
+        "desc": "Chaque niveau ajoute dix pour cent aux revenus mensuels."
+      },
+      "mentoring": {
+        "name": "Mentorat",
+        "desc": "Chaque développeur tient un ticket de plus à la fois."
+      },
+      "stamina": {
+        "name": "Endurance",
+        "desc": "Chaque niveau ajoute deux points d'énergie maximale."
+      },
+      "luck": {
+        "name": "Chance",
+        "desc": "Chaque niveau améliore tous les jets de deux points."
+      },
+      "calm": {
+        "name": "Sang-froid",
+        "desc": "Chaque niveau ajoute cinq points à la résolution de conflit à la main."
+      }
+    },
+    "branches": {
+      "cicd": {
+        "name": "CI/CD"
+      },
+      "devops": {
+        "name": "DevOps"
+      },
+      "management": {
+        "name": "Management"
+      },
+      "profile": {
+        "name": "Profil"
+      }
+    },
+    "upgrades": {
+      "servers": {
+        "name": "Serveurs",
+        "desc": "Chaque niveau fait tenir trois features de plus en production. Facturé chaque mois."
+      },
+      "autoscaling": {
+        "name": "Autoscaling",
+        "desc": "Six features de plus d'un coup, et une facture mensuelle à l'avenant."
+      },
+      "marketing": {
+        "name": "Marketing",
+        "desc": "Chaque niveau ajoute quinze pour cent aux revenus mensuels. Abonnement."
+      },
+      "premium_plan": {
+        "name": "Offre premium",
+        "desc": "Un quart de revenus en plus, une fois pour toutes."
+      },
+      "ai_subscription": {
+        "name": "Abonnement IA",
+        "desc": "Chaque niveau améliore les jets des commits IA. Abonnement."
+      },
+      "ide_licence": {
+        "name": "Licence IDE",
+        "desc": "Les commits à la main réussissent mieux."
+      },
+      "coffee_machine": {
+        "name": "Machine à café",
+        "desc": "Trois points d'énergie maximale, une fois pour toutes."
+      },
+      "dev_tooling": {
+        "name": "Outillage",
+        "desc": "Chaque niveau fait remplir un point de plus par tour à chaque développeur. Abonnement."
+      },
+      "ai_supervisor": {
+        "name": "Superviseur IA",
+        "desc": "Quand vous laissez tourner, il joue le coup évident à votre place au lieu de souffler. Abonnement."
+      }
+    },
+    "ranks": {
+      "junior": {
+        "name": "Junior"
+      },
+      "mid": {
+        "name": "Confirmé"
+      },
+      "senior": {
+        "name": "Senior"
       }
     },
     "profiles": {
@@ -665,7 +819,7 @@
       "squashed": "{count, plural, one {# commit écrasé} other {# commits écrasés}}, {lost, plural, one {# de moins au compteur} other {# de moins au compteur}}",
       "docs_written": "documentation écrite, {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
       "rebased": "rebase du ticket sur dev, l'historique est à jour",
-      "_comment": "Les paramètres node, skill, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
+      "_comment": "Les paramètres node, skill, relic, node, upgrade et rank sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
       "node_done": {
         "craft": "{node} écrit à la main",
         "ai": "{node} généré par la machine, ça compile"
@@ -684,7 +838,16 @@
       "sprint_ended": "sprint {sprint} clos",
       "sprint_started": "sprint {sprint} ouvert",
       "relic_chosen": "{relic} ajouté au projet",
-      "devops_placed": "{devops} passé au niveau {level}",
+      "tree_placed": "{node} passé au niveau {level}",
+      "dev_promoted": "{dev} passe {rank}",
+      "dev_left": "{dev} part faute de salaire, {count, plural, one {# ticket vous revient} other {# tickets vous reviennent}}",
+      "hired": "{dev} rejoint l'équipe ({rank})",
+      "skill_point_bought": "un point de compétence acheté {money} €",
+      "upgrade_bought": "{upgrade} passé au niveau {level}",
+      "outage": "serveurs saturés : {load} features pour {capacity} servies",
+      "month_closed": "mois {month} : +{revenue} € de revenus, −{costs} € de charges, {money} € en caisse",
+      "ticket_assigned_dev": "{dev} prend un ticket du backlog",
+      "ticket_merged_dev": "{dev} a mergé son ticket sur dev",
       "game_over": {
         "burnout": "plus d'énergie, la run s'arrête à {score}",
         "fired": "licencié, la run s'arrête à {score}"
@@ -722,9 +885,16 @@
       "pair_programming": "Review allégée par le pair programming",
       "fresh": "Relu à chaud : remboursement bonifié",
       "grants_skill": "Livrer ce ticket donne une compétence",
-      "devops_cost": "{points, plural, one {# point DevOps} other {# points DevOps}}",
-      "devops_maxed": "Niveau maximum atteint ({max})",
-      "devops_too_expensive": "Pas assez de points : {points} requis",
+      "tree_cost": "{points, plural, one {# point de compétence} other {# points de compétence}}",
+      "tree_maxed": "Niveau maximum atteint ({max})",
+      "tree_requires": "Demande {node} au niveau {level}",
+      "tree_too_expensive": "Pas assez de points : {points} requis",
+      "team_full": "Équipe au complet ({max})",
+      "too_expensive": "Pas assez d'argent : {money} € requis",
+      "capacity": "{count, plural, one {# ticket à la fois} other {# tickets à la fois}}",
+      "salary": "Salaire {money} € par mois",
+      "upkeep": "{money} € par mois",
+      "price": "{money} €",
       "hidden_bug_risk": "{percent} % de risque de bug caché",
       "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}} {points}",
       "wip_cost": "Énergie majorée : {count, plural, one {# ticket en plus} other {# tickets en plus}}",

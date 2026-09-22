@@ -15,7 +15,6 @@ const arbitraryMeta = fc
   .record({
     level: fc.integer({ min: 1, max: 99 }),
     xp: fc.integer({ min: 0, max: 100_000 }),
-    unspentStatPoints: fc.integer({ min: 0, max: 50 }),
     commitsBank: fc.integer({ min: 0, max: 50_000 }),
     totalCommits: fc.integer({ min: 0, max: 50_000 }),
     ticketsDelivered: fc.integer({ min: 0, max: 500 }),
@@ -113,16 +112,5 @@ describe("mergeMeta", () => {
     });
 
     expect(mergeMeta(older, newer).settings).toEqual({ sound: false, reducedMotion: true });
-  });
-
-  test("spent stat points come from the further-along copy, unsplit", () => {
-    const ahead = meta({ xp: 5000, statPoints: { energyMax: 3, luck: 1, conflictRes: 0 } });
-    const behind = meta({ xp: 10, statPoints: { energyMax: 0, luck: 0, conflictRes: 2 } });
-
-    expect(mergeMeta(ahead, behind).statPoints).toEqual({
-      energyMax: 3,
-      luck: 1,
-      conflictRes: 0,
-    });
   });
 });

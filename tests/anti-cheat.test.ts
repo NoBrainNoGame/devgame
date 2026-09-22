@@ -3,24 +3,30 @@ import { describe, expect, test } from "bun:test";
 import { RULES_FINGERPRINT, replayRun, runFingerprint, SAVE_VERSION } from "@/game";
 import type { SkillId } from "@/game/content";
 import { createRun } from "@/game/core/run";
-import type { StatPoints } from "@/game/core/types";
 
-import { newRun, play, policy } from "./helpers";
+import { isType, newRun, play, policy } from "./helpers";
 
 /**
  * A run played *under* the given conditions, the way an attacker would build
  * one: the action log is recorded against the same claim it is submitted with,
  * so the replay is internally consistent and passes.
+ *
+ * Starting points only matter once they are placed, so the forged run spends
+ * them before anything else — a cheat that never spends its points is a cheat
+ * that gains nothing, and a test that would prove nothing.
  */
-function forgedSave(seed: string, statPoints: StatPoints) {
+function forgedSave(seed: string, startingSkillPoints: number) {
   const start = createRun({
     seed,
     mode: "classic",
     profileId: "junior",
     version: SAVE_VERSION,
-    meta: { statPoints },
+    meta: { startingSkillPoints },
   });
-  const live = play(start, { pick: policy("ai"), limit: 400 });
+  const live = play(start, {
+    pick: (state, actions) => actions.find(isType("tree")) ?? policy("ai")(state, actions),
+    limit: 400,
+  });
 
   return {
     version: SAVE_VERSION,
@@ -29,7 +35,7 @@ function forgedSave(seed: string, statPoints: StatPoints) {
     mode: "classic" as const,
     profileId: "junior" as const,
     unlockedSkills: live.state.unlockedSkills,
-    statPoints,
+    startingSkillPoints,
     actions: live.actions,
     clientRunId: "11111111-2222-4333-8444-555555555555",
     createdAt: "2026-09-21T10:00:00.000Z",
@@ -54,7 +60,7 @@ function unlockSave(seed: string, unlockedSkills: SkillId[]) {
     mode: "classic" as const,
     profileId: "junior" as const,
     unlockedSkills,
-    statPoints: { energyMax: 0, luck: 0, conflictRes: 0 },
+    startingSkillPoints: 0,
     actions: live.actions,
     clientRunId: "11111111-2222-4333-8444-555555555555",
     createdAt: "2026-09-21T10:00:00.000Z",
@@ -70,7 +76,7 @@ function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
     mode: "classic" as const,
     profileId: "junior" as const,
     unlockedSkills: live.state.unlockedSkills,
-    statPoints: live.state.statPoints,
+    startingSkillPoints: live.state.startingSkillPoints,
     actions: live.actions,
     clientRunId: "11111111-2222-4333-8444-555555555555",
     createdAt: "2026-09-21T10:00:00.000Z",
@@ -85,8 +91,8 @@ function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
  */
 describe("forged starting conditions", () => {
   test("a run played under forged stats replays cleanly and scores far higher", () => {
-    const honest = replayRun(forgedSave("cheat", { energyMax: 0, luck: 0, conflictRes: 0 }));
-    const forged = replayRun(forgedSave("cheat", { energyMax: 999, luck: 999, conflictRes: 999 }));
+    const honest = replayRun(forgedSave("cheat", 0));
+    const forged = replayRun(forgedSave("cheat", 999));
 
     // Both are internally consistent: the replay cannot tell them apart, which
     // is the whole reason `overclaims` has to check the claim against the

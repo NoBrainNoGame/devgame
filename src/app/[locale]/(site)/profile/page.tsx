@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { emptyMeta, xpForLevel } from "@/game";
+import { accountSkillPoints, emptyMeta, xpForLevel } from "@/game";
 import { redirect } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
@@ -95,6 +95,9 @@ export default async function ProfilePage(): Promise<React.JSX.Element> {
             <Progress value={progress} />
             <p className="text-muted-foreground text-xs tabular-nums">
               {t("xpProgress", { current: meta.xp, next: ceiling })}
+            </p>
+            <p className="text-muted-foreground text-xs">
+              {t("startingPoints", { count: accountSkillPoints(meta.level) })}
             </p>
           </CardContent>
         </Card>

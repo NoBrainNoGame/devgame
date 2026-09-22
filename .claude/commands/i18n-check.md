@@ -7,7 +7,7 @@ actually emits.
 
 `bun test tests/messages.test.ts` already covers part of this: identical key
 sets between the two files, no empty message, matching ICU placeholder names,
-and every content-derived key (`game.skills.*`, `relics`, `devops`, `bots`,
+and every content-derived key (`game.skills.*`, `relics`, `tree`, `upgrades`, `ranks`, `branches`,
 `profiles`, `events`, `nodes` — `name`/`desc`, or `title`/`log` for events).
 Run it first and do not repeat what it proves.
 

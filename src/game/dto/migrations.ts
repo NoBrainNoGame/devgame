@@ -18,6 +18,9 @@ const MIGRATIONS: Record<number, (save: LooseSave) => LooseSave> = {
   // 1 -> 2 has no entry on purpose: version 1 recorded walks over a generated
   // map, and no ticket-shaped game corresponds to that log. `STORAGE_KEYS.run`
   // moved to `:v2` so a browser simply starts fresh.
+  // 2 -> 3 has none either: version 2 claimed permanent stat points and spent
+  // DevOps points, both of which became the skill tree. The keys moved to
+  // `:v3`; the game was still unpublished, so nothing was lost.
 };
 
 export type MigrationResult = { ok: true; dto: RunSaveDto } | { ok: false; error: string };

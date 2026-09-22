@@ -1,11 +1,13 @@
 import {
   AMBIENT_EVENT_IDS,
-  DEVOPS_IDS,
+  DEV_RANKS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
+  TREE_IDS,
+  UPGRADE_IDS,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1aHex } from "@/game/core/hash";
@@ -31,7 +33,7 @@ import { canonicalJson, fnv1aHex } from "@/game/core/hash";
  *
  * `tests/content.test.ts` pins the result, so neither half can move unnoticed.
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /**
  * The rules generation. Bumped by hand when a change makes an old action log
@@ -58,7 +60,9 @@ export function fingerprintFor(epoch: number): string {
       balance: BALANCE,
       skills: SKILL_IDS,
       relics: RELIC_IDS,
-      devops: DEVOPS_IDS,
+      tree: TREE_IDS,
+      upgrades: UPGRADE_IDS,
+      ranks: DEV_RANKS,
       profiles: PROFILE_IDS,
       failures: FAILURE_EVENT_IDS,
       merges: MERGE_EVENT_IDS,

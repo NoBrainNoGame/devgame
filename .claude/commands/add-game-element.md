@@ -1,5 +1,5 @@
 ---
-description: Add a skill, relic, DevOps node, bot archetype, event, node kind or starter profile
+description: Add a skill, relic, skill tree node, upgrade, developer rank, event, node kind or starter profile
 argument-hint: <kind> <name>
 ---
 
@@ -39,7 +39,8 @@ Then run the tests that cover the kind, not the whole suite first:
 - bots: `bun test tests/bots.test.ts`
 - relics: `bun test tests/sprint.test.ts`
 - node kinds: `bun test tests/map.test.ts`
-- DevOps: `bun test tests/actions.test.ts tests/rules.test.ts`
+- tree nodes: `bun test tests/actions.test.ts tests/rules.test.ts`
+- upgrades, ranks: `bun test tests/economy.test.ts tests/team.test.ts`
 
 Finish with `bun run check`, and `bun run sim --runs 200` if the element enters
 a pool the RNG draws from.
