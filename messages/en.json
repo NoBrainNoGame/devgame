@@ -285,7 +285,8 @@
     "dailyResetsIn": "New seed in {time}",
     "periodToday": "Today",
     "periodYesterday": "Yesterday",
-    "periodAll": "All time"
+    "periodAll": "All time",
+    "unavailable": "The leaderboard is unavailable right now. The game still works: your runs are saved in this browser and will be sent when the server is back."
   },
   "profile": {
     "title": "Profile",

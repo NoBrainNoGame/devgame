@@ -285,7 +285,8 @@
     "dailyResetsIn": "Nouvelle graine dans {time}",
     "periodToday": "Aujourd'hui",
     "periodYesterday": "Hier",
-    "periodAll": "Tout"
+    "periodAll": "Tout",
+    "unavailable": "Le classement est indisponible pour le moment. Le jeu, lui, fonctionne : vos runs sont sauvegardées dans ce navigateur et seront envoyées quand le serveur reviendra."
   },
   "profile": {
     "title": "Profil",

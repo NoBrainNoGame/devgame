@@ -16,6 +16,7 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import {
   getLeaderboard,
+  type Leaderboard,
   type LeaderboardEntry,
   type LeaderboardMode,
   type LeaderboardPeriod,
@@ -54,18 +55,11 @@ export default async function LeaderboardPage({
 
   const [t, userId] = await Promise.all([getTranslations("leaderboard"), getCurrentUserId()]);
 
-  // The viewer's profile id, so `getLeaderboard` can find their own best row.
-  // A plain read the page can do itself — no server action needed.
-  const viewerProfile =
-    userId === null
-      ? null
-      : await prisma.profile.findUnique({ where: { userId }, select: { id: true } });
-
-  const board = await getLeaderboard({
-    mode,
-    period,
-    viewerProfileId: viewerProfile?.id ?? null,
-  });
+  // The board is a mirror, not the game: a database that is down, or behind
+  // on its migrations, must not take the page down with it. The error goes to
+  // the server log, where it names the cause; the page says only that the
+  // board is unavailable.
+  const { viewerProfile, board, unavailable } = await loadBoard(mode, period, userId);
 
   const me = board.me;
   const pinned =
@@ -121,7 +115,9 @@ export default async function LeaderboardPage({
         </div>
       ) : null}
 
-      {board.entries.length === 0 ? (
+      {unavailable ? (
+        <p className="mt-8 text-muted-foreground text-sm">{t("unavailable")}</p>
+      ) : board.entries.length === 0 ? (
         <p className="mt-8 text-muted-foreground text-sm">{t("empty")}</p>
       ) : (
         <div className="mt-6">
@@ -167,6 +163,40 @@ export default async function LeaderboardPage({
       )}
     </div>
   );
+}
+
+/**
+ * The viewer's profile id — so `getLeaderboard` can find their own best row, a
+ * plain read the page does itself — then the board. One try around both:
+ * either query failing means the same thing to the reader.
+ */
+async function loadBoard(
+  mode: LeaderboardMode,
+  period: LeaderboardPeriod,
+  userId: string | null,
+): Promise<{
+  viewerProfile: { id: string } | null;
+  board: Leaderboard;
+  unavailable: boolean;
+}> {
+  try {
+    const viewerProfile =
+      userId === null
+        ? null
+        : await prisma.profile.findUnique({ where: { userId }, select: { id: true } });
+    const board = await getLeaderboard({
+      mode,
+      period,
+      viewerProfileId: viewerProfile?.id ?? null,
+    });
+    return { viewerProfile, board, unavailable: false };
+  } catch (error) {
+    console.error(
+      "Leaderboard query failed — is the database up and migrated (`bun run db:up`, `bun run db:deploy`)?",
+      error,
+    );
+    return { viewerProfile: null, board: { entries: [], me: null }, unavailable: true };
+  }
 }
 
 function periodKey(period: LeaderboardPeriod): "periodToday" | "periodYesterday" | "periodAll" {
