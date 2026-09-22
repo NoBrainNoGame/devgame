@@ -29,7 +29,8 @@ export type RunMode = "classic" | "daily";
  * decision about *this* commit, so it costs a turn like any other and leaves
  * the graph a chain — the shape a feature branch actually has.
  */
-export type DetourKind = "refactor" | "fix" | "risky" | "squash" | "docs" | "rebase";
+export const DETOUR_KINDS = ["refactor", "fix", "risky", "squash", "docs", "rebase"] as const;
+export type DetourKind = (typeof DETOUR_KINDS)[number];
 
 export type NodeKind =
   /** Opens a sprint on `dev`: `main` merged back in. Never played. */

@@ -14,6 +14,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import type { NodeKind } from "@/game/core/types";
+import { DETOUR_KINDS } from "@/game/core/types";
 
 import en from "../messages/en.json";
 import fr from "../messages/fr.json";
@@ -152,5 +153,17 @@ describe("french typography", () => {
     }
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe("detours", () => {
+  test("every detour has a name for the machine's hand, in both catalogues", () => {
+    for (const kind of DETOUR_KINDS) {
+      for (const catalogue of [fr, en]) {
+        const nodes = (catalogue as { game: { nodes: Record<string, { aiName?: string }> } }).game
+          .nodes;
+        expect(nodes[kind]?.aiName).toBeTruthy();
+      }
+    }
   });
 });

@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { IdleBar } from "@/components/hud/IdleBar";
 import { TicketDialog } from "@/components/hud/TicketDialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -188,14 +189,17 @@ function TicketCard({
       </button>
 
       {ticket.status === "backlog" ? (
-        <Button
-          size="sm"
-          className="w-full"
-          disabled={busy}
-          onClick={() => onAct({ type: "start", ticketId: ticket.id })}
-        >
-          {t("startTicket")}
-        </Button>
+        <div className="relative">
+          <Button
+            size="sm"
+            className="w-full"
+            disabled={busy}
+            onClick={() => onAct({ type: "start", ticketId: ticket.id })}
+          >
+            {t("startTicket")}
+          </Button>
+          <IdleBar action={{ type: "start", ticketId: ticket.id }} />
+        </div>
       ) : ticket.status === "open" && !current && ticket.assignee === undefined ? (
         <Button
           size="sm"

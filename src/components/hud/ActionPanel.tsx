@@ -1,20 +1,12 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
 
+import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText } from "@/components/hud/useGameText";
-import { IDLE_SPEEDS, useIdleSettings } from "@/components/hud/useIdleSettings";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  type ActionPreview,
-  actionKey,
-  chooseAutopilot,
-  type PlayerAction,
-  type RunSnapshot,
-} from "@/game";
+import { type ActionPreview, actionKey, type PlayerAction, type RunSnapshot } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -26,19 +18,17 @@ import { cn } from "@/lib/utils";
  * switching tickets are free and sit with the board and the ticket bar; the
  * shop and the tree have their own screens.
  *
- * The rest button carries the idle clock: left alone, the run keeps moving.
+ * The idle clock's bar sits under whichever card the clock will press: left
+ * alone, the run keeps moving, and the bar says how.
  */
 export function ActionPanel({
   snapshot,
   busy,
-  paused,
   onAct,
   onOpenBoard,
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
-  /** A dialog has the floor: the idle clock waits. */
-  paused: boolean;
   onAct: (action: PlayerAction) => void;
   /** Nothing in hand: the panel's first offer is the board. */
   onOpenBoard: () => void;
@@ -59,6 +49,7 @@ export function ActionPanel({
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
+  const firstStart = snapshot.actions.find((action) => action.type === "start");
 
   return (
     <section className="space-y-3">
@@ -78,6 +69,7 @@ export function ActionPanel({
             preview={snapshot.previews[actionKey(submit)]}
             busy={busy}
             emphasis
+            action={submit}
             onAct={() => onAct(submit)}
           />
         )}
@@ -89,6 +81,7 @@ export function ActionPanel({
             hint={action.mode === "craft" ? t("craftCommitHint") : t("aiCommitHint")}
             preview={snapshot.previews[actionKey(action)]}
             busy={busy}
+            action={action}
             onAct={() => onAct(action)}
           />
         ))}
@@ -99,27 +92,39 @@ export function ActionPanel({
             hint={t("reviewHint")}
             preview={snapshot.previews[actionKey(review)]}
             busy={busy}
+            action={review}
             onAct={() => onAct(review)}
           />
         )}
 
         {current !== undefined ? null : (
-          <Button
-            className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
-            disabled={busy}
-            onClick={onOpenBoard}
-          >
-            <span className="flex min-w-0 flex-col items-start gap-0.5">
-              <span className="max-w-full truncate">{t("pickTicket")}</span>
-              <span className="whitespace-normal text-left font-normal text-xs opacity-80">
-                {waiting > 0 ? t("pickTicketHint", { count: waiting }) : t("pickTicketEmpty")}
+          <div className="relative">
+            <Button
+              className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
+              disabled={busy}
+              onClick={onOpenBoard}
+            >
+              <span className="flex min-w-0 flex-col items-start gap-0.5">
+                <span className="max-w-full truncate">{t("pickTicket")}</span>
+                <span className="whitespace-normal text-left font-normal text-xs opacity-80">
+                  {waiting > 0 ? t("pickTicketHint", { count: waiting }) : t("pickTicketEmpty")}
+                </span>
               </span>
-            </span>
-          </Button>
+            </Button>
+            {/* Left alone with nothing in hand, the clock starts the oldest ticket itself. */}
+            {firstStart === undefined ? null : <IdleBar action={firstStart} />}
+          </div>
         )}
 
         {rest === undefined ? null : (
-          <IdleRest snapshot={snapshot} rest={rest} busy={busy} paused={paused} onAct={onAct} />
+          <ActionButton
+            label={t("rest")}
+            hint={snapshot.autopilot ? t("restHintAutopilot") : t("restHint")}
+            preview={snapshot.previews[actionKey(rest)]}
+            busy={busy}
+            action={rest}
+            onAct={() => onAct(rest)}
+          />
         )}
 
         {written.length === 0 ? null : (
@@ -138,126 +143,6 @@ export function ActionPanel({
         )}
       </div>
     </section>
-  );
-}
-
-/** Seconds the idle clock takes to press rest on its own, at normal speed. Rendering, not rules. */
-const IDLE_SECONDS = 30;
-const IDLE_TICK_MS = 250;
-
-/**
- * The rest button with the idle clock under it, and the clock's controls.
- *
- * Every turn the clock starts again; when it runs out, the run plays on
- * without you — a rest, or the supervisor's move once it is bought. It waits
- * while the canvas animates or a dialog is open, and it starts over whenever
- * you act yourself, so the bar is always "time since your last decision".
- * Switched off, nothing plays for you; sped up, the same clock runs two, five
- * or ten times faster for a player who trusts their build.
- */
-function IdleRest({
-  snapshot,
-  rest,
-  busy,
-  paused,
-  onAct,
-}: {
-  snapshot: RunSnapshot;
-  rest: PlayerAction;
-  busy: boolean;
-  paused: boolean;
-  onAct: (action: PlayerAction) => void;
-}) {
-  const t = useTranslations("hud");
-  const [idle, setIdle] = useIdleSettings();
-  const [clock, setClock] = useState({ turn: snapshot.turn, elapsed: 0 });
-  const running = idle.enabled && !busy && !paused;
-  const seconds = IDLE_SECONDS / idle.speed;
-
-  // A new turn is a new clock: the state is adjusted during render, the way
-  // React asks for a value that resets when a prop changes.
-  if (clock.turn !== snapshot.turn) setClock({ turn: snapshot.turn, elapsed: 0 });
-
-  useEffect(() => {
-    if (!running) return;
-    const timer = setInterval(
-      () => setClock((value) => ({ ...value, elapsed: value.elapsed + IDLE_TICK_MS / 1000 })),
-      IDLE_TICK_MS,
-    );
-    return () => clearInterval(timer);
-  }, [running]);
-
-  const due = clock.elapsed >= seconds;
-  useEffect(() => {
-    if (!due || !running) return;
-    setClock((value) => ({ ...value, elapsed: 0 }));
-    const move = snapshot.autopilot ? chooseAutopilot(snapshot) : undefined;
-    onAct(move ?? rest);
-  }, [due, running, snapshot, rest, onAct]);
-
-  const pct = idle.enabled ? Math.min(100, (clock.elapsed / seconds) * 100) : 0;
-
-  return (
-    <div className="space-y-1.5">
-      <div className="relative">
-        <ActionButton
-          label={t("rest")}
-          hint={snapshot.autopilot ? t("restHintAutopilot") : t("restHint")}
-          preview={snapshot.previews[actionKey(rest)]}
-          busy={busy}
-          onAct={() => onAct(rest)}
-        />
-        {idle.enabled ? (
-          <div
-            className="pointer-events-none absolute inset-x-1 bottom-0 h-0.5 overflow-hidden rounded-full bg-line"
-            aria-hidden
-          >
-            <div
-              className={cn(
-                "h-full transition-[width] duration-200 ease-linear",
-                snapshot.autopilot ? "bg-branch-feature" : "bg-energy",
-                !running && "opacity-40",
-              )}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        ) : null}
-      </div>
-
-      <div className="flex items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="xs"
-              variant={idle.enabled ? "secondary" : "outline"}
-              aria-pressed={idle.enabled}
-              onClick={() => setIdle({ enabled: !idle.enabled })}
-            >
-              {idle.enabled ? <Pause /> : <Play />}
-              {t("idleAuto")}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-64">
-            {idle.enabled ? t("idleOnHint", { seconds }) : t("idleOffHint")}
-          </TooltipContent>
-        </Tooltip>
-        <fieldset className="ml-auto flex gap-0.5 border-0 p-0" aria-label={t("idleSpeed")}>
-          {IDLE_SPEEDS.map((speed) => (
-            <Button
-              key={speed}
-              size="xs"
-              variant={idle.speed === speed ? "secondary" : "ghost"}
-              aria-pressed={idle.speed === speed}
-              disabled={!idle.enabled}
-              className="px-1.5 tabular-nums"
-              onClick={() => setIdle({ speed })}
-            >
-              ×{speed}
-            </Button>
-          ))}
-        </fieldset>
-      </div>
-    </div>
   );
 }
 
@@ -283,16 +168,18 @@ function WrittenAsButton({
 
   if (action.kind === undefined) return null;
 
-  // Five detours in two hands is ten cards: the name on one line, the hand on
-  // the next, and the description waits in the tooltip.
+  // Five detours in two hands is ten cards: the machine's card is named as
+  // such ("Rebase IA"), the hand's says so under its name, and the
+  // description waits in the tooltip.
   return (
     <ActionButton
-      label={game(`nodes.${action.kind}.name` as never)}
-      subtitle={action.mode === "craft" ? t("byHand") : t("byMachine")}
+      label={game(`nodes.${action.kind}.${action.mode === "ai" ? "aiName" : "name"}` as never)}
+      {...(action.mode === "craft" ? { subtitle: t("byHand") } : {})}
       hint={game(`nodes.${action.kind}.desc` as never)}
       preview={snapshot.previews[actionKey(action)]}
       busy={busy}
       compact
+      action={action}
       onAct={() => onAct(action)}
     />
   );
@@ -306,6 +193,7 @@ function ActionButton({
   busy,
   emphasis = false,
   compact = false,
+  action,
   onAct,
 }: {
   label: string;
@@ -317,6 +205,8 @@ function ActionButton({
   emphasis?: boolean;
   /** Hint in the tooltip only, numbers on two short lines: for the long lists. */
   compact?: boolean;
+  /** The move this card plays, so the idle clock's bar can find its card. */
+  action?: PlayerAction;
   onAct: () => void;
 }) {
   const t = useTranslations("hud");
@@ -324,36 +214,39 @@ function ActionButton({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          variant={emphasis ? "default" : "outline"}
-          className={cn(
-            "h-auto w-full min-w-0 justify-between px-3 text-left",
-            compact ? "py-1.5" : "py-2",
-          )}
-          disabled={busy || preview === undefined || preview.blocked !== undefined}
-          onClick={onAct}
-        >
-          <span className="flex min-w-0 flex-col items-start gap-0.5">
-            <span className="max-w-full truncate">{label}</span>
-            {subtitle === undefined ? null : (
-              <span className="font-normal text-muted-foreground text-xs">{subtitle}</span>
+        <div className="relative">
+          <Button
+            variant={emphasis ? "default" : "outline"}
+            className={cn(
+              "h-auto w-full min-w-0 justify-between px-3 text-left",
+              compact ? "py-1.5" : "py-2",
             )}
-            {compact ? null : (
-              <span
-                className={cn(
-                  "whitespace-normal text-left font-normal text-xs",
-                  emphasis ? "opacity-80" : "text-muted-foreground",
-                )}
-              >
-                {hint}
-              </span>
-            )}
-          </span>
+            disabled={busy || preview === undefined || preview.blocked !== undefined}
+            onClick={onAct}
+          >
+            <span className="flex min-w-0 flex-col items-start gap-0.5">
+              <span className="max-w-full truncate">{label}</span>
+              {subtitle === undefined ? null : (
+                <span className="font-normal text-muted-foreground text-xs">{subtitle}</span>
+              )}
+              {compact ? null : (
+                <span
+                  className={cn(
+                    "whitespace-normal text-left font-normal text-xs",
+                    emphasis ? "opacity-80" : "text-muted-foreground",
+                  )}
+                >
+                  {hint}
+                </span>
+              )}
+            </span>
 
-          {preview === undefined ? null : (
-            <PreviewFace preview={preview} emphasis={emphasis} compact={compact} />
-          )}
-        </Button>
+            {preview === undefined ? null : (
+              <PreviewFace preview={preview} emphasis={emphasis} compact={compact} />
+            )}
+          </Button>
+          {action === undefined ? null : <IdleBar action={action} />}
+        </div>
       </TooltipTrigger>
 
       {preview === undefined ? null : (

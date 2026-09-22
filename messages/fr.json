@@ -81,7 +81,30 @@
     "unlocked": "Débloqué : {name}",
     "ticketsDelivered": "Tickets livrés",
     "moneyEarned": "Encaissé",
-    "startingPoints": "{count, plural, one {# point de compétence} other {# points de compétence}} au départ de chaque run"
+    "startingPoints": "{count, plural, one {# point de compétence} other {# points de compétence}} au départ de chaque run",
+    "firedBy": {
+      "incident": "Licenciement : un incident de trop en production.",
+      "rejection": "Licenciement : une PR refusée de trop.",
+      "stale": "Licenciement : trop de tickets laissés au backlog.",
+      "outage": "Licenciement : des serveurs saturés trop longtemps.",
+      "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même."
+    },
+    "qualityBreakdown": "Ce qui a rempli la prod",
+    "qualitySource": {
+      "incident": "Incidents",
+      "rejection": "PR refusées",
+      "stale": "Tickets imposés",
+      "outage": "Serveurs saturés",
+      "idle_sprint": "Sprints sans livraison"
+    },
+    "stats": {
+      "incidents": "Incidents",
+      "outages": "Mois de saturation",
+      "rejections": "PR refusées",
+      "staleForced": "Tickets imposés",
+      "devsLeft": "Développeurs partis",
+      "moneyLost": "Revenus perdus"
+    }
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -142,7 +165,6 @@
     "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail.",
     "writeInstead": "Ou écrire ce commit autrement :",
     "byHand": "à la main",
-    "byMachine": "par l'IA",
     "noTicket": "Aucun ticket en main : ouvrez le projet et démarrez-en un.",
     "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
     "previewPoints": "Points : {min} à {max}",
@@ -267,7 +289,7 @@
     "treeMaxed": "Au maximum",
     "treeRequires": "{node} niveau {level}",
     "idleAuto": "Auto",
-    "idleOnHint": "Sans action de votre part pendant {seconds} s, le jeu joue tout seul. Coupez-le pour tout gérer vous-même ou faire une pause.",
+    "idleOnHint": "Sans action de votre part pendant {seconds} s, le jeu joue le coup prévu, celui qui porte la barre. Coupez-le pour tout gérer vous-même ou faire une pause.",
     "idleOffHint": "Le jeu attend vos décisions. Activez pour qu'il joue tout seul quand vous ne faites rien.",
     "idleSpeed": "Vitesse de l'horloge",
     "currentTicket": "Ticket en main",
@@ -277,7 +299,9 @@
     "pickTicket": "Ouvrir un ticket",
     "pickTicketHint": "{count, plural, one {# ticket attend au backlog : ouvrez le projet et choisissez.} other {# tickets attendent au backlog : ouvrez le projet et choisissez.}}",
     "pickTicketEmpty": "Le backlog est vide : le sprint se termine dès que le tableau l'est.",
-    "expiresAtSprintEnd": "Expire à la fin du sprint si personne ne le démarre."
+    "expiresAtSprintEnd": "Expire à la fin du sprint si personne ne le démarre.",
+    "idleSpeedLocked": "Vitesse à débloquer dans l'arbre : Avance rapide, niveau {level}.",
+    "logClose": "Fermer le journal"
   },
   "leaderboard": {
     "title": "Classement",
@@ -764,15 +788,18 @@
     "nodes": {
       "squash": {
         "name": "Squash",
-        "desc": "Fusionne les derniers commits IA : la dette part avec eux, le score aussi."
+        "desc": "Fusionne les derniers commits IA : la dette part avec eux, le score aussi.",
+        "aiName": "Squash IA"
       },
       "docs": {
         "name": "Documentation",
-        "desc": "Les prochains commits IA n'ajoutent aucune dette."
+        "desc": "Les prochains commits IA n'ajoutent aucune dette.",
+        "aiName": "Documentation IA"
       },
       "rebase": {
         "name": "Rebase",
-        "desc": "Rejoue le ticket par-dessus dev : son merge ne paiera plus le retard. Rate d'autant plus que la dette est haute."
+        "desc": "dev a avancé depuis l'ouverture du ticket : chaque merge posé entre-temps rend le merge de ce ticket plus risqué. Le rebase remet le ticket à jour et efface ce retard. Il ne remplit aucun point. Presque sûr si la dette est basse, pile ou face si elle est haute.",
+        "aiName": "Rebase IA"
       },
       "sprint_start": {
         "name": "Ouverture de sprint",
@@ -784,11 +811,13 @@
       },
       "refactor": {
         "name": "Refacto",
-        "desc": "Reprendre le commit du ticket qui a coûté le plus de dette : cette dette s'en va."
+        "desc": "Reprendre le commit du ticket qui a coûté le plus de dette : cette dette s'en va.",
+        "aiName": "Refacto IA"
       },
       "risky": {
         "name": "Commit risqué",
-        "desc": "Un point de story de plus, contre un jet nettement moins sûr."
+        "desc": "Un point de story de plus, contre un jet nettement moins sûr.",
+        "aiName": "Commit IA risqué"
       },
       "feature_merge": {
         "name": "Merge de feature",
@@ -808,7 +837,8 @@
       },
       "fix": {
         "name": "Fix",
-        "desc": "Reprendre le plus ancien commit que la review a marqué bugué : le bug s'en va."
+        "desc": "Reprendre le plus ancien commit que la review a marqué bugué : le bug s'en va.",
+        "aiName": "Fix IA"
       }
     },
     "events": {
@@ -931,7 +961,7 @@
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
-      "rebase_risk": "En cas d'échec : +{debt} de dette",
+      "rebase_risk": "Si le rebase rate : +{debt} de dette",
       "build": "Build {points}",
       "automation": "Automatisation {points}",
       "debt": "Dette {points}",
@@ -954,8 +984,8 @@
       "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}} {points}",
       "wip_cost": "Énergie majorée : {count, plural, one {# ticket en plus} other {# tickets en plus}}",
       "machine_flat": "La machine coûte toujours le même prix",
-      "rebase_why": "{count, plural, one {# merge a atterri sur dev} other {# merges ont atterri sur dev}} depuis l'ouverture",
-      "behind_dev": "En retard de {count, plural, one {# merge} other {# merges}} sur dev",
+      "rebase_why": "Retard : {count, plural, one {# merge posé} other {# merges posés}} sur dev depuis l'ouverture, chacun renchérit le merge du ticket",
+      "behind_dev": "En retard de {count, plural, one {# merge} other {# merges}} sur dev : un rebase effacerait ce risque",
       "merge_regen": "Rend {energy} ⚡",
       "merge_risk": "{percent} % de risque d'incident au merge",
       "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",

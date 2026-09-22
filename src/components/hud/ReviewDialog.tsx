@@ -3,6 +3,8 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
+import { IdleBar } from "@/components/hud/IdleBar";
+import { idleStore } from "@/components/hud/idleStore";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
@@ -63,11 +65,20 @@ export function ReviewDialog({
     };
   }, [ticketId, reading]);
 
+  const decided = phase.kind === "pr_accepted" || phase.kind === "ticket_rejected";
+  const done = step >= 4;
+  const hasVerdict = verdict !== null;
+
+  // The clock does not answer a question it has not heard: it waits for the
+  // verdict to be read before its bar starts under the button it will press.
+  useEffect(() => {
+    idleStore.setState({ readingReview: hasVerdict && !done });
+    return () => idleStore.setState({ readingReview: false });
+  }, [hasVerdict, done]);
+
   if (verdict === null) return null;
 
-  const decided = phase.kind === "pr_accepted" || phase.kind === "ticket_rejected";
   const ticket = snapshot.tickets.find((item) => item.id === verdict.ticketId);
-  const done = step >= 4;
 
   const answer = (action: PlayerAction): void => {
     gameStore.setState({ pendingReview: null });
@@ -111,9 +122,12 @@ export function ReviewDialog({
         ) : verdict.accepted ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-muted-foreground text-xs">{t("reviewMergeHint")}</p>
-            <Button disabled={!decided} onClick={() => answer({ type: "merge" })}>
-              {t("reviewMerge")}
-            </Button>
+            <div className="relative">
+              <Button disabled={!decided} onClick={() => answer({ type: "merge" })}>
+                {t("reviewMerge")}
+              </Button>
+              <IdleBar action={{ type: "merge" }} />
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -133,14 +147,17 @@ export function ReviewDialog({
                   {t("reviewRestartHint")}
                 </span>
               </Button>
-              <Button
-                className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                disabled={!decided}
-                onClick={() => answer({ type: "resume" })}
-              >
-                <span>{t("reviewResume")}</span>
-                <span className="font-normal text-xs opacity-80">{t("reviewResumeHint")}</span>
-              </Button>
+              <div className="relative">
+                <Button
+                  className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left"
+                  disabled={!decided}
+                  onClick={() => answer({ type: "resume" })}
+                >
+                  <span>{t("reviewResume")}</span>
+                  <span className="font-normal text-xs opacity-80">{t("reviewResumeHint")}</span>
+                </Button>
+                <IdleBar action={{ type: "resume" }} />
+              </div>
             </div>
           </div>
         )}

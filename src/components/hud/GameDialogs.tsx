@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Fragment } from "react";
 
+import { IdleBar } from "@/components/hud/IdleBar";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { PlayerAction, RunSnapshot } from "@/game";
+import type { PlayerAction, QualitySource, RunSnapshot } from "@/game";
 import { useGameStore } from "@/game";
 
 /** A review being read has the floor: the other questions wait for it. */
@@ -50,22 +52,25 @@ export function ConflictDialog({
         </DialogHeader>
 
         <div className="grid gap-2">
-          <Button
-            variant="outline"
-            className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-            disabled={busy}
-            onClick={() => onAct({ type: "resolve_conflict", how: "manual" })}
-          >
-            <span>
-              {t("conflictManual")}
-              {manual === undefined
-                ? ""
-                : `\u00a0— −${manual.energyCost}\u00a0⚡ · ${manual.successPct ?? 0}\u00a0%`}
-            </span>
-            <span className="whitespace-normal font-normal text-muted-foreground text-xs">
-              {t("conflictManualHint")}
-            </span>
-          </Button>
+          <div className="relative">
+            <Button
+              variant="outline"
+              className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
+              disabled={busy}
+              onClick={() => onAct({ type: "resolve_conflict", how: "manual" })}
+            >
+              <span>
+                {t("conflictManual")}
+                {manual === undefined
+                  ? ""
+                  : `\u00a0— −${manual.energyCost}\u00a0⚡ · ${manual.successPct ?? 0}\u00a0%`}
+              </span>
+              <span className="whitespace-normal font-normal text-muted-foreground text-xs">
+                {t("conflictManualHint")}
+              </span>
+            </Button>
+            <IdleBar action={{ type: "resolve_conflict", how: "manual" }} />
+          </div>
 
           <Button
             variant="outline"
@@ -113,18 +118,20 @@ export function RelicDialog({
 
         <div className="grid gap-2">
           {offer.map((relicId) => (
-            <Button
-              key={relicId}
-              variant="outline"
-              className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-              disabled={busy}
-              onClick={() => onAct({ type: "choose_relic", relicId })}
-            >
-              <span>{game(`relics.${relicId}.name` as never)}</span>
-              <span className="whitespace-normal font-normal text-muted-foreground text-xs">
-                {game(`relics.${relicId}.desc` as never)}
-              </span>
-            </Button>
+            <div key={relicId} className="relative">
+              <Button
+                variant="outline"
+                className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
+                disabled={busy}
+                onClick={() => onAct({ type: "choose_relic", relicId })}
+              >
+                <span>{game(`relics.${relicId}.name` as never)}</span>
+                <span className="whitespace-normal font-normal text-muted-foreground text-xs">
+                  {game(`relics.${relicId}.desc` as never)}
+                </span>
+              </Button>
+              <IdleBar action={{ type: "choose_relic", relicId }} />
+            </div>
           ))}
         </div>
       </DialogContent>
@@ -149,6 +156,21 @@ export function RunOverDialog({
   const reviewing = useReviewing();
   const open = snapshot.phase.kind === "game_over" && !busy && !reviewing;
   const reason = snapshot.phase.kind === "game_over" ? snapshot.phase.reason : null;
+  const cause = snapshot.phase.kind === "game_over" ? snapshot.phase.cause : undefined;
+  const { stats } = snapshot;
+  // What filled the gauge, biggest share first: the answer to "why".
+  const breakdown = (Object.keys(stats.qualityBySource) as QualitySource[])
+    .map((source) => ({ source, points: stats.qualityBySource[source] }))
+    .filter((entry) => entry.points > 0)
+    .sort((a, b) => b.points - a.points);
+  const counters = [
+    ["incidents", stats.incidents],
+    ["outages", stats.outages],
+    ["rejections", stats.rejections],
+    ["staleForced", stats.staleForced],
+    ["devsLeft", stats.devsLeft],
+    ["moneyLost", stats.moneyLost],
+  ] as const;
 
   return (
     <Dialog open={open}>
@@ -156,7 +178,13 @@ export function RunOverDialog({
         <DialogHeader>
           <DialogTitle>{t("runOver")}</DialogTitle>
           <DialogDescription>
-            {reason === "burnout" ? t("burnout") : reason === "fired" ? t("fired") : null}
+            {reason === "burnout"
+              ? t("burnout")
+              : reason === "fired"
+                ? cause === undefined
+                  ? t("fired")
+                  : t(`firedBy.${cause}` as never)
+                : null}
           </DialogDescription>
         </DialogHeader>
 
@@ -171,6 +199,35 @@ export function RunOverDialog({
           <dd className="text-right tabular-nums">{snapshot.ticketsDelivered}</dd>
           <dt className="text-muted-foreground">{t("moneyEarned")}</dt>
           <dd className="text-right tabular-nums">{snapshot.economy.moneyEarned} €</dd>
+        </dl>
+
+        {breakdown.length === 0 ? null : (
+          <section>
+            <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              {t("qualityBreakdown")}
+            </h3>
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              {breakdown.map((entry) => (
+                <Fragment key={entry.source}>
+                  <dt className="text-muted-foreground">
+                    {t(`qualitySource.${entry.source}` as never)}
+                  </dt>
+                  <dd className="text-right text-branch-hotfix tabular-nums">+{entry.points}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          </section>
+        )}
+
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-1 border-line border-t pt-3 text-muted-foreground text-xs">
+          {counters.map(([key, value]) => (
+            <Fragment key={key}>
+              <dt>{t(`stats.${key}` as never)}</dt>
+              <dd className="text-right tabular-nums">
+                {key === "moneyLost" ? `${value} €` : value}
+              </dd>
+            </Fragment>
+          ))}
         </dl>
 
         <DialogFooter className="sm:justify-between">

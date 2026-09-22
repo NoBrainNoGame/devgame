@@ -10,7 +10,10 @@ import { CompanyDialog } from "@/components/hud/CompanyDialog";
 import { ConflictDialog, RelicDialog, RunOverDialog } from "@/components/hud/GameDialogs";
 import { GraphControls } from "@/components/hud/GraphControls";
 import { GraphTooltip } from "@/components/hud/GraphTooltip";
+import { IdleControls } from "@/components/hud/IdleControls";
+import { IdleDriver } from "@/components/hud/IdleDriver";
 import { InfoPanel } from "@/components/hud/InfoPanel";
+import { useIdleStore } from "@/components/hud/idleStore";
 import { LogDrawer } from "@/components/hud/LogDrawer";
 import { ResourceBar } from "@/components/hud/ResourceBar";
 import { ReviewDialog } from "@/components/hud/ReviewDialog";
@@ -18,7 +21,7 @@ import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
 import { TicketBar } from "@/components/hud/TicketBar";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
-import { useGameStore } from "@/game";
+import { idleTarget, useGameStore } from "@/game";
 
 /**
  * A run in progress: the canvas, the HUD around it, and the dialogs the game
@@ -76,9 +79,14 @@ export function RunStage({
   const [boardOpen, setBoardOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [treeOpen, setTreeOpen] = useState(false);
-  // The idle timer waits while any dialog has the floor: a question should
-  // not be answered by the clock.
-  const dialogOpen = boardOpen || companyOpen || treeOpen;
+  // The idle clock waits while a dialog you opened has the floor, and while
+  // the review is still being read. The board is the exception when the
+  // clock's own move is to start a ticket: that board is the clock's, and the
+  // bar sits on the card it will press.
+  const readingReview = useIdleStore((state) => state.readingReview);
+  const target = snapshot === null ? undefined : idleTarget(snapshot);
+  const dialogOpen =
+    companyOpen || treeOpen || readingReview || (boardOpen && target?.type !== "start");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -121,13 +129,16 @@ export function RunStage({
 
         <aside className="order-3 flex w-full min-w-0 shrink-0 flex-col gap-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
           {snapshot === null ? null : (
-            <ActionPanel
-              snapshot={snapshot}
-              busy={busy}
-              paused={dialogOpen}
-              onAct={onAct}
-              onOpenBoard={() => setBoardOpen(true)}
-            />
+            <>
+              <ActionPanel
+                snapshot={snapshot}
+                busy={busy}
+                onAct={onAct}
+                onOpenBoard={() => setBoardOpen(true)}
+              />
+              <IdleControls />
+              <IdleDriver paused={dialogOpen} onAct={onAct} />
+            </>
           )}
         </aside>
       </div>

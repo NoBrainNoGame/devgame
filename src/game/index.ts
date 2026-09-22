@@ -11,6 +11,8 @@
  */
 
 export { chooseAutopilot } from "@/game/bridge/autopilot";
+export type { IdleSpeed } from "@/game/bridge/idle";
+export { IDLE_SPEEDS, idleSpeedAllowed, idleTarget } from "@/game/bridge/idle";
 export type { LandingHandle } from "@/game/bridge/landing";
 export { mountLanding } from "@/game/bridge/landing";
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
@@ -37,9 +39,13 @@ export type {
   NodeKind,
   Phase,
   PlayerAction,
+  QualityChange,
+  QualitySource,
   RunMode,
+  RunStats,
   TicketId,
 } from "@/game/core/types";
+export { DETOUR_KINDS } from "@/game/core/types";
 export type { MetaProgressDto, SettingsDto } from "@/game/dto/meta";
 export { emptyMeta, META_VERSION, MetaProgressSchema } from "@/game/dto/meta";
 export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
