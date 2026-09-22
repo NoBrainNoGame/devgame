@@ -60,7 +60,10 @@ export class BranchRefs extends booyah.ChipBase {
       const tip = tipOfLane.get(ticket.lane);
       if (tip === undefined) continue;
       const colour = ticket.kind === "hotfix" ? THEME.lane.hotfix : THEME.lane.feature;
-      refs.push({ key: ticket.id, label: `${ticket.kind}/${ticket.id}`, colour, nodeId: tip });
+      // Short branch names, the way a team abbreviates them: `feat/t3`.
+      const prefix =
+        ticket.kind === "feature" ? "feat" : ticket.kind === "hotfix" ? "fix" : "refacto";
+      refs.push({ key: ticket.id, label: `${prefix}/${ticket.id}`, colour, nodeId: tip });
     }
 
     if (reveal.headId !== null && depthOf.has(reveal.headId)) {

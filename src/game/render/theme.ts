@@ -58,7 +58,7 @@ export const EDGE_WIDTH = 2.5;
 /** How far a merge or a fork bends out of its column: a bit less than a row. */
 export const BEND = 12;
 /** Room between the last column and the subjects, where the refs sit. */
-export const REF_GUTTER = 96;
+export const REF_GUTTER = 150;
 export const LABEL_GAP = 14;
 
 export const ZOOM: { min: number; max: number; step: number; default: number } = {

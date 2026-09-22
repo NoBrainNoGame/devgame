@@ -38,6 +38,8 @@ interface CommitSprite {
 }
 
 const REVEAL_MS = 260;
+/** Room a commit subject takes, for framing. */
+const SUBJECT_WIDTH = 200;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
   private lanes!: Graphics;
@@ -302,9 +304,11 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const xs = all.map((node) => nodeX(node.lane));
     const ys = all.map((node) => nodeY(node.depth));
 
+    // The subjects are part of the picture: centring the lanes alone parks
+    // them half off screen on a narrow canvas.
     return {
       minX: Math.min(...xs),
-      maxX: Math.max(...xs),
+      maxX: Math.max(this.subjectX() + SUBJECT_WIDTH, ...xs),
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };
