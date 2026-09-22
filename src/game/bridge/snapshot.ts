@@ -16,6 +16,7 @@ import type {
   BotNode,
   Branch,
   BranchId,
+  DetourKind,
   MapNode,
   NodeId,
   Phase,
@@ -104,7 +105,24 @@ export interface RunSnapshot {
    * The node ids are deliberately left out: they are the shape of a sprint
    * nobody has walked yet, and the graph is not allowed to know it.
    */
-  branches: Record<BranchId, Pick<Branch, "id" | "kind" | "skillId" | "open" | "merged">>;
+  branches: Record<
+    BranchId,
+    Pick<Branch, "id" | "kind" | "skillId" | "open" | "merged"> & {
+      /** Commits to write before it can be merged. What the branch costs. */
+      commits: number;
+      /**
+       * The ways its commits may be written, deduplicated and sorted.
+       *
+       * This is what tells two branches apart when neither grants a skill. A
+       * branch carrying a squash and a documentation commit is a different
+       * proposition from one carrying a rebase, and the player has to be able
+       * to see that before choosing rather than after walking it.
+       */
+      offers: DetourKind[];
+      /** True when a feature of its own leaves it partway. */
+      forks: boolean;
+    }
+  >;
 
   /**
    * What the rivals have written, in their own columns.
@@ -145,6 +163,9 @@ export function toSnapshot(state: RunState): RunSnapshot {
       ...(branch.skillId === undefined ? {} : { skillId: branch.skillId }),
       open: branch.open,
       merged: branch.merged,
+      commits: branch.nodeIds.length,
+      offers: offersOf(state, branch),
+      forks: Object.values(state.branches).some((other) => other.parentBranchId === branch.id),
     };
   }
 
@@ -213,4 +234,14 @@ export function toSnapshot(state: RunState): RunSnapshot {
       .map((id) => state.botNodes[id])
       .filter((node): node is BotNode => node !== undefined),
   };
+}
+
+/** Every distinct way a commit on this branch may be written, in a stable order. */
+function offersOf(state: RunState, branch: Branch): DetourKind[] {
+  const seen = new Set<DetourKind>();
+  for (const id of branch.nodeIds) {
+    const offers = state.nodes[id]?.offers;
+    if (offers !== undefined) seen.add(offers);
+  }
+  return [...seen].sort();
 }

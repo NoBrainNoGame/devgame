@@ -108,8 +108,14 @@ describe("failures", () => {
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
 
-    const manual = applyAction(state, { type: "resolve_conflict", how: "manual" }).state;
-    expect(manual.player.energy).toBeLessThan(state.player.energy);
+    // Asserted on what untangling it charged, not on the net: a conflict happens
+    // at a merge, and finishing one hands the merge's rest back in the same
+    // action — often more than the fix cost.
+    const manual = applyAction(state, { type: "resolve_conflict", how: "manual" });
+    const charged = eventsOfType(manual.events, "energy").find(
+      (event) => event.reason === "conflict_manual",
+    );
+    expect(charged?.delta).toBe(-BALANCE.failure.conflictManualEnergy);
 
     // Assert on the emitted delta rather than the total: finishing the commit
     // may also tip the debt over the explosion threshold, which repays some of
@@ -122,7 +128,7 @@ describe("failures", () => {
     // at a merge, and finishing one spends the merge's cost and hands back its
     // rest. What matters is that the machine's fix itself charged nothing.
     const spent = eventsOfType(machine.events, "energy").filter(
-      (event) => event.reason === "conflict",
+      (event) => event.reason === "conflict_manual",
     );
     expect(spent).toEqual([]);
   });

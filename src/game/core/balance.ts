@@ -39,11 +39,15 @@ export const BALANCE = {
     /**
      * Energy returned by merging a feature branch and by a sprint merge.
      *
-     * A feature is three to five commits at two energy each, so the merge has
-     * to give back less than that or the trunk-based shape turns energy into a
+     * A feature is two to five commits at two energy each, so the merge has to
+     * give back less than that or the trunk-based shape turns energy into a
      * resource that only ever goes up.
+     *
+     * Raised by two when a skill started costing commits: the branch a player
+     * actually picks grew by about one commit, and the rest went on paying for
+     * it out of a budget that had not moved.
      */
-    featureMergeRegen: 2,
+    featureMergeRegen: 4,
     sprintMergeRegen: 6,
     /**
      * Fraction of the maximum handed back when a sprint closes.
@@ -250,10 +254,21 @@ export const BALANCE = {
     featuresPerSprint: { min: 3, max: 5 },
     /** Branches offered at each merge. Two is a choice, three is a fork. */
     featureOptions: { min: 2, max: 3 },
-    /** Commits inside one feature branch. */
-    featureBranchLength: { min: 2, max: 4 },
-    /** Chance in percent that a branch carries a skill, while the pool has one. */
-    skillBranchPct: 60,
+    /**
+     * Commits inside a feature branch that grants nothing.
+     *
+     * This is the fast option: you deliver, you keep pace with the rivals, and
+     * you come out of it with nothing lasting.
+     */
+    featureBranchLength: { min: 2, max: 3 },
+    /**
+     * Extra commits a branch carries when it also grants a skill.
+     *
+     * The whole trade. A skill has to cost turns, or the branch that grants one
+     * is strictly better than the branch beside it and there is no decision to
+     * make.
+     */
+    skillBranchExtraCommits: { min: 1, max: 2 },
     /** Chance in percent that a feature branch carries a branch of its own. */
     subBranchPct: 25,
     /** Chance in percent of a one-node detour beside a commit inside a feature. */

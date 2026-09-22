@@ -34,39 +34,16 @@ import { canonicalJson, fnv1aHex } from "@/game/core/hash";
 export const SAVE_VERSION = 1;
 
 /**
- * 1 — first playable rules.
- * 2 — a branch merges on its last node (a sub-branch used to strand its
- *     parent), a review charges energy, monitoring warns before a production
- *     bug, and a detour may no longer hop over the sprint merge.
- * 3 — review has to be learned. It is offered only once a branch has granted
- *     `canReview`, and only while there is unread machine-written work for it
- *     to find. A log from epoch 2 that reviewed on turn one no longer replays.
- * 4 — the race is run in one unit. `player.sprintProgress` is an index into the
- *     main line, as a rival's always was, instead of a count of every node
- *     resolved; branch and detour work no longer advances it. Three detour
- *     kinds added — squash, docs, rebase — which changes every map.
- * 5 — trunk-based. Nothing is written on `main`: it is a spine of merges, one
- *     per feature, and every commit lives on a branch that leaves it and comes
- *     back. A merge is the end of a feature rather than one more commit, so the
- *     decision at every step is which feature to build. Rivals write their own
- *     commits and land their own merges in a column each, and they get faster
- *     every sprint rather than only at spawn. The energy economy was retuned
- *     around merges being mandatory instead of optional.
- * 6 — a merge conflict comes from a merge or a rebase, the two places two
- *     histories actually meet, instead of from any missed commit roll. Landing
- *     a branch now rolls for one, and a merge conflict cannot be walked away
- *     from. A step with one way forward is walked automatically rather than
- *     offered as a list of one, so every choice the panel shows is a choice
- *     between features.
- * 7 — `main` and `dev`. Nothing is written on either: `dev` takes the sprint
- *     anchor and one merge per feature, `main` takes the sprint merge and the
- *     release. Detours stopped being nodes and became ways of *writing* a
- *     commit, carried by `PlayerAction.kind`. A hotfix is spliced onto the
- *     branch you were on. Rivals land their merges on `dev` and their ceiling
- *     was two features short. `HEAD` follows the last commit written. Energy
- *     and rival pace retuned around all of it.
+ * The rules generation. Bumped by hand when a change makes an old action log
+ * replay to a *different game*, which the fingerprint cannot see on its own.
+ *
+ * Still 1: the game has never been published, so no board has ever compared
+ * two runs. The epochs this went through while the rules were being built
+ * protected nothing and are not worth carrying — the first number that will
+ * ever mean anything is the one in force when scores start being submitted.
+ * Everything before that is a game nobody played.
  */
-export const RULES_EPOCH = 7;
+export const RULES_EPOCH = 1;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

@@ -51,7 +51,14 @@ export function startNextSprint(context: RuleContext): void {
   state.sprint += 1;
 
   const previousRelease = getNode(state, state.player.nodeId);
-  const offset = Math.max(...allNodes(state).map((node) => node.depth)) + 1;
+  // Above everything already drawn, the rivals' columns included. They keep
+  // writing while the sprint closes, so a sprint that only cleared the player's
+  // own nodes opened on rows a rival had already taken.
+  const offset =
+    Math.max(
+      ...allNodes(state).map((node) => node.depth),
+      ...Object.values(state.botNodes).map((node) => node.depth),
+    ) + 1;
 
   const plan = generateSprint({
     sprint: state.sprint,

@@ -179,6 +179,13 @@ function MoveButton({
   const branch = node.branchId === undefined ? undefined : snapshot.branches[node.branchId];
   const skillId = node.skillId ?? (opensBranch ? branch?.skillId : undefined);
 
+  // What the branch carries. This is what tells two of them apart when neither
+  // grants a skill — without it the panel offers the same card twice.
+  const offers = branch?.offers ?? [];
+  const offerNames = offers.map((kind) => game(`nodes.${kind}.name` as never)).join(", ");
+  const plainSubtitle =
+    offers.length > 0 ? t("branchCarries", { what: offerNames }) : t("branchPlain");
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -192,7 +199,7 @@ function MoveButton({
             <span>{label}</span>
             {skillId === undefined ? (
               <span className="whitespace-normal text-left font-normal text-muted-foreground text-xs">
-                {hint}
+                {opensBranch ? plainSubtitle : hint}
               </span>
             ) : (
               <span className="whitespace-normal text-left font-normal text-branch-feature text-xs">
@@ -201,7 +208,14 @@ function MoveButton({
             )}
           </span>
 
-          {preview !== undefined && preview.energyCost > 0 ? (
+          {/* What the branch costs: the commits you have to write before it can
+              be merged. Stepping onto it is free, so the energy figure on a
+              move card is always zero and says nothing. */}
+          {opensBranch && branch !== undefined ? (
+            <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+              {t("branchCommits", { count: branch.commits })}
+            </span>
+          ) : preview !== undefined && preview.energyCost > 0 ? (
             <span className="shrink-0 text-energy text-xs tabular-nums">
               −{preview.energyCost} ⚡
             </span>
@@ -210,10 +224,46 @@ function MoveButton({
       </TooltipTrigger>
 
       <TooltipContent className="max-w-64" side="left">
-        {skillId === undefined ? null : (
-          <p className="text-muted-foreground">{game(`skills.${skillId}.desc` as never)}</p>
+        {opensBranch && branch !== undefined ? (
+          <>
+            <p>{t("branchLength", { count: branch.commits })}</p>
+
+            {skillId === undefined ? (
+              <p className="text-muted-foreground">{t("branchPlainHint")}</p>
+            ) : (
+              <p className="text-muted-foreground">{game(`skills.${skillId}.desc` as never)}</p>
+            )}
+
+            {/* What you will be able to write along the way. Two branches that
+                grant the same nothing still differ here, and this is the only
+                place that difference can be read before committing to one. */}
+            {offers.length === 0 ? (
+              <p className="text-muted-foreground">{t("branchNoOffers")}</p>
+            ) : (
+              <>
+                <p className="pt-1">{t("branchOffers")}</p>
+                <ul className="text-muted-foreground">
+                  {offers.map((kind) => (
+                    <li key={kind}>
+                      {game(`nodes.${kind}.name` as never)} — {game(`nodes.${kind}.desc` as never)}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {branch.forks ? <p className="text-branch-feature">{t("branchForks")}</p> : null}
+
+            <p className="text-muted-foreground">{t("previewFreeMove")}</p>
+          </>
+        ) : (
+          <>
+            {skillId === undefined ? null : (
+              <p className="text-muted-foreground">{game(`skills.${skillId}.desc` as never)}</p>
+            )}
+            {preview === undefined ? null : <PreviewDetail preview={preview} />}
+          </>
         )}
-        {preview === undefined ? null : <PreviewDetail preview={preview} />}
       </TooltipContent>
     </Tooltip>
   );

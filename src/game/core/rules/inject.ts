@@ -44,6 +44,17 @@ export function injectBranch(
     if (node.depth > insertDepth) node.depth += rows;
   }
 
+  // The rivals' columns share the same rows, so they move with everything else.
+  // Leaving them put slid a rival's merge onto a row one of the player's own
+  // merges had just been pushed into — two merges drawn on the same spot of a
+  // branch that only ever has one.
+  for (const node of Object.values(state.botNodes)) {
+    if (node.depth > insertDepth) node.depth += rows;
+  }
+  for (const bot of Object.values(state.bots)) {
+    if (bot.depth > insertDepth) bot.depth += rows;
+  }
+
   const nodeKind: NodeKind = kind === "hotfix" ? "hotfix" : "refactor";
   const created: MapNode[] = [];
 

@@ -104,13 +104,30 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
   let depth = offset;
 
   for (let feature = 0; feature < featureCount; feature += 1) {
-    const optionCount = rng.int(map.featureOptions.min, map.featureOptions.max);
+    // Never more options than the skill pool can tell apart. One fast branch
+    // plus one per skill still on offer. With the pool dry that is a single
+    // branch, which the graph walks by itself — honest, and better than two
+    // cards that grant the same nothing for the same commits.
+    const optionCount = Math.min(
+      rng.int(map.featureOptions.min, map.featureOptions.max),
+      1 + pool.length,
+    );
 
     const built: BuiltBranch[] = [];
     let span = 0;
 
+    // The options have to sit on a frontier: no branch may cost more than
+    // another and grant less, or it is not an option, it is a worse version of
+    // the one beside it.
+    //
+    // So exactly one option is the fast one — short, grants nothing — and every
+    // other carries a skill and is strictly longer than it. "Deliver now" against
+    // "spend these extra commits on something lasting", every time.
+    const plainLength = rng.int(map.featureBranchLength.min, map.featureBranchLength.max);
+    const plainIndex = rng.int(0, optionCount - 1);
+
     for (let option = 0; option < optionCount; option += 1) {
-      const branch = buildBranch(depth);
+      const branch = buildBranch(depth, plainLength, option !== plainIndex);
       built.push(branch);
       span = Math.max(span, branch.tail.depth - depth);
     }
@@ -178,11 +195,20 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
    * One feature branch: a chain of commits, its own optional detours, and
    * sometimes a bifurcation of its own. The caller wires its tail to the merge.
    */
-  function buildBranch(from: number): BuiltBranch {
+  function buildBranch(from: number, plainLength: number, wantsSkill: boolean): BuiltBranch {
     const branchId: BranchId = `b${branchSerial.next}`;
     branchSerial.next += 1;
 
-    const length = rng.int(map.featureBranchLength.min, map.featureBranchLength.max);
+    // The skill is drawn first, because it is what the branch costs. A branch
+    // that grants one is strictly longer than the fast option beside it — that
+    // is the trade the whole choice is made of.
+    const skillId = pool.length > 0 && wantsSkill ? rng.pick(pool) : undefined;
+    if (skillId !== undefined) pool.splice(pool.indexOf(skillId), 1);
+
+    const length =
+      skillId === undefined
+        ? plainLength
+        : plainLength + rng.int(map.skillBranchExtraCommits.min, map.skillBranchExtraCommits.max);
 
     const chain: MapNode[] = [];
     for (let i = 0; i < length; i += 1) {
@@ -200,9 +226,6 @@ export function generateSprint(options: GenerateSprintOptions): SprintPlan {
     if (head === undefined || tail === undefined) {
       throw new Error(`generateSprint: sprint ${sprint} produced an empty branch`);
     }
-
-    const skillId = pool.length > 0 && rng.chance(map.skillBranchPct) ? rng.pick(pool) : undefined;
-    if (skillId !== undefined) pool.splice(pool.indexOf(skillId), 1);
 
     const branch: Branch = {
       id: branchId,

@@ -149,7 +149,15 @@
     "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail.",
     "writeInstead": "Ou écrire ce commit autrement :",
     "byHand": "à la main",
-    "byMachine": "par l'IA"
+    "byMachine": "par l'IA",
+    "branchCommits": "{count} commits",
+    "branchLength": "{count, plural, one {# commit à écrire avant de pouvoir merger} other {# commits à écrire avant de pouvoir merger}}",
+    "branchPlain": "Livraison rapide, rien à gagner",
+    "branchPlainHint": "Cette branche n'apporte aucune compétence : elle se merge plus vite, et c'est tout ce qu'elle offre.",
+    "branchCarries": "Livraison rapide · {what}",
+    "branchOffers": "En chemin, vous pourrez écrire :",
+    "branchNoOffers": "Rien de particulier en chemin : des commits ordinaires.",
+    "branchForks": "Une seconde feature en part : deux branches ouvertes à la fois coûtent le double."
   },
   "leaderboard": {
     "title": "Classement",
@@ -370,7 +378,7 @@
       },
       "ci_cd": {
         "name": "CI/CD",
-        "desc": "Les merges ne coûtent plus d'énergie."
+        "desc": "Chaque merge rend plus d'énergie : le repos est plus reposant."
       },
       "linter": {
         "name": "Linter",
@@ -470,7 +478,7 @@
       },
       "cd": {
         "name": "CD",
-        "desc": "Les merges ne coûtent plus d'énergie."
+        "desc": "Chaque merge rend plus d'énergie."
       },
       "auto_linter": {
         "name": "Linter automatique",

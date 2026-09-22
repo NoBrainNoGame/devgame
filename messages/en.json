@@ -149,7 +149,15 @@
     "graphHint": "Wheel to zoom, drag to pan. Hover a commit for the detail.",
     "writeInstead": "Or write this commit as:",
     "byHand": "by hand",
-    "byMachine": "with the AI"
+    "byMachine": "with the AI",
+    "branchCommits": "{count} commits",
+    "branchLength": "{count, plural, one {# commit to write before it can be merged} other {# commits to write before it can be merged}}",
+    "branchPlain": "Delivers fast, grants nothing",
+    "branchPlainHint": "This branch carries no skill: it merges sooner, and that is all it offers.",
+    "branchCarries": "Delivers fast · {what}",
+    "branchOffers": "Along the way you will be able to write:",
+    "branchNoOffers": "Nothing special along the way: ordinary commits.",
+    "branchForks": "A second feature leaves it: two open branches cost double."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -370,7 +378,7 @@
       },
       "ci_cd": {
         "name": "CI/CD",
-        "desc": "Merges no longer cost energy."
+        "desc": "Every merge hands back more energy: the rest rests harder."
       },
       "linter": {
         "name": "Linter",
@@ -470,7 +478,7 @@
       },
       "cd": {
         "name": "CD",
-        "desc": "Merges no longer cost energy."
+        "desc": "Every merge hands back more energy."
       },
       "auto_linter": {
         "name": "Auto linter",
