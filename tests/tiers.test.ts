@@ -22,12 +22,14 @@ describe("tiers", () => {
     expect(tierOf(first)).toBe(1);
     expect(tierOf(first * growth - 1)).toBe(1);
     expect(tierOf(first * growth)).toBe(2);
-    expect(tierOf(first * growth ** 6)).toBe(7);
+    expect(tierOf(first * growth ** 4)).toBe(5);
+    // The ladder ends: no amount reaches a tier past the last.
+    expect(tierOf(first * growth ** 40)).toBe(BALANCE.economy.tier.last);
   });
 
-  test("money reaching a threshold raises the tier once, and spending never lowers it", () => {
+  test("earnings reaching a threshold raise the tier once, and spending never lowers it", () => {
     const state = inHand("tier-up");
-    state.money = BALANCE.economy.tier.first - 10;
+    state.moneyEarned = BALANCE.economy.tier.first - 10;
     const ticket = sortedTickets(state).find((t) => t.status === "backlog");
     if (ticket === undefined) throw new Error("expected a backlog ticket");
     ticket.status = "merged";
@@ -45,11 +47,11 @@ describe("tiers", () => {
     expect(eventsOfType(later.events, "tier_reached")).toEqual([]);
   });
 
-  test("a feature arriving at a higher tier earns and weighs ten times more per tier", () => {
+  test("a feature arriving at a higher tier earns and weighs more, by the same factor per tier", () => {
     const { mrrGrowth, loadGrowth } = BALANCE.economy.tier;
     expect(tierScale(0, mrrGrowth)).toBe(1);
-    expect(tierScale(2, mrrGrowth)).toBe(100);
-    expect(tierScale(3, loadGrowth)).toBe(1000);
+    expect(tierScale(2, mrrGrowth)).toBe(mrrGrowth ** 2);
+    expect(tierScale(3, loadGrowth)).toBe(loadGrowth ** 3);
 
     // Same seed, same draws: only the tier differs, so the tickets differ by
     // exactly the scale and nothing else.
@@ -75,8 +77,8 @@ describe("tiers", () => {
     const b = arrivedRich[0];
     if (a === undefined || b === undefined) throw new Error("expected arrivals");
     expect(b.points).toBe(a.points);
-    expect(b.mrr).toBe(a.mrr * 100);
-    expect(b.load).toBe(a.load * 100);
+    expect(b.mrr).toBe(a.mrr * mrrGrowth ** 2);
+    expect(b.load).toBe(a.load * loadGrowth ** 2);
     expect(b.tier).toBe(2);
   });
 

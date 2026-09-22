@@ -1,5 +1,5 @@
 import type { DevRank, ProfileId, RelicId, SkillId, TreeNodeId, UpgradeId } from "@/game/content";
-import { DEV_RANK } from "@/game/content";
+import { DEV_RANK, DEV_RANKS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
@@ -15,7 +15,7 @@ import {
 } from "@/game/core/rules/modifiers";
 import { previewAll } from "@/game/core/rules/preview";
 import { skillPointPrice } from "@/game/core/rules/shop";
-import { devCapacity, ticketsOf } from "@/game/core/rules/team";
+import { devCapacity, hireCostFor, maxSeats, ticketsOf } from "@/game/core/rules/team";
 import {
   behindOf,
   buggedOn,
@@ -132,6 +132,12 @@ export interface EconomyView {
   paydayIn: number;
   /** What the next skill point costs in the shop. */
   skillPointPrice: number;
+  /** Lifetime earnings that reach the next tier, null at the last one. */
+  nextTierAt: number | null;
+  /** Developers on the roster, and the seats there are for them. */
+  seats: { used: number; max: number };
+  /** What each rank costs to hire today, discounts included. */
+  hireCosts: Record<DevRank, number>;
 }
 
 export interface RunSnapshot {
@@ -170,8 +176,8 @@ export interface RunSnapshot {
   economy: EconomyView;
   /** The roster, in hiring order. */
   devs: DevView[];
-  /** The idle timer may play a move rather than rest: the supervisor is bought. */
-  autopilot: boolean;
+  /** The supervisor's level, 0 when none: how much the idle clock may do on its own. */
+  autopilot: number;
   /** How fast the idle clock may run: 0 = ×1, 1 = ×10, 2 = ×100. */
   idleSpeedTier: number;
 
@@ -298,6 +304,14 @@ export function toSnapshot(state: RunState): RunSnapshot {
       month: state.months,
       paydayIn: paydayIn(state),
       skillPointPrice: skillPointPrice(state),
+      nextTierAt:
+        state.tier >= BALANCE.economy.tier.last
+          ? null
+          : BALANCE.economy.tier.first * BALANCE.economy.tier.growth ** state.tier,
+      seats: { used: state.devs.length, max: maxSeats(effects) },
+      hireCosts: Object.fromEntries(
+        DEV_RANKS.map((rank) => [rank, hireCostFor(effects, rank)]),
+      ) as Record<DevRank, number>,
     },
     devs,
     autopilot: effects.autopilot,

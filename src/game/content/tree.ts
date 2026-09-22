@@ -121,8 +121,10 @@ export const TREE: Record<TreeNodeId, TreeNodeDef> = {
     id: "sre",
     branch: "devops",
     maxLevel: 2,
-    // The one automation that touches the economy: capacity without upkeep.
-    perLevel: { infraCapacity: 2 },
+    // The one automation that touches the economy: a share of whatever
+    // capacity you own, without upkeep — so it keeps meaning something at
+    // every order of magnitude.
+    perLevel: { infraCapacityPct: 10 },
     cost: [2, 3],
     requires: [{ id: "monitoring", level: 1 }],
   },

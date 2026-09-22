@@ -21,7 +21,9 @@ import {
   DEV_RANKS,
   UPGRADE_CATEGORIES,
   UPGRADES,
+  type UpgradeCategory,
   type UpgradeId,
+  upgradeCost,
   upgradesIn,
 } from "@/game/content";
 import { cn } from "@/lib/utils";
@@ -34,6 +36,10 @@ import { cn } from "@/lib/utils";
  * at the end of the month is never a surprise. The shop and the team are the
  * two things that number buys. Everything here is free in time, so the
  * dialog stays open across purchases.
+ *
+ * The shop is a ladder: each category shows what the run's tier has unlocked,
+ * then one greyed rung for the tier after, and nothing beyond. A run learns
+ * there is a Death Star by earning the Dyson swarm.
  */
 export function CompanyDialog({
   open,
@@ -61,6 +67,7 @@ export function CompanyDialog({
             <span className="text-foreground tabular-nums">
               {t("money", { money: money(economy.money) })}
             </span>
+            {economy.tier > 0 ? ` · ${t("tierBadge", { tier: economy.tier })}` : ""}
             {" · "}
             {t("mrr", { money: money(economy.mrr) })}
             {" · "}
@@ -129,7 +136,7 @@ function Finances({ snapshot }: { snapshot: RunSnapshot }) {
                 economy.net < 0 ? "text-branch-hotfix" : "text-branch-main",
               )}
             >
-              {signed(economy.net)} €
+              {money(economy.net, { signed: true })}
             </dd>
           </div>
         </dl>
@@ -154,23 +161,29 @@ function Finances({ snapshot }: { snapshot: RunSnapshot }) {
         </p>
         <p className="text-muted-foreground text-xs">
           {t("moneyEarned", { money: money(economy.moneyEarned) })}
+          {economy.nextTierAt === null
+            ? ""
+            : ` · ${t("nextTierAt", { tier: economy.tier + 1, money: money(economy.nextTierAt) })}`}
         </p>
+        {economy.nextTierAt === null ? null : (
+          <Progress
+            value={Math.min(100, (economy.moneyEarned / economy.nextTierAt) * 100)}
+            className="h-1.5"
+          />
+        )}
       </section>
     </div>
   );
 }
 
 function Line({ label, value, tone }: { label: string; value: number; tone?: string }) {
+  const money = useMoney();
   return (
     <div className="flex items-baseline justify-between">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("tabular-nums", tone)}>{signed(value)} €</dd>
+      <dd className={cn("tabular-nums", tone)}>{money(value, { signed: true })}</dd>
     </div>
   );
-}
-
-function signed(value: number): string {
-  return value > 0 ? `+${value}` : `${value}`;
 }
 
 function Shop({
@@ -205,19 +218,43 @@ function Shop({
       </section>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {UPGRADE_CATEGORIES.map((category) => (
+        {UPGRADE_CATEGORIES.filter((category) => category !== "org").map((category) => (
           <section key={category} className="min-w-0 space-y-2">
             <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
               {t(`category.${category}`)}
             </h3>
             <div className="space-y-2">
-              {upgradesIn(category).map((id) => (
-                <UpgradeCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
-              ))}
+              <Ladder category={category} snapshot={snapshot} busy={busy} onAct={onAct} />
             </div>
           </section>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * One category's rungs: everything unlocked, then the first rung of the next
+ * tier greyed as a promise, and the rest kept out of sight.
+ */
+function Ladder({
+  category,
+  snapshot,
+  busy,
+  onAct,
+}: {
+  category: UpgradeCategory;
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const tier = snapshot.economy.tier;
+  const shown = upgradesIn(category).filter((id) => UPGRADES[id].tier <= tier + 1);
+  return (
+    <div className="contents">
+      {shown.map((id) => (
+        <UpgradeCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+      ))}
     </div>
   );
 }
@@ -240,8 +277,9 @@ function UpgradeCard({
 
   const def = UPGRADES[id];
   const level = snapshot.upgrades[id] ?? 0;
-  const maxed = level >= def.maxLevel;
-  const cost = def.cost[level];
+  const cost = upgradeCost(id, level);
+  const maxed = cost === undefined;
+  const locked = def.tier > snapshot.economy.tier;
   const action: PlayerAction = { type: "buy", id };
   const offered = snapshot.actions.some((a) => a.type === "buy" && a.id === id);
   const preview = snapshot.previews[actionKey(action)];
@@ -251,11 +289,22 @@ function UpgradeCard({
       className={cn(
         "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
         maxed && "border-branch-main/60",
+        locked && "opacity-60",
       )}
     >
       <div className="flex items-baseline justify-between gap-2">
         <span className="truncate font-medium">{game(`upgrades.${id}.name` as never)}</span>
-        {def.maxLevel > 1 ? (
+        {locked ? (
+          <span className="shrink-0 text-muted-foreground text-xs">
+            {t("nextTier", { tier: def.tier })}
+          </span>
+        ) : def.maxLevel === undefined ? (
+          level > 0 ? (
+            <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+              {t("levelOf", { level })}
+            </span>
+          ) : null
+        ) : def.maxLevel > 1 ? (
           <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
             {level}/{def.maxLevel}
           </span>
@@ -280,7 +329,7 @@ function UpgradeCard({
               disabled={busy || !offered}
               onClick={() => onAct(action)}
             >
-              {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost ?? 0) })}
+              {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost) })}
             </Button>
           </span>
         </TooltipTrigger>
@@ -310,26 +359,51 @@ function Team({
   const game = useTranslations("game");
   const render = useGameText();
 
+  const { seats, tier } = snapshot.economy;
+
   return (
     <div className="space-y-4">
       <section className="space-y-2">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          {t("hire")}
-        </h3>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            {t("hire")}
+          </h3>
+          <span
+            className={cn(
+              "text-xs tabular-nums",
+              seats.used >= seats.max ? "text-branch-hotfix" : "text-muted-foreground",
+            )}
+          >
+            {t("seats", { used: seats.used, max: seats.max })}
+          </span>
+        </div>
         <p className="text-muted-foreground text-xs">{t("hireHint")}</p>
         <div className="grid gap-2 sm:grid-cols-3">
           {DEV_RANKS.map((rank) => {
             const action: PlayerAction = { type: "hire", rank };
             const offered = snapshot.actions.some((a) => a.type === "hire" && a.rank === rank);
             const preview = snapshot.previews[actionKey(action)];
+            const locked = DEV_RANK[rank].tier > tier;
             return (
               <article
                 key={rank}
-                className="space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm"
+                className={cn(
+                  "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
+                  locked && "opacity-60",
+                )}
               >
-                <p className="font-medium">{game(`ranks.${rank}.name` as never)}</p>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="font-medium">{game(`ranks.${rank}.name` as never)}</p>
+                  {locked ? (
+                    <span className="shrink-0 text-muted-foreground text-xs">
+                      {t("nextTier", { tier: DEV_RANK[rank].tier })}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="text-muted-foreground text-xs">
                   {t("rankCapacity", { count: DEV_RANK[rank].capacity })}
+                  {" · "}
+                  {t("rankSpeed", { count: DEV_RANK[rank].speed })}
                   {" · "}
                   {t("rankSalary", { money: money(DEV_RANK[rank].salary) })}
                 </p>
@@ -343,7 +417,7 @@ function Team({
                         disabled={busy || !offered}
                         onClick={() => onAct(action)}
                       >
-                        {t("buyFor", { money: money(DEV_RANK[rank].hireCost) })}
+                        {t("buyFor", { money: money(snapshot.economy.hireCosts[rank]) })}
                       </Button>
                     </span>
                   </TooltipTrigger>
@@ -358,6 +432,16 @@ function Team({
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("sites")}
+        </h3>
+        <p className="text-muted-foreground text-xs">{t("sitesHint")}</p>
+        <div className="grid gap-2 sm:grid-cols-3">
+          <Ladder category="org" snapshot={snapshot} busy={busy} onAct={onAct} />
         </div>
       </section>
 

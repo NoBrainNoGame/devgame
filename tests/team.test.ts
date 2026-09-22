@@ -45,7 +45,7 @@ describe("hiring", () => {
 
     const full = structuredClone(rich);
     full.money = 100_000;
-    for (let i = 0; i < BALANCE.team.maxDevs; i++) {
+    for (let i = 0; i < BALANCE.team.baseSeats; i++) {
       full.devs.push({
         id: `d${i + 1}`,
         rank: "junior",
@@ -126,7 +126,7 @@ describe("the team's turn", () => {
     expect(authored.length).toBe(1);
     // Picked up and written on the first turn, written again on the second.
     const ticket = ticketsOf(after, "d1")[0];
-    expect(ticket?.filled).toBe(2 * BALANCE.team.pointsPerTurn);
+    expect(ticket?.filled).toBe(2 * DEV_RANK.junior.speed);
     expect(after.player.aiChain).toBe(3);
     expect(after.debt).toBe(state.debt);
     expect(after.player.totalCommits).toBe(state.player.totalCommits);
@@ -233,7 +233,8 @@ describe("payday for the team", () => {
 
 describe("a sprint you sat out", () => {
   test("costs patience, however busy the team was", () => {
-    const state = funded("idle");
+    const state = funded("idle", 100_000);
+    state.tier = DEV_RANK.senior.tier;
     const hired = applyAction(state, { type: "hire", rank: "senior" }).state;
     const rested = play(hired, {
       pick: (_, actions) => actions.find(isType("rest")),
@@ -258,7 +259,8 @@ describe("a sprint you sat out", () => {
   });
 
   test("the team picks up the backlog before the board forces it on you", () => {
-    const state = funded("pull-first");
+    const state = funded("pull-first", 100_000);
+    state.tier = DEV_RANK.senior.tier;
     const hired = applyAction(state, { type: "hire", rank: "senior" }).state;
     const run = play(hired, {
       pick: (_, actions) => actions.find(isType("choose_relic")) ?? actions.find(isType("rest")),

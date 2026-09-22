@@ -237,7 +237,14 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         seq,
         turn,
         kind: "feat",
-        text: text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) }),
+        text:
+          event.source === undefined
+            ? text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) })
+            : text("log.hired_by_site", {
+                dev: event.devId,
+                rank: ref(`ranks.${event.rank}.name`),
+                site: ref(`upgrades.${event.source}.name`),
+              }),
       };
 
     case "dev_left":

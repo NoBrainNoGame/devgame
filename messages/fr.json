@@ -259,8 +259,8 @@
     "lineNet": "Net",
     "monthCount": "Mois {month}",
     "infra": "Infrastructure",
-    "capacity": "Features servies",
-    "capacityHint": "Chaque feature livrée occupe les serveurs. Au-delà de la capacité, le surplus ne rapporte rien et la prod perd patience chaque mois.",
+    "capacity": "Utilisateurs servis",
+    "capacityHint": "Chaque feature livrée amène ses utilisateurs sur les serveurs. Au-delà de la capacité, le surplus ne rapporte rien et la prod perd patience chaque mois, d'autant plus que le dépassement est large.",
     "saturated": "Serveurs saturés : le surplus ne rapporte rien et la prod perd patience à chaque paie.",
     "moneyEarned": "{money} encaissés depuis le début",
     "buyPoint": "Point de compétence",
@@ -274,7 +274,7 @@
     "upkeepPerLevel": "{money} par mois et par niveau",
     "upkeepNow": "{money} par mois actuellement",
     "hire": "Embaucher",
-    "hireHint": "Un développeur prend les tickets du backlog, code seul et merge seul. Il coûte son salaire à chaque paie ; impayé, il s'en va et vous rend ses tickets.",
+    "hireHint": "Un développeur prend les tickets du backlog, code seul et merge seul. Il coûte son salaire à chaque paie ; impayé, il s'en va et vous rend ses tickets. Un site ouvre des postes et arrive avec son équipe.",
     "rankCapacity": "{count, plural, one {# ticket à la fois} other {# tickets à la fois}}",
     "rankSalary": "{money} par mois",
     "roster": "L'équipe",
@@ -303,7 +303,14 @@
     "expiresAtSprintEnd": "Expire à la fin du sprint si personne ne le démarre.",
     "idleSpeedLocked": "Vitesse à débloquer dans l'arbre : Avance rapide, niveau {level}.",
     "logClose": "Fermer le journal",
-    "tierBadge": "palier {tier}"
+    "tierBadge": "palier {tier}",
+    "seats": "{used} / {max} postes",
+    "rankSpeed": "{count, plural, one {# point par tour} other {# points par tour}}",
+    "sites": "Sites",
+    "sitesHint": "Un site ouvre des postes et amène son équipe, embauchée sans frais et payée comme les autres. Loyer mensuel.",
+    "nextTier": "palier {tier}",
+    "levelOf": "niv. {level}",
+    "nextTierAt": "palier {tier} à {money} gagnés"
   },
   "leaderboard": {
     "title": "Classement",
@@ -723,11 +730,11 @@
     "upgrades": {
       "servers": {
         "name": "Serveurs",
-        "desc": "Chaque niveau fait tenir trois features de plus en production. Facturé chaque mois."
+        "desc": "Chaque niveau sert cent utilisateurs de plus. Facturé chaque mois, un peu plus cher à chaque niveau, sans dernier niveau."
       },
       "autoscaling": {
         "name": "Autoscaling",
-        "desc": "Six features de plus d'un coup, et une facture mensuelle à l'avenant."
+        "desc": "Un quart de capacité en plus sur tout ce que vous possédez, à chaque niveau. Abonnement."
       },
       "marketing": {
         "name": "Marketing",
@@ -751,11 +758,71 @@
       },
       "dev_tooling": {
         "name": "Outillage",
-        "desc": "Chaque niveau fait remplir un point de plus par tour à chaque développeur. Abonnement."
+        "desc": "Chaque niveau fait remplir un point de plus par tour à chaque développeur, quel que soit son grade. Abonnement."
       },
       "ai_supervisor": {
         "name": "Superviseur IA",
-        "desc": "Quand vous laissez tourner, il joue le coup évident à votre place au lieu de souffler. Abonnement."
+        "desc": "Quand vous laissez tourner, il joue à votre place. Niveau 1 : le coup évident. Niveau 2 : il corrige et refactorise aussi. Niveau 3 : il achète aussi. Abonnement."
+      },
+      "datacenter": {
+        "name": "Datacenter",
+        "desc": "Mille utilisateurs par niveau. Un bâtiment à vous, une facture à la mesure."
+      },
+      "region": {
+        "name": "Région cloud",
+        "desc": "Dix mille utilisateurs par niveau, sur un continent que vous n'avez jamais visité."
+      },
+      "orbital_station": {
+        "name": "Station orbitale",
+        "desc": "Cent mille utilisateurs par niveau. La latence s'explique par la distance."
+      },
+      "dyson_swarm": {
+        "name": "Essaim de Dyson",
+        "desc": "Un million d'utilisateurs par niveau. Le soleil chauffe un peu moins."
+      },
+      "death_star": {
+        "name": "Étoile de la mort",
+        "desc": "Dix millions d'utilisateurs par niveau. Le service juridique préfère « plateforme sphérique »."
+      },
+      "mobile_app": {
+        "name": "Application mobile",
+        "desc": "Ajoute la moitié du revenu de base, une fois pour toutes."
+      },
+      "enterprise_plan": {
+        "name": "Offre entreprise",
+        "desc": "La moitié du revenu de base en plus. Les clients signent des contrats plus longs que la vie de vos serveurs."
+      },
+      "platform_api": {
+        "name": "API plateforme",
+        "desc": "La moitié du revenu de base en plus. D'autres construisent sur vous, et paient pour ça."
+      },
+      "marketplace": {
+        "name": "Place de marché",
+        "desc": "La moitié du revenu de base en plus. Vous prenez une commission sur ce que vous n'avez pas fait."
+      },
+      "ai_agents": {
+        "name": "Agents autonomes",
+        "desc": "La moitié du revenu de base en plus. Les clients n'ouvrent plus l'application ; leurs agents le font."
+      },
+      "coworking": {
+        "name": "Coworking",
+        "desc": "Deux postes et un junior qui arrive avec les clés. Loyer mensuel."
+      },
+      "office": {
+        "name": "Bureaux",
+        "desc": "Quatre postes et deux confirmés. Une plaque à l'entrée, un loyer à la hauteur."
+      },
+      "campus": {
+        "name": "Campus",
+        "desc": "Six postes et trois confirmés. Il y a une cantine, et une navette pour y aller."
+      },
+      "offshore_hub": {
+        "name": "Hub offshore",
+        "desc": "Huit postes et quatre seniors, dans un fuseau horaire où il fait toujours jour."
+      },
+      "orbital_campus": {
+        "name": "Campus orbital",
+        "desc": "Douze postes et six seniors. Personne ne rentre chez soi le soir."
       }
     },
     "ranks": {
@@ -960,7 +1027,8 @@
         "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
-      "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi"
+      "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
+      "hired_by_site": "{dev} rejoint l'équipe ({rank}) avec {site}"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -977,7 +1045,7 @@
       "tree_maxed": "Niveau maximum atteint ({max})",
       "tree_requires": "Demande {node} au niveau {level}",
       "tree_too_expensive": "Pas assez de points : {points} requis",
-      "team_full": "Équipe au complet ({max})",
+      "team_full": "Plus de poste libre ({max})",
       "too_expensive": "Pas assez d'argent : {money} requis",
       "capacity": "{count, plural, one {# ticket à la fois} other {# tickets à la fois}}",
       "salary": "Salaire {money} par mois",
@@ -996,7 +1064,12 @@
       "refactor_target": "Reprend le commit qui a coûté {debt} de dette",
       "fix_bug": "Reprend le plus ancien commit bugué du ticket",
       "rest_regen": "+{energy} énergie",
-      "rest_wip": "{count, plural, one {# ticket en plus : on souffle moins} other {# tickets en plus : on souffle moins}}"
+      "rest_wip": "{count, plural, one {# ticket en plus : on souffle moins} other {# tickets en plus : on souffle moins}}",
+      "tier_locked": "Se débloque au palier {tier}",
+      "capacity_gain": "+{users} utilisateurs servis",
+      "capacity_gain_pct": "+{pct} % de capacité",
+      "seats": "{count, plural, one {# poste} other {# postes}}",
+      "brings_team": "Arrive avec {count} × {rank}"
     },
     "tickets": {
       "feature": {

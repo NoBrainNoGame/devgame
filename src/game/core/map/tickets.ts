@@ -75,7 +75,9 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
   const mrr =
     (points * economy.mrrPerPoint + jitter) * tierScale(state.tier, economy.tier.mrrGrowth);
   const load =
-    points * economy.infra.usersPerPoint * tierScale(state.tier, economy.tier.loadGrowth);
+    points *
+    economy.infra.usersPerPoint *
+    tierScale(Math.min(state.tier, economy.tier.loadTierCap), economy.tier.loadGrowth);
 
   const id: TicketId = `t${state.nextTicketSerial}`;
   state.nextTicketSerial += 1;

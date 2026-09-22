@@ -119,7 +119,7 @@ export function ActionPanel({
         {rest === undefined ? null : (
           <ActionButton
             label={t("rest")}
-            hint={snapshot.autopilot ? t("restHintAutopilot") : t("restHint")}
+            hint={snapshot.autopilot > 0 ? t("restHintAutopilot") : t("restHint")}
             preview={snapshot.previews[actionKey(rest)]}
             busy={busy}
             action={rest}

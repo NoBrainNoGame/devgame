@@ -5,7 +5,6 @@ import { changeMoney } from "@/game/core/rules/money";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { payTeam } from "@/game/core/rules/team";
 import { sortedTickets } from "@/game/core/rules/tickets";
-import { raiseTier, tierOf } from "@/game/core/rules/tier";
 import type { RunState } from "@/game/core/types";
 
 /**
@@ -57,6 +56,22 @@ export function loadOf(state: RunState): number {
   let load = 0;
   for (const ticket of sortedTickets(state)) {
     if (ticket.status === "merged" && ticket.kind === "feature") load += ticket.load;
+  }
+  return load;
+}
+
+/**
+ * The load once the tickets about to land have landed: what is merged,
+ * plus every open feature that is nearly written. The number a warning is
+ * built on, since the merged load alone only tells you about last month.
+ */
+export function projectedLoadOf(state: RunState): number {
+  let load = loadOf(state);
+  for (const ticket of sortedTickets(state)) {
+    if (ticket.status !== "open" || ticket.kind !== "feature") continue;
+    if (ticket.filled * 100 >= ticket.points * BALANCE.economy.infra.predictFillPct) {
+      load += ticket.load;
+    }
   }
   return load;
 }
@@ -120,12 +135,13 @@ export function closeMonth(context: RuleContext): void {
   state.sprintMonths += 1;
 
   changeMoney(context, report.revenue, "revenue");
-  state.moneyEarned += report.revenue;
   state.stats.moneyLost += report.lost;
-  // Per ten percent over the line: a product that keeps growing past its
-  // servers is the one ending a long run, so the bleed grows with the excess
-  // — relative, so it reads the same at every order of magnitude.
+  // Per ten percent over the tolerance: a product that keeps growing past
+  // its servers is the one ending a long run, so the bleed grows with the
+  // excess — relative, so it reads the same at every order of magnitude,
+  // and capped, so being three times over is no worse than twice.
   if (report.overPct > 0) {
+    const { outageQualityPer10Pct, outageTolerancePct, outageMaxPct } = BALANCE.economy.infra;
     state.stats.outages += 1;
     emit(context, {
       type: "outage",
@@ -133,16 +149,12 @@ export function closeMonth(context: RuleContext): void {
       capacity: report.capacity,
       overPct: report.overPct,
     });
-    raiseQuality(
-      context,
-      BALANCE.economy.infra.outageQualityPer10Pct * Math.ceil(report.overPct / 10),
-      "outage",
-    );
+    const counted = Math.min(report.overPct, outageMaxPct) - outageTolerancePct;
+    if (counted > 0) {
+      raiseQuality(context, outageQualityPer10Pct * Math.ceil(counted / 10), "outage");
+    }
   }
   changeMoney(context, -report.upkeep, "upkeep");
-  // Revenue raises the tier too: a run that spends everything it makes still
-  // grows.
-  raiseTier(context, tierOf(Math.max(state.money, report.mrr * BALANCE.economy.tier.mrrFactor)));
 
   // Salaries are the team's rule, and a departure is too; the bill is
   // reported here so the log line has the whole month on it.

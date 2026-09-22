@@ -30,7 +30,7 @@ export function idleTarget(snapshot: RunSnapshot): PlayerAction | undefined {
     case "game_over":
       return undefined;
     case "choose_action": {
-      if (snapshot.autopilot) return legal(chooseAutopilot(snapshot));
+      if (snapshot.autopilot > 0) return legal(chooseAutopilot(snapshot));
       const inHand = snapshot.tickets.some((ticket) => ticket.id === snapshot.player.ticketId);
       if (!inHand) {
         const start = find((a) => a.type === "start");

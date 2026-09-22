@@ -110,19 +110,27 @@ tests/actions.test.ts tests/rules.test.ts`.
 ### An upgrade
 
 1. Add the id to `UPGRADE_IDS` and the entry to `UPGRADES` in
-   `src/game/content/upgrades.ts`: `category`, `maxLevel`, `cost` (one price
-   per level, in money), `upkeep` (charged per level every month, 0 for a
-   one-off), `perLevel`.
+   `src/game/content/upgrades.ts`: `category`, `tier` (the lowest tier that
+   shows it), `price` as `{ base, growth }` (level *n* costs
+   `round(base × growth^n)`), `maxLevel` (leave it out for a rung that never
+   ends), `upkeep` (charged per level every month, 0 for a one-off),
+   `perLevel`, and `hires` for a site that brings a team. Keep an infra rung at
+   the ladder's price per user — `tests/content.test.ts` checks that each rung
+   is a tier above the last and ten times as big.
 2. If no `Effects` field expresses what it does, see
    [When no effect field fits](#when-no-effect-field-fits). The economy reads
-   `infraCapacity` and `mrrBonusPct` in `rules/economy.ts`, the team reads
-   `devSpeedBonus`, `devCapacityBonus` and `hiringDiscountPct` in
-   `rules/team.ts`, and the HUD reads `autopilot`.
+   `infraCapacity`, `infraCapacityPct` and `mrrBonusPct` in
+   `rules/economy.ts`, the team reads `teamSeats`, `devSpeedBonus`,
+   `devCapacityBonus` and `hiringDiscountPct` in `rules/team.ts`, and the HUD
+   reads `autopilot` as a level.
 3. Two message entries under `game.upgrades.<id>`. The shop lists every id of
-   a category through `upgradesIn`, so nothing to add in `CompanyDialog.tsx`.
-4. No action wiring: `getAvailableActions` offers `buy` for every id that can
-   be paid for, `buyUpgrade` in `rules/shop.ts` refreshes the effects and the
-   energy ceiling.
+   a category through `upgradesIn` and shows one greyed rung of the next tier,
+   so nothing to add in `CompanyDialog.tsx`; `org` is listed under Sites in
+   the Team tab.
+4. No action wiring: `getAvailableActions` offers `buy` for every id the tier
+   has unlocked and the money can pay for, `buyUpgrade` in `rules/shop.ts`
+   refreshes the effects and the energy ceiling, and walks in the team a site
+   brings through `addDev`.
 5. Draws no randomness. The fingerprint moves (`UPGRADE_IDS` is hashed), so
    repin it.
 
@@ -133,10 +141,14 @@ line: `upgrades avg` says whether the manager ever buys it.
 ### A developer rank
 
 Ranks live in `DEV_RANK` in `src/game/content/team.ts`: `capacity`,
-`hireCost`, `salary`. Adding one means appending it to `DEV_RANKS` (the order
-is the promotion ladder, `nextRank` walks it), a `game.ranks.<id>.name`
+`speed` (points filled per turn), `hireCost`, `salary`, `tier` (the lowest
+tier that can hire it). Adding one means appending it to `DEV_RANKS` (the
+order is the promotion ladder, `nextRank` walks it), a `game.ranks.<id>.name`
 message, and a repinned fingerprint. `hire` is offered for every rank the
-money allows; the rest of the team's rules read the rank through the table.
+tier, the seats (`maxSeats`: the head office plus every site) and the money
+allow; the rest of the team's rules read the rank through the table. Every
+way a developer joins — hiring, a site, an acquisition — goes through
+`addDev`, so the roster has one door.
 
 What a developer does each turn — pick up, write, land — is `workTeam` in
 `rules/team.ts`, and it is deliberately a pure function of the board: no roll,

@@ -1,4 +1,4 @@
-import { DEV_RANK, TREE, treeCost, UPGRADES, upgradeCost } from "@/game/content";
+import { DEV_RANK, TREE, treeCost, UPGRADES, upgradeCost, upgradeUnlocked } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, money, ref, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
@@ -14,7 +14,7 @@ import {
   wipExtra,
 } from "@/game/core/rules/modifiers";
 import { canBuySkillPoint, skillPointPrice } from "@/game/core/rules/shop";
-import { devCapacity, hireCostFor } from "@/game/core/rules/team";
+import { devCapacity, hireCostFor, maxSeats } from "@/game/core/rules/team";
 import {
   behindOf,
   currentTicket,
@@ -203,17 +203,36 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const cost = upgradeCost(action.id, level);
       const notes: I18nText[] = [text("notes.price", { money: money(cost ?? 0) })];
       if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: money(def.upkeep) }));
+      if (def.perLevel.infraCapacity !== undefined) {
+        notes.push(text("notes.capacity_gain", { users: def.perLevel.infraCapacity }));
+      }
+      if (def.perLevel.infraCapacityPct !== undefined) {
+        notes.push(text("notes.capacity_gain_pct", { pct: def.perLevel.infraCapacityPct }));
+      }
+      if (def.perLevel.teamSeats !== undefined) {
+        notes.push(text("notes.seats", { count: def.perLevel.teamSeats }));
+      }
+      if (def.hires !== undefined) {
+        notes.push(
+          text("notes.brings_team", {
+            count: def.hires.count,
+            rank: ref(`ranks.${def.hires.rank}.name`),
+          }),
+        );
+      }
 
       return {
         action,
         energyCost: 0,
         consumesTurn: false,
         notes,
-        ...(cost === undefined
-          ? { blocked: text("notes.tree_maxed", { max: def.maxLevel }) }
-          : cost > state.money
-            ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
-            : {}),
+        ...(!upgradeUnlocked(action.id, state.tier)
+          ? { blocked: text("notes.tier_locked", { tier: def.tier }) }
+          : cost === undefined
+            ? { blocked: text("notes.tree_maxed", { max: def.maxLevel ?? 0 }) }
+            : cost > state.money
+              ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
+              : {}),
       };
     }
 
@@ -245,11 +264,13 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
           text("notes.salary", { money: money(DEV_RANK[action.rank].salary) }),
           text("notes.capacity", { count: capacity }),
         ],
-        ...(state.devs.length >= BALANCE.team.maxDevs
-          ? { blocked: text("notes.team_full", { max: BALANCE.team.maxDevs }) }
-          : cost > state.money
-            ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
-            : {}),
+        ...(DEV_RANK[action.rank].tier > state.tier
+          ? { blocked: text("notes.tier_locked", { tier: DEV_RANK[action.rank].tier }) }
+          : state.devs.length >= maxSeats(effects)
+            ? { blocked: text("notes.team_full", { max: maxSeats(effects) }) }
+            : cost > state.money
+              ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
+              : {}),
       };
     }
 

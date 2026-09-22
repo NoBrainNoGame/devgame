@@ -26,7 +26,7 @@ export function IdleBar({ action }: { action: PlayerAction }): React.JSX.Element
       <div
         className={cn(
           "h-full transition-[width] duration-100 ease-linear",
-          snapshot.autopilot ? "bg-branch-feature" : "bg-energy",
+          snapshot.autopilot > 0 ? "bg-branch-feature" : "bg-energy",
           !running && "opacity-40",
         )}
         style={{ width: `${pct}%` }}

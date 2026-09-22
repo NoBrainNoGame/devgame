@@ -259,8 +259,8 @@
     "lineNet": "Net",
     "monthCount": "Month {month}",
     "infra": "Infrastructure",
-    "capacity": "Features served",
-    "capacityHint": "Every shipped feature sits on the servers. Past the capacity the excess earns nothing and production loses patience every month.",
+    "capacity": "Users served",
+    "capacityHint": "Every shipped feature brings its users onto the servers. Past the capacity the excess earns nothing and production loses patience every month, all the more as the overrun is wide.",
     "saturated": "Servers saturated: the excess earns nothing and production loses patience at every payday.",
     "moneyEarned": "{money} collected so far",
     "buyPoint": "Skill point",
@@ -274,7 +274,7 @@
     "upkeepPerLevel": "{money} per month per level",
     "upkeepNow": "{money} per month currently",
     "hire": "Hire",
-    "hireHint": "A developer takes tickets from the backlog, codes alone and merges alone. They cost their salary at every payday; unpaid, they leave and hand their tickets back.",
+    "hireHint": "A developer takes tickets from the backlog, codes alone and merges alone. They cost their salary at every payday; unpaid, they leave and hand their tickets back. A site opens seats and comes with its team.",
     "rankCapacity": "{count, plural, one {# ticket at a time} other {# tickets at a time}}",
     "rankSalary": "{money} per month",
     "roster": "The team",
@@ -303,7 +303,14 @@
     "expiresAtSprintEnd": "Expires at the end of the sprint unless someone starts it.",
     "idleSpeedLocked": "A speed to unlock in the tree: Fast forward, level {level}.",
     "logClose": "Close the log",
-    "tierBadge": "tier {tier}"
+    "tierBadge": "tier {tier}",
+    "seats": "{used} / {max} seats",
+    "rankSpeed": "{count, plural, one {# point per turn} other {# points per turn}}",
+    "sites": "Sites",
+    "sitesHint": "A site opens seats and brings its team, hired for free and paid like the others. Monthly rent.",
+    "nextTier": "tier {tier}",
+    "levelOf": "lvl {level}",
+    "nextTierAt": "tier {tier} at {money} earned"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -723,11 +730,11 @@
     "upgrades": {
       "servers": {
         "name": "Servers",
-        "desc": "Each level carries three more features in production. Billed monthly."
+        "desc": "Each level serves a hundred more users. Billed monthly, a little dearer each level, no last level."
       },
       "autoscaling": {
         "name": "Autoscaling",
-        "desc": "Six more features at once, with a monthly bill to match."
+        "desc": "A quarter more capacity on everything you own, per level. Subscription."
       },
       "marketing": {
         "name": "Marketing",
@@ -751,11 +758,71 @@
       },
       "dev_tooling": {
         "name": "Tooling",
-        "desc": "Each level makes every developer fill one more point per turn. Subscription."
+        "desc": "Each level makes every developer fill one more point per turn, whatever their rank. Subscription."
       },
       "ai_supervisor": {
         "name": "AI supervisor",
-        "desc": "When you let the run idle, it plays the obvious move for you instead of resting. Subscription."
+        "desc": "When you let the run idle, it plays for you. Level 1: the obvious move. Level 2: it fixes and refactors too. Level 3: it buys too. Subscription."
+      },
+      "datacenter": {
+        "name": "Datacenter",
+        "desc": "A thousand users per level. A building of your own, a bill to match."
+      },
+      "region": {
+        "name": "Cloud region",
+        "desc": "Ten thousand users per level, on a continent you have never visited."
+      },
+      "orbital_station": {
+        "name": "Orbital station",
+        "desc": "A hundred thousand users per level. The latency is explained by the distance."
+      },
+      "dyson_swarm": {
+        "name": "Dyson swarm",
+        "desc": "A million users per level. The sun runs slightly cooler."
+      },
+      "death_star": {
+        "name": "Death Star",
+        "desc": "Ten million users per level. Legal prefers “spherical platform”."
+      },
+      "mobile_app": {
+        "name": "Mobile app",
+        "desc": "Adds half the base revenue, once and for all."
+      },
+      "enterprise_plan": {
+        "name": "Enterprise plan",
+        "desc": "Half the base revenue again. Customers sign contracts longer than the life of your servers."
+      },
+      "platform_api": {
+        "name": "Platform API",
+        "desc": "Half the base revenue again. Others build on you, and pay for it."
+      },
+      "marketplace": {
+        "name": "Marketplace",
+        "desc": "Half the base revenue again. You take a cut of what you did not make."
+      },
+      "ai_agents": {
+        "name": "Autonomous agents",
+        "desc": "Half the base revenue again. Customers no longer open the app; their agents do."
+      },
+      "coworking": {
+        "name": "Coworking",
+        "desc": "Two seats and a junior who comes with the keys. Monthly rent."
+      },
+      "office": {
+        "name": "Office",
+        "desc": "Four seats and two mid-levels. A plaque by the door, a rent to match."
+      },
+      "campus": {
+        "name": "Campus",
+        "desc": "Six seats and three mid-levels. There is a canteen, and a shuttle to reach it."
+      },
+      "offshore_hub": {
+        "name": "Offshore hub",
+        "desc": "Eight seats and four seniors, in a time zone where it is always daytime."
+      },
+      "orbital_campus": {
+        "name": "Orbital campus",
+        "desc": "Twelve seats and six seniors. Nobody goes home at night."
       }
     },
     "ranks": {
@@ -960,7 +1027,8 @@
         "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
-      "tier_reached": "tier {tier} reached: the scale changes, and so does the shop"
+      "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
+      "hired_by_site": "{dev} joins the team ({rank}) with {site}"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -977,7 +1045,7 @@
       "tree_maxed": "Maximum level reached ({max})",
       "tree_requires": "Needs {node} at level {level}",
       "tree_too_expensive": "Not enough points: {points} needed",
-      "team_full": "Team is full ({max})",
+      "team_full": "No seat left ({max})",
       "too_expensive": "Not enough money: {money} needed",
       "capacity": "{count, plural, one {# ticket at a time} other {# tickets at a time}}",
       "salary": "Salary {money} per month",
@@ -996,7 +1064,12 @@
       "refactor_target": "Redoes the commit that cost {debt} debt",
       "fix_bug": "Redoes the ticket's oldest bugged commit",
       "rest_regen": "+{energy} energy",
-      "rest_wip": "{count, plural, one {# extra ticket: less rest} other {# extra tickets: less rest}}"
+      "rest_wip": "{count, plural, one {# extra ticket: less rest} other {# extra tickets: less rest}}",
+      "tier_locked": "Unlocks at tier {tier}",
+      "capacity_gain": "+{users} users served",
+      "capacity_gain_pct": "+{pct}% capacity",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "brings_team": "Comes with {count} × {rank}"
     },
     "tickets": {
       "feature": {

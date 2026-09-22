@@ -430,7 +430,7 @@ export type GameEvent =
   | { type: "tier_reached"; tier: number }
   | { type: "upgrade_bought"; id: UpgradeId; level: number }
   | { type: "skill_point_bought"; price: number }
-  | { type: "hired"; devId: DevId; rank: DevRank }
+  | { type: "hired"; devId: DevId; rank: DevRank; source?: UpgradeId }
   /** Unpaid. The tickets are yours now. */
   | { type: "dev_left"; devId: DevId; ticketIds: TicketId[] }
   | { type: "dev_promoted"; devId: DevId; rank: DevRank }

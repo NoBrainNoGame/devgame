@@ -49,7 +49,9 @@ export const SAVE_VERSION = 3;
  * ticket's column taken at its first commit rather than at its opening, a
  * refused review pulling the next backlog ticket rather than inventing one,
  * skill tickets expiring with their sprint, and the skill-ticket chance moved
- * by a tree node.
+ * by a tree node. And what would have been epoch 3: tiers, a load in users
+ * and a tier reached by lifetime earnings, a shop that is a ladder, and a
+ * team whose speed is its rank.
  */
 export const RULES_EPOCH = 1;
 

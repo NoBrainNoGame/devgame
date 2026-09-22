@@ -265,7 +265,8 @@ describe("merge events", () => {
     }
     expect(nitpickRegen).toBe(0);
     expect(migrationPaid).toBe(seen.get("new_lib_migration") ?? 0);
-  });
+    // Three hundred runs that now outlive the old ones: give them the time.
+  }, 20_000);
 
   test("Dependabot removes the library migration from the merge table", () => {
     const armed = inHand("no-migration");

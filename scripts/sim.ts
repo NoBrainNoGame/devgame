@@ -10,14 +10,29 @@
  * never fires, and a policy that dominates every other.
  */
 
-import { DEV_RANK, SKILLS, type TreeNodeId, upgradeCost } from "@/game/content";
+import {
+  DEV_RANK,
+  SKILLS,
+  type TreeNodeId,
+  UPGRADES,
+  type UpgradeId,
+  upgradeCost,
+} from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { monthlyReport, mrrOf } from "@/game/core/rules/economy";
+import { capacityAdvice } from "@/game/core/rules/capacity";
+import {
+  capacityOf,
+  loadOf,
+  monthlyReport,
+  mrrOf,
+  projectedLoadOf,
+} from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import { skillPointPrice } from "@/game/core/rules/shop";
+import { hireCostFor } from "@/game/core/rules/team";
 import {
   buggedOn,
   currentTicket,
@@ -26,15 +41,18 @@ import {
   playerTickets,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
-import { createRun, hashState } from "@/game/core/run";
+import { createRun } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 type PolicyName = "ai" | "craft" | "mixed" | "careful";
 
-/** Turn-consuming actions before a run is declared unending. */
-const MAX_TURNS = 1500;
+/** Turn-consuming actions before a run is declared unending, unless `--turns` says otherwise. */
+const DEFAULT_MAX_TURNS = 1500;
+
+/** Free actions in a row before a run is declared looping. */
+const MAX_FREE_STREAK = 200;
 
 interface Outcome {
   reason: "burnout" | "fired" | "stuck" | "capped";
@@ -62,12 +80,19 @@ interface Outcome {
   outages: number;
   upgrades: number;
   pointsBought: number;
+  /** The orders of magnitude: where the run got to, and how high the pile went. */
+  tier: number;
+  /** The tier the run had reached when sprint 10 ended, or its last one. */
+  tierAt10: number;
+  moneyPeak: number;
+  cause: string;
 }
 
 function parseArgs(argv: string[]): {
   runs: number;
   policy: PolicyName | "all";
   seed: number;
+  turns: number;
   verbose: boolean;
 } {
   const get = (flag: string): string | undefined => {
@@ -79,6 +104,7 @@ function parseArgs(argv: string[]): {
     runs: Number(get("--runs") ?? 200),
     policy: (get("--policy") ?? "all") as PolicyName | "all",
     seed: Number(get("--seed") ?? 1),
+    turns: Number(get("--turns") ?? DEFAULT_MAX_TURNS),
     verbose: argv.includes("--verbose"),
   };
 }
@@ -156,32 +182,60 @@ const TREE_ORDER: TreeNodeId[] = [
 ];
 
 /**
- * The manager: servers when production saturates, a junior when one can be
- * afforded, a skill point when the money is plentiful, otherwise the cheapest
- * upgrade going. Naive on purpose — it is the same for every policy.
+ * The manager: the cheapest rung that fits when production saturates, the
+ * best rank the payroll can carry, a site once the month runs a surplus, a
+ * skill point when the money is plentiful, otherwise the cheapest upgrade
+ * going. Naive on purpose — it is the same for every policy.
  */
 function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
   const effects = gatherEffects(state);
   const report = monthlyReport(state, effects);
+  const purchases = actions.filter(
+    (a): a is Extract<PlayerAction, { type: "buy" }> => a.type === "buy",
+  );
+  const priceOf = (id: UpgradeId) => upgradeCost(id, state.upgrades[id] ?? 0) ?? Infinity;
 
-  if (report.load >= report.capacity) {
-    const servers = actions.find((a) => a.type === "buy" && a.id === "servers");
-    if (servers !== undefined) return servers;
+  const reserve = report.upkeep + report.salaries;
+  // Production about to pass the warning line: buy what the game itself
+  // would advise, and buy nothing else until it can be afforded.
+  const needed = projectedLoadOf(state) - (report.capacity * BALANCE.economy.infra.warnPct) / 100;
+  if (needed > 0) {
+    const advice = capacityAdvice(state, effects, needed);
+    if (advice !== undefined) {
+      const buy = purchases.find((a) => a.id === advice.id);
+      return buy;
+    }
   }
 
-  const hire = actions.find((a) => a.type === "hire" && a.rank === "junior");
-  if (hire !== undefined && report.net - DEV_RANK.junior.salary >= 0) return hire;
+  const hires = actions.filter(
+    (a): a is Extract<PlayerAction, { type: "hire" }> => a.type === "hire",
+  );
+  const hire = [...hires].sort((x, y) => DEV_RANK[y.rank].speed - DEV_RANK[x.rank].speed)[0];
+  if (
+    hire !== undefined &&
+    report.net - DEV_RANK[hire.rank].salary >= 0 &&
+    state.money - hireCostFor(effects, hire.rank) >= reserve
+  ) {
+    return hire;
+  }
+
+  if (report.net > 0) {
+    const site = purchases.find(
+      (a) => UPGRADES[a.id].category === "org" && priceOf(a.id) <= state.money / 2,
+    );
+    if (site !== undefined) return site;
+  }
 
   if (state.money > 2 * skillPointPrice(state)) {
     const point = actions.find((a) => a.type === "buy_point");
     if (point !== undefined) return point;
   }
 
-  const purchases = actions.filter(
-    (a): a is Extract<PlayerAction, { type: "buy" }> => a.type === "buy",
-  );
+  // Infra is bought on advice only: a rich run would otherwise stack servers
+  // it does not need, one free action at a time, forever.
   const affordable = purchases
-    .map((a) => ({ a, cost: upgradeCost(a.id, state.upgrades[a.id] ?? 0) ?? Infinity }))
+    .filter((a) => UPGRADES[a.id].category !== "infra")
+    .map((a) => ({ a, cost: priceOf(a.id) }))
     .filter(({ cost }) => cost <= state.money / 2)
     .sort((x, y) => x.cost - y.cost)[0];
   return affordable?.a;
@@ -300,7 +354,7 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   }
 }
 
-function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
+function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: boolean): Outcome {
   let state = createRun({
     seed,
     mode: "classic",
@@ -323,8 +377,11 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
   let outages = 0;
   let upgrades = 0;
   let pointsBought = 0;
+  let moneyPeak = 0;
+  let freeStreak = 0;
+  let tierAt10 = -1;
 
-  while (state.phase.kind !== "game_over" && turns < MAX_TURNS) {
+  while (state.phase.kind !== "game_over" && turns < maxTurns) {
     const actions = getAvailableActions(state);
     if (actions.length === 0) {
       return summarise(state, "stuck", {
@@ -342,16 +399,20 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
         outages,
         upgrades,
         pointsBought,
+        moneyPeak,
+        tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
 
     const action = choose(policy, state, actions);
-    const before = hashState(state);
+    const turnBefore = state.turn;
     const result = applyAction(state, action);
     state = result.state;
 
-    // A free action that changed nothing is a loop, not a game.
-    if (hashState(state) === before) {
+    // Free actions are fine; two hundred in a row without a turn passing is
+    // a loop, not a game. Cheaper than hashing a late run's state each move.
+    freeStreak = state.turn === turnBefore ? freeStreak + 1 : 0;
+    if (freeStreak > MAX_FREE_STREAK) {
       return summarise(state, "stuck", {
         failures,
         reviews,
@@ -367,10 +428,13 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
         outages,
         upgrades,
         pointsBought,
+        moneyPeak,
+        tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
 
     maxDebt = Math.max(maxDebt, state.debt);
+    moneyPeak = Math.max(moneyPeak, state.money);
 
     for (const event of result.events) {
       if (event.type === "turn_started") {
@@ -386,6 +450,7 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
       if (event.type === "ticket_started" && event.forced) forced += 1;
       if (event.type === "sprint_ended") {
         carriedOver += openTickets(state).length;
+        if (state.sprint === 10) tierAt10 = state.tier;
       }
       if (event.type === "hired") hires += 1;
       if (event.type === "dev_left") devsLeft += 1;
@@ -393,6 +458,12 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
       if (event.type === "outage") outages += 1;
       if (event.type === "upgrade_bought") upgrades += 1;
       if (event.type === "skill_point_bought") pointsBought += 1;
+      if (verbose && event.type === "month_closed") {
+        const effects = gatherEffects(state);
+        console.log(
+          `  ── month ${event.month}: tier ${state.tier} revenue ${event.revenue} lost ${event.lost} upkeep ${event.upkeep} salaries ${event.salaries} → $${event.money}  load ${loadOf(state)}/${capacityOf(effects)}  q=${state.quality}`,
+        );
+      }
     }
 
     if (verbose) {
@@ -425,6 +496,8 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
     outages,
     upgrades,
     pointsBought,
+    moneyPeak,
+    tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
   });
 }
 
@@ -443,6 +516,8 @@ function summarise(
     | "finalDebt"
     | "moneyEarned"
     | "mrr"
+    | "tier"
+    | "cause"
   >,
 ): Outcome {
   return {
@@ -456,6 +531,8 @@ function summarise(
     finalDebt: state.debt,
     moneyEarned: state.moneyEarned,
     mrr: mrrOf(state, gatherEffects(state)),
+    tier: state.tier,
+    cause: state.phase.kind === "game_over" ? (state.phase.cause ?? "-") : "-",
     ...extra,
   };
 }
@@ -513,6 +590,26 @@ function report(policy: string, outcomes: Outcome[]): void {
     `  debt      final avg ${mean(outcomes.map((o) => o.finalDebt)).toFixed(0)}  peak avg ${mean(outcomes.map((o) => o.maxDebt)).toFixed(0)}`,
   );
   console.log(
+    `  tiers     reached med ${quantile(
+      outcomes.map((o) => o.tier),
+      0.5,
+    )}  max ${Math.max(...outcomes.map((o) => o.tier))}  at sprint 10 med ${quantile(
+      outcomes.map((o) => o.tierAt10),
+      0.5,
+    )}  money peak med ${quantile(
+      outcomes.map((o) => o.moneyPeak),
+      0.5,
+    )}  fired by ${Object.entries(
+      outcomes.reduce<Record<string, number>>((acc, o) => {
+        if (o.reason === "fired") acc[o.cause] = (acc[o.cause] ?? 0) + 1;
+        return acc;
+      }, {}),
+    )
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `${k} ${v}`)
+      .join(" ")}`,
+  );
+  console.log(
     `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}`,
   );
   console.log(
@@ -561,7 +658,7 @@ const args = parseArgs(Bun.argv.slice(2));
 
 if (args.verbose) {
   const policy: PolicyName = args.policy === "all" ? "mixed" : args.policy;
-  const outcome = playOne(`sim-${args.seed}`, policy, true);
+  const outcome = playOne(`sim-${args.seed}`, policy, args.turns, true);
   console.log("\n", outcome);
 } else {
   checkGeneration(Math.min(500, args.runs * 2));
@@ -572,7 +669,7 @@ if (args.verbose) {
   for (const policy of policies) {
     const outcomes: Outcome[] = [];
     for (let i = 0; i < args.runs; i++) {
-      outcomes.push(playOne(`sim-${args.seed + i}`, policy, false));
+      outcomes.push(playOne(`sim-${args.seed + i}`, policy, args.turns, false));
     }
     report(policy, outcomes);
   }

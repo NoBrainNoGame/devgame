@@ -313,22 +313,41 @@ export const BALANCE = {
     monthsPerSprint: 3,
     startingMoney: 100,
     /** Monthly revenue of a shipped feature: this per story point, plus a jitter. */
-    mrrPerPoint: 2,
+    mrrPerPoint: 3,
     mrrJitter: { min: 0, max: 3 },
     /**
      * Orders of magnitude. A tier is reached at `first × growth^(tier−1)` of
-     * money, or of monthly revenue times `mrrFactor` — and never lost: a
-     * purchase must not shrink the next ticket. Every feature that arrives at
-     * a tier earns and weighs `mrrGrowth`/`loadGrowth` to that power, so the
-     * unit of account changes with the run and yesterday's features become
-     * rounding noise, the way an incremental game is meant to feel.
+     * lifetime earnings — never of money in hand, so a purchase cannot shrink
+     * the next ticket and saving is never the way up. Every feature that
+     * arrives at a tier earns and weighs `mrrGrowth`/`loadGrowth` to that
+     * power, so the unit of account changes with the run and yesterday's
+     * features become rounding noise, the way an incremental game is meant
+     * to feel.
      */
     tier: {
       first: 1_000,
       growth: 10,
-      mrrFactor: 10,
-      mrrGrowth: 10,
-      loadGrowth: 10,
+      /**
+       * Five, not ten: the team and the products compound with it, and a
+       * tier is meant to last a couple of sprints all the way up, not a
+       * month by the end. The money still climbs a decade a tier — that is
+       * what the thresholds say — it just takes more features to do it.
+       */
+      mrrGrowth: 5,
+      loadGrowth: 5,
+      /**
+       * Past this tier a feature brings no more users than at it: there are
+       * only so many people, and the last rung of the ladder is meant to be
+       * enough for all of them. Revenue keeps climbing; the servers stop
+       * being the thing that ends a run.
+       */
+      loadTierCap: 5,
+      /**
+       * The last tier. Products, sites and a growing team compound with the
+       * tier's own ×10, so past here a tier would last a month; the ladder
+       * ends where the lore does, and the money keeps counting without it.
+       */
+      last: 6,
     },
     infra: {
       /** Users production serves before anything has been bought. */
@@ -342,6 +361,14 @@ export const BALANCE = {
        * at every order of magnitude.
        */
       outageQualityPer10Pct: 2,
+      /**
+       * Overrun production puts up with before its patience goes: under
+       * this, a saturated month costs revenue and nothing else. A tier's
+       * first feature always lands before the tier's capacity is paid for.
+       */
+      outageTolerancePct: 25,
+      /** Overrun beyond this counts no further: the bleed has a ceiling. */
+      outageMaxPct: 100,
       /** Share of capacity at which the board is warned. */
       warnPct: 80,
       /** An open ticket this full counts towards the next payday's load. */
@@ -355,9 +382,8 @@ export const BALANCE = {
 
   /** The hired team. Ranks are priced in `content/team.ts`. */
   team: {
-    maxDevs: 3,
-    /** Story points a developer fills per turn on each ticket held. */
-    pointsPerTurn: 1,
+    /** Seats at the head office; sites add theirs. */
+    baseSeats: 3,
     /** Tickets delivered before a developer is promoted a rank. */
     promoteEvery: 4,
   },

@@ -3,15 +3,15 @@ import { emit, type RuleContext } from "@/game/core/rules/context";
 
 /**
  * Orders of magnitude. The tier is what the shop, the team and the tickets
- * scale with; it is reached by money or by revenue and kept for good, so
+ * scale with; it is reached by lifetime earnings and kept for good, so
  * spending never makes the run smaller. Computed by counting powers, not by
  * a logarithm that rounds 1 000 to 2.999…
  */
 export function tierOf(amount: number): number {
-  const { first, growth } = BALANCE.economy.tier;
+  const { first, growth, last } = BALANCE.economy.tier;
   let tier = 0;
   let threshold = first;
-  while (amount >= threshold) {
+  while (amount >= threshold && tier < last) {
     tier += 1;
     threshold *= growth;
   }

@@ -47,4 +47,5 @@ export {
   UPGRADES,
   upgradeCost,
   upgradesIn,
+  upgradeUnlocked,
 } from "@/game/content/upgrades";

@@ -1,4 +1,4 @@
-import { DEV_RANK, type DevRank, type Effects, nextRank } from "@/game/content";
+import { DEV_RANK, type DevRank, type Effects, nextRank, type UpgradeId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
@@ -40,20 +40,25 @@ export function hireCostFor(effects: Effects, rank: DevRank): number {
   return Math.round((DEV_RANK[rank].hireCost * (100 - effects.hiringDiscountPct)) / 100);
 }
 
-export function canHire(state: RunState, effects: Effects, rank: DevRank): boolean {
-  return state.devs.length < BALANCE.team.maxDevs && hireCostFor(effects, rank) <= state.money;
+/** Seats for developers: the head office plus every site bought. */
+export function maxSeats(effects: Effects): number {
+  return BALANCE.team.baseSeats + effects.teamSeats;
 }
 
-export function hireDev(context: RuleContext, rank: DevRank): Dev {
+export function canHire(state: RunState, effects: Effects, rank: DevRank): boolean {
+  return (
+    DEV_RANK[rank].tier <= state.tier &&
+    state.devs.length < maxSeats(effects) &&
+    hireCostFor(effects, rank) <= state.money
+  );
+}
+
+/**
+ * Puts a developer on the roster. The one door for hiring, for a site that
+ * brings its team and for an acquisition: whoever pays, the dev is the same.
+ */
+export function addDev(context: RuleContext, rank: DevRank, source?: UpgradeId): Dev {
   const { state } = context;
-  if (state.devs.length >= BALANCE.team.maxDevs) {
-    throw new Error(`The team is full at ${BALANCE.team.maxDevs}`);
-  }
-  const cost = hireCostFor(context.effects, rank);
-  if (cost > state.money) throw new Error(`A ${rank} costs ${cost}, you have ${state.money}`);
-
-  changeMoney(context, -cost, "hire");
-
   const dev: Dev = {
     id: `d${state.nextDevSerial}`,
     rank,
@@ -64,8 +69,28 @@ export function hireDev(context: RuleContext, rank: DevRank): Dev {
   state.nextDevSerial += 1;
   state.devs.push(dev);
 
-  emit(context, { type: "hired", devId: dev.id, rank });
+  emit(context, {
+    type: "hired",
+    devId: dev.id,
+    rank,
+    ...(source === undefined ? {} : { source }),
+  });
   return dev;
+}
+
+export function hireDev(context: RuleContext, rank: DevRank): Dev {
+  const { state } = context;
+  if (DEV_RANK[rank].tier > state.tier) {
+    throw new Error(`A ${rank} is hired from tier ${DEV_RANK[rank].tier}`);
+  }
+  if (state.devs.length >= maxSeats(context.effects)) {
+    throw new Error(`The team is full at ${maxSeats(context.effects)}`);
+  }
+  const cost = hireCostFor(context.effects, rank);
+  if (cost > state.money) throw new Error(`A ${rank} costs ${cost}, you have ${state.money}`);
+
+  changeMoney(context, -cost, "hire");
+  return addDev(context, rank);
 }
 
 /**
@@ -116,9 +141,10 @@ export function workTeam(context: RuleContext): void {
   const { state } = context;
   pullTeam(context);
 
-  const speed = BALANCE.team.pointsPerTurn + context.effects.devSpeedBonus;
   for (const dev of state.devs) {
-    let budget = speed;
+    // A rank is a speed: a senior fills three points a turn where a junior
+    // fills one, which is what the price gap pays for.
+    let budget = DEV_RANK[dev.rank].speed + context.effects.devSpeedBonus;
     for (const ticket of ticketsOf(state, dev.id)) {
       if (budget <= 0) break;
       const points = Math.min(budget, ticket.points - ticket.filled);

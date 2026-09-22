@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
+  DEV_RANK,
   EFFECT_KEYS,
   FAILURE_EVENT_IDS,
   FAILURE_EVENTS,
@@ -117,16 +118,53 @@ describe("content tables", () => {
     }
   });
 
-  test("every upgrade has a price for each of its levels and a category", () => {
+  test("every upgrade has a geometric price, a category and a tier", () => {
     for (const id of UPGRADE_IDS) {
       const def = UPGRADES[id];
       expect(UPGRADE_CATEGORIES).toContain(def.category);
-      expect(def.cost.length).toBe(def.maxLevel);
+      expect(def.tier).toBeGreaterThanOrEqual(0);
       expect(def.upkeep).toBeGreaterThanOrEqual(0);
-      for (let level = 0; level < def.maxLevel; level++) {
-        expect(upgradeCost(id, level)).toBeGreaterThan(0);
+      expect(def.price.base).toBeGreaterThan(0);
+      expect(def.price.growth).toBeGreaterThanOrEqual(1);
+      const last = def.maxLevel ?? 5;
+      let previous = 0;
+      for (let level = 0; level < last; level++) {
+        const cost = upgradeCost(id, level);
+        expect(cost).toBeGreaterThan(0);
+        expect(cost).toBeGreaterThanOrEqual(previous);
+        previous = cost ?? 0;
       }
-      expect(upgradeCost(id, def.maxLevel)).toBeUndefined();
+      if (def.maxLevel !== undefined) expect(upgradeCost(id, def.maxLevel)).toBeUndefined();
+      else expect(upgradeCost(id, 50)).toBeGreaterThan(0);
+      if (def.maxLevel === undefined && id !== "death_star") {
+        expect(def.price.growth).toBeGreaterThan(1);
+      }
+    }
+  });
+
+  test("the ladders climb: each rung is a tier above the last and ten times as big", () => {
+    const rungs = [
+      "servers",
+      "datacenter",
+      "region",
+      "orbital_station",
+      "dyson_swarm",
+      "death_star",
+    ] as const;
+    for (let i = 1; i < rungs.length; i++) {
+      const lower = UPGRADES[rungs[i - 1] as (typeof rungs)[number]];
+      const upper = UPGRADES[rungs[i] as (typeof rungs)[number]];
+      expect(upper.tier).toBe(lower.tier + 1);
+      expect(upper.perLevel.infraCapacity).toBe((lower.perLevel.infraCapacity ?? 0) * 10);
+      expect(upper.price.base).toBe(lower.price.base * 10);
+    }
+    for (const id of UPGRADE_IDS) {
+      const def = UPGRADES[id];
+      if (def.hires !== undefined) {
+        expect(def.category).toBe("org");
+        expect(def.perLevel.teamSeats ?? 0).toBeGreaterThanOrEqual(def.hires.count);
+        expect(DEV_RANK[def.hires.rank].tier).toBeLessThanOrEqual(def.tier);
+      }
     }
   });
 
@@ -173,7 +211,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("1c6b407f");
+    expect(RULES_FINGERPRINT).toBe("f0f7627a");
   });
 
   test("the save version and the epoch are positive integers", () => {

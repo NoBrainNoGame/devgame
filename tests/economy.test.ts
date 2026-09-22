@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { UPGRADES } from "@/game/content";
+import { UPGRADES, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { monthlyReport, monthTurns } from "@/game/core/rules/economy";
@@ -133,11 +133,20 @@ describe("the month", () => {
 
     const { state: after, events } = applyAction(state, { type: "rest" });
     expect(eventsOfType(events, "outage")[0]?.overPct).toBe(100);
-    // Per ten percent over the line, so growing past the servers hurts more,
-    // and the same share hurts the same at every order of magnitude.
+    // Per ten percent over the tolerance, so growing past the servers hurts
+    // more, and the same share hurts the same at every order of magnitude.
+    const { outageQualityPer10Pct, outageTolerancePct } = BALANCE.economy.infra;
     expect(after.quality).toBe(
-      state.quality + BALANCE.economy.infra.outageQualityPer10Pct * Math.ceil(report.overPct / 10),
+      state.quality + outageQualityPer10Pct * Math.ceil((report.overPct - outageTolerancePct) / 10),
     );
+
+    // A quarter over is lost revenue and nothing else.
+    const tolerated = inHand("tolerated");
+    shipFeature(tolerated, 100, Math.floor((capacity * (100 + outageTolerancePct)) / 100));
+    tolerated.sprintTurn = monthTurns() - 1;
+    const mild = applyAction(tolerated, { type: "rest" });
+    expect(eventsOfType(mild.events, "outage").length).toBe(1);
+    expect(mild.state.quality).toBe(tolerated.quality);
 
     const served = structuredClone(state);
     served.upgrades.servers = 8;
@@ -152,7 +161,7 @@ describe("the shop", () => {
     expect(getAvailableActions(state).some(isType("buy"))).toBe(false);
 
     const rich = structuredClone(state);
-    rich.money = UPGRADES.servers.cost[0] ?? 0;
+    rich.money = upgradeCost("servers", 0) ?? 0;
     const buy = getAvailableActions(rich).find((a) => a.type === "buy" && a.id === "servers");
     expect(buy).toBeDefined();
     if (buy === undefined) return;

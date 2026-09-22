@@ -60,6 +60,8 @@ export interface Effects {
   infraCapacityPct: number;
   /** Percent added to the monthly recurring revenue. */
   mrrBonusPct: number;
+  /** Seats for developers, on top of the head office. */
+  teamSeats: number;
   /** Story points a hired developer fills per turn, on top of the base rate. */
   devSpeedBonus: number;
   /** Tickets every hired developer can hold at once, on top of their rank. */
@@ -74,10 +76,12 @@ export interface Effects {
    */
   idleSpeedTier: number;
   /**
-   * The idle timer plays a sensible move instead of resting. A rendering
-   * concern read by the HUD, but bought in the run, so it is an effect.
+   * The idle timer plays a sensible move instead of resting, and how far it
+   * goes: 1 chooses among your moves, 2 also fixes and refactors, 3 also
+   * buys. A rendering concern read by the HUD, but bought in the run, so it
+   * is an effect.
    */
-  autopilot: boolean;
+  autopilot: number;
   /**
    * Unlocks the review action.
    *
@@ -116,12 +120,13 @@ export const NO_EFFECTS: Effects = {
   infraCapacity: 0,
   infraCapacityPct: 0,
   mrrBonusPct: 0,
+  teamSeats: 0,
   devSpeedBonus: 0,
   devCapacityBonus: 0,
   hiringDiscountPct: 0,
   skillTicketPoints: 0,
   idleSpeedTier: 0,
-  autopilot: false,
+  autopilot: 0,
   canReview: true,
 };
 

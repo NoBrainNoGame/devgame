@@ -261,23 +261,54 @@ sprint : trois paies par sprint, et un sprint qui se termine tôt paie quand
 même ses trois mois.
 
 À chaque paie : les revenus rentrent, les **abonnements** de la boutique et
-les **salaires** sortent. La production ne sert qu'un certain nombre de
-features ; au-delà de la **capacité**, le surplus ne rapporte rien et la prod
-perd patience chaque mois. C'est toute la scalabilité : grandir oblige à payer
-des serveurs.
+les **salaires** sortent. Chaque feature livrée amène ses **utilisateurs** sur
+les serveurs ; au-delà de la **capacité**, le surplus ne rapporte rien, et
+passé un quart de dépassement la prod perd patience chaque mois, d'autant
+plus que le dépassement est large, avec un plafond. C'est toute la
+scalabilité : grandir oblige à payer des serveurs, et une feature arrive
+toujours avant l'infra qui la sert.
+
+**Les paliers.** La run monte des **ordres de grandeur**. Le palier 1 est
+atteint à 1 000 € **gagnés depuis le début** — jamais l'argent en
+caisse, pour que dépenser ne fasse pas reculer et qu'épargner ne soit pas le
+chemin —, le palier 2 à 10 k€, puis ×10 à chaque fois, sans fin. Un palier
+ne se perd jamais, et l'échelle s'arrête au palier 6, là où l'histoire
+s'arrête. Une feature qui arrive au palier *t* rapporte et pèse 5^*t* fois
+une feature du départ — cinq et non dix, parce que l'équipe et les produits
+multiplient aussi, et qu'un palier doit durer deux ou trois sprints jusqu'en
+haut (les utilisateurs cessent de croître après le palier 5 : il n'y a que
+tant de monde) —, et le tableau apporte deux tickets de plus par sprint et
+par palier. L'unité d'affichage suit (€, k€,
+M€, G€…) ; le moteur, lui, garde des entiers.
 
 **La boutique** (`src/game/content/upgrades.ts`) vend en argent, sans coûter
-de tour : de l'infra (serveurs, autoscaling), de la croissance (marketing,
-offre premium), de l'outillage (abonnement IA, licence IDE, machine à café,
-outillage pour l'équipe, superviseur IA), et des **points de compétence** dont
-le prix monte à chaque achat. Certains achats sont des abonnements et se
-paient tous les mois.
+de tour, et chaque article a un **palier** d'apparition : le joueur voit ce
+que son palier a débloqué, un barreau grisé pour le palier suivant, rien
+au-delà. Les prix sont géométriques (`base × croissance^niveau`) et la
+plupart des barreaux n'ont pas de dernier niveau. L'**infra** est une échelle
+d'un barreau par palier, dix fois plus grand et dix fois plus cher que le
+précédent au même prix par utilisateur : serveurs, datacenter, région
+cloud, station orbitale, essaim de Dyson, étoile de la mort — celle-ci à prix
+fixe, pour que les serveurs ne soient jamais ce qui termine une run arrivée
+là ; l'autoscaling ajoute un pourcentage de tout ce qu'on possède. La
+**croissance** vend des pourcentages puis des **produits**, un par palier,
+qui ajoutent chacun la moitié du revenu de base.
+L'**outillage** vend l'abonnement IA, la licence IDE, la machine à café,
+l'outillage d'équipe et le **superviseur IA** à trois niveaux, dix fois plus
+cher chacun. Des **points de compétence** dont le prix monte à chaque achat.
+Certains achats sont des abonnements et se paient tous les mois.
 
 **L'équipe** (`src/game/content/team.ts`). Un développeur s'embauche contre
-un coût fixe et un salaire mensuel. Il prend seul les tickets *feature* les
-plus anciens du backlog — jamais un hotfix ni une refacto imposée — en tient
-un à la fois pour un junior, deux pour un confirmé, trois pour un senior, et
-monte d'un rang tous les quelques tickets livrés. Chaque tour, il écrit un
+un coût fixe et un salaire mensuel, un ordre de grandeur entre les grades
+parce que le débit l'est aussi : un junior tient un ticket et remplit un
+point par tour, un confirmé deux et deux, un senior trois et trois. Le
+confirmé s'embauche à partir du palier 1, le senior du palier 2. Il prend seul
+les tickets *feature* les plus anciens du backlog — jamais un hotfix ni une
+refacto imposée — et monte d'un rang tous les quelques tickets livrés. Le
+siège a trois **postes** ; les **sites** de la boutique (coworking, bureaux,
+campus, hub offshore, campus orbital, un par palier et un seul de chaque) en
+ouvrent d'autres, trente-deux en tout, et arrivent avec leur équipe, embauchée
+sans frais et payée comme les autres. Chaque tour, il écrit un
 commit sur chacun de ses tickets, à la main, relu, sans dette ; ticket plein,
 il le merge lui-même, sans review ni merge de votre part, et vous en gardez la
 compétence, les points et l'XP. Ses tickets ne sont pas les vôtres : ils ne

@@ -27,8 +27,18 @@ export function useGameText(): (value: I18nText) => string {
   );
 }
 
-/** The same formatter, for a component that shows a number of its own. */
-export function useMoney(): (value: number) => string {
+/**
+ * The same formatter, for a component that shows a number of its own. A
+ * balance line asks for the sign, so a gain reads "+1,2 k€" and stands
+ * apart from a bill.
+ */
+export function useMoney(): (value: number, options?: { signed?: boolean }) => string {
   const locale = useLocale();
-  return useCallback((value: number) => formatMoney(value, locale), [locale]);
+  return useCallback(
+    (value: number, options?: { signed?: boolean }) => {
+      const formatted = formatMoney(value, locale);
+      return options?.signed === true && value > 0 ? `+${formatted}` : formatted;
+    },
+    [locale],
+  );
 }
