@@ -256,7 +256,7 @@ function TicketButton({
       <TooltipTrigger asChild>
         <Button
           variant="outline"
-          className="h-auto justify-between px-3 py-2 text-left"
+          className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
           disabled={busy}
           onClick={onAct}
         >
@@ -389,7 +389,10 @@ function ActionButton({
       <TooltipTrigger asChild>
         <Button
           variant={emphasis ? "default" : "outline"}
-          className={cn("h-auto justify-between px-3 text-left", compact ? "py-1.5" : "py-2")}
+          className={cn(
+            "h-auto w-full min-w-0 justify-between px-3 text-left",
+            compact ? "py-1.5" : "py-2",
+          )}
           disabled={busy || preview === undefined || preview.blocked !== undefined}
           onClick={onAct}
         >

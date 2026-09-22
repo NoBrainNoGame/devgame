@@ -33,33 +33,23 @@ translation fails there and names the id.
 
 ### A skill
 
-1. Add the id to `FEATURE_SKILL_IDS` (a branch you merge) or `BOT_SKILL_IDS` (a
-   trophy for firing a rival) in `src/game/content/skills.ts`.
-2. Add the `SKILLS` entry: `source`, `effects`, `unlockCost`.
+1. Add the id to `SKILL_IDS` in `src/game/content/skills.ts`. Every skill is
+   the reward of a ticket you deliver; there is no other source.
+2. Add the `SKILLS` entry: `effects`, `unlockCost`.
 3. If no field in `Effects` expresses what it does, see
    [When no effect field fits](#when-no-effect-field-fits).
 4. Add `game.skills.<id>.name` and `game.skills.<id>.desc` to **both**
    `messages/fr.json` and `messages/en.json`.
-5. A **bot** skill must be the `trophy` of exactly one archetype in
-   `src/game/content/bots.ts`, or it can never be awarded. Trophies must be
-   distinct — `tests/content.test.ts` enforces both.
-6. A **feature** skill reaches the map through `availableSkills()` in
-   `src/game/core/rules/sprint.ts`, which filters `state.unlockedSkills`. If
-   the skill is meant to be available from the very first run, it must be in
-   **three** places that do not know about each other:
-   - `unlockCost: 0` in `SKILLS`,
-   - `SKILLS_UNLOCK_FREE` in `src/game/core/run.ts` (the fallback pool for a
-     run with no meta),
-   - the `unlockedSkills` list in `emptyMeta()` in `src/game/dto/meta.ts` (what
-     a brand-new account starts with).
-
-   **Symptom of getting this wrong: the skill silently never appears on a
-   map.** Nothing fails. `rng.pick(pool)` simply never sees it, because the
-   pool is the account's unlocks, not the table.
-7. A skill with `unlockCost > 0` is unlocked by `applyRunToMeta` in
+5. A skill reaches the board through `availableSkills()` in
+   `src/game/core/rules/sprint.ts`: the account's unlocks, minus what the run
+   already earned, minus what a ticket on the board already promises.
+   `freeFeatureSkills()` derives the starter set from `unlockCost: 0`, and
+   both `createRun` and `emptyMeta()` read it — one place, on purpose.
+6. A skill with `unlockCost > 0` is unlocked by `applyRunToMeta` in
    `src/lib/profile/progression.ts` once the player has banked that many
    commits. No extra wiring.
-8. Map generation: none. `generateSprint` takes whatever pool it is handed.
+7. Ticket generation: none. `drawTicket` in `src/game/core/map/tickets.ts`
+   takes whatever pool it is handed.
 
 **What to verify.** `bun test tests/content.test.ts tests/messages.test.ts`,
 then `bun run sim --runs 200` and confirm no policy's score distribution moved
@@ -107,32 +97,31 @@ distinct relics drawn from `RELIC_IDS`.
 **What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
 tests/actions.test.ts tests/rules.test.ts`.
 
-### A bot archetype
+### A ticket criterion
 
-1. Add the id to `BOT_ARCHETYPE_IDS` and the entry to `BOT_ARCHETYPES` in
-   `src/game/content/bots.ts`. **The array order is the arrival order**:
-   `spawnBotsForSprint` takes the first unused archetype.
-2. It needs a `trophy`, and that trophy must be a `BOT_SKILL_IDS` entry no
-   other archetype claims — so a fifth archetype means a fifth bot skill.
-3. `pressure` only understands `prRejected`, `forcedRebase` and
-   `debtPerMistake`. The first two are read by `failurePressure` in
-   `src/game/core/rules/bots.ts` and fed into `drawFailure` in
-   `rules/events.ts`; a new pressure key does nothing until a rule reads it.
-4. Two message entries under `game.bots.<id>`.
-5. **`BALANCE.bots.max` is 4.** A fifth archetype appended to the array will
-   never spawn until that number moves, which is a balance change and moves the
-   fingerprint on its own. `docs/game-design.md` caps the count at four
-   deliberately — four cursors is the limit of what a player tracks.
-6. Map generation: none. Bots hold an index into the main line, not a node.
+1. Add the id to `CRITERION_KINDS` in `src/game/content/criteria.ts`.
+2. Say when it holds: `isCriterionMet` in `src/game/core/rules/criteria.ts` is
+   an exhaustive switch over the kind, so this is a typecheck error until you
+   write it. A criterion is **derived**, never stored — it is read off the
+   ticket's commits and the run's state every time it is asked, which is what
+   lets the merge button appear and disappear honestly.
+3. Give it a weight in `BALANCE.tickets.criteriaWeights` — `satisfies
+   Record<CriterionKind, number>`, so also a typecheck error.
+4. If it can only ever hold once something is learned, gate it the way
+   `reviewed` is gated in `drawCriteria` (`src/game/core/map/tickets.ts`): a
+   criterion a run can never satisfy is a ticket that can never merge.
+5. Two message entries under `game.criteria.<kind>`: `name` and `desc`. The
+   panel shows the checklist from them.
+6. It enters `rng.weighted` when a ticket is drawn, so **it moves the epoch**.
 
-**What to verify.** `bun test tests/content.test.ts tests/bots.test.ts
-tests/messages.test.ts`, then `bun run sim --runs 200` and look at `bots fired
-avg` per policy: a new archetype that nobody ever fires, or that everybody
-fires immediately, is a `firingTurns` problem.
+**What to verify.** `bun test tests/criteria.test.ts tests/tickets.test.ts`,
+then `bun run sim --runs 200`: the policies answer criteria by name in
+`choose()` (`scripts/sim.ts`), so a new kind needs a line there or every ticket
+that asks for it is carried over forever.
 
 ### An event
 
-The two tables in `src/game/content/events.ts` behave very differently.
+The three tables in `src/game/content/events.ts` behave differently.
 
 **A failure event** (drawn when a commit roll misses):
 
@@ -143,32 +132,43 @@ The two tables in `src/game/content/events.ts` behave very differently.
    so **this one is a typecheck error until you write it** — the only content
    addition the compiler catches for you.
 3. Return the right `FailureOutcome`: `conflict` hands the player a second
-   decision, `resolve` lets the node through anyway, `retry` eats the turn and
-   leaves the node unresolved, `resolve_then_hotfix` ships it and splices a
-   hotfix branch in front.
-4. If the weight should move with the board, add it to `failurePressure` and
-   to the per-id weighting in `drawFailure`.
-5. Two message entries: `game.events.<id>.title` and `.log` (**not** `name`/
+   decision, `resolve` writes the commit anyway, `retry` eats the turn and
+   writes nothing, `resolve_then_incident` writes it and records a production
+   incident, which opens a hotfix ticket.
+4. Two message entries: `game.events.<id>.title` and `.log` (**not** `name`/
    `desc` — events are the exception).
+
+**A merge event** (drawn when a ticket lands and `mergeEventChance` said
+something happens):
+
+1. Add the id to `MERGE_EVENT_IDS` and the entry to `MERGE_EVENTS`: `weight`,
+   `outcome` (`conflict` opens the resolution choice, `resolve` lands the
+   ticket), `effect`, `noRegen`, `cancelledByDependabot`.
+2. Its whole effect is the table: `drawMergeEvent` in `rules/events.ts` applies
+   `effect.energy` and `effect.debt`, and `performMerge` in `rules/commit.ts`
+   reads `outcome` and `noRegen`. A new kind of consequence means editing one
+   of those two, which is a rule change.
+3. Same two message entries, `title` and `log`.
 
 **An ambient event** (drawn on `chore` nodes and rarely after a success):
 
 1. Add the id to `AMBIENT_EVENT_IDS` and the entry to `AMBIENT_EVENTS`.
-2. Its whole effect is the table: `effect.energy`, `effect.progress`,
-   `effect.debt`, applied by `drawAmbient`. A fourth kind of effect means
-   editing `drawAmbient`, which is a rule change.
+2. Its whole effect is the table: `effect.energy` and `effect.debt`, applied
+   by `drawAmbient`. A third kind of effect means editing `drawAmbient`, which
+   is a rule change.
 3. `cancelledByDependabot` removes it from the table entirely when the player
    has the DevOps node.
 4. Same two message entries, `title` and `log`.
 
-Both tables feed `rng.weighted`, so **adding to either always moves the
-epoch**: the weights change, the draw changes, every recorded run replays
+All three tables feed `rng.weighted`, so **adding to any of them always moves
+the epoch**: the weights change, the draw changes, every recorded run replays
 differently.
 
 **What to verify.** `bun test tests/events.test.ts tests/content.test.ts
 tests/messages.test.ts`, then `bun run sim --runs 300` and read the `failures`
 line: an event that never appears in three hundred runs has a weight problem or
-an eligibility flag that is never satisfied.
+an eligibility flag that is never satisfied. Merge events are counted by
+`tests/events.test.ts` over three hundred seeds rather than by the sim.
 
 ### A way of writing a commit (a "detour")
 
@@ -177,30 +177,32 @@ commit *becomes* when the player chooses to write it that way, so adding one is
 a weight and a rule, not a place on the map.
 
 1. Add it to `DetourKind` in `src/game/core/types.ts`. It is a subset of
-   `NodeKind`, so add it there too.
-2. Add a weight to `BALANCE.map.detourWeights` and an entry to `DETOURS` at the
-   foot of `src/game/core/map/generate.ts`. That is the whole of map
-   generation: a node carries `offers`, nothing is placed.
+   `NodeKind`, so add it there too — and to `DetourKindSchema` in
+   `src/game/dto/run.ts`, or a save that took it will not parse.
+2. Say when it is offered: `offersOf` in `src/game/core/rules/tickets.ts` is
+   the **one** source of truth the actions, the previews and the commit rule
+   all read. Always, or under a condition the way `squash` and `rebase` are.
 3. Add an energy price to `BALANCE.energy.cost` — a typecheck error until you
    do — and a glyph to `nodeGlyph` in `src/game/render/theme.ts`, likewise.
-4. Teach the rules what it does, in `src/game/core/rules/progress.ts`
-   (`resolveNode`) or in `rules/commit.ts` (`succeed`, for something that
-   happens on a landed roll). Both read `node.kind`, which `performCommit` has
-   already set from the action.
-5. `arriveAt` has an exhaustive switch over `NodeKind`: add the case beside the
-   other commits, or it will not compile.
-6. Two message entries under `game.nodes.<kind>`. The panel labels the card
+   `pointsFor` in `rules/write.ts` decides what it fills: a chore and a rebase
+   fill nothing.
+4. Teach the rules what it does, in `writeCommit` (`src/game/core/rules/write.ts`)
+   or in `rules/commit.ts` (`succeed`, for something that happens on a landed
+   roll). Both read the kind `commitKindFor` resolved from the action.
+5. Two message entries under `game.nodes.<kind>`. The panel labels the card
    `<name> · à la main` / `· par l'IA` from them.
-7. It changes the draw in `generateSprint`, so **it moves the epoch**.
+6. It is offered on every commit rather than drawn, so on its own it moves no
+   RNG — but the rule that makes it do something almost always does. Decide
+   the epoch on that.
 
-**What to verify.** `bun test tests/map.test.ts tests/rules.test.ts`, then
-`bun run sim --runs 200` and confirm the policies still take it — a detour
-nobody writes is a weight that does nothing.
+**What to verify.** `bun test tests/rules.test.ts`, then `bun run sim --runs
+200` and confirm the policies still take it — a detour nobody writes is a
+button that does nothing.
 
 ### A node kind
 
-Rare now: almost everything is either a commit on a branch or a merge. This is
-the one with the most places to touch and the least help from the compiler.
+Rare now: almost everything is either a commit on a ticket or a merge. This
+is the one with the most places to touch and the least help from the compiler.
 
 1. Add it to the `NodeKind` union in `src/game/core/types.ts`.
 2. Add an energy price to `BALANCE.energy.cost` in
@@ -211,26 +213,25 @@ the one with the most places to touch and the least help from the compiler.
 3. Add a glyph to `nodeGlyph` in `src/game/render/theme.ts` — exhaustive
    switch, so this is a typecheck error too. Check `laneColour` in the same
    file; it is *not* exhaustive and will fall through to the feature colour.
-4. Place it. Either in `generateSprint` (`src/game/core/map/generate.ts`) or in
-   `injectBranch` (`src/game/core/rules/inject.ts`). A new **detour** kind also
-   needs a weight in `BALANCE.map.detourWeights` and an entry in the
-   `detourKinds` array, or the generator never draws it.
-5. Teach the rules what it does, in `src/game/core/rules/progress.ts`:
-   - `arriveAt` has a `default` branch. **A new kind falls into it silently**
-     and behaves like an ordinary commit node — no typecheck error, no test
-     failure, just a node that does nothing special.
-   - `isAutoWalkable` decides whether an AI burst may walk through it. Left
-     out, an AI commit stops dead at it.
-   - `resolveNode` special-cases `risky`, `refactor` and `chore`.
+4. Write it. Nothing is generated ahead of the player: a node exists because
+   a rule in `src/game/core/rules/write.ts` wrote it — `writeCommit` for the
+   ticket's commits, `completeMerge`, `writeSprintStart` and `writeRelease` for
+   the trunk. `checkInvariants` (`src/game/core/map/graph.ts`) says what may
+   sit on `main` and `dev`; a new trunk kind has to be added there or the
+   tests will refuse it.
+5. Teach the rules what it does, in `writeCommit`: it special-cases `risky`,
+   `refactor`, `chore`, `squash`, `docs` and `rebase`. **A new kind falls
+   through silently** and behaves like an ordinary commit — no typecheck
+   error, no test failure.
 6. Two message entries under `game.nodes.<kind>` — the log renders
    `nodes.<kind>.name` as a parameter of `log.node_done`.
-7. It changes map generation, so **it moves the epoch**.
+7. It changes what a rule writes, so **it moves the epoch**.
 
-**What to verify.** `bun test tests/map.test.ts` — it runs `checkInvariants`
-over 500 seeds and will catch a node with no successor, a back edge, an
-unreachable node or two branches colliding in the same lane. Then `bun run sim`
-and read the `generation` block: `invariant failures 0`, and `choice points`
-should not have dropped.
+**What to verify.** `bun test tests/map.test.ts` — it plays 500 seeds and runs
+`checkInvariants` on each, and will catch a parent that does not exist, a row
+that does not increase, two commits on one spot, or work outside a ticket's
+column. Then `bun run sim` and read the `generation` block: `invariant
+failures 0`.
 
 ### A starter profile
 
@@ -238,7 +239,7 @@ should not have dropped.
    `src/game/content/profiles.ts`.
 2. `unlockCost` **must be greater than zero** for anything but `junior` —
    `tests/content.test.ts` asserts it.
-3. `startingSkills` are `FeatureSkillId`s granted at `createRun`;
+3. `startingSkills` are `SkillId`s granted at `createRun`;
    `startingDevops` is a partial map of levels.
 4. Two message entries under `game.profiles.<id>`.
 5. No UI wiring: `RunSetup.tsx` renders `PROFILE_IDS`, `RunSaveSchema`
@@ -264,7 +265,7 @@ purpose: composition is a sum and a logical OR, which cannot be got wrong.
    ignored when summing. (`tests/content.test.ts` does catch this, because the
    content entry then names a key `EFFECT_KEYS` lacks.)
 2. Read it somewhere. `rules/modifiers.ts` is the intended home for anything
-   that changes a number; `rules/events.ts` and `rules/progress.ts` read the
+   that changes a number; `rules/events.ts` and `rules/write.ts` read the
    switch-like ones.
 3. **Nothing in the suite catches a field that is declared, summed and never
    read.** The relic simply does nothing. Write the test that proves it works,
@@ -311,29 +312,33 @@ bun run sim --seed 42 --verbose    # one run, printed turn by turn
 ```
 
 `--verbose` prints a single run and ignores `--runs`; with `--policy all` it
-uses `mixed`. Without `--verbose` it first checks map generation over
-`min(500, runs * 2)` sprints, then reports each policy.
+uses `mixed`. Without `--verbose` it first plays `min(500, runs * 2)` seeds for
+forty actions each and checks the graph they wrote, then reports each policy.
 
 **Reading the output honestly.**
 
 - `generation → invariant failures` must be `0`. Anything else is a broken
   graph, not a balance problem, and `bun test tests/map.test.ts` will name it.
-- `generation → choice points` is the average number of nodes with more than
-  one exit. If it falls towards the `min`, the map has become a corridor and
-  the game has stopped asking questions.
-- `ends` should contain **no `stuck` and no `capped`**. `stuck` means the
-  engine reached a state with no legal action — always a bug. `capped` means a
-  run hit the 4000-iteration ceiling — a run that cannot end.
+- `ends` should contain **no `stuck` and no `capped`**, and both `burnout`
+  and `fired`. `stuck` means the engine reached a state with no legal action,
+  or a free action changed nothing — always a bug. `capped` means a run hit
+  the turn ceiling — a run that cannot end.
 - `turns med` with `p10` and `p90` tells you the spread. A `p90` an order of
-  magnitude above the median (the `mixed` policy does this today) means the
-  distribution is bimodal: most runs die early and a few go forever. The median
-  alone will lie to you about that.
+  magnitude above the median means the distribution is bimodal: most runs die
+  early and a few go forever. The median alone will lie to you about that.
+- `tickets delivered`, `carried over` and `forced` say whether the backlog is
+  doing its job: a run that carries over more than it delivers is drowning,
+  one that is never assigned anything is not being pushed. `wip` is the
+  average number of extra open tickets per turn — the pressure the design asks
+  for, and the thing that burns a run out if it climbs unchecked.
+- `incidents` against `ends → fired`: the machine-written policies should be
+  the ones production fires, the careful ones the ones that burn out.
 - `score med` against `max`: one enormous `max` is one lucky run, not a
   balanced policy. Compare medians across policies.
 - **No policy should dominate.** If `craft` doubles everything else's median,
-  AI commits are not worth their debt. Today `careful` and `craft` lead on
-  median score while `ai` burns out in a dozen turns — that is the intended
-  shape, not a bug.
+  AI commits are not worth their points. The naive `ai` policy never reviews
+  and never squashes, so it is meant to die fast; `mixed` and `careful` are
+  the ones to compare.
 - `failures` is a raw count across all runs. A failure id missing from the line
   entirely is one that can never fire: check its `requiresUnreviewedAi` and
   `forbiddenOnHotfix` flags.
@@ -360,16 +365,15 @@ In practice:
 | Change | Epoch |
 |---|---|
 | A balance number | Yes — the numbers are the game |
-| A relic, a failure event, an ambient event | Yes — they enter an RNG pool |
-| A node kind, or anything in `map/generate.ts` | Yes |
+| A relic, a failure event, a merge event, an ambient event, a criterion | Yes — they enter an RNG pool |
+| A node kind, or anything in `map/tickets.ts` | Yes |
 | A rule that changes an outcome, a cost or a draw | Yes |
 | A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |
 | A skill with `unlockCost: 0` | Yes — it joins the free pool, so it enters `rng.pick` on every map |
 | Gating an action in `getAvailableActions` | Yes — an old log that took it no longer replays |
-| A new `DetourKind` | Yes — it enters the `offers` draw on every branch |
+| A new `DetourKind` | Not on its own — it is offered, not drawn — but its rule is |
 | A field added to `PlayerAction` | No on its own, but the rule reading it almost always is |
 | A DevOps id or a profile id appended to its array | No — no randomness is drawn from either |
-| A fifth bot archetype, appended, with `bots.max` still 4 | No — it never spawns |
 | Renaming a message, a comment, a variable | No |
 
 When in doubt, bump it. The cost of bumping is a leaderboard that starts again.
@@ -377,7 +381,7 @@ The cost of not bumping is a leaderboard that compares two different games and
 looks perfectly healthy while doing it.
 
 Bumping the epoch changes the fingerprint, so the pinned value in
-`tests/content.test.ts` (`expect(RULES_FINGERPRINT).toBe("b7844377")`) has to
+`tests/content.test.ts` (`expect(RULES_FINGERPRINT).toBe("…")`) has to
 be updated in the same commit. Add a numbered line to the `RULES_EPOCH` doc
 comment saying what changed — that list is the only record of why the boards
 were reset.
@@ -610,12 +614,12 @@ translation layer in.
 1. Emit it from the engine with `text(key, params)` from
    `src/game/core/i18n.ts`. The key is a dot path inside the `game` namespace.
 2. **A parameter that names something is a key reference, not a string.** The
-   engine knows a bot's archetype, not its name, so it passes a
-   `ref("bots.rapide.name")` and `renderText()` resolves it before
+   engine knows a skill's id, not its name, so it passes a
+   `ref("skills.linter.name")` and `renderText()` resolves it before
    substituting. Marking those explicitly beats guessing from the shape of a
    string:
    ```ts
-   text("log.bot_fired", { bot: ref(`bots.${event.archetype}.name`) })
+   text("log.ticket_merged_skill", { skill: ref(`skills.${event.skillId}.name`) })
    ```
 3. Add the key to **both** `messages/fr.json` and `messages/en.json`. FR is the
    source of truth; EN is kept in step with it.
@@ -624,7 +628,7 @@ translation layer in.
 `tests/messages.test.ts` enforces three things: identical key sets between the
 catalogues, no empty message, and identical ICU placeholder names per key. It
 also derives the expected content keys from the id arrays — skills, relics,
-devops, bots and profiles need `name` and `desc`; failure and ambient events
+devops and profiles need `name` and `desc`; failure, merge and ambient events
 need `title` and `log`; node kinds need `name` and `desc`.
 
 **What it does not check**: keys the engine emits that are not derived from a
