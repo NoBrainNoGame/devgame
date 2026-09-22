@@ -22,11 +22,13 @@ jamais. Chaque commit est un choix de style de jeu : lent et sûr, ou rapide et
 risqué.
 
 Le dépôt est à vous. Le backlog, non. Chaque sprint apporte des **tickets** —
-des features à livrer, avec des points de story à remplir et des critères
-d'acceptation à tenir — et le projet en apporte de plus en plus. Un ticket
-laissé en attente finit par vous être assigné ; un ticket ouvert de plus, c'est
-chaque commit plus cher et chaque jet plus mauvais. Et ce qui part en
-production sans avoir été relu finit par y casser quelque chose.
+des features à livrer, avec des points de story à remplir — et le projet en
+apporte de plus en plus. Un ticket plein part en **review**, et la review
+trouve ce que la machine a écrit sans relecture. Un ticket laissé en attente
+finit par vous être assigné ; un ticket refusé en fait arriver un autre en
+parallèle ; un ticket ouvert de plus, c'est chaque commit plus cher et chaque
+jet plus mauvais. Et ce qui part en production sans avoir été relu finit par y
+casser quelque chose.
 
 Une run se termine de deux façons : **burnout** (vous n'avez plus d'énergie) ou
 **licenciement** (la production a perdu patience). Le score est fait des
@@ -59,30 +61,39 @@ plus.**
 
 Un ticket, c'est :
 
-- des **points de story** à remplir — chaque commit qui atterrit en remplit ;
-- zéro à deux **critères d'acceptation** typés, à tenir au moment du merge :
-  - **Relu** — aucun commit IA du ticket ne reste sans relecture ;
-  - **Documenté** — un commit de documentation est sur le ticket ;
-  - **Refactoré** — un commit de refacto est sur le ticket ;
-  - **Dette maîtrisée** — la dette technique est basse à l'instant du merge ;
+- des **points de story** à remplir — chaque commit qui atterrit en remplit,
+  un à la main, deux par la machine ;
 - parfois une **compétence**, payée en points de story supplémentaires : le
   ticket qui donne quelque chose coûte strictement plus que celui qui ne donne
   rien, sinon il n'y a pas de décision.
 
-Les critères ne sont jamais « cochés » : ils se lisent à chaque instant sur
-les commits du ticket et l'état de la run. Le bouton **Merger** n'existe que
-quand les points sont pleins et que tous les critères tiennent — et disparaît
-si la machine écrit un commit de plus sur un ticket qui demande à être relu.
+Points pleins, le ticket n'est pas livré : il est **soumis**. Quelqu'un lit la
+pull request, et ce qu'il trouve est exactement ce que le jeu punit : chaque
+commit IA non relu peut être attrapé comme un bug, et un code au-dessus de son
+plafond de dette ne prend rien de plus. La modale de review lit le ticket à
+voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
 
-**Démarrer** un ticket du backlog et **basculer** d'un ticket ouvert à l'autre
-sont gratuits en temps. Ce qui coûte, c'est d'en tenir plusieurs : chaque
-ticket ouvert au-delà du premier majore l'énergie de chaque commit et retire
-des points à chaque jet. Un hotfix ou une refacto imposée comptent dedans —
-c'est le but.
+- **Acceptée** : le ticket merge sur `dev` dans le même tour, et livre sa
+  compétence.
+- **Refusée** : les bugs trouvés reviennent en points de correctif, et le
+  joueur choisit — **recommencer** (les commits sont jetés, `git reset --hard`,
+  la branche repart de `dev`) ou **continuer** (garder les commits, corriger).
+  Dans les deux cas **un nouveau ticket s'ouvre en parallèle** : le sprint
+  n'attend pas.
+
+**Démarrer** un ticket depuis le tableau du projet et **basculer** d'un ticket
+ouvert à l'autre sont gratuits en temps. Ce qui coûte, c'est d'en tenir
+plusieurs : chaque ticket ouvert au-delà du premier majore l'énergie de chaque
+commit et retire des points à chaque jet. Un hotfix ou une refacto imposée
+comptent dedans — c'est le but.
 
 **Le backlog s'impose.** Un ticket resté en attente au-delà d'un sprint de
 grâce est ouvert d'office au sprint suivant. C'est la pression du jeu : plus on
 reste sur le projet, plus il arrive de tickets, et plus on en tient à la fois.
+
+Plus tard : embaucher des développeurs avec les revenus du programme, qui
+prendront les tickets en trop — un à la fois pour un junior, deux pour un
+intermédiaire, trois pour un senior.
 
 ### Le commit
 
@@ -106,12 +117,11 @@ documentation, en squash ou en rebase est une décision sur *ce commit-là* :
 il coûte un tour comme les autres et laisse le graphe en chaîne. Les détours
 sont toujours proposés, sauf deux qui sont situationnels :
 
-- **Refacto** — rembourse de la dette, et tient le critère *Refactoré*.
+- **Refacto** — rembourse de la dette.
 - **Commit risqué** — un point de story de plus contre un jet nettement moins
   sûr.
 - **Corvée** — déclenche un événement du quotidien, souvent favorable.
-- **Documentation** — les prochains commits IA n'ajoutent aucune dette, et le
-  ticket tient *Documenté*.
+- **Documentation** — les prochains commits IA n'ajoutent aucune dette.
 - **Squash** — proposé dès que le ticket porte assez de commits IA non relus :
   leur dette part avec eux, et eux partent du score. La seule façon d'effacer
   de la dette **sans savoir reviewer**.
@@ -121,8 +131,8 @@ sont toujours proposés, sauf deux qui sont situationnels :
   la chance mais de la dette : quasi gratuit sur un historique propre, pile ou
   face à soixante.
 
-Un **hotfix** ou une **refacto imposée** est un ticket ouvert de force, sans
-critère, qui n'accepte qu'un seul type de commit tant que ses points ne sont
+Un **hotfix** ou une **refacto imposée** est un ticket ouvert de force, qui
+n'accepte qu'un seul type de commit tant que ses points ne sont
 pas pleins.
 
 Le commit, la review et le merge consomment un tour. Démarrer un ticket,
@@ -137,15 +147,14 @@ relu.
 
 **La review s'apprend.** L'action n'existe pas tant qu'un ticket livré ne l'a
 pas accordée : Revue de code, ou Pair programming, qui est la même habitude
-sous un autre nom. Une run qui ne croise ni l'une ni l'autre n'a aucun moyen
-de tenir le critère *Relu* — et le jeu ne le demande jamais à une run qui ne
-peut pas l'apprendre.
+sous un autre nom. Une run qui ne croise ni l'une ni l'autre n'a que le squash
+pour faire disparaître un commit IA avant la pull request.
 
 - Elle coûte un peu d'énergie et un tour.
 - Elle nettoie les derniers commits IA non relus du ticket, du plus récent au
   plus ancien, et rembourse de la dette en proportion. Relire pendant que c'est
   frais en lit plus.
-- Un commit relu ne peut plus casser la production.
+- Un commit relu ne peut plus casser la production, ni faire refuser la PR.
 - Le **bot de review** DevOps relit tout seul, à sa cadence — le ticket en
   main, puis ce qui a déjà été livré sur `dev` sans relecture. C'est la seule
   façon de relire du code déjà mergé avant que la release ne le juge.
@@ -288,12 +297,15 @@ est fusionnée avec celle du serveur à la première connexion, jamais écrasée
 
 ## Direction artistique
 
-Rendu du graphe façon client git de bureau : nœuds ronds, lanes épaisses qui
-sortent de leur colonne, coudent une fois et arrivent verticales, et un sujet
-de commit (`feat: Commit`) à droite de chaque nœud. `main`, `dev`, les tickets
-et les hotfixes ont chacun leur couleur, et elles ne servent qu'à ça. Les refs
-`main`, `dev` et `HEAD` sont étiquetées au sommet de leur colonne, et
-s'empilent quand elles tombent sur le même commit.
+Rendu du graphe façon client git de bureau : colonnes étroites, rangées
+courtes, petits disques, et **une ligne continue par branche tant qu'elle
+vit** — `main` et `dev` ne finissent jamais, la ligne d'un ticket court de son
+fork à son tip et jusqu'au présent tant qu'il est ouvert. Les commits de tronc
+sont creux. Les refs — `main`, `dev`, `HEAD`, `feat/t3` — sont des pastilles
+dans une gouttière entre le graphe et les sujets, sur le commit qu'elles
+pointent ; les sujets (`feat: Commit`) s'alignent dans une colonne à part.
+`main`, `dev`, les tickets et les hotfixes ont chacun leur couleur, et elles ne
+servent qu'à ça.
 
 Interface de type terminal ou IDE sombre, en thème sombre uniquement, police à
 chasse fixe partout. Le journal d'événements est écrit en pseudo-messages de
@@ -330,8 +342,15 @@ que le moteur sait.
    graphe se lit dans l'ordre où il a été écrit.
 
 Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
-nœud : ouvrir un ticket est « Démarrer », et écrire un commit en refacto est
-« Refacto · à la main ».
+nœud : ouvrir un ticket est « Démarrer », soumettre est « Ouvrir la PR », et
+écrire un commit en refacto est « Refacto · à la main ».
+
+Le HUD a quatre places, une par rôle : la barre de ressources dit où on en est
+et combien de tours il reste au sprint ; la barre de tickets, au-dessus du
+graphe, tient les tickets en main sous forme d'onglets ; le panneau de droite
+est la décision du tour et rien d'autre ; le journal se replie sous le graphe.
+Le tableau du projet est une modale — démarrer un ticket est une décision de
+projet, pas un coup.
 
 Survoler un commit l'explique dans une infobulle **DOM**, pas dans le canvas :
 traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom.
@@ -350,11 +369,11 @@ Les décisions ci-dessous sont dans le moteur.
 
 | # | Point du document initial | Décision et raison |
 | --- | --- | --- |
-| 1 | Des bots rivaux poussent sur `main` et le joueur est viré s'ils le distancent | **Retirés.** L'ennemi est le backlog : des tickets à critères, qui s'accumulent et s'imposent. Une course contre des bots faisait perdre sans rien enseigner ; un ticket qu'on n'arrive pas à livrer dit exactement pourquoi. Les bots pourront revenir comme aides ponctuelles. |
+| 1 | Des bots rivaux poussent sur `main` et le joueur est viré s'ils le distancent | **Retirés.** L'ennemi est le backlog : des tickets qui s'accumulent, s'imposent et passent en review. Une course contre des bots faisait perdre sans rien enseigner ; un ticket qu'on n'arrive pas à livrer dit exactement pourquoi. Les bots pourront revenir comme aides ponctuelles. |
 | 2 | « Jet de dés » opaque : le joueur ne sait pas ce qu'il risque | Pourcentage de réussite, coût, points et dette **sur la carte**. Le dilemme reste entier ; seul l'aveuglement disparaît. |
 | 3 | Dette technique « cachée » | Affichée en **fourchette floue**, exacte avec le Linter ou Œil de lynx. Une jauge totalement invisible produit de la frustration, pas de l'apprentissage. |
 | 4 | Énergie à zéro = fin de run immédiate | État de **crunch** avant le burnout, et burnout seulement après un tour complet à zéro. Une fin de run doit être annoncée. |
-| 5 | La review n'avance pas : pure perte | La review tient le critère *Relu*, rembourse de la dette et retire le commit du jet de la release. Elle est une façon de livrer, pas un sacrifice. |
+| 5 | La review n'avance pas : pure perte | La review fait passer la pull request, rembourse de la dette et retire le commit du jet de la release. Elle est une façon de livrer, pas un sacrifice. |
 | 6 | Sprints de 15 à 25 nœuds | Une **boîte de tours** (`balance.ts`). Un sprint doit se tester en une session, et sa longueur ne dépend plus d'un graphe généré. |
 | 7 | Rien n'explique comment on perd | **Jauge de production**, visible en permanence, remplie par les incidents. Un objectif invisible n'est pas un objectif. |
 | 8 | Aucune reproductibilité ni anti-triche pour un classement | Moteur **pur et déterministe** : une run est sa **graine plus la liste ordonnée des actions**, et le serveur la **rejoue** pour calculer le score. Sauvegardes minuscules, scores non falsifiables. |

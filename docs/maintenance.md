@@ -97,27 +97,23 @@ distinct relics drawn from `RELIC_IDS`.
 **What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
 tests/actions.test.ts tests/rules.test.ts`.
 
-### A ticket criterion
+### The pull request review
 
-1. Add the id to `CRITERION_KINDS` in `src/game/content/criteria.ts`.
-2. Say when it holds: `isCriterionMet` in `src/game/core/rules/criteria.ts` is
-   an exhaustive switch over the kind, so this is a typecheck error until you
-   write it. A criterion is **derived**, never stored — it is read off the
-   ticket's commits and the run's state every time it is asked, which is what
-   lets the merge button appear and disappear honestly.
-3. Give it a weight in `BALANCE.tickets.criteriaWeights` — `satisfies
-   Record<CriterionKind, number>`, so also a typecheck error.
-4. If it can only ever hold once something is learned, gate it the way
-   `reviewed` is gated in `drawCriteria` (`src/game/core/map/tickets.ts`): a
-   criterion a run can never satisfy is a ticket that can never merge.
-5. Two message entries under `game.criteria.<kind>`: `name` and `desc`. The
-   panel shows the checklist from them.
-6. It enters `rng.weighted` when a ticket is drawn, so **it moves the epoch**.
+There are no acceptance criteria: a ticket with its points full is submitted,
+and `performSubmit` in `src/game/core/rules/acceptance.ts` decides. What it
+weighs is in `BALANCE.acceptance` — the chance each unread machine-written
+commit is caught (`bugDetectPct`), the debt ceiling (`maxDebt`), the fix
+points a bug adds (`pointsPerBug`). A new reason to refuse is a rule change
+there, a new field on the `pr_reviewed` event so the dialog can read it out,
+and a line in `ReviewDialog.tsx`.
 
-**What to verify.** `bun test tests/criteria.test.ts tests/tickets.test.ts`,
-then `bun run sim --runs 200`: the policies answer criteria by name in
-`choose()` (`scripts/sim.ts`), so a new kind needs a line there or every ticket
-that asks for it is carried over forever.
+A rejection always opens one more ticket beside the rejected one
+(`arriveTicket` + `openTicket`, forced). That is the design's pressure, not a
+side effect: removing it makes a rejection cheap.
+
+**What to verify.** `bun test tests/acceptance.test.ts`, then `bun run sim
+--runs 200`: `tickets delivered` against `carried over` per policy, and `wip`
+— a rejection spiral shows as a WIP that climbs past three.
 
 ### An event
 
@@ -365,7 +361,7 @@ In practice:
 | Change | Epoch |
 |---|---|
 | A balance number | Yes — the numbers are the game |
-| A relic, a failure event, a merge event, an ambient event, a criterion | Yes — they enter an RNG pool |
+| A relic, a failure event, a merge event, an ambient event | Yes — they enter an RNG pool |
 | A node kind, or anything in `map/tickets.ts` | Yes |
 | A rule that changes an outcome, a cost or a draw | Yes |
 | A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |

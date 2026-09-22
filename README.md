@@ -5,9 +5,10 @@ You play a developer advancing commit by commit on a project that never ships:
 every commit is a choice between a craft commit (safe, expensive in energy) and
 an AI commit (cheap, fills twice the story points, accrues hidden technical
 debt and ships bugs if nobody reads it). Tickets arrive every sprint with
-points to fill and acceptance criteria to hold, the ones you leave waiting get
-assigned to you anyway, and every ticket you hold beyond the first taxes every
-commit. Tickets you deliver become permanent skills, a turn spent on code
+story points to fill; a full ticket goes to review, and the review catches what
+the machine wrote unread. The tickets you leave waiting get assigned to you
+anyway, a rejected one brings another alongside, and every ticket you hold
+beyond the first taxes every commit. Tickets you deliver become permanent skills, a turn spent on code
 review repays debt, and DevOps points automate away whole mechanics.
 
 Runs are infinite sprints. They end in burnout, or with production firing you.
@@ -114,7 +115,7 @@ src/
     hud/         resource bar, action panel, commit log, dialogs
   game/
     core/        pure deterministic rules — no Pixi, no React, no clock
-    content/     data tables: skills, relics, criteria, DevOps, events, profiles
+    content/     data tables: skills, relics, DevOps, events, profiles
     dto/         zod schemas and the server-side replay
     chips/       booyah flow — scene tree, camera, effect queue
     render/      Pixi 8 — the git graph, theme, coordinates
