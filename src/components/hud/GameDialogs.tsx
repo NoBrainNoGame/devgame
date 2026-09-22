@@ -12,6 +12,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
+import { useGameStore } from "@/game";
+
+/** A review being read has the floor: the other questions wait for it. */
+function useReviewing(): boolean {
+  return useGameStore((state) => state.pendingReview !== null);
+}
 
 /**
  * The moments the game stops and asks a direct question: how to untangle a
@@ -30,7 +36,8 @@ export function ConflictDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
-  const open = snapshot.phase.kind === "resolve_conflict" && !busy;
+  const reviewing = useReviewing();
+  const open = snapshot.phase.kind === "resolve_conflict" && !busy && !reviewing;
 
   const manual = snapshot.previews["conflict:manual"];
   const machine = snapshot.previews["conflict:ai"];
@@ -92,7 +99,8 @@ export function RelicDialog({
   const t = useTranslations("hud");
   const game = useTranslations("game");
 
-  const open = snapshot.phase.kind === "choose_relic" && !busy;
+  const reviewing = useReviewing();
+  const open = snapshot.phase.kind === "choose_relic" && !busy && !reviewing;
   const offer = snapshot.phase.kind === "choose_relic" ? snapshot.phase.offer : [];
 
   return (
@@ -138,7 +146,8 @@ export function RunOverDialog({
   const t = useTranslations("play");
   const common = useTranslations("common");
 
-  const open = snapshot.phase.kind === "game_over" && !busy;
+  const reviewing = useReviewing();
+  const open = snapshot.phase.kind === "game_over" && !busy && !reviewing;
   const reason = snapshot.phase.kind === "game_over" ? snapshot.phase.reason : null;
 
   return (
