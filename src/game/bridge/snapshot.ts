@@ -60,8 +60,8 @@ export interface PlayerView {
 
 /**
  * A ticket as the panel shows it: what it asks for, how far it is, and
- * whether it can land. The node ids are left out — the board knows the ticket,
- * the graph knows the commits.
+ * whether it can land. The node ids are there for the ticket's own dialog,
+ * which lists its commits from `nodes`.
  */
 export interface TicketView {
   id: TicketId;
@@ -82,6 +82,10 @@ export interface TicketView {
   behind: number;
   ready: boolean;
   commits: number;
+  nodeIds: NodeId[];
+  sprintArrived: number;
+  /** Debt this ticket's commits cost, repayments not credited. */
+  debtAdded: number;
   mustWrite?: Ticket["mustWrite"];
 }
 
@@ -154,6 +158,9 @@ export function toSnapshot(state: RunState): RunSnapshot {
     points: ticket.points,
     filled: ticket.filled,
     rework: ticket.rework,
+    nodeIds: [...ticket.nodeIds],
+    sprintArrived: ticket.sprintArrived,
+    debtAdded: ticket.debtAdded,
     rejections: ticket.rejections,
     unread: unreadAiOn(state, ticket).length,
     bugs: buggedOn(state, ticket).length,

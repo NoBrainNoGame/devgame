@@ -187,7 +187,24 @@
     "reviewBugs": "{bugs, plural, one {# bug trouvé} other {# bugs trouvés}}",
     "reviewNoBugs": "aucun bug trouvé",
     "bugsOn": "{count, plural, one {# bug à corriger} other {# bugs à corriger}}",
-    "reviewBugsToFix": "{count, plural, one {# commit est marqué bugué : un fix le corrige.} other {# commits sont marqués bugués : un fix chacun.}}"
+    "reviewBugsToFix": "{count, plural, one {# commit est marqué bugué : un fix le corrige.} other {# commits sont marqués bugués : un fix chacun.}}",
+    "ticketOpenHint": "Voir le détail du ticket",
+    "ticketStatus": {
+      "backlog": "Au backlog",
+      "open": "En cours",
+      "merged": "Livré"
+    },
+    "ticketArrived": "arrivé au sprint {sprint}",
+    "ticketRework": "{count, plural, one {# point de correctif} other {# points de correctif}} ajouté par {rejections, plural, one {# review refusée} other {# reviews refusées}}",
+    "ticketDebtLabel": "Dette ajoutée",
+    "ticketDebtAdded": "{debt}",
+    "ticketBugsLabel": "Bugs marqués",
+    "ticketUnreadLabel": "Commits IA non relus",
+    "ticketBehindLabel": "Retard sur dev",
+    "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
+    "ticketNoCommits": "Aucun commit encore. Le premier bifurque de dev.",
+    "ticketBugged": "bugué",
+    "ticketCost": "+{debt} dette"
   },
   "leaderboard": {
     "title": "Classement",

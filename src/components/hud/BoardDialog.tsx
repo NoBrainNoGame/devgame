@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 
+import { TicketDialog } from "@/components/hud/TicketDialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,6 +35,14 @@ export function BoardDialog({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = snapshot.tickets.find((ticket) => ticket.id === selectedId) ?? null;
+
+  const act = (action: PlayerAction): void => {
+    onAct(action);
+    setSelectedId(null);
+    onOpenChange(false);
+  };
 
   const columns: { key: "backlog" | "open" | "merged"; tickets: TicketView[] }[] = [
     { key: "backlog", tickets: snapshot.tickets.filter((ticket) => ticket.status === "backlog") },
@@ -74,10 +84,8 @@ export function BoardDialog({
                       ticket={ticket}
                       current={ticket.id === snapshot.player.ticketId}
                       busy={busy}
-                      onAct={(action) => {
-                        onAct(action);
-                        onOpenChange(false);
-                      }}
+                      onOpen={() => setSelectedId(ticket.id)}
+                      onAct={act}
                     />
                   ))
                 )}
@@ -85,6 +93,14 @@ export function BoardDialog({
             </section>
           ))}
         </div>
+
+        <TicketDialog
+          ticket={selected}
+          snapshot={snapshot}
+          busy={busy}
+          onClose={() => setSelectedId(null)}
+          onAct={act}
+        />
       </DialogContent>
     </Dialog>
   );
@@ -94,16 +110,22 @@ function TicketCard({
   ticket,
   current,
   busy,
+  onOpen,
   onAct,
 }: {
   ticket: TicketView;
   current: boolean;
   busy: boolean;
+  onOpen: () => void;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
   const game = useTranslations("game");
 
+  // The card is two things: a button that opens the ticket in full, and the
+  // one action the board allows on it. Two real buttons, not a clickable box
+  // with a button inside — nested buttons are invalid, and a box with a role
+  // does not read as one.
   return (
     <article
       className={cn(
@@ -112,35 +134,41 @@ function TicketCard({
         ticket.kind === "hotfix" && "border-branch-hotfix/60",
       )}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className={cn("font-medium", ticket.kind === "hotfix" && "text-branch-hotfix")}>
-          #{ticket.id.slice(1)}
-          {" "}
-          {game(`tickets.${ticket.kind}.name` as never)}
-        </span>
-        <span className="text-muted-foreground text-xs tabular-nums">
-          {t("storyPointsShort", { count: ticket.points })}
-        </span>
-      </div>
+      <button
+        type="button"
+        className="w-full space-y-2 rounded text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        title={t("ticketOpenHint")}
+        onClick={onOpen}
+      >
+        <div className="flex items-baseline justify-between gap-2">
+          <span className={cn("font-medium", ticket.kind === "hotfix" && "text-branch-hotfix")}>
+            #{ticket.id.slice(1)} {game(`tickets.${ticket.kind}.name` as never)}
+          </span>
+          <span className="text-muted-foreground text-xs tabular-nums">
+            {t("storyPointsShort", { count: ticket.points })}
+          </span>
+        </div>
 
-      {ticket.skillId === undefined ? null : (
-        <p className="text-branch-feature text-xs">
-          {t("grants")}
-          {" "}
-          {game(`skills.${ticket.skillId}.name` as never)}
-        </p>
-      )}
-
-      {ticket.status === "backlog" ? null : (
-        <>
-          <Progress value={(ticket.filled / Math.max(1, ticket.points)) * 100} className="h-1.5" />
-          <p className="text-muted-foreground text-xs">
-            {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
-            {ticket.bugs > 0 ? ` · ${t("bugsOn", { count: ticket.bugs })}` : ""}
-            {ticket.unread > 0 ? ` · ${t("unreadOn", { count: ticket.unread })}` : ""}
+        {ticket.skillId === undefined ? null : (
+          <p className="text-branch-feature text-xs">
+            {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
           </p>
-        </>
-      )}
+        )}
+
+        {ticket.status === "backlog" ? null : (
+          <>
+            <Progress
+              value={(ticket.filled / Math.max(1, ticket.points)) * 100}
+              className="h-1.5"
+            />
+            <p className="text-muted-foreground text-xs">
+              {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
+              {ticket.bugs > 0 ? ` · ${t("bugsOn", { count: ticket.bugs })}` : ""}
+              {ticket.unread > 0 ? ` · ${t("unreadOn", { count: ticket.unread })}` : ""}
+            </p>
+          </>
+        )}
+      </button>
 
       {ticket.status === "backlog" ? (
         <Button

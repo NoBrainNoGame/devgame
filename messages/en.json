@@ -187,7 +187,24 @@
     "reviewBugs": "{bugs, plural, one {# bug found} other {# bugs found}}",
     "reviewNoBugs": "no bug found",
     "bugsOn": "{count, plural, one {# bug to fix} other {# bugs to fix}}",
-    "reviewBugsToFix": "{count, plural, one {# commit is flagged as bugged: a fix corrects it.} other {# commits are flagged as bugged: one fix each.}}"
+    "reviewBugsToFix": "{count, plural, one {# commit is flagged as bugged: a fix corrects it.} other {# commits are flagged as bugged: one fix each.}}",
+    "ticketOpenHint": "See the ticket in full",
+    "ticketStatus": {
+      "backlog": "In the backlog",
+      "open": "In progress",
+      "merged": "Delivered"
+    },
+    "ticketArrived": "arrived in sprint {sprint}",
+    "ticketRework": "{count, plural, one {# fix point} other {# fix points}} added by {rejections, plural, one {# refused review} other {# refused reviews}}",
+    "ticketDebtLabel": "Debt added",
+    "ticketDebtAdded": "{debt}",
+    "ticketBugsLabel": "Flagged bugs",
+    "ticketUnreadLabel": "Unread machine commits",
+    "ticketBehindLabel": "Behind dev",
+    "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
+    "ticketNoCommits": "No commit yet. The first one forks off dev.",
+    "ticketBugged": "bugged",
+    "ticketCost": "+{debt} debt"
   },
   "leaderboard": {
     "title": "Leaderboard",
