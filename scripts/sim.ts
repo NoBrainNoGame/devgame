@@ -1,7 +1,7 @@
 /**
  * Headless balance simulator.
  *
- *   bun run sim                       200 runs, mixed policy
+ *   bun run sim                       200 runs, every policy
  *   bun run sim --runs 500 --policy ai
  *   bun run sim --seed 42 --verbose   one run, printed turn by turn
  *
@@ -13,16 +13,19 @@
 import { SKILLS } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { unreadAiOn } from "@/game/core/rules/criteria";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
-import { createRun } from "@/game/core/run";
+import { currentTicket, getTicket, openTickets } from "@/game/core/rules/tickets";
+import { createRun, hashState } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
-import type { PlayerAction, RunState } from "@/game/core/types";
+import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 type PolicyName = "ai" | "craft" | "mixed" | "careful";
 
-const MAX_ITERATIONS = 4000;
+/** Turn-consuming actions before a run is declared unending. */
+const MAX_TURNS = 1500;
 
 interface Outcome {
   reason: "burnout" | "fired" | "stuck" | "capped";
@@ -30,6 +33,11 @@ interface Outcome {
   sprints: number;
   score: number;
   commits: number;
+  ticketsDelivered: number;
+  carriedOver: number;
+  forced: number;
+  incidents: number;
+  wipSum: number;
   finalDebt: number;
   maxDebt: number;
   reviews: number;
@@ -65,40 +73,47 @@ function prefer(actions: PlayerAction[], ...matchers: ((a: PlayerAction) => bool
 }
 
 /**
- * Which feature to build. Every choice is one now — the graph walks a forced
- * step by itself — so this is purely "which branch".
+ * Which ticket to start, when nothing is in hand.
  *
- * A branch that teaches something the run cannot otherwise do outranks the
- * rest. Review is the case that matters: it does not exist until a branch
+ * A ticket that teaches something the run cannot otherwise do outranks the
+ * rest. Review is the case that matters: it does not exist until a ticket
  * grants it, so a policy that walked past the one offering it would be
- * measuring a player who does not read their own options.
+ * measuring a player who does not read their own options. Otherwise the
+ * cheapest ticket, delivered soonest.
  */
-function chooseMove(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
-  const moves = actions.filter(
-    (a): a is Extract<PlayerAction, { type: "move" }> => a.type === "move",
+function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
+  if (currentTicket(state) !== null) return undefined;
+
+  const starts = actions.filter(
+    (a): a is Extract<PlayerAction, { type: "start" }> => a.type === "start",
   );
-  if (moves.length === 0) return undefined;
+  if (starts.length === 0) return undefined;
 
   const wantsReview = !gatherEffects(state).canReview;
-
-  const branchTeaches = (nodeId: string): boolean => {
-    const branchId = state.nodes[nodeId]?.branchId;
-    const skillId = branchId === undefined ? undefined : state.branches[branchId]?.skillId;
-    return skillId !== undefined && SKILLS[skillId].effects.canReview === true;
+  const score = (ticket: Ticket): number => {
+    const teaches =
+      ticket.skillId !== undefined && SKILLS[ticket.skillId].effects.canReview === true;
+    if (wantsReview && teaches) return 1000;
+    return (ticket.skillId === undefined ? 0 : 100) - ticket.points;
   };
 
-  const score = (nodeId: string): number => {
-    const node = state.nodes[nodeId];
-    if (node === undefined) return 0;
-    if (wantsReview && branchTeaches(nodeId)) return 9;
-    // Otherwise: a branch that grants anything beats one that grants nothing,
-    // and the shorter of two plain branches beats the longer.
-    const branchId = node.branchId;
-    const branch = branchId === undefined ? undefined : state.branches[branchId];
-    return branch?.skillId !== undefined ? 5 : 3;
-  };
+  return starts.reduce((best, start) =>
+    score(getTicket(state, start.ticketId)) > score(getTicket(state, best.ticketId)) ? start : best,
+  );
+}
 
-  return moves.reduce((best, move) => (score(move.nodeId) > score(best.nodeId) ? move : best));
+/** The open ticket closest to landing, if it is not the one in hand. */
+function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
+  const current = currentTicket(state);
+  const open = openTickets(state);
+  if (current === null || open.length < 2) return undefined;
+
+  const remaining = (ticket: Ticket): number =>
+    ticket.points - ticket.filled + ticket.criteria.length * 2 + (ticket.mustWrite ? -5 : 0);
+  const best = open.reduce((a, b) => (remaining(b) < remaining(a) ? b : a));
+  if (best.id === current.id) return undefined;
+
+  return actions.find((a) => a.type === "checkout" && a.ticketId === best.id);
 }
 
 function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): PlayerAction {
@@ -106,23 +121,58 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const isCraft = (a: PlayerAction) =>
     a.type === "commit" && a.mode === "craft" && a.kind === undefined;
   const isReview = (a: PlayerAction) => a.type === "review";
+  const isMerge = (a: PlayerAction) => a.type === "merge";
   const isDevops = (a: PlayerAction) => a.type === "devops";
   const writtenAs = (kind: string) => (a: PlayerAction) =>
     a.type === "commit" && a.kind === kind && a.mode === "craft";
-  const unreviewed = state.player.aiHistory.filter((e) => !e.reviewed).length;
+
+  const ticket = currentTicket(state);
+  const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
   const lowEnergy = state.player.energy <= 3;
+  const fallback: PlayerAction = { type: "review" };
 
   // A point costs no turn, so any policy that ignores them is leaving value on
   // the table. Every policy takes them.
   const devops = actions.find(isDevops);
   if (devops !== undefined) return devops;
 
-  const move = chooseMove(state, actions);
-  if (move !== undefined) return move;
+  const start = chooseStart(state, actions);
+  if (start !== undefined) return start;
 
-  // What this commit could be written as instead. The two committed policies
-  // never take one — that is what makes them the extremes — but a player who
-  // reads their options does, and the numbers are meant to describe a player.
+  const merge = actions.find(isMerge);
+  if (merge !== undefined) return merge;
+
+  const checkout = chooseCheckout(state, actions);
+  if (checkout !== undefined) return checkout;
+
+  // What the ticket asks for. A criterion left unmet is a ticket that never
+  // merges, so every policy answers them; the two committed policies still
+  // never take a detour for its own sake.
+  if (ticket !== null) {
+    const missing = new Set(
+      ticket.criteria.filter((kind) => {
+        if (kind === "documented")
+          return !ticket.nodeIds.some((id) => state.nodes[id]?.kind === "docs");
+        if (kind === "refactored")
+          return !ticket.nodeIds.some((id) => state.nodes[id]?.kind === "refactor");
+        if (kind === "reviewed") return unreviewed > 0;
+        return false;
+      }),
+    );
+    if (missing.has("documented")) {
+      const docs = actions.find(writtenAs("docs"));
+      if (docs !== undefined) return docs;
+    }
+    if (missing.has("refactored") || ticket.criteria.includes("clean")) {
+      const refactor = actions.find(writtenAs("refactor"));
+      if (refactor !== undefined && (missing.has("refactored") || state.debt > 30)) return refactor;
+    }
+    if (missing.has("reviewed") && ticket.filled >= ticket.points) {
+      const review = actions.find(isReview);
+      if (review !== undefined) return review;
+    }
+  }
+
   if (policy === "mixed" || policy === "careful") {
     if (state.debt >= 40) {
       const refactor = actions.find(writtenAs("refactor"));
@@ -136,27 +186,23 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
       const rebase = actions.find(writtenAs("rebase"));
       if (rebase !== undefined) return rebase;
     }
-    const docs = actions.find(writtenAs("docs"));
-    if (docs !== undefined) return docs;
   }
 
   switch (policy) {
     case "ai":
-      return prefer(actions, isAi, isCraft) ?? actions[0] ?? { type: "review" };
+      return prefer(actions, isAi, isCraft) ?? fallback;
 
     case "craft":
-      return prefer(actions, isCraft, isAi) ?? actions[0] ?? { type: "review" };
+      return prefer(actions, isCraft, isAi) ?? fallback;
 
     case "mixed":
-      if (unreviewed >= 3)
-        return prefer(actions, isReview, isAi) ?? actions[0] ?? { type: "review" };
-      return prefer(actions, isAi, isCraft) ?? actions[0] ?? { type: "review" };
+      if (unreviewed >= 3) return prefer(actions, isReview, isAi) ?? fallback;
+      return prefer(actions, isAi, isCraft) ?? fallback;
 
     case "careful":
-      if (unreviewed >= 2)
-        return prefer(actions, isReview, isCraft) ?? actions[0] ?? { type: "review" };
-      if (lowEnergy) return prefer(actions, isAi, isCraft) ?? actions[0] ?? { type: "review" };
-      return prefer(actions, isCraft, isAi) ?? actions[0] ?? { type: "review" };
+      if (unreviewed >= 2) return prefer(actions, isReview, isCraft) ?? fallback;
+      if (lowEnergy) return prefer(actions, isAi, isCraft) ?? fallback;
+      return prefer(actions, isCraft, isAi) ?? fallback;
   }
 }
 
@@ -171,43 +217,95 @@ function playOne(seed: string, policy: PolicyName, verbose: boolean): Outcome {
   const failures: Record<string, number> = {};
   let reviews = 0;
   let maxDebt = 0;
-  let iterations = 0;
+  let turns = 0;
+  let incidents = 0;
+  let forced = 0;
+  let carriedOver = 0;
+  let wipSum = 0;
 
-  while (state.phase.kind !== "game_over" && iterations < MAX_ITERATIONS) {
+  while (state.phase.kind !== "game_over" && turns < MAX_TURNS) {
     const actions = getAvailableActions(state);
     if (actions.length === 0) {
-      return summarise(state, "stuck", { failures, reviews, maxDebt });
+      return summarise(state, "stuck", {
+        failures,
+        reviews,
+        maxDebt,
+        incidents,
+        forced,
+        carriedOver,
+        wipSum,
+      });
     }
 
     const action = choose(policy, state, actions);
+    const before = hashState(state);
     const result = applyAction(state, action);
     state = result.state;
-    iterations += 1;
+
+    // A free action that changed nothing is a loop, not a game.
+    if (hashState(state) === before) {
+      return summarise(state, "stuck", {
+        failures,
+        reviews,
+        maxDebt,
+        incidents,
+        forced,
+        carriedOver,
+        wipSum,
+      });
+    }
+
     maxDebt = Math.max(maxDebt, state.debt);
 
     for (const event of result.events) {
+      if (event.type === "turn_started") {
+        turns += 1;
+        wipSum += Math.max(0, openTickets(state).length - 1);
+      }
       if (event.type === "failure_event") {
         failures[event.eventId] = (failures[event.eventId] ?? 0) + 1;
       }
       if (event.type === "reviewed") reviews += 1;
+      if (event.type === "incident") incidents += 1;
+      if (event.type === "ticket_started" && event.forced) forced += 1;
+      if (event.type === "sprint_ended") {
+        carriedOver += openTickets(state).length;
+      }
     }
 
     if (verbose) {
-      const label = action.type === "commit" ? `commit:${action.mode}` : action.type;
+      const label =
+        action.type === "commit"
+          ? `commit:${action.mode}${action.kind === undefined ? "" : `:${action.kind}`}`
+          : action.type === "start" || action.type === "checkout"
+            ? `${action.type}:${action.ticketId}`
+            : action.type;
+      const ticket = currentTicket(state);
       console.log(
-        `t${state.turn} s${state.sprint} ${label.padEnd(14)} e=${state.player.energy} debt=${state.debt} ${state.phase.kind}`,
+        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${openTickets(state).length} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
       );
     }
   }
 
   const reason = state.phase.kind === "game_over" ? state.phase.reason : "capped";
-  return summarise(state, reason, { failures, reviews, maxDebt });
+  return summarise(state, reason, {
+    failures,
+    reviews,
+    maxDebt,
+    incidents,
+    forced,
+    carriedOver,
+    wipSum,
+  });
 }
 
 function summarise(
   state: RunState,
   reason: Outcome["reason"],
-  extra: { failures: Record<string, number>; reviews: number; maxDebt: number },
+  extra: Omit<
+    Outcome,
+    "reason" | "turns" | "sprints" | "score" | "commits" | "ticketsDelivered" | "finalDebt"
+  >,
 ): Outcome {
   return {
     reason,
@@ -215,10 +313,9 @@ function summarise(
     sprints: Math.max(0, state.sprint - 1),
     score: computeScore(state),
     commits: state.player.totalCommits,
+    ticketsDelivered: state.ticketsDelivered,
     finalDebt: state.debt,
-    maxDebt: extra.maxDebt,
-    reviews: extra.reviews,
-    failures: extra.failures,
+    ...extra,
   };
 }
 
@@ -246,6 +343,10 @@ function report(policy: string, outcomes: Outcome[]): void {
 
   const turns = outcomes.map((o) => o.turns);
   const scores = outcomes.map((o) => o.score);
+  const totalTurns = Math.max(
+    1,
+    turns.reduce((a, b) => a + b, 0),
+  );
 
   console.log(`\n── ${policy} ── ${outcomes.length} runs`);
   console.log(
@@ -260,7 +361,12 @@ function report(policy: string, outcomes: Outcome[]): void {
   console.log(
     `  score     med ${quantile(scores, 0.5)}  p90 ${quantile(scores, 0.9)}  max ${Math.max(...scores)}`,
   );
-  console.log(`  sprints   avg ${mean(outcomes.map((o) => o.sprints)).toFixed(2)}`);
+  console.log(
+    `  sprints   avg ${mean(outcomes.map((o) => o.sprints)).toFixed(2)}   tickets delivered avg ${mean(outcomes.map((o) => o.ticketsDelivered)).toFixed(1)}  carried over avg ${mean(outcomes.map((o) => o.carriedOver)).toFixed(1)}  forced avg ${mean(outcomes.map((o) => o.forced)).toFixed(1)}`,
+  );
+  console.log(
+    `  wip       avg ${(outcomes.reduce((s, o) => s + o.wipSum, 0) / totalTurns).toFixed(2)} extra tickets per turn   incidents avg ${mean(outcomes.map((o) => o.incidents)).toFixed(2)}`,
+  );
   console.log(
     `  debt      final avg ${mean(outcomes.map((o) => o.finalDebt)).toFixed(0)}  peak avg ${mean(outcomes.map((o) => o.maxDebt)).toFixed(0)}`,
   );
@@ -272,39 +378,35 @@ function report(policy: string, outcomes: Outcome[]): void {
   );
 }
 
+/** Plays a few turns per seed and checks the graph each one produces. */
 function checkGeneration(count: number): void {
   let broken = 0;
-  const lengths: number[] = [];
   const nodeCounts: number[] = [];
-  const choicePoints: number[] = [];
 
   for (let i = 0; i < count; i++) {
-    const state = createRun({
+    let state = createRun({
       seed: `gen-${i}`,
       mode: "classic",
       profileId: "junior",
       version: SAVE_VERSION,
     });
-    const nodes = Object.values(state.nodes);
-    const failures = checkInvariants(nodes);
+    for (let step = 0; step < 40 && state.phase.kind !== "game_over"; step += 1) {
+      const actions = getAvailableActions(state);
+      const action = choose("mixed", state, actions);
+      state = applyAction(state, action).state;
+    }
+
+    const failures = checkInvariants(state);
     if (failures.length > 0) {
       broken += 1;
       if (broken <= 3) console.log(`  seed gen-${i}:`, failures.slice(0, 3));
     }
-    lengths.push(state.sprintLength);
-    nodeCounts.push(nodes.length);
-    choicePoints.push(nodes.filter((node) => node.next.length > 1).length);
+    nodeCounts.push(Object.keys(state.nodes).length);
   }
 
-  console.log(`\n── generation ── ${count} sprints`);
+  console.log(`\n── generation ── ${count} runs of 40 actions`);
   console.log(`  invariant failures  ${broken}`);
-  console.log(
-    `  main length         min ${Math.min(...lengths)} max ${Math.max(...lengths)} avg ${mean(lengths).toFixed(1)}`,
-  );
-  console.log(`  nodes per sprint    avg ${mean(nodeCounts).toFixed(1)}`);
-  console.log(
-    `  choice points       avg ${mean(choicePoints).toFixed(1)}  min ${Math.min(...choicePoints)}`,
-  );
+  console.log(`  nodes written       avg ${mean(nodeCounts).toFixed(1)}`);
 }
 
 const args = parseArgs(Bun.argv.slice(2));

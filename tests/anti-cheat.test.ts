@@ -5,7 +5,7 @@ import type { SkillId } from "@/game/content";
 import { createRun } from "@/game/core/run";
 import type { StatPoints } from "@/game/core/types";
 
-import { isCommit, newRun, play, prefer } from "./helpers";
+import { newRun, play, policy } from "./helpers";
 
 /**
  * A run played *under* the given conditions, the way an attacker would build
@@ -20,7 +20,7 @@ function forgedSave(seed: string, statPoints: StatPoints) {
     version: SAVE_VERSION,
     meta: { statPoints },
   });
-  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 400 });
+  const live = play(start, { pick: policy("ai"), limit: 400 });
 
   return {
     version: SAVE_VERSION,
@@ -45,7 +45,7 @@ function unlockSave(seed: string, unlockedSkills: SkillId[]) {
     version: SAVE_VERSION,
     meta: { unlockedSkills },
   });
-  const live = play(start, { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 400 });
+  const live = play(start, { pick: policy("ai"), limit: 400 });
 
   return {
     version: SAVE_VERSION,
@@ -62,7 +62,7 @@ function unlockSave(seed: string, unlockedSkills: SkillId[]) {
 }
 
 function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
-  const live = play(newRun(seed), { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 200 });
+  const live = play(newRun(seed), { pick: policy("ai"), limit: 200 });
   return {
     version: SAVE_VERSION,
     rules: RULES_FINGERPRINT,

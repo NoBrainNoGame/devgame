@@ -6,10 +6,10 @@ import { isCurrentRules, replayRun } from "@/game/dto/replay";
 import { MAX_ACTIONS, PlayerActionSchema, RunSaveSchema } from "@/game/dto/run";
 import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 
-import { isCommit, newRun, play, prefer } from "./helpers";
+import { newRun, play, policy } from "./helpers";
 
 function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
-  const live = play(newRun(seed), { pick: prefer(isCommit("ai"), isCommit("craft")), limit: 60 });
+  const live = play(newRun(seed), { pick: policy("ai"), limit: 60 });
   return {
     version: SAVE_VERSION,
     rules: RULES_FINGERPRINT,
@@ -28,7 +28,7 @@ function saveFor(seed: string, overrides: Record<string, unknown> = {}) {
 describe("PlayerActionSchema", () => {
   test("accepts every action the engine produces", () => {
     const live = play(newRun("dto-actions"), {
-      pick: prefer(isCommit("ai"), isCommit("craft")),
+      pick: policy("ai"),
       limit: 80,
     });
     for (const action of live.actions) {
@@ -40,9 +40,10 @@ describe("PlayerActionSchema", () => {
     expect(PlayerActionSchema.safeParse({ type: "deploy" }).success).toBe(false);
   });
 
-  test("rejects a malformed node id", () => {
-    expect(PlayerActionSchema.safeParse({ type: "move", nodeId: "main" }).success).toBe(false);
-    expect(PlayerActionSchema.safeParse({ type: "move", nodeId: "2:7" }).success).toBe(true);
+  test("rejects a malformed ticket id", () => {
+    expect(PlayerActionSchema.safeParse({ type: "start", ticketId: "main" }).success).toBe(false);
+    expect(PlayerActionSchema.safeParse({ type: "start", ticketId: "t7" }).success).toBe(true);
+    expect(PlayerActionSchema.safeParse({ type: "merge" }).success).toBe(true);
   });
 
   test("rejects an unknown DevOps or relic id", () => {
@@ -113,7 +114,7 @@ describe("replayRun", () => {
 
   test("refuses a log that keeps going after the run ended", () => {
     const live = play(newRun("dto-past-end"), {
-      pick: prefer(isCommit("ai")),
+      pick: policy("ai"),
       limit: 600,
     });
     if (live.state.phase.kind !== "game_over") return;
@@ -131,7 +132,7 @@ describe("replayRun", () => {
 
   test("reports the XP the run earned, which is what the server awards", () => {
     const live = play(newRun("dto-xp"), {
-      pick: prefer(isCommit("ai"), isCommit("craft")),
+      pick: policy("ai"),
       limit: 400,
     });
     if (live.state.xpEarned === 0) return;

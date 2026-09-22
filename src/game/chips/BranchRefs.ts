@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from "pixi.js";
 
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
+import { headOf } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { cursorStyle } from "@/game/render/textStyles";
@@ -43,7 +44,7 @@ export class BranchRefs extends booyah.ChipBase {
       let top = Number.NEGATIVE_INFINITY;
 
       for (const node of Object.values(state.nodes)) {
-        if (node.lane !== ref.lane || node.status !== "done") continue;
+        if (node.lane !== ref.lane) continue;
         if (node.depth > top) top = node.depth;
       }
 
@@ -55,8 +56,8 @@ export class BranchRefs extends booyah.ChipBase {
       // `HEAD` hangs off the left of its own commit. When it is on this very
       // node — you just landed a merge — the two refs are stacked rather than
       // drawn on top of each other, which is what a git client does.
-      const head = state.nodes[state.player.headId];
-      const shared = head !== undefined && head.lane === ref.lane && head.depth === top;
+      const head = headOf(state);
+      const shared = head.lane === ref.lane && head.depth === top;
 
       const target = nodeY(top) - (shared ? STACK : 0);
       ref.y = ref.placed ? ref.y + (target - ref.y) * ease : target;

@@ -9,7 +9,7 @@ import type { RunSnapshot } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
- * Energy, debt and the sprint clock.
+ * Energy, debt, production's patience and the sprint clock.
  *
  * Debt is shown as a band unless something in the build reveals it. That is the
  * design's answer to a gauge that used to be invisible: hidden enough to be a
@@ -52,12 +52,38 @@ export function ResourceBar({ snapshot }: { snapshot: RunSnapshot }) {
         <TooltipContent>{t("debtHint")}</TooltipContent>
       </Tooltip>
 
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="w-44 shrink-0">
+            <div className="mb-1 flex items-baseline justify-between">
+              <span className="text-muted-foreground">{t("quality")}</span>
+              <span
+                className={cn(
+                  "tabular-nums",
+                  snapshot.quality >= snapshot.qualityMax / 2 && "text-branch-hotfix",
+                )}
+              >
+                {snapshot.quality}/{snapshot.qualityMax}
+              </span>
+            </div>
+            <Progress
+              value={(snapshot.quality / snapshot.qualityMax) * 100}
+              className="[&>*]:bg-branch-hotfix"
+            />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent>{t("qualityHint")}</TooltipContent>
+      </Tooltip>
+
       <div className="flex flex-1 flex-wrap items-center justify-end gap-3 text-muted-foreground">
         <span>
           {common("sprint")} <span className="text-foreground tabular-nums">{snapshot.sprint}</span>
         </span>
         <span>
-          {common("turn")} <span className="text-foreground tabular-nums">{snapshot.turn}</span>
+          {common("turn")}{" "}
+          <span className="text-foreground tabular-nums">
+            {snapshot.sprintTurn}/{snapshot.sprintTurns}
+          </span>
         </span>
         <span>
           {common("commits")}{" "}
@@ -68,9 +94,9 @@ export function ResourceBar({ snapshot }: { snapshot: RunSnapshot }) {
             {t("unreviewed", { count: player.unreviewed })}
           </Badge>
         ) : null}
-        {player.overextended ? (
+        {player.wip > 0 ? (
           <Badge variant="outline" className="border-branch-hotfix text-branch-hotfix">
-            {t("overextended")}
+            {t("wip", { count: player.wip })}
           </Badge>
         ) : null}
       </div>

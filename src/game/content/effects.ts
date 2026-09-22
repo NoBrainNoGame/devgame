@@ -15,7 +15,7 @@ export interface Effects {
   craftSuccessPoints: number;
   /** Added to an AI commit's success chance. */
   aiSuccessPoints: number;
-  /** Added to a risky node's success chance. */
+  /** Added to a risky commit's success chance. */
   riskySuccessPoints: number;
   /** Added to every success chance, on top of the per-kind fields. */
   allSuccessPoints: number;
@@ -24,17 +24,15 @@ export interface Effects {
 
   /** Raises the energy ceiling. */
   energyMaxBonus: number;
-  /** Subtracted from the energy cost of a merge node. */
-  mergeEnergyDiscount: number;
-  /** Added to the energy given back by a merge node. */
+  /** Added to the energy given back by a merge. */
   mergeRegenBonus: number;
   /** Subtracted from the energy cost of a review. */
   reviewEnergyDiscount: number;
 
   /** Extra commits a single review cleans up. */
   reviewExtraCommits: number;
-  /** Extra nodes a successful AI commit jumps. */
-  aiJumpBonus: number;
+  /** Debt a machine-written commit does not add. */
+  aiDebtDiscount: number;
 
   /** Show the exact debt instead of a range. */
   debtVisible: boolean;
@@ -45,13 +43,13 @@ export interface Effects {
 
   /** A failed roll may be rolled again, once per sprint. */
   rerollFailedRoll: boolean;
-  /** A rejected pull request costs no progress. */
+  /** A rejected pull request costs no story points. */
   counterPrRejection: boolean;
-  /** A forced rebase costs no replayed node. */
+  /** A rebase that misses adds no debt. */
   absorbRebase: boolean;
   /** The "obsolete dependency" event never fires. */
   cancelObsoleteLib: boolean;
-  /** Warned a node ahead of a production bug; the hotfix branch is shorter. */
+  /** Warned once ahead of a production bug; hotfix tickets are shorter. */
   monitoring: boolean;
   /** A free review happens automatically every N turns. 0 disables it. */
   freeReviewEvery: number;
@@ -61,7 +59,7 @@ export interface Effects {
    * Reading back what the machine wrote is a thing you learn to do, not a
    * button the game hands you: without it, an AI commit's debt is permanent
    * and the only answers are craft commits, refactor detours and automation.
-   * That is what makes the first branch offering it worth stopping for.
+   * That is what makes the first ticket offering it worth taking.
    */
   canReview: boolean;
 }
@@ -74,12 +72,11 @@ export const NO_EFFECTS: Effects = {
   conflictResistancePoints: 0,
 
   energyMaxBonus: 0,
-  mergeEnergyDiscount: 0,
   mergeRegenBonus: 0,
   reviewEnergyDiscount: 0,
 
   reviewExtraCommits: 0,
-  aiJumpBonus: 0,
+  aiDebtDiscount: 0,
 
   debtVisible: false,
   debtFuzzBonus: 0,

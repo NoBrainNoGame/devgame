@@ -18,7 +18,7 @@ export interface ProfileRow {
   xp: number;
   commitsBank: number;
   totalCommits: number;
-  botsFired: number;
+  ticketsDelivered: number;
   unlocks: unknown;
   settings: unknown;
   metaVersion: number;
@@ -34,7 +34,7 @@ export function toMeta(row: ProfileRow): MetaProgressDto {
     xp: row.xp,
     commitsBank: row.commitsBank,
     totalCommits: row.totalCommits,
-    botsFired: row.botsFired,
+    ticketsDelivered: row.ticketsDelivered,
     metaVersion: row.metaVersion,
     updatedAt: row.updatedAt.toISOString(),
     ...(isRecord(row.settings) ? row.settings : {}),
@@ -51,7 +51,7 @@ export function toColumns(meta: MetaProgressDto) {
     xp: meta.xp,
     commitsBank: meta.commitsBank,
     totalCommits: meta.totalCommits,
-    botsFired: meta.botsFired,
+    ticketsDelivered: meta.ticketsDelivered,
     unlocks: {
       unlockedProfiles: meta.unlockedProfiles,
       unlockedSkills: meta.unlockedSkills,

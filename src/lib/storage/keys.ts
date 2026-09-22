@@ -6,6 +6,6 @@
  */
 export const STORAGE_KEYS = {
   meta: "devgame:meta:v1",
-  run: "devgame:run:v1",
+  run: "devgame:run:v2",
   pendingSubmit: "devgame:pending-submit:v1",
 } as const;

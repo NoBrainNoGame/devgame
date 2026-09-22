@@ -14,7 +14,7 @@ export interface RunOutcome {
   /** XP the run earned. */
   xp: number;
   commits: number;
-  botsFired: number;
+  ticketsDelivered: number;
   sprints: number;
 }
 
@@ -54,7 +54,7 @@ export function applyRunToMeta(meta: MetaProgressDto, outcome: RunOutcome, now: 
       unspentStatPoints: meta.unspentStatPoints + levelsGained * BALANCE.devops.perLevel,
       commitsBank,
       totalCommits: meta.totalCommits + Math.max(0, outcome.commits),
-      botsFired: meta.botsFired + Math.max(0, outcome.botsFired),
+      ticketsDelivered: meta.ticketsDelivered + Math.max(0, outcome.ticketsDelivered),
       unlockedProfiles: [...unlockedProfiles].sort(),
       unlockedSkills: [...unlockedSkills].sort(),
       updatedAt: now,

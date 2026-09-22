@@ -1,20 +1,14 @@
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
-import type { MapNode, NodeId, RunState } from "@/game/core/types";
+import type { MapNode, NodeId, RunState, Ticket } from "@/game/core/types";
 
 /**
- * Reading and checking the graph. Nothing here mutates state except
- * `setCandidates`, which is the one place node status is allowed to change as a
- * group.
+ * Reading and checking the graph. Nothing here mutates state.
  */
 
 export function getNode(state: RunState, id: NodeId): MapNode {
   const node = state.nodes[id];
   if (node === undefined) throw new Error(`Unknown node ${id}`);
   return node;
-}
-
-export function successors(state: RunState, id: NodeId): MapNode[] {
-  return getNode(state, id).next.map((next) => getNode(state, next));
 }
 
 /** Every node in the run, in a stable order. Iteration order must never vary. */
@@ -24,31 +18,39 @@ export function allNodes(state: RunState): MapNode[] {
     .map((id) => getNode(state, id));
 }
 
-/**
- * Marks `ids` as the places the player may step next, and clears any previous
- * candidacy. Nodes already resolved keep their `done` status.
- */
-export function setCandidates(state: RunState, ids: readonly NodeId[]): void {
-  // Unsorted on purpose: clearing a status is order-independent, and this walks
-  // every node in the run every time the player moves.
+/** The newest node in a column, or null when nothing has been written there. */
+export function tipOfLane(state: RunState, lane: number): MapNode | null {
+  let best: MapNode | null = null;
   for (const node of Object.values(state.nodes)) {
-    if (node.status === "candidate") node.status = "locked";
+    if (node.lane !== lane) continue;
+    if (best === null || node.depth > best.depth) best = node;
   }
-  for (const id of ids) {
-    const node = getNode(state, id);
-    if (node.status === "done") continue;
-    node.status = "candidate";
-  }
+  return best;
 }
 
-/** True while the player stands on a feature branch rather than on `main` or `dev`. */
-export function isOnBranch(state: RunState): boolean {
-  return getNode(state, state.player.nodeId).lane >= FIRST_FEATURE_LANE;
+/** The newest commit on the ticket, or null before its first. */
+export function tipOfTicket(state: RunState, ticket: Ticket): MapNode | null {
+  const last = ticket.nodeIds[ticket.nodeIds.length - 1];
+  return last === undefined ? null : getNode(state, last);
 }
 
-export function isOnHotfix(state: RunState): boolean {
-  const node = getNode(state, state.player.nodeId);
-  return node.kind === "hotfix";
+/**
+ * `HEAD`: the last commit actually written, where the graph draws the player.
+ *
+ * Derived rather than stored. It is the tip of the ticket being written, or the
+ * tip of `dev` when there is none — or when the ticket has no commit yet, since
+ * a branch that has not been forked is still `dev`. Five different rules would
+ * have to keep a stored copy right; none has to keep this one.
+ */
+export function headOf(state: RunState): MapNode {
+  const ticketId = state.player.ticketId;
+  const ticket = ticketId === null ? undefined : state.tickets[ticketId];
+  const onTicket = ticket === undefined ? null : tipOfTicket(state, ticket);
+  if (onTicket !== null) return onTicket;
+
+  const dev = tipOfLane(state, DEV_LANE);
+  if (dev === null) throw new Error("headOf: nothing has been written on dev");
+  return dev;
 }
 
 export interface InvariantFailure {
@@ -57,81 +59,38 @@ export interface InvariantFailure {
 }
 
 /**
- * Structural rules the generator must never break. Checked in tests over
- * hundreds of seeds rather than at runtime — a malformed graph is a bug in
- * generation, and failing loudly in a player's browser helps nobody.
+ * Structural rules the engine must never break. Checked in tests over hundreds
+ * of played seeds rather than at runtime — a malformed graph is a bug in a
+ * rule, and failing loudly in a player's browser helps nobody.
  */
-export function checkInvariants(nodes: readonly MapNode[]): InvariantFailure[] {
+export function checkInvariants(state: RunState): InvariantFailure[] {
   const failures: InvariantFailure[] = [];
-  const byId = new Map<NodeId, MapNode>();
-  for (const node of nodes) byId.set(node.id, node);
+  const nodes = Object.values(state.nodes);
 
-  const starts = nodes.filter((node) => node.kind === "sprint_start");
-  const releases = nodes.filter((node) => node.kind === "release");
-
-  if (starts.length !== 1) {
-    failures.push({ rule: "one-start", detail: `${starts.length} sprint_start nodes` });
-  }
-  if (releases.length !== 1) {
-    failures.push({ rule: "one-release", detail: `${releases.length} release nodes` });
-  }
-
+  // The DAG reads by parents, the way git does: every parent exists, and it
+  // was written before the commit that points at it.
   for (const node of nodes) {
-    if (node.kind === "release") {
-      if (node.next.length !== 0) {
-        failures.push({ rule: "release-is-terminal", detail: node.id });
-      }
-    } else if (node.next.length < 1 || node.next.length > 3) {
-      failures.push({
-        rule: "successor-count",
-        detail: `${node.id} has ${node.next.length} successors`,
-      });
+    if (node.parents.length > 2) {
+      failures.push({ rule: "at-most-two-parents", detail: node.id });
     }
-
-    const sorted = [...node.next].sort();
-    if (sorted.join(",") !== node.next.join(",")) {
-      failures.push({ rule: "successors-sorted", detail: node.id });
-    }
-
-    for (const nextId of node.next) {
-      const next = byId.get(nextId);
-      if (next === undefined) {
-        failures.push({ rule: "successor-exists", detail: `${node.id} -> ${nextId}` });
+    for (const parentId of node.parents) {
+      const parent = state.nodes[parentId];
+      if (parent === undefined) {
+        failures.push({ rule: "parent-exists", detail: `${node.id} -> ${parentId}` });
         continue;
       }
-      if (next.depth <= node.depth) {
+      if (parent.depth >= node.depth) {
         failures.push({
           rule: "depth-increases",
-          detail: `${node.id}(${node.depth}) -> ${nextId}(${next.depth})`,
+          detail: `${parentId}(${parent.depth}) -> ${node.id}(${node.depth})`,
         });
       }
     }
   }
 
-  const start = starts[0];
-  if (start !== undefined) {
-    const seen = new Set<NodeId>();
-    const stack = [start.id];
-    while (stack.length > 0) {
-      const id = stack.pop();
-      if (id === undefined || seen.has(id)) continue;
-      seen.add(id);
-      const node = byId.get(id);
-      if (node !== undefined) stack.push(...node.next);
-    }
-
-    for (const node of nodes) {
-      if (!seen.has(node.id)) {
-        failures.push({ rule: "reachable", detail: node.id });
-      }
-    }
-  }
-
-  // Two branches sharing a column at the same depth would draw on top of each
-  // other. `main` and `dev` are exempt: each is a single chain.
+  // Two commits on the same spot would draw on top of each other.
   const occupied = new Map<string, NodeId>();
   for (const node of nodes) {
-    if (node.lane === MAIN_LANE || node.lane === DEV_LANE) continue;
     const key = `${node.lane}@${node.depth}`;
     const previous = occupied.get(key);
     if (previous !== undefined) {
@@ -141,8 +100,8 @@ export function checkInvariants(nodes: readonly MapNode[]): InvariantFailure[] {
   }
 
   // What may sit on each long-lived branch. Nothing is ever *written* on
-  // either: `main` ships sprints, `dev` integrates features, and everything
-  // else happens on a branch that leaves `dev` and comes back.
+  // either: `main` ships sprints, `dev` integrates tickets, and everything
+  // else happens in a ticket's column.
   for (const node of nodes) {
     if (node.lane === MAIN_LANE) {
       if (node.kind !== "sprint_merge" && node.kind !== "release") {
@@ -152,70 +111,41 @@ export function checkInvariants(nodes: readonly MapNode[]): InvariantFailure[] {
       if (node.kind !== "sprint_start" && node.kind !== "feature_merge") {
         failures.push({ rule: "dev-integrates-only", detail: `${node.id} is a ${node.kind}` });
       }
-      if (node.branchId !== undefined) {
-        failures.push({ rule: "dev-is-not-a-branch", detail: node.id });
+    } else {
+      if (node.lane < FIRST_FEATURE_LANE) {
+        failures.push({ rule: "work-belongs-to-a-column", detail: node.id });
       }
-    } else if (node.branchId === undefined) {
-      failures.push({ rule: "work-belongs-to-a-branch", detail: node.id });
+      if (node.ticketId === undefined) {
+        failures.push({ rule: "work-belongs-to-a-ticket", detail: node.id });
+      }
     }
   }
 
-  // A branch is a branch: exactly one edge leads into it, and it ends in a
-  // merge. Anything else is a fork that never comes home, which is not a shape
-  // git can express.
-  const branchHeads = new Map<string, MapNode[]>();
-  for (const node of nodes) {
-    if (node.branchId === undefined) continue;
-    const bucket = branchHeads.get(node.branchId);
-    if (bucket === undefined) branchHeads.set(node.branchId, [node]);
-    else bucket.push(node);
-  }
-
-  const headOfBranch = new Map<string, NodeId>();
-  for (const [branchId, group] of branchHeads) {
-    const lowest = group.reduce((best, node) => (node.depth < best.depth ? node : best));
-    headOfBranch.set(branchId, lowest.id);
-  }
-
-  for (const [branchId, group] of branchHeads) {
-    const ids = new Set(group.map((node) => node.id));
-    const head = group.reduce((lowest, node) => (node.depth < lowest.depth ? node : lowest));
-
-    // Exactly one edge forks into the branch. Anything else arriving from
-    // outside has to be landing on a merge — a branch that left this one and
-    // is coming home, which is a merge commit's second parent.
-    let forks = 0;
-    for (const node of nodes) {
-      if (ids.has(node.id)) continue;
-      for (const id of node.next) {
-        if (!ids.has(id)) continue;
-        if (id === head.id) forks += 1;
-        else if (byId.get(id)?.kind !== "feature_merge") {
-          failures.push({ rule: "branch-entered-mid-way", detail: `${node.id} -> ${id}` });
-        }
+  // A ticket is a chain: each commit's first parent is the previous one, and
+  // the first commit forks off `dev`. Two open tickets never share a column.
+  const lanes = new Map<number, string>();
+  for (const ticket of Object.values(state.tickets)) {
+    if (ticket.status === "open" && ticket.lane !== undefined) {
+      const other = lanes.get(ticket.lane);
+      if (other !== undefined) {
+        failures.push({ rule: "one-ticket-per-lane", detail: `${other} and ${ticket.id}` });
       }
-    }
-    if (forks !== 1) {
-      failures.push({ rule: "branch-has-one-fork", detail: `${branchId} forks ${forks} times` });
+      lanes.set(ticket.lane, ticket.id);
     }
 
-    // Leaving the branch is either coming home — onto a merge — or forking
-    // into a branch of your own, which lands on that branch's first commit.
-    for (const node of group) {
-      for (const id of node.next) {
-        if (ids.has(id)) continue;
-        const landing = byId.get(id);
-        if (landing === undefined) continue;
-
-        const isMerge = landing.kind === "feature_merge" || landing.kind === "sprint_merge";
-        if (isMerge || headOfBranch.get(landing.branchId ?? "") === landing.id) continue;
-
-        failures.push({
-          rule: "branch-ends-in-a-merge",
-          detail: `${branchId} leaves to ${id}, a ${landing.kind}`,
-        });
+    ticket.nodeIds.forEach((id, index) => {
+      const node = state.nodes[id];
+      if (node === undefined) {
+        failures.push({ rule: "ticket-node-exists", detail: `${ticket.id} -> ${id}` });
+        return;
       }
-    }
+      const expected = index === 0 ? undefined : ticket.nodeIds[index - 1];
+      const first = node.parents[0];
+      const firstIsDev = first !== undefined && state.nodes[first]?.lane === DEV_LANE;
+      if (expected === undefined ? !firstIsDev : first !== expected) {
+        failures.push({ rule: "ticket-is-a-chain", detail: `${ticket.id} at ${id}` });
+      }
+    });
   }
 
   return failures;

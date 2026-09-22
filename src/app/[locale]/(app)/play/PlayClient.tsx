@@ -213,7 +213,7 @@ export function PlayClient(props: PlayClientProps) {
         {
           xp: snapshot.xpEarned,
           commits: snapshot.player.totalCommits,
-          botsFired: 0,
+          ticketsDelivered: 0,
           sprints: Math.max(0, snapshot.sprint - 1),
         },
         new Date().toISOString(),

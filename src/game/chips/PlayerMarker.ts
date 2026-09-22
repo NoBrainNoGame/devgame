@@ -2,6 +2,7 @@ import { Container, Graphics, Text } from "pixi.js";
 
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
+import { headOf } from "@/game/core/map/graph";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { cursorStyle } from "@/game/render/textStyles";
 import { NODE_RADIUS, THEME } from "@/game/render/theme";
@@ -48,9 +49,7 @@ export class PlayerMarker extends booyah.ChipBase {
 
   protected _onTick(): void {
     const { session, reducedMotion } = sceneContext(this.chipContext);
-    const state = session.getState();
-    const node = state.nodes[state.player.headId];
-    if (node === undefined) return;
+    const node = headOf(session.getState());
 
     const targetX = nodeX(node.lane);
     const targetY = nodeY(node.depth);

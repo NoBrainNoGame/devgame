@@ -7,15 +7,15 @@ import {
   type SkillId,
 } from "@/game/content";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
-import { generateSprint } from "@/game/core/map/generate";
+import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
 import { energyMax } from "@/game/core/rules/modifiers";
-import { arriveAt } from "@/game/core/rules/progress";
 import { availableSkills } from "@/game/core/rules/sprint";
+import { writeSprintStart } from "@/game/core/rules/write";
 import type { RunMode, RunState, StatPoints } from "@/game/core/types";
 
 export interface RunMeta {
-  /** Feature skills this account has unlocked. Defaults to the starter set. */
+  /** Skills this account has unlocked. Defaults to the starter set. */
   unlockedSkills?: readonly SkillId[];
   statPoints?: Partial<StatPoints>;
 }
@@ -35,7 +35,8 @@ export function defaultUnlockedSkills(): SkillId[] {
 }
 
 /**
- * A fresh run at turn 0, standing on the first sprint's anchor.
+ * A fresh run at turn 1: `dev` opened, the first sprint's tickets in the
+ * backlog, nothing in hand.
  *
  * Everything past this point is a pure function of the seed and the actions,
  * which is what `replayRun` depends on. Nothing here may read the clock or the
@@ -65,27 +66,30 @@ export function createRun(options: CreateRunOptions): RunState {
     rng: { s: fnv1a(seed) | 0 },
     turn: 1,
     sprint: 1,
-    sprintLength: 0,
+    sprintTurn: 0,
 
     nodes: {},
-    branches: {},
     nextNodeSerial: 0,
-    nextBranchSerial: 0,
+    nextDepth: 0,
+
+    tickets: {},
+    nextTicketSerial: 1,
+    devMerges: 0,
+    shipped: [],
 
     player: {
-      nodeId: "",
-      headId: "",
+      ticketId: null,
       energy: 0,
       energyMax: 0,
       totalCommits: 0,
       zeroEnergyStreak: 0,
-      aiHistory: [],
       aiChain: 0,
       rerollUsed: false,
       turnsSinceFreeReview: 0,
       freeRefactor: false,
       docsCharges: 0,
     },
+
     skills: [...profile.startingSkills].sort(),
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),
     statPoints,
@@ -97,7 +101,12 @@ export function createRun(options: CreateRunOptions): RunState {
     debtNoise: 0,
 
     monitoringWarning: false,
+    quality: 0,
+    sprintIncidents: 0,
+
     xpEarned: 0,
+    pointsDelivered: 0,
+    ticketsDelivered: 0,
 
     phase: { kind: "choose_action" },
     log: [],
@@ -109,23 +118,8 @@ export function createRun(options: CreateRunOptions): RunState {
   state.player.energyMax = energyMax(state, context.effects);
   state.player.energy = state.player.energyMax;
 
-  const plan = generateSprint({
-    sprint: 1,
-    offset: 0,
-    skillPool: availableSkills(state.unlockedSkills, state.skills),
-    rng: context.rng,
-    serial: { next: 0 },
-    branchSerial: { next: 0 },
-  });
-
-  for (const node of plan.nodes) state.nodes[node.id] = node;
-  for (const branch of plan.branches) state.branches[branch.id] = branch;
-
-  state.nextNodeSerial = plan.nodes.length;
-  state.nextBranchSerial = plan.branches.length;
-  state.sprintLength = plan.length;
-
-  arriveAt(context, plan.startId);
+  writeSprintStart(context);
+  arriveTickets(context, availableSkills(state));
 
   // The setup events describe a board nobody has seen yet, so they are dropped
   // rather than logged: the log starts when the player does.

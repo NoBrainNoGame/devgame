@@ -18,7 +18,7 @@ const arbitraryMeta = fc
     unspentStatPoints: fc.integer({ min: 0, max: 50 }),
     commitsBank: fc.integer({ min: 0, max: 50_000 }),
     totalCommits: fc.integer({ min: 0, max: 50_000 }),
-    botsFired: fc.integer({ min: 0, max: 500 }),
+    ticketsDelivered: fc.integer({ min: 0, max: 500 }),
     metaVersion: fc.integer({ min: 0, max: 500 }),
     unlockedProfiles: fc.subarray(["junior", "senior", "vibe_coder", "devops"] as const, {
       minLength: 1,
@@ -58,19 +58,21 @@ describe("mergeMeta", () => {
         expect(merged.totalCommits).toBeGreaterThanOrEqual(
           Math.max(a.totalCommits, b.totalCommits),
         );
-        expect(merged.botsFired).toBeGreaterThanOrEqual(Math.max(a.botsFired, b.botsFired));
+        expect(merged.ticketsDelivered).toBeGreaterThanOrEqual(
+          Math.max(a.ticketsDelivered, b.ticketsDelivered),
+        );
       }),
     );
   });
 
   test("never invents progress either — counters are a maximum, not a sum", () => {
-    const a = meta({ totalCommits: 100, xp: 500, botsFired: 3 });
-    const b = meta({ totalCommits: 100, xp: 500, botsFired: 3 });
+    const a = meta({ totalCommits: 100, xp: 500, ticketsDelivered: 3 });
+    const b = meta({ totalCommits: 100, xp: 500, ticketsDelivered: 3 });
     const merged = mergeMeta(a, b);
 
     expect(merged.totalCommits).toBe(100);
     expect(merged.xp).toBe(500);
-    expect(merged.botsFired).toBe(3);
+    expect(merged.ticketsDelivered).toBe(3);
   });
 
   test("keeps every unlock from both sides, in a stable order", () => {

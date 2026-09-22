@@ -22,15 +22,26 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text(`log.node_done.${event.mode}`, { node: ref(`nodes.${event.kind}.name`) }),
       };
 
-    case "branch_merged":
+    case "ticket_arrived":
+      return { seq, turn, kind: "note", text: text("log.ticket_arrived") };
+
+    case "ticket_started":
+      return {
+        seq,
+        turn,
+        kind: event.kind === "hotfix" ? "fix" : "note",
+        text: text(event.forced ? `log.ticket_assigned.${event.kind}` : "log.ticket_started"),
+      };
+
+    case "ticket_merged":
       return {
         seq,
         turn,
         kind: "merge",
         text:
           event.skillId === undefined
-            ? text("log.branch_merged")
-            : text("log.branch_merged_skill", { skill: ref(`skills.${event.skillId}.name`) }),
+            ? text("log.ticket_merged")
+            : text("log.ticket_merged_skill", { skill: ref(`skills.${event.skillId}.name`) }),
       };
 
     case "skill_gained":
@@ -56,13 +67,8 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
     case "ambient_event":
       return { seq, turn, kind: "note", text: text(`events.${event.eventId}.log`) };
 
-    case "forced_rebase":
-      return {
-        seq,
-        turn,
-        kind: event.absorbed ? "chore" : "revert",
-        text: text(event.absorbed ? "log.rebase_absorbed" : "log.rebase_forced"),
-      };
+    case "incident":
+      return { seq, turn, kind: "revert", text: text(`log.incident.${event.source}`) };
 
     case "pr_rejected":
       return {
@@ -97,20 +103,7 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
       return { seq, turn, kind: "chore", text: text("log.docs_written", { count: event.charges }) };
 
     case "rebased":
-      return {
-        seq,
-        turn,
-        kind: "chore",
-        text: text("log.rebased", { count: event.nodeIds.length }),
-      };
-
-    case "nodes_injected":
-      return {
-        seq,
-        turn,
-        kind: "fix",
-        text: text(`log.injected.${event.kind}`, { count: event.nodeIds.length }),
-      };
+      return { seq, turn, kind: "chore", text: text("log.rebased") };
 
     case "debt_explosion":
       return { seq, turn, kind: "revert", text: text("log.debt_explosion") };
@@ -153,7 +146,18 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text: text(`log.game_over.${event.reason}`, { score: event.score }),
       };
 
-    default:
+    // Listed rather than defaulted: a new event should fail to compile here,
+    // not silently vanish from the log.
+    case "turn_started":
+    case "roll":
+    case "points":
+    case "energy":
+    case "debt":
+    case "checkout":
+    case "docs_used":
+    case "quality":
+    case "devops_points":
+    case "crunch":
       return null;
   }
 }

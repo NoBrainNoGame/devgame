@@ -11,7 +11,7 @@ function row(score: number, name = `p${score}`): Row {
     displayName: name,
     score,
     sprints: 1,
-    botsFired: 0,
+    ticketsDelivered: 0,
     finishedAt: "2026-09-21T10:00:00.000Z",
   };
 }

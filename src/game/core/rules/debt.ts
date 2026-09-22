@@ -1,13 +1,14 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { forceTicket, openTickets } from "@/game/core/rules/tickets";
 
 /**
  * Technical debt: the price of every shortcut, paid later and all at once.
  *
  * It does two things. It makes every roll worse in proportion to itself, and
- * past a threshold it forces refactor nodes into the path. The player is never
- * told the exact figure unless something in the build reveals it — see
- * `debtView` in `modifiers.ts` for what is shown instead.
+ * past a threshold it forces a refactor ticket open. The player is never told
+ * the exact figure unless something in the build reveals it — see `debtView`
+ * in `modifiers.ts` for what is shown instead.
  */
 
 export function addDebt(context: RuleContext, amount: number): void {
@@ -37,7 +38,16 @@ export function applyDebtDecay(context: RuleContext): void {
   if (decay > 0) repayDebt(context, decay);
 }
 
-/** True once the debt is high enough to force refactor work into the path. */
-export function shouldExplode(context: RuleContext): boolean {
-  return context.state.debt >= BALANCE.debt.explosionThreshold;
+/**
+ * Past the threshold, a refactor ticket is forced open — one at a time. The
+ * debt stays high until that ticket merges, so without the guard a second
+ * one would open every turn.
+ */
+export function checkExplosion(context: RuleContext): void {
+  const { state } = context;
+  if (state.debt < BALANCE.debt.explosionThreshold) return;
+  if (openTickets(state).some((ticket) => ticket.kind === "refactor")) return;
+
+  const ticket = forceTicket(context, "refactor", BALANCE.debt.explosionPoints);
+  emit(context, { type: "debt_explosion", ticketId: ticket.id });
 }

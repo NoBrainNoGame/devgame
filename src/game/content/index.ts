@@ -1,3 +1,5 @@
+export type { CriterionKind } from "@/game/content/criteria";
+export { CRITERION_KINDS, isCriterionKind } from "@/game/content/criteria";
 export type { DevopsDef, DevopsId } from "@/game/content/devops";
 export { DEVOPS, DEVOPS_IDS, devopsCost, isDevopsId } from "@/game/content/devops";
 export type { Effects, PartialEffects } from "@/game/content/effects";

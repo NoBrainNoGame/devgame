@@ -1,16 +1,22 @@
 import { RELIC_IDS, type RelicId, type SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { generateSprint } from "@/game/core/map/generate";
-import { allNodes, getNode } from "@/game/core/map/graph";
+import { arriveTickets } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { gainEnergy } from "@/game/core/rules/energy";
+import { recordIncident } from "@/game/core/rules/events";
 import { grantDevopsPoints } from "@/game/core/rules/grants";
 import { energyMax } from "@/game/core/rules/modifiers";
-import { arriveAt } from "@/game/core/rules/progress";
+import { isOver } from "@/game/core/rules/over";
+import { assignStaleTickets, sortedTickets } from "@/game/core/rules/tickets";
+import { writeRelease, writeSprintStart } from "@/game/core/rules/write";
+import type { RunState } from "@/game/core/types";
 
 /**
- * A sprint closes on its release node: the work ships, the team gets a weekend,
- * and a project improvement is chosen.
+ * A sprint is a box of turns. When it runs out — or when there is nothing left
+ * on the board — the work ships: `dev` is merged into `main`, the release is
+ * tagged, and production gets to say what it thinks of what was shipped
+ * unread. Then the team gets a weekend, a project improvement is chosen, and
+ * the next sprint's tickets arrive.
  *
  * The run has no ending: "how long can you keep this up" is the only question
  * the game ever asks.
@@ -18,6 +24,15 @@ import { arriveAt } from "@/game/core/rules/progress";
 
 export function endSprint(context: RuleContext): void {
   const { state } = context;
+
+  writeRelease(context);
+
+  shipBugs(context);
+  if (isOver(context)) return;
+
+  if (state.sprintIncidents === 0) {
+    state.quality = Math.max(0, state.quality - BALANCE.quality.decayPerCleanSprint);
+  }
 
   grantDevopsPoints(context, BALANCE.devops.perSprint);
 
@@ -35,6 +50,36 @@ export function endSprint(context: RuleContext): void {
   state.phase = { kind: "choose_relic", offer };
 }
 
+/**
+ * The release finds what shipped unread. Every machine-written commit nobody
+ * reviewed, and every conflict the machine fixed with a bug attached, rolls
+ * for an incident. Hotfixes are exempt: a fix that breeds its own fix is a
+ * spiral, not a tension.
+ */
+function shipBugs(context: RuleContext): void {
+  const { state } = context;
+  const shipped = [...state.shipped];
+  state.shipped = [];
+
+  const hotfixNodes = new Set<string>();
+  for (const ticket of sortedTickets(state)) {
+    if (ticket.kind === "hotfix") for (const id of ticket.nodeIds) hotfixNodes.add(id);
+  }
+
+  for (const id of shipped) {
+    const node = state.nodes[id];
+    if (node === undefined || hotfixNodes.has(id)) continue;
+
+    const suspect =
+      node.commit.hiddenBug === true || (node.commit.mode === "ai" && !node.commit.reviewed);
+    if (!suspect) continue;
+
+    if (!context.rng.chance(BALANCE.release.bugPerUnreadPct)) continue;
+    recordIncident(context, "release", id);
+    if (isOver(context)) return;
+  }
+}
+
 function drawRelicOffer(context: RuleContext): RelicId[] {
   const owned = new Set(context.state.relics);
   const available = RELIC_IDS.filter((id) => !owned.has(id));
@@ -47,53 +92,28 @@ export function startNextSprint(context: RuleContext): void {
   const { state } = context;
 
   state.sprint += 1;
-
-  const previousRelease = getNode(state, state.player.nodeId);
-  const offset = Math.max(...allNodes(state).map((node) => node.depth)) + 1;
-
-  const plan = generateSprint({
-    sprint: state.sprint,
-    offset,
-    skillPool: availableSkills(state.unlockedSkills, state.skills),
-    rng: context.rng,
-    serial: { next: state.nextNodeSerial },
-    branchSerial: { next: state.nextBranchSerial },
-  });
-
-  // `generateSprint` works on its own serial cursors; copy them back so the
-  // next injection does not reuse an id it already handed out.
-  state.nextNodeSerial = maxSerial(plan.nodes) + 1;
-  state.nextBranchSerial += plan.branches.length;
-
-  for (const node of plan.nodes) state.nodes[node.id] = node;
-  for (const branch of plan.branches) state.branches[branch.id] = branch;
-
-  state.sprintLength = plan.length;
-  previousRelease.next = [plan.startId];
-
+  state.sprintTurn = 0;
+  state.sprintIncidents = 0;
   state.player.rerollUsed = false;
+  state.phase = { kind: "choose_action" };
+
+  writeSprintStart(context);
+
+  // What was left waiting is yours now, then the new work arrives on top.
+  assignStaleTickets(context);
+  arriveTickets(context, availableSkills(state));
 
   emit(context, { type: "sprint_started", sprint: state.sprint });
-  arriveAt(context, plan.startId);
-}
-
-function maxSerial(nodes: { id: string }[]): number {
-  let max = -1;
-  for (const node of nodes) {
-    const serial = Number(node.id.slice(node.id.indexOf(":") + 1));
-    if (serial > max) max = serial;
-  }
-  return max;
 }
 
 /**
- * Skills that may still be placed on a branch: unlocked by the account and not
- * already earned this run.
+ * Skills a new ticket may still grant: unlocked by the account, not already
+ * earned this run, and not already promised by a ticket on the board.
  */
-export function availableSkills(
-  unlocked: readonly SkillId[],
-  owned: readonly SkillId[],
-): SkillId[] {
-  const ownedSet = new Set(owned);
-  return [...unlocked].filter((id) => !ownedSet.has(id)).sort();
+export function availableSkills(state: RunState): SkillId[] {
+  const taken = new Set<SkillId>(state.skills);
+  for (const ticket of Object.values(state.tickets)) {
+    if (ticket.skillId !== undefined && ticket.status !== "merged") taken.add(ticket.skillId);
+  }
+  return [...state.unlockedSkills].filter((id) => !taken.has(id)).sort();
 }

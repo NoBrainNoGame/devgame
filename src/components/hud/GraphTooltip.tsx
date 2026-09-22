@@ -66,9 +66,11 @@ export function GraphTooltip(): React.JSX.Element | null {
             <span className="text-muted-foreground">
               {node.lane === 0
                 ? "main"
-                : node.lane > 0
-                  ? (node.branchId ?? t("tooltipFeature"))
-                  : t("tooltipHotfix")}
+                : node.lane === 1 && node.ticketId === undefined
+                  ? "dev"
+                  : node.ticketId === undefined
+                    ? t("tooltipFeature")
+                    : `#${node.ticketId.slice(1)}`}
             </span>
           </Row>
 

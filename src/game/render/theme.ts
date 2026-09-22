@@ -76,17 +76,9 @@ export function laneColour(lane: number, kind: NodeKind): number {
   return THEME.lane.feature;
 }
 
-/**
- * The kind a node is *called*, which is not always the kind it is.
- *
- * A `fork` is an ordinary commit on `main` that happens to have a branch
- * leaving it. Naming it as a fork — on its button, in its tooltip, beside it on
- * the graph — would tell the player the repository was written before they got
- * there, which is the one thing the graph is not allowed to say. If they open
- * the branch, the lane leaving the node says it better than a word could.
- */
+/** The kind a node is *called*. Today every kind is called what it is. */
 export function labelledKind(kind: NodeKind): NodeKind {
-  return kind === "fork" ? "commit" : kind;
+  return kind;
 }
 
 /**
@@ -117,8 +109,6 @@ export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): st
     case "sprint_start":
       return "init";
     case "commit":
-    case "fork":
-    case "feature":
       return mode === "ai" ? "chore" : "feat";
   }
 }
@@ -128,10 +118,6 @@ export function nodeGlyph(kind: NodeKind): string {
   switch (kind) {
     case "sprint_start":
       return "◆";
-    case "fork":
-      return "⑂";
-    case "feature":
-      return "";
     case "feature_merge":
     case "sprint_merge":
       return "⑃";

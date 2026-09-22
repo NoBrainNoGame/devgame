@@ -5,7 +5,7 @@ import { hashState } from "@/game/core/run";
 import { replayRun } from "@/game/dto/replay";
 import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 
-import { isCommit, newRun, play, prefer } from "./helpers";
+import { isCommit, isType, newRun, play, prefer } from "./helpers";
 
 /**
  * The property the whole anti-cheat rests on: a seed and a list of actions
@@ -13,7 +13,7 @@ import { isCommit, newRun, play, prefer } from "./helpers";
  * longer be verified and the leaderboard is fiction.
  */
 describe("determinism", () => {
-  const policy = prefer(isCommit("ai"), isCommit("craft"));
+  const policy = prefer(isType("merge"), isCommit("ai"), isCommit("craft"), isType("start"));
 
   test("the same seed and actions produce the same state", () => {
     for (const seed of ["alpha", "beta", "gamma", "delta"]) {
@@ -78,8 +78,8 @@ describe("determinism", () => {
   test("a tampered action log is rejected rather than scored", () => {
     const live = play(newRun("tamper"), { pick: policy, limit: 80 });
     const actions = [...live.actions];
-    // A move to a node that is not a candidate at that point in the run.
-    actions.splice(3, 0, { type: "move", nodeId: "9:99" });
+    // Starting a ticket that does not exist at that point in the run.
+    actions.splice(3, 0, { type: "start", ticketId: "t999" });
 
     const result = replayRun({
       version: SAVE_VERSION,

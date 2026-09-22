@@ -1,7 +1,16 @@
+import { DEV_LANE } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
+import { currentTicket, offersOf } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
-import type { DetourKind, GameEvent, PlayerAction, RunState } from "@/game/core/types";
+import type {
+  CommitMode,
+  DetourKind,
+  GameEvent,
+  PlayerAction,
+  RunState,
+  Ticket,
+} from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 /** A run at turn one, with the default unlocks, for a named seed. */
@@ -12,6 +21,21 @@ export function newRun(
   return createRun({ seed, mode: "classic", profileId, version: SAVE_VERSION });
 }
 
+/** A run with a ticket in hand: the first of the backlog, just started. */
+export function inHand(seed: string): RunState {
+  const state = newRun(seed);
+  const start = getAvailableActions(state).find((action) => action.type === "start");
+  if (start === undefined) throw new Error(`${seed}: the backlog is empty at turn one`);
+  return applyAction(state, start).state;
+}
+
+/** The ticket being written, which a test about a commit needs to exist. */
+export function ticketInHand(state: RunState): Ticket {
+  const ticket = currentTicket(state);
+  if (ticket === null) throw new Error("expected a ticket in hand");
+  return ticket;
+}
+
 /** A copy of `state` that has learned to review. */
 export function withReviewSkill(state: RunState): RunState {
   const next = structuredClone(state);
@@ -20,22 +44,70 @@ export function withReviewSkill(state: RunState): RunState {
 }
 
 /**
- * A copy that can review *right now*: the skill learned, and one unread AI
- * commit for it to find. Review is doubly gated — learned, and with something
- * to read — so a test that wants to exercise it has to say so rather than
- * assume it is always on the table.
+ * A copy that can review *right now*: the skill learned, and one unread
+ * machine-written commit on the ticket in hand for it to find. Review is
+ * doubly gated — learned, and with something to read — so a test that wants
+ * to exercise it has to say so rather than assume it is always on the table.
  */
 export function makeReviewable(state: RunState): RunState {
   const next = withReviewSkill(state);
-  next.player.aiHistory = [{ nodeId: next.player.nodeId, reviewed: false }];
+  plantAiCommit(next);
   return next;
 }
 
 /**
- * Drives a run until the player is standing on a node that offers `kind`,
- * ready to write it that way. Offers are sprinkled by the generator, so this
- * walks several seeds rather than stubbing the map: a real seed proves the
- * choice is reachable in a game that could actually happen.
+ * Writes an unread machine-written commit straight onto the ticket in hand,
+ * without a roll. For tests about what happens *to* such a commit.
+ */
+export function plantAiCommit(state: RunState): string {
+  return plantCommit(state, "ai");
+}
+
+/** Writes a commit of either hand onto the ticket in hand, without a roll. */
+export function plantCommit(state: RunState, mode: CommitMode): string {
+  const ticket = ticketInHand(state);
+  if (ticket.lane === undefined) throw new Error("ticket has no column");
+
+  const last = ticket.nodeIds[ticket.nodeIds.length - 1];
+  const dev = Object.values(state.nodes)
+    .filter((node) => node.lane === DEV_LANE)
+    .sort((a, b) => b.depth - a.depth)[0];
+  const parent = last ?? dev?.id;
+  if (parent === undefined) throw new Error("nothing to fork from");
+
+  const id = `${state.sprint}:${state.nextNodeSerial}`;
+  state.nextNodeSerial += 1;
+  state.nodes[id] = {
+    id,
+    sprint: state.sprint,
+    kind: "commit",
+    lane: ticket.lane,
+    depth: state.nextDepth,
+    parents: [parent],
+    ticketId: ticket.id,
+    commit: { mode, reviewed: mode === "craft" },
+  };
+  state.nextDepth += 1;
+  ticket.nodeIds.push(id);
+  state.player.totalCommits += 1;
+  return id;
+}
+
+/** A copy whose ticket in hand can merge right now: points full, no criteria. */
+export function makeReady(state: RunState): RunState {
+  const next = structuredClone(state);
+  const ticket = ticketInHand(next);
+  if (ticket.nodeIds.length === 0) plantCommit(next, "craft");
+  ticket.filled = ticket.points;
+  ticket.criteria = [];
+  return next;
+}
+
+/**
+ * Drives a run until the ticket in hand offers `kind`, ready to write it that
+ * way. Squash and rebase are situational, so this plays real seeds rather than
+ * stubbing the board: a real seed proves the choice is reachable in a game
+ * that could actually happen.
  */
 export function standingOn(kind: DetourKind, options: { prefix?: string } = {}): RunState {
   return offering(kind, options).state;
@@ -43,10 +115,10 @@ export function standingOn(kind: DetourKind, options: { prefix?: string } = {}):
 
 /**
  * The same, but the craft commit that writes it as `kind` is known to have
- * landed — a roll that missed resolves nothing, and a test about what the
+ * landed — a roll that missed writes nothing, and a test about what the
  * commit *does* has nothing to assert against.
  */
-export function committedOn(
+export function committedAs(
   kind: DetourKind,
   options: { prefix?: string; where?: (state: RunState) => boolean } = {},
 ): { before: RunState; after: RunState; events: GameEvent[] } {
@@ -67,29 +139,37 @@ function offering(
     for (let step = 0; step < 300; step += 1) {
       if (state.phase.kind === "game_over") break;
 
+      const ticket = currentTicket(state);
       if (
         state.phase.kind === "choose_action" &&
-        state.nodes[state.player.nodeId]?.offers === kind &&
+        ticket !== null &&
+        offersOf(state, ticket).includes(kind) &&
         (options.where?.(state) ?? true)
       ) {
         if (options.mustResolve !== true) return { state };
 
-        // The roll has to have *succeeded*, not merely let the node through:
-        // the failure table can resolve a node anyway, and a node that only
-        // survived is not a node that did what it promised.
+        // The roll has to have *succeeded*, not merely let the commit through:
+        // the failure table can write a commit anyway, and a commit that only
+        // survived is not a commit that did what it promised.
         const probe = applyAction(state, { type: "commit", mode: "craft", kind });
         const roll = probe.events.find((event) => event.type === "roll");
         const landed =
           (roll === undefined || (roll.type === "roll" && roll.success)) &&
-          probe.events.some(
-            (event) => event.type === "node_done" && event.nodeId === state.player.nodeId,
-          );
+          probe.events.some((event) => event.type === "node_done" && event.kind === kind);
         if (landed) return { state };
         break;
       }
 
+      // Greedy about the board: every ticket started as soon as it arrives, so
+      // one landing while another is open — the situation a rebase needs —
+      // happens within a sprint or two rather than never.
       const legal = getAvailableActions(state);
-      const action = legal.find((a) => a.type === "commit" && a.mode === "ai") ?? legal[0];
+      const action = prefer(
+        isType("merge"),
+        isType("start"),
+        isCommit("ai"),
+        isCommit("craft"),
+      )(state, legal);
       if (action === undefined) break;
 
       state = applyAction(state, action).state;
@@ -100,35 +180,19 @@ function offering(
 }
 
 /**
- * A run stopped on an ordinary commit it has to write: `choose_action`, on a
- * plain node with nothing on offer. Most rules about "a commit" mean this one,
- * and letting the first action of a seed decide made the test depend on the
- * map rather than on the rule.
+ * A run stopped on an ordinary commit it has to write: a plain feature ticket
+ * in hand, in `choose_action`. Most rules about "a commit" mean this one.
  */
 export function writingACommit(prefix: string): RunState {
-  for (let attempt = 0; attempt < 400; attempt += 1) {
-    let state = newRun(`${prefix}-${attempt}`);
+  return inHand(prefix);
+}
 
-    for (let step = 0; step < 60; step += 1) {
-      if (state.phase.kind === "game_over") break;
-
-      const node = state.nodes[state.player.nodeId];
-      if (
-        state.phase.kind === "choose_action" &&
-        node?.kind === "commit" &&
-        node.offers === undefined
-      ) {
-        return state;
-      }
-
-      const legal = getAvailableActions(state);
-      const action = legal.find((a) => a.type === "commit" && a.mode === "craft") ?? legal[0];
-      if (action === undefined) break;
-      state = applyAction(state, action).state;
-    }
-  }
-
-  throw new Error(`No seed out of 400 reached a plain commit for ${prefix}`);
+/** Takes the first relic on offer, so a test can act after a sprint boundary. */
+export function settle(state: RunState): RunState {
+  if (state.phase.kind !== "choose_relic") return state;
+  const relicId = state.phase.offer[0];
+  if (relicId === undefined) return state;
+  return applyAction(state, { type: "choose_relic", relicId }).state;
 }
 
 export interface PlayResult {
@@ -188,14 +252,26 @@ export function prefer(
 }
 
 export const isCommit =
-  (mode: "craft" | "ai") =>
+  (mode: CommitMode) =>
   (action: PlayerAction): boolean =>
-    action.type === "commit" && action.mode === mode;
+    action.type === "commit" && action.mode === mode && action.kind === undefined;
 
 export const isType =
   (type: PlayerAction["type"]) =>
   (action: PlayerAction): boolean =>
     action.type === type;
+
+/**
+ * A player who plays the game: lands a ticket the moment it is ready, writes
+ * with the given hand otherwise, and starts whatever is waiting when nothing
+ * is in hand. The default for any test that just needs a run to go somewhere.
+ */
+export function policy(
+  mode: CommitMode,
+): (state: RunState, actions: PlayerAction[]) => PlayerAction | undefined {
+  const other: CommitMode = mode === "ai" ? "craft" : "ai";
+  return prefer(isType("merge"), isCommit(mode), isCommit(other), isType("start"));
+}
 
 /**
  * Finds a seed whose run satisfies `predicate` within `limit` actions. Tests
@@ -218,7 +294,7 @@ export function findSeed(
 
   for (let i = 0; i < attempts; i++) {
     const result = play(newRun(`${prefix}-${i}`), {
-      ...(options.pick === undefined ? {} : { pick: options.pick }),
+      pick: options.pick ?? policy("ai"),
       ...(options.limit === undefined ? {} : { limit: options.limit }),
       ...(options.stop === undefined ? {} : { stop: options.stop }),
     });

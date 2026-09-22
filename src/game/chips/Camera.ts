@@ -4,6 +4,7 @@ import { gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import type { GraphView } from "@/game/chips/GraphView";
+import { headOf } from "@/game/core/map/graph";
 import { nodeY } from "@/game/render/coords";
 import { ZOOM } from "@/game/render/theme";
 
@@ -231,9 +232,7 @@ export class Camera extends booyah.ChipBase {
     if (this.focusY !== null) return this.focusY;
 
     const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-    const head = state.nodes[state.player.headId];
-    return head === undefined ? 0 : nodeY(head.depth);
+    return nodeY(headOf(session.getState()).depth);
   }
 
   private snap(keepY = false): void {

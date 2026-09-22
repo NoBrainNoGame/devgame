@@ -5,6 +5,7 @@ import { sceneContext } from "@/game/chips/context";
 import { Flash } from "@/game/chips/fx/Flash";
 import { Pop } from "@/game/chips/fx/Pop";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
+import { headOf } from "@/game/core/map/graph";
 import type { GameEvent, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { THEME } from "@/game/render/theme";
@@ -105,27 +106,20 @@ export class FxQueue extends booyah.Queue {
           this.skipFlag,
         );
 
-      case "conflict": {
-        const at = this.positionOf(event.nodeId);
-        return at === null ? null : new Flash(at, THEME.lane.hotfix, 420, this.skipFlag);
-      }
+      case "points":
+        return new Pop(
+          this.playerPosition(),
+          `${event.delta > 0 ? "+" : ""}${event.delta} pts`,
+          THEME.lane.feature,
+          650,
+          this.skipFlag,
+        );
 
-      case "nodes_injected": {
-        const first = event.nodeIds[0];
-        if (first === undefined) return null;
-        const at = this.positionOf(first);
-        return at === null
-          ? null
-          : new Flash(
-              at,
-              event.kind === "hotfix" ? THEME.lane.hotfix : THEME.lane.refactor,
-              420,
-              this.skipFlag,
-            );
-      }
+      case "conflict":
+        return new Flash(this.playerPosition(), THEME.lane.hotfix, 420, this.skipFlag);
 
-      case "forced_rebase":
-        return event.absorbed ? null : new Flash(this.playerPosition(), THEME.lane.hotfix, 300);
+      case "incident":
+        return new Flash(this.playerPosition(), THEME.lane.hotfix, 420, this.skipFlag);
 
       case "pr_rejected":
         return event.countered
@@ -145,7 +139,6 @@ export class FxQueue extends booyah.Queue {
         return new Beat(200, this.skipFlag);
 
       case "roll":
-      case "ai_jumped":
         return new Beat(120, this.skipFlag);
 
       default:
@@ -166,7 +159,7 @@ export class FxQueue extends booyah.Queue {
 
   private playerPosition(): { x: number; y: number } {
     const { session } = sceneContext(this.chipContext);
-    const state = session.getState();
-    return this.positionOf(state.player.headId) ?? { x: 0, y: 0 };
+    const head = headOf(session.getState());
+    return { x: nodeX(head.lane), y: nodeY(head.depth) };
   }
 }

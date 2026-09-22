@@ -10,7 +10,9 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import type { Branch, CommitMode, MapNode, RunState } from "@/game/core/types";
+import { unreadAiOn } from "@/game/core/rules/criteria";
+import { behindOf, openTickets } from "@/game/core/rules/tickets";
+import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
 
 /**
  * The single place that turns "what the player has" into "what the numbers
@@ -64,75 +66,77 @@ export function isCrunch(state: RunState): boolean {
   return state.player.energy <= BALANCE.energy.crunchThreshold;
 }
 
-/** Feature branches the player has stepped onto and not yet merged. */
-export function openBranches(state: RunState): Branch[] {
-  return Object.keys(state.branches)
-    .sort()
-    .map((id) => state.branches[id])
-    .filter((branch): branch is Branch => branch !== undefined)
-    .filter((branch) => branch.open && !branch.merged)
-    .filter((branch) => branch.kind === "feature" || branch.kind === "subfeature");
-}
-
-/** Working two features at once is allowed, and it costs you on both. */
-export function isOverextended(state: RunState): boolean {
-  return openBranches(state).length >= 2;
+/**
+ * Open tickets beyond the first. Each one is something else you are holding
+ * in your head, and every commit and every roll pays for it.
+ */
+export function wipExtra(state: RunState): number {
+  return Math.max(0, openTickets(state).length - 1);
 }
 
 /**
- * Share of recent AI commits that have been read by a human. With nothing
- * unread, the ratio is a perfect 1.
+ * Share of machine-written commits a human has read, over everything still
+ * on the board or shipped since the last release. With nothing unread, the
+ * ratio is a perfect 1.
  */
 export function reviewedRatio(state: RunState): number {
-  const history = state.player.aiHistory;
-  if (history.length === 0) return 1;
-  const reviewed = history.filter((entry) => entry.reviewed).length;
-  return reviewed / history.length;
+  let total = 0;
+  let reviewed = 0;
+
+  const consider = (id: string): void => {
+    const commit = state.nodes[id]?.commit;
+    if (commit === undefined || commit.mode !== "ai") return;
+    total += 1;
+    if (commit.reviewed) reviewed += 1;
+  };
+
+  for (const id of state.shipped) consider(id);
+  for (const ticket of openTickets(state)) {
+    for (const id of ticket.nodeIds) consider(id);
+  }
+
+  return total === 0 ? 1 : reviewed / total;
 }
 
 /**
- * Success chance for resolving `node` with a given commit mode, in percent,
- * already clamped. `risky` nodes replace the base chance rather than adding to
- * it: they are a different kind of gamble, not a worse commit.
- */
-/**
- * The odds that landing a branch tangles.
+ * The odds that landing a ticket tangles.
  *
  * A conflict is not something that happens while you write a commit — it is
  * what happens when two histories meet. So it is priced by what you are
- * bringing to the merge: how much debt, and how much machine-written work
- * nobody has read.
+ * bringing to the merge: how much debt, how much machine-written work nobody
+ * has read, and how far `dev` has moved since you left it.
  */
-export function mergeConflictChance(state: RunState): number {
+export function mergeConflictChance(state: RunState, ticket: Ticket): number {
   const { failure } = BALANCE;
-  const unread = state.player.aiHistory.filter((entry) => !entry.reviewed).length;
 
   const value =
     failure.mergeConflictBase +
     Math.floor(state.debt / failure.mergeConflictDebtDivisor) +
-    unread * failure.mergeConflictPerUnread;
+    unreadAiOn(state, ticket).length * failure.mergeConflictPerUnread +
+    behindOf(state, ticket) * failure.mergeConflictPerBehind;
 
   return Math.max(0, Math.min(failure.mergeConflictMax, value));
 }
 
+/**
+ * Success chance for writing a commit of `kind` with a given hand, in percent,
+ * already clamped. `risky` replaces the base chance rather than adding to it:
+ * it is a different kind of gamble, not a worse commit.
+ */
 export function commitChance(
   state: RunState,
   mode: CommitMode,
-  node: MapNode,
+  kind: NodeKind,
   effects = gatherEffects(state),
 ): Breakdown {
   const notes: I18nText[] = [];
   const { commit } = BALANCE;
 
   let value: number =
-    node.kind === "risky"
-      ? commit.riskyBase
-      : node.kind === "rebase"
-        ? commit.rebaseBase
-        : commit.base[mode];
+    kind === "risky" ? commit.riskyBase : kind === "rebase" ? commit.rebaseBase : commit.base[mode];
 
   const perMode =
-    node.kind === "risky"
+    kind === "risky"
       ? effects.riskySuccessPoints
       : mode === "ai"
         ? effects.aiSuccessPoints
@@ -148,9 +152,9 @@ export function commitChance(
     notes.push(text("notes.automation", { points: signed(effects.allSuccessPoints) }));
   }
 
-  // A rebase replays your commits on top of the trunk, so it is priced by how
+  // A rebase replays your commits on top of `dev`, so it is priced by how
   // clean they are rather than by luck: same malus, far steeper divisor.
-  const divisor = node.kind === "rebase" ? commit.rebaseDebtDivisor : commit.debtRiskDivisor;
+  const divisor = kind === "rebase" ? commit.rebaseDebtDivisor : commit.debtRiskDivisor;
   const debtMalus = Math.floor(state.debt / divisor);
   if (debtMalus > 0) {
     value -= debtMalus;
@@ -162,9 +166,11 @@ export function commitChance(
     notes.push(text("notes.crunch", { points: signed(-BALANCE.energy.crunchMalusPoints) }));
   }
 
-  if (isOverextended(state)) {
-    value -= commit.secondBranchMalusPoints;
-    notes.push(text("notes.overextended", { points: signed(-commit.secondBranchMalusPoints) }));
+  const extra = wipExtra(state);
+  if (extra > 0) {
+    const malus = BALANCE.wip.malusPerExtra * extra;
+    value -= malus;
+    notes.push(text("notes.wip", { points: signed(-malus), count: extra }));
   }
 
   return { value: clampChance(value), notes };
@@ -188,37 +194,39 @@ export function conflictChance(state: RunState, effects = gatherEffects(state)):
 }
 
 /**
- * Energy to resolve `node`. `mode` is absent for nodes that are walked rather
- * than committed to — a merge, a release.
+ * Energy to write a commit of `kind`. `mode` is absent for nodes that are
+ * landed rather than written — a merge.
+ *
+ * The machine's price is flat: one point, whatever the commit. It does not
+ * get cheaper for being a refactor and it does not get dearer for being a
+ * risky one — that indifference is the thing it sells.
  */
 export function nodeEnergyCost(
   state: RunState,
-  node: MapNode,
+  kind: NodeKind,
   mode: CommitMode | undefined,
-  effects = gatherEffects(state),
 ): Breakdown {
   const notes: I18nText[] = [];
-  let value: number = BALANCE.energy.cost[node.kind];
+  let value: number;
 
-  if (mode !== undefined) value += BALANCE.energy.commitCost[mode];
+  if (mode === "ai") {
+    value = BALANCE.energy.commitCost.ai;
+    notes.push(text("notes.machine_flat"));
+  } else {
+    value = BALANCE.energy.cost[kind];
+    if (mode !== undefined) value += BALANCE.energy.commitCost[mode];
+  }
 
-  if (node.kind === "refactor" && state.player.freeRefactor) {
-    value = 0;
+  if (kind === "refactor" && mode !== undefined && state.player.freeRefactor) {
     notes.push(text("notes.free_refactor"));
-    return { value, notes };
+    return { value: 0, notes };
   }
 
-  if (node.kind === "feature_merge" || node.kind === "sprint_merge") {
-    const discounted = Math.max(0, value - effects.mergeEnergyDiscount);
-    if (discounted !== value) {
-      notes.push(text("notes.merge_free"));
-      value = discounted;
-    }
-  }
-
-  if (isOverextended(state)) {
-    value *= BALANCE.energy.secondBranchCostMultiplier;
-    notes.push(text("notes.overextended_cost"));
+  const extra = wipExtra(state);
+  if (extra > 0 && value > 0) {
+    const multiplier = 1 + BALANCE.wip.energyPerExtra * extra;
+    value = Math.round(value * multiplier);
+    notes.push(text("notes.wip_cost", { count: extra }));
   }
 
   return { value, notes };

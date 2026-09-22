@@ -1,20 +1,17 @@
 import { BALANCE } from "@/game/core/balance";
-import { getNode } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
-import { drawAmbient, injectHotfix, resolveFailure } from "@/game/core/rules/events";
-import { commitChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
 import {
-  type AfterResolution,
-  afterResolution,
-  autoWalk,
-  completeMerge,
-  isMergeNode,
-  replayOntoTrunk,
-  resolveNode,
-} from "@/game/core/rules/progress";
-import type { CommitMode, DetourKind } from "@/game/core/types";
+  drawAmbient,
+  recordIncident,
+  resolveConflict,
+  resolveFailure,
+} from "@/game/core/rules/events";
+import { commitChance, mergeConflictChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
+import { currentTicket, getTicket } from "@/game/core/rules/tickets";
+import { completeMerge, writeCommit } from "@/game/core/rules/write";
+import type { CommitMode, DetourKind, MapNode, NodeKind, Ticket } from "@/game/core/types";
 
 /**
  * The action the whole game is about: write it yourself, or let the machine
@@ -26,26 +23,21 @@ import type { CommitMode, DetourKind } from "@/game/core/types";
  * only partly.
  */
 
-export function performCommit(
-  context: RuleContext,
-  mode: CommitMode,
-  kind?: DetourKind,
-): AfterResolution {
+/** What this commit is written as: the forced kind, the detour, or plain. */
+export function commitKindFor(ticket: Ticket, kind: DetourKind | undefined): NodeKind {
+  return ticket.mustWrite ?? kind ?? "commit";
+}
+
+export function performCommit(context: RuleContext, mode: CommitMode, kind?: DetourKind): void {
   const { state } = context;
-  const node = getNode(state, state.player.nodeId);
+  const ticket = currentTicket(state);
+  if (ticket === null) throw new Error("performCommit: no ticket in hand");
 
-  // Writing it as the thing it offered. The node *becomes* a refactor, so every
-  // rule downstream — the odds, the price, what it does on resolution — reads
-  // `node.kind` exactly as it always has.
-  if (kind !== undefined && node.offers === kind) {
-    node.kind = kind;
-    node.offers = undefined;
-  }
+  const nodeKind = commitKindFor(ticket, kind);
 
-  const cost = nodeEnergyCost(state, node, mode, context.effects);
-  spendEnergy(context, cost.value, "commit");
+  spendEnergy(context, nodeEnergyCost(state, nodeKind, mode).value, "commit");
 
-  const chance = commitChance(state, mode, node, context.effects);
+  const chance = commitChance(state, mode, nodeKind, context.effects);
   let outcome = context.rng.roll(chance.value);
   let rerolled = false;
 
@@ -66,67 +58,110 @@ export function performCommit(
     rerolled,
   });
 
-  if (outcome.success) return succeed(context, mode);
+  if (outcome.success) {
+    succeed(context, ticket, nodeKind, mode);
+    return;
+  }
 
   // A rebase that misses leaves half a replay behind, whatever the failure
   // table then decides to do about it.
-  if (node.kind === "rebase") addDebt(context, BALANCE.rebase.failureDebt);
+  if (nodeKind === "rebase" && !context.effects.absorbRebase) {
+    addDebt(context, BALANCE.rebase.failureDebt);
+  }
 
-  const failure = resolveFailure(context);
+  const failure = resolveFailure(context, nodeKind);
 
   switch (failure.kind) {
     case "conflict":
-      state.phase = { kind: "resolve_conflict", nodeId: node.id, mode };
-      emit(context, { type: "conflict", nodeId: node.id });
-      return "continue";
+      state.phase = {
+        kind: "resolve_conflict",
+        source: "commit",
+        ticketId: ticket.id,
+        mode,
+        nodeKind,
+      };
+      emit(context, { type: "conflict", ticketId: ticket.id });
+      return;
 
     case "resolve":
-      return succeed(context, mode);
+      succeed(context, ticket, nodeKind, mode);
+      return;
 
-    case "resolve_then_hotfix": {
-      resolveNode(context, node, mode);
-      injectHotfix(context);
-      return afterResolution(context);
+    case "resolve_then_incident": {
+      const node = succeed(context, ticket, nodeKind, mode);
+      recordIncident(context, "commit", node.id);
+      return;
     }
 
     case "retry":
-      // The node is still there, still unresolved, and the turn is spent.
+      // Nothing was written, and the turn is spent.
       state.phase = { kind: "choose_action" };
-      return "continue";
+      return;
   }
 }
 
-function succeed(context: RuleContext, mode: CommitMode): AfterResolution {
+function succeed(
+  context: RuleContext,
+  ticket: Ticket,
+  kind: NodeKind,
+  mode: CommitMode,
+  hiddenBug = false,
+): MapNode {
   const { state } = context;
-  const node = getNode(state, state.player.nodeId);
+  const node = writeCommit(context, ticket, kind, mode, { hiddenBug });
 
-  const kind = node.kind;
-  resolveNode(context, node, mode);
-
-  // The trunk moves under you: the rebase node lands, and the next main-line
-  // node lands with it, free.
-  if (kind === "rebase") replayOntoTrunk(context);
-
-  if (mode === "ai") {
-    const jumps = context.rng.int(BALANCE.commit.aiJump.min, BALANCE.commit.aiJump.max);
-    autoWalk(context, jumps + context.effects.aiJumpBonus);
-  } else if (context.rng.chance(BALANCE.commit.craftFreeRefactorPct)) {
-    // Writing it by hand leaves you knowing where the bodies are.
+  // Writing it by hand leaves you knowing where the bodies are.
+  if (mode === "craft" && context.rng.chance(BALANCE.commit.craftFreeRefactorPct)) {
     state.player.freeRefactor = true;
   }
 
   if (context.rng.chance(BALANCE.commit.ambientOnSuccessPct)) drawAmbient(context);
 
-  return afterResolution(context);
+  state.phase = { kind: "choose_action" };
+  return node;
 }
 
-/** Finishes the work that a merge conflict interrupted. */
-export function completeConflict(context: RuleContext, mode: CommitMode): AfterResolution {
-  const node = getNode(context.state, context.state.player.nodeId);
-  // A conflict on a merge is still a merge: it has to cost and pay back what a
-  // merge does, not resolve like an ordinary commit.
-  if (isMergeNode(node)) return completeMerge(context, node);
+/**
+ * Landing the ticket in hand. The only place a merge conflict can start,
+ * because it is the only place two histories meet — that and a rebase, which
+ * is the same act under another name.
+ */
+export function performMerge(context: RuleContext): void {
+  const { state } = context;
+  const ticket = currentTicket(state);
+  if (ticket === null) throw new Error("performMerge: no ticket in hand");
 
-  resolveNode(context, node, mode);
-  return afterResolution(context);
+  if (context.rng.chance(mergeConflictChance(state, ticket))) {
+    state.phase = { kind: "resolve_conflict", source: "merge", ticketId: ticket.id };
+    emit(context, { type: "conflict", ticketId: ticket.id });
+    return;
+  }
+
+  completeMerge(context, ticket);
+  state.phase = { kind: "choose_action" };
+}
+
+/**
+ * The two ways out of a conflict, and what each leads to. A merge cannot be
+ * walked away from — the ticket is half-applied and the only way out is
+ * through — so a failed manual fix leaves the question on the table. A rebase
+ * that stays tangled is simply not landed, and the turn is gone.
+ */
+export function resolveConflictPhase(context: RuleContext, how: "manual" | "ai"): void {
+  const { state } = context;
+  const phase = state.phase;
+  if (phase.kind !== "resolve_conflict") throw new Error("resolveConflictPhase: no conflict");
+
+  const ticket = getTicket(state, phase.ticketId);
+  const { resolved, hiddenBug } = resolveConflict(context, how);
+
+  if (!resolved) {
+    if (phase.source === "commit") state.phase = { kind: "choose_action" };
+    return;
+  }
+
+  if (phase.source === "merge") completeMerge(context, ticket, { hiddenBug });
+  else succeed(context, ticket, phase.nodeKind, phase.mode, hiddenBug);
+
+  state.phase = { kind: "choose_action" };
 }

@@ -1,123 +1,107 @@
 import { describe, expect, test } from "bun:test";
 
-import { BALANCE } from "@/game/core/balance";
-import { checkInvariants } from "@/game/core/map/graph";
+import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
-import { getAvailableActions } from "@/game/core/rules/actions";
-import { applyAction } from "@/game/core/rules/reducer";
-import type { MapNode } from "@/game/core/types";
+import { openTickets } from "@/game/core/rules/tickets";
 
-import { isCommit, newRun, play, prefer } from "./helpers";
+import { findSeed, isCommit, isType, newRun, play, policy, prefer } from "./helpers";
 
-function sprintNodes(seed: string): MapNode[] {
-  return Object.values(newRun(seed).nodes);
-}
-
-describe("sprint generation", () => {
-  test("500 seeds all satisfy the structural invariants", () => {
+/**
+ * There is no map to generate any more: the graph is written as the run is
+ * played. So the structural rules are checked on played runs — several
+ * hundred seeds, each driven a few dozen actions by a player who starts,
+ * commits, and merges.
+ */
+describe("the written graph", () => {
+  test("500 played seeds all satisfy the structural invariants", () => {
     const broken: string[] = [];
     for (let i = 0; i < 500; i++) {
-      const failures = checkInvariants(sprintNodes(`map-${i}`));
-      if (failures.length > 0) broken.push(`map-${i}: ${failures[0]?.rule}`);
+      const { state } = play(newRun(`map-${i}`), { pick: policy("ai"), limit: 40 });
+      const failures = checkInvariants(state);
+      if (failures.length > 0) broken.push(`map-${i}: ${failures[0]?.rule} ${failures[0]?.detail}`);
     }
     expect(broken).toEqual([]);
   });
 
-  test("main ships sprints, dev integrates features", () => {
-    const { featuresPerSprint } = BALANCE.map;
-
-    for (let i = 0; i < 200; i++) {
-      const state = newRun(`len-${i}`);
-      const main = Object.values(state.nodes).filter((node) => node.lane === MAIN_LANE);
-      const dev = Object.values(state.nodes).filter((node) => node.lane === DEV_LANE);
-
-      // `main` takes exactly two nodes a sprint: the merge that ships it and
-      // the release that tags it. Nothing is ever written there.
-      expect(main.map((node) => node.kind).sort()).toEqual(["release", "sprint_merge"]);
-
-      // `dev` is the anchor plus one merge per feature — and that is the race.
-      expect(dev.length).toBe(state.sprintLength);
-      expect(state.sprintLength).toBeGreaterThanOrEqual(featuresPerSprint.min + 1);
-      expect(state.sprintLength).toBeLessThanOrEqual(featuresPerSprint.max + 1);
-      for (const node of dev) {
-        expect(["sprint_start", "feature_merge"]).toContain(node.kind);
-        expect(node.branchId).toBeUndefined();
-      }
+  test("a fresh run has exactly one commit: dev, opened from nothing", () => {
+    for (let i = 0; i < 50; i++) {
+      const state = newRun(`fresh-${i}`);
+      const nodes = Object.values(state.nodes);
+      expect(nodes.length).toBe(1);
+      expect(nodes[0]?.kind).toBe("sprint_start");
+      expect(nodes[0]?.lane).toBe(DEV_LANE);
+      expect(nodes[0]?.parents).toEqual([]);
+      expect(headOf(state).id).toBe(nodes[0]?.id ?? "");
     }
   });
 
-  test("no commit is ever made on a long-lived branch", () => {
-    for (let i = 0; i < 200; i++) {
-      const nodes = sprintNodes(`trunk-${i}`);
-      const commits = nodes.filter((node) => node.kind === "commit");
-      expect(commits.length).toBeGreaterThan(0);
+  test("main ships sprints, dev integrates tickets, and nothing is written on either", () => {
+    const { state } = findSeed((r) => r.state.sprint >= 3, {
+      prefix: "trunk",
+      pick: policy("ai"),
+      limit: 400,
+      stop: (s) => s.sprint >= 3,
+    });
 
-      for (const node of commits) {
-        expect(node.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
-        expect(node.branchId).toBeDefined();
-      }
+    const main = Object.values(state.nodes).filter((node) => node.lane === MAIN_LANE);
+    const dev = Object.values(state.nodes).filter((node) => node.lane === DEV_LANE);
+    expect(main.length).toBe(2 * (state.sprint - 1));
+    for (const node of main) expect(["sprint_merge", "release"]).toContain(node.kind);
+    for (const node of dev) expect(["sprint_start", "feature_merge"]).toContain(node.kind);
 
-      // A detour is a way of writing a commit, never a node of its own.
-      for (const node of nodes) {
-        expect(["refactor", "risky", "chore", "squash", "docs", "rebase"]).not.toContain(node.kind);
-      }
+    const work = Object.values(state.nodes).filter((node) => node.lane >= FIRST_FEATURE_LANE);
+    expect(work.length).toBeGreaterThan(0);
+    for (const node of work) expect(node.ticketId).toBeDefined();
+  });
+
+  test("a sprint's release has two parents on main and the merge before it one from dev", () => {
+    const { state } = findSeed((r) => r.state.sprint >= 3, {
+      prefix: "release-parents",
+      pick: policy("ai"),
+      limit: 400,
+      stop: (s) => s.sprint >= 3,
+    });
+
+    const merges = Object.values(state.nodes)
+      .filter((node) => node.kind === "sprint_merge")
+      .sort((a, b) => a.depth - b.depth);
+    expect(merges.length).toBe(2);
+
+    // The first sprint merge has only `dev` behind it; the second also has the
+    // previous release, the way git records a merge on a branch with history.
+    expect(merges[0]?.parents.length).toBe(1);
+    expect(merges[1]?.parents.length).toBe(2);
+    for (const merge of merges) {
+      const fromDev = merge.parents.some((id) => state.nodes[id]?.lane === DEV_LANE);
+      expect(fromDev).toBe(true);
     }
   });
 
-  test("every sprint offers real choices, not a corridor", () => {
-    for (let i = 0; i < 200; i++) {
-      const nodes = sprintNodes(`choice-${i}`);
-      const branching = nodes.filter((node) => node.next.length > 1);
-      expect(branching.length).toBeGreaterThan(0);
+  test("every open ticket has a column of its own, freed when it merges", () => {
+    for (let i = 0; i < 60; i++) {
+      // Start everything, merge nothing: as many columns as tickets.
+      const greedy = play(newRun(`columns-${i}`), {
+        pick: prefer(isType("start"), isCommit("ai")),
+        limit: 30,
+      });
+      const lanes = openTickets(greedy.state).map((ticket) => ticket.lane);
+      expect(new Set(lanes).size).toBe(lanes.length);
+      for (const lane of lanes) expect(lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
     }
-  });
 
-  test("every merge offers a choice of features, and some of them carry a skill", () => {
-    for (let i = 0; i < 100; i++) {
-      const state = newRun(`feature-${i}`);
-      const features = Object.values(state.branches).filter((branch) => branch.kind === "feature");
-      expect(features.length).toBeGreaterThan(0);
-      expect(features.some((branch) => branch.skillId !== undefined)).toBe(true);
-
-      // Every node on main that is not an end offers at least two features.
-      for (const node of Object.values(state.nodes)) {
-        if (node.lane !== 0) continue;
-        if (node.kind === "sprint_merge" || node.kind === "release") continue;
-        if (node.kind === "feature_merge" && node.next.length === 1) continue;
-        expect(node.next.length).toBeGreaterThanOrEqual(BALANCE.map.featureOptions.min);
-      }
-    }
-  });
-
-  test("a feature branch merges strictly below its fork", () => {
-    for (let i = 0; i < 100; i++) {
-      const state = newRun(`merge-${i}`);
-      for (const branch of Object.values(state.branches)) {
-        const nodes = branch.nodeIds.map((id) => state.nodes[id]);
-        const target = state.nodes[branch.mergeInto];
-        expect(target).toBeDefined();
-        for (const node of nodes) {
-          expect(node).toBeDefined();
-          if (node === undefined || target === undefined) continue;
-          expect(node.depth).toBeLessThan(target.depth);
-        }
-      }
-    }
-  });
-
-  test("no two branches share a column at the same depth", () => {
-    for (let i = 0; i < 300; i++) {
-      const failures = checkInvariants(sprintNodes(`lane-${i}`)).filter(
-        (failure) => failure.rule === "lane-collision",
-      );
-      expect(failures).toEqual([]);
-    }
+    const { state } = play(newRun("free-column"), {
+      pick: policy("ai"),
+      limit: 300,
+      stop: (s) => s.ticketsDelivered >= 1,
+    });
+    const merged = Object.values(state.tickets).find((ticket) => ticket.status === "merged");
+    expect(merged?.lane).toBeUndefined();
   });
 
   test("node ids stay unique once later sprints are appended", () => {
     const { state } = play(newRun("append"), {
-      pick: prefer(isCommit("ai"), isCommit("craft")),
-      limit: 300,
+      pick: policy("ai"),
+      limit: 400,
       stop: (s) => s.sprint >= 3,
     });
 
@@ -126,120 +110,27 @@ describe("sprint generation", () => {
     expect(new Set(ids.map(nodeSerial)).size).toBe(ids.length);
   });
 
-  test("appended sprints keep the graph acyclic and connected", () => {
-    const { state } = play(newRun("append-2"), {
-      pick: prefer(isCommit("ai"), isCommit("craft")),
-      limit: 300,
-      stop: (s) => s.sprint >= 3,
-    });
-
-    for (const node of Object.values(state.nodes)) {
-      for (const nextId of node.next) {
-        const next = state.nodes[nextId];
-        expect(next).toBeDefined();
-        if (next !== undefined) expect(next.depth).toBeGreaterThan(node.depth);
-      }
-    }
-  });
-});
-
-describe("paths through a sprint", () => {
-  test("every route crosses the sprint merge", () => {
-    // A detour that lands on the release would skip the design's end-of-sprint
-    // merge, and with it the energy the sprint boundary is supposed to give
-    // back — while leaving the merge node stranded in the graph forever.
-    for (let i = 0; i < 300; i++) {
-      const state = newRun(`merge-path-${i}`);
-      const merge = Object.values(state.nodes).find((node) => node.kind === "sprint_merge");
-      const release = Object.values(state.nodes).find((node) => node.kind === "release");
-
-      expect(merge).toBeDefined();
-      expect(release).toBeDefined();
-      if (merge === undefined || release === undefined) continue;
-
-      const intoRelease = Object.values(state.nodes).filter((node) =>
-        node.next.includes(release.id),
-      );
-      expect(intoRelease.map((node) => node.id)).toEqual([merge.id]);
-    }
+  test("rows only ever go up: every commit is written after everything before it", () => {
+    const { state } = play(newRun("rows"), { pick: policy("ai"), limit: 200 });
+    const depths = Object.values(state.nodes).map((node) => node.depth);
+    expect(new Set(depths).size).toBe(depths.length);
+    expect(Math.max(...depths)).toBe(state.nextDepth - 1);
   });
 
-  test("a feature is delivered by its merge commit, not by its last commit", () => {
-    // Taking a sub-branch skips some of its parent's nodes by design. Requiring
-    // every node to have been walked left the parent open for the rest of the
-    // run: the skill it promised was swallowed, and `isOverextended` stayed
-    // true forever, costing −15 on every roll with no way to clear it.
-    //
-    // Played across many seeds, always stepping onto a branch when offered, so
-    // sub-branches are actually entered.
-    let checked = 0;
-
-    for (let i = 0; i < 60; i++) {
-      const played = play(newRun(`sub-merge-${i}`), {
-        pick: (state, actions) => {
-          const onto = actions.find(
-            (action) =>
-              action.type === "move" && state.nodes[action.nodeId]?.branchId !== undefined,
-          );
-          return onto ?? actions.find(isCommit("ai")) ?? actions[0];
-        },
-        limit: 400,
-      });
-
-      for (const branch of Object.values(played.state.branches)) {
-        if (branch.kind !== "feature" && branch.kind !== "subfeature") continue;
-        if (!branch.open && !branch.merged) continue;
-
-        const mergeResolved = played.state.nodes[branch.mergeInto]?.status === "done";
-        checked += 1;
-        expect(branch.merged).toBe(mergeResolved);
-        expect(branch.open).toBe(!mergeResolved);
-      }
-    }
-
-    expect(checked).toBeGreaterThan(20);
-  });
-});
-
-describe("what the graph can express", () => {
-  test("HEAD is always on a commit that exists", () => {
+  test("HEAD is always on a commit that exists, on the ticket in hand when it has one", () => {
     for (let i = 0; i < 40; i += 1) {
-      const played = play(newRun(`head-${i}`), {
-        pick: prefer(isCommit("ai"), isCommit("craft")),
-        limit: 80,
-      });
+      const played = play(newRun(`head-${i}`), { pick: policy("ai"), limit: 80 });
+      const state = played.state;
 
-      const head = played.state.nodes[played.state.player.headId];
-      expect(head).toBeDefined();
-      // In git you stand on history. The node you are about to write does not
-      // exist yet, so there is nothing there to stand on.
-      expect(head?.status).toBe("done");
-    }
-  });
+      const head = headOf(state);
+      expect(state.nodes[head.id]).toBeDefined();
 
-  test("a choice is always a choice between features", () => {
-    for (let i = 0; i < 60; i += 1) {
-      let state = newRun(`choice-shape-${i}`);
-
-      for (let step = 0; step < 120 && state.phase.kind !== "game_over"; step += 1) {
-        if (state.phase.kind === "choose_node") {
-          const { candidates } = state.phase;
-
-          // Never a list of one: a forced step is walked, not offered.
-          expect(candidates.length).toBeGreaterThanOrEqual(2);
-
-          // And every option opens a branch of its own.
-          for (const id of candidates) {
-            const node = state.nodes[id];
-            expect(node?.branchId).toBeDefined();
-            expect(node?.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
-          }
-        }
-
-        const legal = getAvailableActions(state);
-        const action = legal.find(isCommit("ai")) ?? legal[0];
-        if (action === undefined) break;
-        state = applyAction(state, action).state;
+      const ticketId = state.player.ticketId;
+      const ticket = ticketId === null ? undefined : state.tickets[ticketId];
+      if (ticket !== undefined && ticket.nodeIds.length > 0) {
+        expect(head.id).toBe(ticket.nodeIds[ticket.nodeIds.length - 1] ?? "");
+      } else {
+        expect(head.lane).toBe(DEV_LANE);
       }
     }
   });

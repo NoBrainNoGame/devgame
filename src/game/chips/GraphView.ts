@@ -3,6 +3,7 @@ import { Container, Graphics, Text } from "pixi.js";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
+import { headOf } from "@/game/core/map/graph";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
@@ -13,13 +14,10 @@ import { labelledKind, laneColour, NODE_RADIUS, nodeGlyph, nodePrefix } from "@/
 /**
  * The history, as it is written.
  *
- * The graph shows **what has happened and nothing else**. The engine knows the
- * whole sprint in advance — it has to, or a run could not be replayed — but
- * showing it would turn the game into a board you walk across, when the fiction
- * is a repository you are building commit by commit. So the graph stops at the
- * node you are standing on: nothing above it, not even a hint of a branch. The
- * next commit is drawn when you have chosen it, and a fork appears only once
- * you have opened the branch that makes it one.
+ * The graph shows **what has happened and nothing else**. The engine holds no
+ * commit before it is written — a ticket is a demand, not a path — so the
+ * graph stops at the last commit: nothing above it, not even a hint of what
+ * comes next. A ticket's column appears with its first commit and not before.
  *
  * A new commit is never inserted silently: `reveal` animates it in, which is
  * what lets a machine-written burst of three read as three separate things
@@ -95,10 +93,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   // --- what is visible ------------------------------------------------------
 
-  /**
-   * Nodes the player has actually resolved. A node the engine generated but
-   * nobody has reached does not exist as far as the graph is concerned.
-   */
+  /** Every commit written. Nothing exists in the state before it is. */
   private revealed(): MapNode[] {
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
@@ -106,7 +101,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     return Object.keys(state.nodes)
       .sort()
       .map((id) => state.nodes[id])
-      .filter((node): node is MapNode => node !== undefined && node.status === "done");
+      .filter((node): node is MapNode => node !== undefined);
   }
 
   private rebuild(): void {
@@ -136,13 +131,16 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const { session } = sceneContext(this.chipContext);
     const state = session.getState();
 
+    // An edge runs from a commit to each of its parents, the way git records
+    // it: a merge draws two, one straight up its column and one bending in
+    // from the ticket it landed.
     for (const node of nodes) {
-      for (const nextId of node.next) {
-        if (!shown.has(nextId)) continue;
-        const next = state.nodes[nextId];
-        if (next === undefined) continue;
+      for (const parentId of node.parents) {
+        if (!shown.has(parentId)) continue;
+        const parent = state.nodes[parentId];
+        if (parent === undefined) continue;
 
-        drawEdge(this.edges, node, next, laneColour(next.lane, next.kind), 0.95);
+        drawEdge(this.edges, parent, node, laneColour(node.lane, node.kind), 0.95);
       }
     }
   }
@@ -240,9 +238,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     if (this.sprites === undefined) return null;
 
     const nodes = this.revealed();
-    const head = this.node(sceneContext(this.chipContext).session.getState().player.headId);
-    const all = head === undefined ? nodes : [...nodes, head];
-    if (all.length === 0) return null;
+    const all = [...nodes, headOf(sceneContext(this.chipContext).session.getState())];
 
     const xs = all.map((node) => nodeX(node.lane));
     const ys = all.map((node) => nodeY(node.depth));
@@ -258,6 +254,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
 /** A glyph on every node is a glyph on none, so ordinary commits stay plain. */
 function glyphFor(node: MapNode): string {
-  if (node.kind === "commit" || node.kind === "feature") return "";
+  if (node.kind === "commit") return "";
   return nodeGlyph(node.kind);
 }

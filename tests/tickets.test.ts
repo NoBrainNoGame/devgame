@@ -1,0 +1,168 @@
+import { describe, expect, test } from "bun:test";
+
+import { SKILLS } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
+import { ticketsFor } from "@/game/core/map/tickets";
+import { getAvailableActions } from "@/game/core/rules/actions";
+import { applyAction } from "@/game/core/rules/reducer";
+import { backlogTickets, openTickets, sortedTickets } from "@/game/core/rules/tickets";
+import { createRun } from "@/game/core/run";
+import { SAVE_VERSION } from "@/game/dto/version";
+
+import { eventsOfType, findSeed, inHand, isType, newRun, play, policy } from "./helpers";
+
+describe("the backlog", () => {
+  test("a sprint brings the tickets the balance says, more as the project goes on", () => {
+    const { base, growEvery, maxPerSprint } = BALANCE.tickets;
+    expect(ticketsFor(1)).toBe(base);
+    expect(ticketsFor(1 + growEvery)).toBe(base + 1);
+    expect(ticketsFor(999)).toBe(maxPerSprint);
+
+    for (let i = 0; i < 50; i += 1) {
+      const state = newRun(`arrivals-${i}`);
+      expect(backlogTickets(state).length).toBe(ticketsFor(1));
+      expect(openTickets(state)).toEqual([]);
+    }
+  });
+
+  test("the first ticket of a sprint always carries a skill, and it costs more points", () => {
+    for (let i = 0; i < 100; i += 1) {
+      const state = newRun(`frontier-${i}`);
+      const tickets = sortedTickets(state);
+      const first = tickets[0];
+      expect(first?.skillId).toBeDefined();
+
+      const { points, skillExtraPoints } = BALANCE.tickets;
+      for (const ticket of tickets) {
+        if (ticket.skillId === undefined) {
+          expect(ticket.points).toBeGreaterThanOrEqual(points.min);
+          expect(ticket.points).toBeLessThanOrEqual(points.max);
+        } else {
+          expect(ticket.points).toBeGreaterThanOrEqual(points.min + skillExtraPoints.min);
+          expect(ticket.points).toBeLessThanOrEqual(points.max + skillExtraPoints.max);
+        }
+      }
+    }
+  });
+
+  test("a skill is never promised twice", () => {
+    const { state } = findSeed((r) => r.state.sprint >= 3, {
+      prefix: "unique-skill",
+      pick: policy("ai"),
+      limit: 400,
+    });
+
+    const promised = sortedTickets(state)
+      .filter((ticket) => ticket.status !== "merged")
+      .map((ticket) => ticket.skillId)
+      .filter((id) => id !== undefined);
+    expect(new Set(promised).size).toBe(promised.length);
+    for (const id of promised) expect(state.skills).not.toContain(id);
+  });
+
+  test("`reviewed` is never asked of a run that can never review", () => {
+    for (let i = 0; i < 60; i += 1) {
+      const state = newRun(`no-review-${i}`);
+      const learnable = state.unlockedSkills.some((id) => SKILLS[id].effects.canReview === true);
+      if (learnable) continue;
+      for (const ticket of sortedTickets(state)) {
+        expect(ticket.criteria).not.toContain("reviewed");
+      }
+    }
+
+    // And the other way round: with review unlockable, it does turn up.
+    let seen = 0;
+    for (let i = 0; i < 100; i += 1) {
+      const state = newRun(`review-crit-${i}`);
+      if (sortedTickets(state).some((ticket) => ticket.criteria.includes("reviewed"))) seen += 1;
+    }
+    expect(seen).toBeGreaterThan(0);
+  });
+
+  test("starting a ticket is free, takes a column, and puts it in hand", () => {
+    const state = newRun("start");
+    const start = getAvailableActions(state).find(isType("start"));
+    if (start?.type !== "start") throw new Error("expected a start");
+
+    const after = applyAction(state, start).state;
+    const ticket = after.tickets[start.ticketId];
+
+    expect(after.turn).toBe(state.turn);
+    expect(ticket?.status).toBe("open");
+    expect(ticket?.lane).toBeGreaterThanOrEqual(2);
+    expect(after.player.ticketId).toBe(start.ticketId);
+  });
+
+  test("a second ticket takes its own column, and switching is free", () => {
+    const one = inHand("two-columns");
+    const start = getAvailableActions(one).find(isType("start"));
+    if (start?.type !== "start") throw new Error("expected a second ticket");
+
+    const two = applyAction(one, start).state;
+    const lanes = openTickets(two).map((ticket) => ticket.lane);
+    expect(new Set(lanes).size).toBe(2);
+    // Starting a second one does not pull you off the first.
+    expect(two.player.ticketId).toBe(one.player.ticketId);
+
+    const switched = applyAction(two, { type: "checkout", ticketId: start.ticketId }).state;
+    expect(switched.player.ticketId).toBe(start.ticketId);
+    expect(switched.turn).toBe(two.turn);
+  });
+
+  test("a ticket left in the backlog past its grace is assigned to you", () => {
+    // Start one ticket and never another: everything else sits in the backlog
+    // until the board hands it over. Hand-written on a deep tank, so the run
+    // reaches the sprint where that happens without burning out or shipping
+    // anything broken.
+    const deep = createRun({
+      seed: "assigned",
+      mode: "classic",
+      profileId: "junior",
+      version: SAVE_VERSION,
+      meta: { statPoints: { energyMax: 200 } },
+    });
+    let started = false;
+    const idle = play(deep, {
+      pick: (state, actions) => {
+        if (state.player.ticketId === null && !started) {
+          started = true;
+          return actions.find((a) => a.type === "start");
+        }
+        return (
+          actions.find((a) => a.type === "commit" && a.mode === "craft" && a.kind === undefined) ??
+          actions.find((a) => a.type !== "start")
+        );
+      },
+      limit: 80,
+      stop: (_, events) =>
+        events.some((e) => e.type === "ticket_started" && e.forced && e.kind === "feature"),
+    });
+
+    // A hotfix is forced open too, but that is production's doing, not the
+    // board's: only a feature left waiting counts here.
+    const forced = eventsOfType(idle.events, "ticket_started").filter(
+      (e) => e.forced && e.kind === "feature",
+    );
+    expect(forced.length).toBeGreaterThan(0);
+    const first = forced[0];
+    if (first === undefined) return;
+
+    const ticket = idle.state.tickets[first.ticketId];
+    expect(ticket?.status).toBe("open");
+    expect(idle.state.sprint - (ticket?.sprintArrived ?? 0)).toBeGreaterThan(
+      BALANCE.tickets.graceSprints,
+    );
+  });
+
+  test("tickets are ordered by number, not by spelling, past the tenth", () => {
+    const { state } = findSeed((r) => r.state.nextTicketSerial > 12, {
+      prefix: "serial",
+      pick: policy("ai"),
+      limit: 600,
+    });
+
+    const ids = sortedTickets(state).map((ticket) => Number(ticket.id.slice(1)));
+    const sorted = [...ids].sort((a, b) => a - b);
+    expect(ids).toEqual(sorted);
+  });
+});

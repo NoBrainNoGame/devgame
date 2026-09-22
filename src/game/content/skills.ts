@@ -1,8 +1,8 @@
 import type { PartialEffects } from "@/game/content/effects";
 
 /**
- * Skills are permanent for the length of a run. Every one of them is a feature
- * branch you merge.
+ * Skills are permanent for the length of a run. Every one of them is the reward
+ * of a ticket you delivered.
  */
 
 export const SKILL_IDS = [
@@ -105,7 +105,9 @@ export const SKILLS: Record<SkillId, SkillDef> = {
 
   sprint_final: {
     id: "sprint_final",
-    effects: { aiJumpBonus: 1 },
+    // The machine's debt, discounted: the only skill that makes the fast route
+    // cheaper to keep taking rather than safer to take once.
+    effects: { aiDebtDiscount: 3 },
     unlockCost: 300,
   },
   lynx_eye: {

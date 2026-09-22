@@ -13,10 +13,20 @@ import { DEVOPS_IDS, PROFILE_IDS, RELIC_IDS, SKILL_IDS } from "@/game/content";
 /** Upper bound on a single run, so a replay can never be made to run forever. */
 export const MAX_ACTIONS = 5000;
 
+const TicketIdSchema = z.string().regex(/^t\d+$/);
+
+const DetourKindSchema = z.enum(["refactor", "risky", "chore", "squash", "docs", "rebase"]);
+
 export const PlayerActionSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("commit"), mode: z.enum(["craft", "ai"]) }),
+  z.object({ type: z.literal("start"), ticketId: TicketIdSchema }),
+  z.object({ type: z.literal("checkout"), ticketId: TicketIdSchema }),
+  z.object({
+    type: z.literal("commit"),
+    mode: z.enum(["craft", "ai"]),
+    kind: DetourKindSchema.optional(),
+  }),
   z.object({ type: z.literal("review") }),
-  z.object({ type: z.literal("move"), nodeId: z.string().regex(/^\d+:\d+$/) }),
+  z.object({ type: z.literal("merge") }),
   z.object({ type: z.literal("devops"), id: z.enum(DEVOPS_IDS) }),
   z.object({ type: z.literal("resolve_conflict"), how: z.enum(["manual", "ai"]) }),
   z.object({ type: z.literal("choose_relic"), relicId: z.enum(RELIC_IDS) }),

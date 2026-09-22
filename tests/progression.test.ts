@@ -7,7 +7,7 @@ import { applyRunToMeta, levelProgress } from "@/lib/profile/progression";
 const NOW = "2026-09-21T10:00:00.000Z";
 const LATER = "2026-09-22T10:00:00.000Z";
 
-const nothing = { xp: 0, commits: 0, botsFired: 0, sprints: 0 };
+const nothing = { xp: 0, commits: 0, ticketsDelivered: 0, sprints: 0 };
 
 describe("applyRunToMeta", () => {
   test("a run that earned nothing changes nothing but the timestamp", () => {
@@ -73,13 +73,13 @@ describe("applyRunToMeta", () => {
     const rich = { ...emptyMeta(NOW), xp: 1000, totalCommits: 500, commitsBank: 500 };
     const { meta } = applyRunToMeta(
       rich,
-      { xp: -50, commits: -100, botsFired: -3, sprints: 0 },
+      { xp: -50, commits: -100, ticketsDelivered: -3, sprints: 0 },
       LATER,
     );
 
     expect(meta.xp).toBe(1000);
     expect(meta.totalCommits).toBe(500);
-    expect(meta.botsFired).toBe(0);
+    expect(meta.ticketsDelivered).toBe(0);
   });
 });
 

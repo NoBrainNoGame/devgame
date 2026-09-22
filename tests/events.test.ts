@@ -1,132 +1,137 @@
 import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
-import { checkInvariants } from "@/game/core/map/graph";
-import { FIRST_FEATURE_LANE } from "@/game/core/map/layout";
+import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
+import { openTickets } from "@/game/core/rules/tickets";
 
-import { eventsOfType, findSeed, isCommit, newRun, play, prefer } from "./helpers";
-
-const aiPolicy = prefer(isCommit("ai"));
+import {
+  eventsOfType,
+  findSeed,
+  inHand,
+  isCommit,
+  isType,
+  makeReady,
+  newRun,
+  plantAiCommit,
+  play,
+  policy,
+  prefer,
+  settle,
+  ticketInHand,
+} from "./helpers";
 
 describe("failures", () => {
-  test("a hotfix splices nodes in and leaves the graph valid", () => {
+  test("a production bug opens a hotfix ticket and fills the gauge", () => {
     const { state, events } = findSeed(
-      (r) => r.events.some((e) => e.type === "nodes_injected" && e.kind === "hotfix"),
-      { prefix: "hotfix", pick: aiPolicy, limit: 120 },
+      (r) => r.events.some((e) => e.type === "incident" && e.source === "commit"),
+      { prefix: "hotfix", pick: policy("ai"), limit: 200 },
     );
 
-    const injected = eventsOfType(events, "nodes_injected").filter((e) => e.kind === "hotfix");
-    expect(injected[0]?.nodeIds.length).toBe(BALANCE.failure.hotfixNodes);
-    expect(
-      checkInvariants(Object.values(state.nodes).filter((n) => n.sprint === state.sprint)),
-    ).toBeDefined();
+    const incident = eventsOfType(events, "incident").find((e) => e.source === "commit");
+    expect(incident).toBeDefined();
+    if (incident === undefined) return;
 
-    for (const node of Object.values(state.nodes)) {
-      for (const nextId of node.next) {
-        const next = state.nodes[nextId];
-        expect(next?.depth ?? 0).toBeGreaterThan(node.depth);
-      }
-    }
+    const hotfix = state.tickets[incident.ticketId];
+    expect(hotfix?.kind).toBe("hotfix");
+    expect(hotfix?.mustWrite).toBe("hotfix");
+    expect(hotfix?.criteria).toEqual([]);
+    expect(hotfix?.points).toBe(BALANCE.failure.hotfixPoints);
+    expect(state.quality).toBeGreaterThan(0);
   });
 
-  test("a hotfix is written on the branch you were on, not beside it", () => {
-    const { state } = findSeed(
-      (r) => r.events.some((e) => e.type === "nodes_injected" && e.kind === "hotfix"),
-      { prefix: "hotfix-lane", pick: aiPolicy, limit: 120 },
+  test("a hotfix ticket only takes fix commits, and they land in its own column", () => {
+    const found = findSeed(
+      (r) => r.events.some((e) => e.type === "incident" && e.source === "commit"),
+      {
+        prefix: "hotfix-commits",
+        pick: policy("ai"),
+        limit: 200,
+        stop: (_, latest) => latest.some((e) => e.type === "incident"),
+      },
     );
+    const state = settle(found.state);
 
-    const hotfix = Object.values(state.nodes).filter((node) => node.kind === "hotfix");
-    expect(hotfix.length).toBeGreaterThan(0);
+    const hotfix = openTickets(state).find((ticket) => ticket.kind === "hotfix");
+    expect(hotfix).toBeDefined();
+    if (hotfix === undefined) return;
 
-    // A production bug is `fix:` commits you have to write before you can carry
-    // on — never `main`, never `dev`, and never a branch with no merge.
-    for (const node of hotfix) {
-      expect(node.lane).toBeGreaterThanOrEqual(FIRST_FEATURE_LANE);
-      expect(node.branchId).toBeDefined();
+    const onIt = applyAction(state, { type: "checkout", ticketId: hotfix.id }).state;
+    const commits = getAvailableActions(onIt).filter(isType("commit"));
+    expect(commits.length).toBe(2);
+    expect(commits.every((a) => a.type === "commit" && a.kind === undefined)).toBe(true);
+
+    const written = play(onIt, { pick: prefer(isCommit("craft")), limit: 6 });
+    for (const done of eventsOfType(written.events, "node_done")) {
+      if (done.kind === "sprint_merge" || done.kind === "release") continue;
+      const node = written.state.nodes[done.nodeId];
+      if (node?.ticketId !== hotfix.id) continue;
+      expect(done.kind).toBe("hotfix");
+      expect(node.lane).toBeGreaterThanOrEqual(2);
     }
   });
 
   test("monitoring shortens the hotfix", () => {
-    const { state } = findSeed((r) => r.state.phase.kind === "choose_action", {
-      prefix: "mon",
-      pick: aiPolicy,
-      limit: 1,
-    });
-
-    const watched = structuredClone(state);
-    watched.devops.monitoring = 1;
-    expect(BALANCE.failure.hotfixNodesWithMonitoring).toBeLessThan(BALANCE.failure.hotfixNodes);
-    expect(watched.devops.monitoring).toBe(1);
+    expect(BALANCE.failure.hotfixPointsWithMonitoring).toBeLessThan(BALANCE.failure.hotfixPoints);
   });
 
   test("a production bug needs unreviewed machine-written code", () => {
-    const craftOnly = play(newRun("no-prod-bug"), { pick: prefer(isCommit("craft")), limit: 120 });
+    const craftOnly = play(newRun("no-prod-bug"), { pick: policy("craft"), limit: 200 });
     const prodBugs = eventsOfType(craftOnly.events, "failure_event").filter(
       (e) => e.eventId === "prod_bug",
     );
     expect(prodBugs).toEqual([]);
   });
 
-  test("Tests counters a rejected pull request instead of costing progress", () => {
-    const { state } = findSeed((r) => r.state.phase.kind === "choose_action", {
-      prefix: "pr",
-      pick: aiPolicy,
-      limit: 1,
-    });
-
-    const armed = structuredClone(state);
+  test("Tests counters a rejected pull request instead of costing points", () => {
+    const armed = inHand("pr");
     armed.skills = ["unit_tests"];
 
-    const run = play(armed, { pick: aiPolicy, limit: 200 });
+    const run = play(armed, { pick: policy("ai"), limit: 300 });
     for (const event of eventsOfType(run.events, "pr_rejected")) {
       expect(event.countered).toBe(true);
     }
   });
 
-  test("auto-rebase absorbs a forced rebase", () => {
-    const { state } = findSeed((r) => r.state.phase.kind === "choose_action", {
-      prefix: "rebase",
-      pick: aiPolicy,
-      limit: 1,
-    });
+  test("a rejected pull request takes points back off the ticket", () => {
+    const { events } = findSeed(
+      (r) => r.events.some((e) => e.type === "pr_rejected" && !e.countered),
+      { prefix: "pr-points", pick: policy("ai"), limit: 300 },
+    );
 
-    const armed = structuredClone(state);
-    armed.devops.auto_rebase = 1;
+    const taken = eventsOfType(events, "points").filter((e) => e.delta < 0);
+    // A ticket with nothing filled yet has nothing to lose, which is the one
+    // case the event fires without a points delta.
+    for (const event of taken) expect(event.delta).toBe(-BALANCE.failure.prRejectedPoints);
+  });
 
-    const run = play(armed, { pick: aiPolicy, limit: 200 });
-    for (const event of eventsOfType(run.events, "forced_rebase")) {
-      expect(event.absorbed).toBe(true);
-    }
+  test("a broken build costs energy and writes nothing", () => {
+    const { events } = findSeed(
+      (r) => r.events.some((e) => e.type === "failure_event" && e.eventId === "broken_build"),
+      { prefix: "broken", pick: policy("ai"), limit: 300 },
+    );
+    const spent = eventsOfType(events, "energy").filter((e) => e.reason === "broken_build");
+    expect(spent[0]?.delta).toBe(-BALANCE.failure.brokenBuildEnergy);
   });
 
   test("resolving a conflict by hand costs energy, by machine costs debt", () => {
     const { state } = findSeed((r) => r.state.phase.kind === "resolve_conflict", {
       prefix: "conflict-cost",
-      pick: aiPolicy,
-      limit: 60,
+      pick: policy("ai"),
+      limit: 120,
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
 
-    // Asserted on what untangling it charged, not on the net: a conflict happens
-    // at a merge, and finishing one hands the merge's rest back in the same
-    // action — often more than the fix cost.
     const manual = applyAction(state, { type: "resolve_conflict", how: "manual" });
     const charged = eventsOfType(manual.events, "energy").find(
       (event) => event.reason === "conflict_manual",
     );
     expect(charged?.delta).toBe(-BALANCE.failure.conflictManualEnergy);
 
-    // Assert on the emitted delta rather than the total: finishing the commit
-    // may also tip the debt over the explosion threshold, which repays some of
-    // it in the same action.
     const machine = applyAction(state, { type: "resolve_conflict", how: "ai" });
     const fix = eventsOfType(machine.events, "debt")[0];
     expect(fix?.delta).toBe(BALANCE.debt.perAiConflictFix);
 
-    // Energy is not asserted against a total any more: a conflict now happens
-    // at a merge, and finishing one spends the merge's cost and hands back its
-    // rest. What matters is that the machine's fix itself charged nothing.
     const spent = eventsOfType(machine.events, "energy").filter(
       (event) => event.reason === "conflict_manual",
     );
@@ -136,55 +141,85 @@ describe("failures", () => {
   test("a conflict does not cost two turns", () => {
     const { state } = findSeed((r) => r.state.phase.kind === "resolve_conflict", {
       prefix: "conflict-turn",
-      pick: aiPolicy,
-      limit: 60,
+      pick: policy("ai"),
+      limit: 120,
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
 
     const after = applyAction(state, { type: "resolve_conflict", how: "ai" }).state;
     expect(after.turn).toBe(state.turn + 1);
   });
+
+  test("a merge conflict resolved by the machine still lands the ticket", () => {
+    const { state } = findSeed(
+      (r) => r.state.phase.kind === "resolve_conflict" && r.state.phase.source === "merge",
+      {
+        prefix: "merge-conflict",
+        pick: policy("ai"),
+        limit: 200,
+        stop: (s) => s.phase.kind === "resolve_conflict" && s.phase.source === "merge",
+      },
+    );
+    if (state.phase.kind !== "resolve_conflict") return;
+    const ticketId = state.phase.ticketId;
+
+    const after = applyAction(state, { type: "resolve_conflict", how: "ai" }).state;
+    expect(after.tickets[ticketId]?.status).toBe("merged");
+    expect(after.phase.kind).not.toBe("resolve_conflict");
+  });
 });
 
 describe("debt explosion", () => {
-  test("crossing the threshold forces refactor work and repays debt", () => {
-    const { state } = findSeed((r) => r.state.phase.kind === "choose_node", {
-      prefix: "explode",
-      pick: aiPolicy,
-      limit: 2,
-    });
-
-    const loaded = structuredClone(state);
+  test("crossing the threshold forces a refactor ticket open, once", () => {
+    const loaded = inHand("explode");
     loaded.debt = BALANCE.debt.explosionThreshold + 5;
-    const nodeId = loaded.phase.kind === "choose_node" ? loaded.phase.candidates[0] : undefined;
-    if (nodeId === undefined) return;
 
-    const moved = applyAction(loaded, { type: "move", nodeId }).state;
-    const after = play(moved, { pick: aiPolicy, limit: 1 });
+    const once = applyAction(loaded, { type: "commit", mode: "craft" });
+    const explosions = eventsOfType(once.events, "debt_explosion");
+    expect(explosions.length).toBe(1);
 
-    const explosions = eventsOfType(after.events, "debt_explosion");
-    if (explosions.length === 0) return;
+    const forced = openTickets(once.state).find((ticket) => ticket.kind === "refactor");
+    expect(forced?.mustWrite).toBe("refactor");
+    expect(forced?.points).toBe(BALANCE.debt.explosionPoints);
+    // Still in hand: the refactor waits rather than yanking you off your ticket.
+    expect(once.state.player.ticketId).toBe(loaded.player.ticketId);
 
-    expect(Object.values(after.state.nodes).some((node) => node.kind === "refactor")).toBe(true);
-    expect(after.state.debt).toBeLessThan(loaded.debt);
+    // The debt is still over the line; a second ticket must not open.
+    const twice = applyAction(once.state, { type: "commit", mode: "craft" });
+    expect(eventsOfType(twice.events, "debt_explosion")).toEqual([]);
+  });
+
+  test("landing the forced refactor repays the debt", () => {
+    const loaded = inHand("explode-repay");
+    loaded.debt = BALANCE.debt.explosionThreshold + 5;
+    const exploded = applyAction(loaded, { type: "commit", mode: "craft" }).state;
+    const forced = openTickets(exploded).find((ticket) => ticket.kind === "refactor");
+    if (forced === undefined) throw new Error("expected a refactor ticket");
+
+    const onIt = makeReady(applyAction(exploded, { type: "checkout", ticketId: forced.id }).state);
+    expect(ticketInHand(onIt).id).toBe(forced.id);
+    const result = applyAction(onIt, { type: "merge" });
+    if (result.state.phase.kind === "resolve_conflict") return;
+
+    expect(result.state.debt).toBeLessThan(onIt.debt);
   });
 });
 
 describe("ambient events", () => {
   test("Dependabot removes the obsolete-dependency event from the table", () => {
-    const { state } = findSeed((r) => r.state.phase.kind === "choose_action", {
-      prefix: "dependabot",
-      pick: aiPolicy,
-      limit: 1,
-    });
-
-    const armed = structuredClone(state);
+    const armed = inHand("dependabot");
     armed.devops.dependabot = 1;
 
-    const run = play(armed, { pick: aiPolicy, limit: 300 });
+    const run = play(armed, { pick: policy("ai"), limit: 300 });
     const obsolete = eventsOfType(run.events, "ambient_event").filter(
       (e) => e.eventId === "obsolete_lib",
     );
     expect(obsolete).toEqual([]);
+  });
+
+  test("a planted commit is what a production bug is traced to", () => {
+    const state = inHand("planted");
+    plantAiCommit(state);
+    expect(ticketInHand(state).nodeIds.length).toBe(1);
   });
 });

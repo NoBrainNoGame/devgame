@@ -27,7 +27,7 @@ export interface LeaderboardEntry {
   displayName: string;
   score: number;
   sprints: number;
-  botsFired: number;
+  ticketsDelivered: number;
   finishedAt: string;
 }
 
@@ -45,7 +45,7 @@ interface BestRow {
   displayName: string;
   score: number;
   sprintsCompleted: number;
-  botsFired: number;
+  ticketsDelivered: number;
   finishedAt: Date;
 }
 
@@ -74,7 +74,7 @@ async function bestPerPlayer(
     SELECT * FROM (
       SELECT DISTINCT ON (r."profileId")
         r."id", r."profileId", p."displayName",
-        r."score", r."sprintsCompleted", r."botsFired", r."finishedAt"
+        r."score", r."sprintsCompleted", r."ticketsDelivered", r."finishedAt"
       FROM "Run" r
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
@@ -102,7 +102,7 @@ export async function getLeaderboard(options: {
       displayName: row.displayName,
       score: row.score,
       sprints: row.sprintsCompleted,
-      botsFired: row.botsFired,
+      ticketsDelivered: row.ticketsDelivered,
       finishedAt: row.finishedAt.toISOString(),
     })),
   );
@@ -154,7 +154,7 @@ async function viewerBest(
     WITH best AS (
       SELECT DISTINCT ON (r."profileId")
         r."id", r."profileId", p."displayName",
-        r."score", r."sprintsCompleted", r."botsFired", r."finishedAt"
+        r."score", r."sprintsCompleted", r."ticketsDelivered", r."finishedAt"
       FROM "Run" r
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
@@ -179,7 +179,7 @@ async function viewerBest(
     displayName: row.displayName,
     score: row.score,
     sprints: row.sprintsCompleted,
-    botsFired: row.botsFired,
+    ticketsDelivered: row.ticketsDelivered,
     finishedAt: row.finishedAt.toISOString(),
   };
 }

@@ -15,7 +15,9 @@ import { SAVE_VERSION } from "@/game/dto/version";
 type LooseSave = Record<string, unknown>;
 
 const MIGRATIONS: Record<number, (save: LooseSave) => LooseSave> = {
-  // 1 -> 2 goes here when the action shape next changes.
+  // 1 -> 2 has no entry on purpose: version 1 recorded walks over a generated
+  // map, and no ticket-shaped game corresponds to that log. `STORAGE_KEYS.run`
+  // moved to `:v2` so a browser simply starts fresh.
 };
 
 export type MigrationResult = { ok: true; dto: RunSaveDto } | { ok: false; error: string };

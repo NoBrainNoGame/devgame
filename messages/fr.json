@@ -111,18 +111,12 @@
     "conflictAiHint": "Passe toujours, ajoute de la dette et peut cacher un bug.",
     "previewSuccess": "Réussite : {percent} %",
     "previewEnergy": "Énergie : {cost}",
-    "previewProgress": "Progression : {min} à {max}",
     "previewDebt": "Dette : {min} à {max}",
     "previewTakesTurn": "Consomme un tour",
     "previewFreeMove": "Coup gratuit",
     "previewBlocked": "Indisponible",
     "previewNotes": "Détail du calcul",
     "unreviewed": "{count, plural, one {# commit non relu} other {# commits non relus}}",
-    "overextended": "Deux features ouvertes",
-    "overextendedHint": "Tout coûte le double et tous les jets sont pénalisés.",
-    "chooseNode": "Quelle feature construire ? Chaque branche est un chemin différent jusqu'au prochain merge.",
-    "openBranch": "Nouvelle feature",
-    "openBranchHint": "Ouvre une branche depuis dev. Rien ne s'écrit ailleurs : c'est en la mergeant qu'on livre, et qu'on gagne sa compétence.",
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
     "zoomFit": "Voir tout l'historique",
@@ -135,20 +129,30 @@
     "tooltipUnread": "non relu",
     "tooltipBranch": "Branche",
     "tooltipFeature": "feature",
-    "tooltipHotfix": "hotfix",
     "tooltipGrants": "Débloque",
     "graphHint": "Molette pour zoomer, glisser pour déplacer. Survolez un commit pour le détail.",
     "writeInstead": "Ou écrire ce commit autrement :",
     "byHand": "à la main",
     "byMachine": "par l'IA",
-    "branchCommits": "{count} commits",
-    "branchLength": "{count, plural, one {# commit à écrire avant de pouvoir merger} other {# commits à écrire avant de pouvoir merger}}",
-    "branchPlain": "Livraison rapide, rien à gagner",
-    "branchPlainHint": "Cette branche n'apporte aucune compétence : elle se merge plus vite, et c'est tout ce qu'elle offre.",
-    "branchCarries": "Livraison rapide · {what}",
-    "branchOffers": "En chemin, vous pourrez écrire :",
-    "branchNoOffers": "Rien de particulier en chemin : des commits ordinaires.",
-    "branchForks": "Une seconde feature en part : deux branches ouvertes à la fois coûtent le double."
+    "noTicket": "Aucun ticket en main : démarrez-en un dans le backlog.",
+    "mustWrite": {
+      "hotfix": "La prod est cassée : seuls des commits de correctif comptent ici.",
+      "refactor": "La dette a explosé : seuls des commits de refacto comptent ici."
+    },
+    "merge": "Merger sur dev",
+    "mergeHint": "Le ticket est prêt : tous ses critères tiennent.",
+    "switchTo": "Autres tickets ouverts",
+    "checkout": "Basculer sur",
+    "backlog": "Backlog",
+    "startTicket": "Démarrer",
+    "ticketPoints": "{filled}/{max} pts",
+    "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
+    "noCriteria": "Aucun critère : les points suffisent.",
+    "criteriaTitle": "Critères d'acceptation",
+    "previewPoints": "Points : {min} à {max}",
+    "quality": "Prod",
+    "qualityHint": "Chaque bug en production remplit cette jauge. Pleine, c'est le licenciement. Un sprint sans incident la fait baisser.",
+    "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}"
   },
   "leaderboard": {
     "title": "Classement",
@@ -158,7 +162,7 @@
     "columnPlayer": "Joueur",
     "columnScore": "Score",
     "columnSprints": "Sprints",
-    "columnBots": "Bots virés",
+    "columnTickets": "Tickets livrés",
     "columnDate": "Date",
     "empty": "Aucun score pour l'instant.",
     "yourRank": "Votre rang : {rank}",
@@ -179,7 +183,7 @@
     "columnProfile": "Profil",
     "columnScore": "Score",
     "columnSprints": "Sprints",
-    "columnBots": "Bots virés",
+    "columnTickets": "Tickets livrés",
     "columnStatus": "État",
     "status": {
       "in_progress": "En cours",
@@ -283,11 +287,11 @@
       "accountI4": "Vérification : les jetons de connexion envoyés par e-mail, valables quinze minutes.",
       "accountP2": "Base légale : l'exécution du service que vous demandez. L'adresse e-mail est obligatoire, c'est elle qui identifie le compte.",
       "gameTitle": "Données de jeu",
-      "gameP1": "Votre profil : pseudonyme affiché, niveau, XP, commits en banque, commits cumulés, bots virés, déblocages et réglages.",
-      "gameP2": "Une partie est enregistrée comme sa graine et la liste ordonnée de vos actions, pas comme un score. Le serveur rejoue cette liste pour calculer le score, les sprints, les bots virés et les commits, avec les dates de début et de fin.",
+      "gameP1": "Votre profil : pseudonyme affiché, niveau, XP, commits en banque, commits cumulés, tickets livrés, déblocages et réglages.",
+      "gameP2": "Une partie est enregistrée comme sa graine et la liste ordonnée de vos actions, pas comme un score. Le serveur rejoue cette liste pour calculer le score, les sprints, les tickets livrés et les commits, avec les dates de début et de fin.",
       "gameP3": "Une partie envoyée dont le rejeu échoue est conservée, marquée rejetée : c'est la seule trace de ce qui a été soumis.",
       "publicTitle": "Ce qui est public",
-      "publicP1": "Le classement affiche votre pseudonyme, votre score, vos sprints, vos bots virés et la date de la partie. Votre adresse e-mail n'apparaît nulle part.",
+      "publicP1": "Le classement affiche votre pseudonyme, votre score, vos sprints, vos tickets livrés et la date de la partie. Votre adresse e-mail n'apparaît nulle part.",
       "publicP2": "Le pseudonyme est libre : choisissez-en un que cela ne vous dérange pas de rendre public.",
       "cookiesTitle": "Cookies",
       "cookiesP1": "Les seuls cookies sont ceux de l'authentification : le cookie de session, et des cookies de très courte durée posés pendant une connexion par Google. Aucun ne sert à vous suivre, il n'y a donc pas de bandeau à cliquer.",
@@ -513,7 +517,7 @@
       },
       "rebase": {
         "name": "Rebase",
-        "desc": "Rejoue la branche par-dessus et emporte le commit suivant. Rate d'autant plus que la dette est haute."
+        "desc": "Rejoue le ticket par-dessus dev : son merge ne paiera plus le retard. Rate d'autant plus que la dette est haute."
       },
       "sprint_start": {
         "name": "Ouverture de sprint",
@@ -529,19 +533,11 @@
       },
       "risky": {
         "name": "Commit risqué",
-        "desc": "Avance plus loin, contre un jet nettement moins sûr."
+        "desc": "Un point de story de plus, contre un jet nettement moins sûr."
       },
       "chore": {
         "name": "Corvée",
         "desc": "Un commit d'entretien : il déclenche un événement du quotidien."
-      },
-      "fork": {
-        "name": "Commit",
-        "desc": "Un pas de plus dans la feature en cours."
-      },
-      "feature": {
-        "name": "Commit de feature",
-        "desc": "Un pas de plus dans la feature en cours."
       },
       "feature_merge": {
         "name": "Merge de feature",
@@ -573,10 +569,6 @@
         "title": "PR rejetée",
         "log": "un relecteur a fermé la PR sans commentaire"
       },
-      "forced_rebase": {
-        "title": "Rebase forcé",
-        "log": "quelqu'un a poussé sur main pendant qu'on codait"
-      },
       "helpful_colleague": {
         "title": "Collègue serviable",
         "log": "un collègue passe et débloque le truc en deux minutes"
@@ -592,37 +584,31 @@
       "obsolete_lib": {
         "title": "Bibliothèque obsolète",
         "log": "la lib est dépréciée depuis deux ans"
+      },
+      "broken_build": {
+        "title": "Build cassé",
+        "log": "le CI est rouge, et ce n'est pas le code"
       }
     },
     "log": {
       "squashed": "{count, plural, one {# commit écrasé} other {# commits écrasés}}, {lost, plural, one {# de moins au compteur} other {# de moins au compteur}}",
       "docs_written": "documentation écrite, {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
-      "rebased": "rebase de la branche, {count, plural, one {# commit emporté} other {# commits emportés}}",
-      "_comment": "Les paramètres node, skill, bot, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
+      "rebased": "rebase du ticket sur dev, l'historique est à jour",
+      "_comment": "Les paramètres node, skill, relic et devops sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
       "node_done": {
         "craft": "{node} écrit à la main",
         "ai": "{node} généré par la machine, ça compile"
       },
-      "branch_merged": "branche intégrée à dev",
-      "branch_merged_skill": "{skill} intégré à dev",
       "skill_gained": "{skill} acquis pour le reste de la run",
       "conflict": "deux branches, un seul fichier",
       "conflict_resolved": {
         "manual": "conflit démêlé à la main, ligne par ligne",
         "ai": "conflit résolu par la machine, sans relire"
       },
-      "rebase_absorbed": "rebase absorbé par l'automatisation",
-      "rebase_forced": "rebase forcé, un nœud à rejouer",
       "pr_countered": "PR contestée, les tests ont tranché",
       "pr_rejected": "PR refusée, retour en arrière",
       "reviewed": "{count, plural, one {# commit relu} other {# commits relus}}",
       "reviewed_free": "{count, plural, one {# commit relu par le bot} other {# commits relus par le bot}}",
-      "injected": {
-        "feature": "{count, plural, one {# nœud ajouté à la feature} other {# nœuds ajoutés à la feature}}",
-        "subfeature": "{count, plural, one {# nœud ajouté à la sous-feature} other {# nœuds ajoutés à la sous-feature}}",
-        "hotfix": "hotfix ouvert, {count, plural, one {# nœud à parcourir} other {# nœuds à parcourir}}",
-        "refactor": "{count, plural, one {# nœud de refacto imposé} other {# nœuds de refacto imposés}}"
-      },
       "debt_explosion": "la dette a explosé, refacto obligatoire",
       "sprint_ended": "sprint {sprint} clos",
       "sprint_started": "sprint {sprint} ouvert",
@@ -632,7 +618,20 @@
         "burnout": "plus d'énergie, la run s'arrête à {score}",
         "fired": "licencié, la run s'arrête à {score}"
       },
-      "monitoring_warning": "le monitoring a vu le bug avant la prod"
+      "monitoring_warning": "le monitoring a vu le bug avant la prod",
+      "ticket_arrived": "nouveau ticket dans le backlog",
+      "ticket_started": "ticket démarré, branche ouverte",
+      "ticket_assigned": {
+        "feature": "ticket resté au backlog : on vous l'assigne",
+        "hotfix": "hotfix ouvert, la prod attend",
+        "refactor": "refacto imposée, la dette a explosé"
+      },
+      "ticket_merged": "ticket mergé sur dev",
+      "ticket_merged_skill": "{skill} mergé sur dev",
+      "incident": {
+        "commit": "bug en production, hotfix ouvert",
+        "release": "la release a cassé la prod, hotfix ouvert"
+      }
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -641,20 +640,50 @@
       "automation": "Automatisation {points}",
       "debt": "Dette {points}",
       "crunch": "Crunch {points}",
-      "overextended": "Deux features ouvertes {points}",
       "free_refactor": "Refacto offerte par le dernier commit artisanal",
-      "merge_free": "Merge gratuit en énergie",
-      "overextended_cost": "Énergie doublée : deux features ouvertes",
       "pair_programming": "Review allégée par le pair programming",
       "fresh": "Relu à chaud : remboursement bonifié",
-      "repays_debt": "Rembourse de la dette",
-      "risky_node": "Nœud risqué : jet moins sûr, progression plus grande",
-      "chore_node": "Corvée : déclenche un événement",
-      "grants_skill": "Merger cette branche donne une compétence",
+      "grants_skill": "Livrer ce ticket donne une compétence",
       "devops_cost": "{points, plural, one {# point DevOps} other {# points DevOps}}",
       "devops_maxed": "Niveau maximum atteint ({max})",
       "devops_too_expensive": "Pas assez de points : {points} requis",
-      "hidden_bug_risk": "{percent} % de risque de bug caché"
+      "hidden_bug_risk": "{percent} % de risque de bug caché",
+      "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}} {points}",
+      "wip_cost": "Énergie majorée : {count, plural, one {# ticket en plus} other {# tickets en plus}}",
+      "machine_flat": "La machine coûte toujours le même prix",
+      "rebase_why": "{count, plural, one {# merge a atterri sur dev} other {# merges ont atterri sur dev}} depuis l'ouverture",
+      "conflict_risk": "{percent} % de risque de conflit",
+      "behind_dev": "En retard de {count, plural, one {# merge} other {# merges}} sur dev",
+      "merge_regen": "Rend {energy} ⚡"
+    },
+    "criteria": {
+      "reviewed": {
+        "name": "Relu",
+        "desc": "Aucun commit IA du ticket ne reste sans relecture."
+      },
+      "documented": {
+        "name": "Documenté",
+        "desc": "Le ticket contient un commit de documentation."
+      },
+      "refactored": {
+        "name": "Refactoré",
+        "desc": "Le ticket contient un commit de refacto."
+      },
+      "clean": {
+        "name": "Dette maîtrisée",
+        "desc": "La dette technique est basse au moment du merge."
+      }
+    },
+    "tickets": {
+      "feature": {
+        "name": "Feature"
+      },
+      "hotfix": {
+        "name": "Hotfix"
+      },
+      "refactor": {
+        "name": "Refacto imposée"
+      }
     }
   }
 }

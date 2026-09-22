@@ -1,20 +1,24 @@
 import type { Effects } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { unreadAiOn } from "@/game/core/rules/criteria";
 import { repayDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
+import { currentTicket } from "@/game/core/rules/tickets";
 import type { NodeId, RunState } from "@/game/core/types";
 
 /**
  * Reading back what the machine wrote.
  *
  * A review buys no ground — the turn goes by while you read — so it has to pay
- * for itself: it repays debt, and it takes machine-written commits out of the
- * pool a production bug can be traced back to.
+ * for itself: it repays debt, it is what a ticket that asks to be reviewed
+ * needs, and it takes a commit out of the pool the release will roll bugs
+ * from.
  *
  * Reviewing while the code is fresh pays more. That is what turns the choice
- * into a rhythm (AI, AI, AI, review, merge) instead of a coin flip every node.
+ * into a rhythm (AI, AI, AI, review, merge) instead of a coin flip every
+ * commit.
  */
 
 export interface ReviewOutcome {
@@ -23,6 +27,11 @@ export interface ReviewOutcome {
   chain: boolean;
 }
 
+/**
+ * A deliberate review reads the ticket in hand. The automatic one reads the
+ * ticket in hand and then whatever has shipped unread — the only way code
+ * already on `dev` gets read before the release judges it.
+ */
 export function performReview(context: RuleContext, free: boolean): ReviewOutcome {
   const { state } = context;
   const { review } = BALANCE;
@@ -38,16 +47,14 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
 
   // Most recent first: the point of the chain bonus is that fresh code is
   // cheaper to read, so freshness is what gets read.
+  const candidates = [...reviewable(state, free)].reverse();
   const cleaned: NodeId[] = [];
-  for (let i = state.player.aiHistory.length - 1; i >= 0 && cleaned.length < budget; i--) {
-    const entry = state.player.aiHistory[i];
-    if (entry === undefined || entry.reviewed) continue;
-
-    entry.reviewed = true;
-    cleaned.push(entry.nodeId);
-
-    const node = state.nodes[entry.nodeId];
-    if (node?.commit !== undefined) node.commit.reviewed = true;
+  for (const id of candidates) {
+    if (cleaned.length >= budget) break;
+    const node = state.nodes[id];
+    if (node === undefined) continue;
+    node.commit.reviewed = true;
+    cleaned.push(id);
   }
   cleaned.reverse();
 
@@ -68,28 +75,38 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
   return { nodeIds: cleaned, debtDelta: -debtDelta, chain };
 }
 
-export function hasUnreviewedAi(context: RuleContext): boolean {
-  return hasUnreviewedAiIn(context.state);
+function reviewable(state: RunState, includeShipped: boolean): NodeId[] {
+  const ticket = currentTicket(state);
+  const onTicket = ticket === null ? [] : unreadAiOn(state, ticket);
+  if (!includeShipped) return onTicket;
+
+  const shipped = state.shipped.filter((id) => {
+    const commit = state.nodes[id]?.commit;
+    return commit !== undefined && commit.mode === "ai" && !commit.reviewed;
+  });
+  return [...shipped, ...onTicket];
 }
 
-export function hasUnreviewedAiIn(state: RunState): boolean {
-  return state.player.aiHistory.some((entry) => !entry.reviewed);
+/** Whether the ticket in hand has machine-written commits nobody has read. */
+export function hasUnreviewedAi(state: RunState): boolean {
+  const ticket = currentTicket(state);
+  return ticket !== null && unreadAiOn(state, ticket).length > 0;
 }
 
 /**
  * Whether the review action is on the table at all.
  *
- * Both halves matter. `canReview` is learned — from the Code review branch, or
+ * Both halves matter. `canReview` is learned — from the Code review ticket, or
  * from Pair programming, which is the same habit under another name. Having
  * something unread is what stops the button being a way to throw a turn
  * away.
  */
 export function canReview(state: RunState, effects: Effects): boolean {
-  return effects.canReview && hasUnreviewedAiIn(state);
+  return effects.canReview && hasUnreviewedAi(state);
 }
 
 /**
- * The DevOps review bot. Runs on its own cadence at the end of a turn, so the
+ * The automatic review. Runs on its own cadence at the end of a turn, so the
  * automation the player paid for keeps working while they are busy elsewhere.
  */
 export function runFreeReview(context: RuleContext, cadence: number): void {
@@ -100,16 +117,7 @@ export function runFreeReview(context: RuleContext, cadence: number): void {
   if (player.turnsSinceFreeReview < cadence) return;
 
   player.turnsSinceFreeReview = 0;
-  if (!hasUnreviewedAi(context)) return;
+  if (reviewable(context.state, true).length === 0) return;
 
   performReview(context, true);
-}
-
-/** Remembers an AI commit so a later review has something to find. */
-export function recordAiCommit(context: RuleContext, nodeId: NodeId): void {
-  const { player } = context.state;
-  player.aiHistory.push({ nodeId, reviewed: false });
-  player.aiChain += 1;
-
-  while (player.aiHistory.length > BALANCE.review.window) player.aiHistory.shift();
 }

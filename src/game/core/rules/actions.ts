@@ -1,7 +1,9 @@
 import { DEVOPS_IDS } from "@/game/content";
+import { isReady } from "@/game/core/rules/criteria";
 import { canPlaceDevops } from "@/game/core/rules/devops";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { canReview } from "@/game/core/rules/review";
+import { backlogTickets, currentTicket, offersOf, openTickets } from "@/game/core/rules/tickets";
 import type { PlayerAction, RunState } from "@/game/core/types";
 
 /**
@@ -17,37 +19,37 @@ import type { PlayerAction, RunState } from "@/game/core/types";
  *
  * Review is gated, on two counts. It has to have been learned, and it has to
  * have something to read: a review with no unread machine-written commit
- * repays nothing, costs energy and spends a turn. An action that can
- * only ever make things worse is not a decision, it is a trap.
+ * repays nothing, costs energy and spends a turn. An action that can only
+ * ever make things worse is not a decision, it is a trap. A merge is gated the
+ * same way: it exists once the ticket is ready, and not before.
  */
 export function getAvailableActions(state: RunState): PlayerAction[] {
   switch (state.phase.kind) {
     case "choose_action": {
-      const actions: PlayerAction[] = [
-        { type: "commit", mode: "craft" },
-        { type: "commit", mode: "ai" },
-      ];
+      const actions: PlayerAction[] = [];
+      const ticket = currentTicket(state);
 
-      // What this commit could be written as instead. Both hands, because
-      // letting the machine write a refactor is a real and bad idea.
-      const offers = state.nodes[state.player.nodeId]?.offers;
-      if (offers !== undefined) {
-        actions.push({ type: "commit", mode: "craft", kind: offers });
-        actions.push({ type: "commit", mode: "ai", kind: offers });
+      for (const waiting of backlogTickets(state)) {
+        actions.push({ type: "start", ticketId: waiting.id });
+      }
+      for (const open of openTickets(state)) {
+        if (open.id !== ticket?.id) actions.push({ type: "checkout", ticketId: open.id });
       }
 
-      if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
-      for (const id of DEVOPS_IDS) {
-        if (canPlaceDevops(state, id)) actions.push({ type: "devops", id });
-      }
-      return actions;
-    }
+      if (ticket !== null) {
+        actions.push({ type: "commit", mode: "craft" }, { type: "commit", mode: "ai" });
 
-    case "choose_node": {
-      const actions: PlayerAction[] = state.phase.candidates
-        .map((nodeId) => ({ type: "move", nodeId }) as const)
-        .sort((a, b) => a.nodeId.localeCompare(b.nodeId));
-      // Points may also be spent between two nodes: it costs no turn either way.
+        // What this commit could be written as instead. Both hands, because
+        // letting the machine write a refactor is a real and bad idea.
+        for (const kind of offersOf(state, ticket)) {
+          actions.push({ type: "commit", mode: "craft", kind });
+          actions.push({ type: "commit", mode: "ai", kind });
+        }
+
+        if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
+        if (isReady(state, ticket)) actions.push({ type: "merge" });
+      }
+
       for (const id of DEVOPS_IDS) {
         if (canPlaceDevops(state, id)) actions.push({ type: "devops", id });
       }
@@ -73,10 +75,12 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
   if (a.type !== b.type) return false;
 
   switch (a.type) {
+    case "start":
+      return b.type === "start" && a.ticketId === b.ticketId;
+    case "checkout":
+      return b.type === "checkout" && a.ticketId === b.ticketId;
     case "commit":
       return b.type === "commit" && a.mode === b.mode && a.kind === b.kind;
-    case "move":
-      return b.type === "move" && a.nodeId === b.nodeId;
     case "devops":
       return b.type === "devops" && a.id === b.id;
     case "resolve_conflict":
@@ -84,6 +88,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "choose_relic":
       return b.type === "choose_relic" && a.relicId === b.relicId;
     case "review":
+    case "merge":
       return true;
   }
 }

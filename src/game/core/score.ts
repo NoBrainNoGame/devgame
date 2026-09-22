@@ -2,14 +2,15 @@ import { BALANCE } from "@/game/core/balance";
 import type { RunState } from "@/game/core/types";
 
 /**
- * A run's score. Commits are the body of it, and surviving a sprint is worth
- * five of them — the leaderboard should reward playing the game, not grinding
- * safe commits forever.
+ * A run's score. Commits are the body of it, every story point delivered is
+ * worth two of them and surviving a sprint is worth five — the leaderboard
+ * should reward shipping, not grinding safe commits forever.
  */
 export function computeScore(state: RunState): number {
   const { score } = BALANCE;
   return (
     state.player.totalCommits * score.perCommit +
+    state.pointsDelivered * score.perTicketPoint +
     Math.max(0, state.sprint - 1) * score.perSprintCompleted
   );
 }

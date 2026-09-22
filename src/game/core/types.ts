@@ -1,5 +1,6 @@
 import type {
   AmbientEventId,
+  CriterionKind,
   DevopsId,
   EventId,
   FailureEventId,
@@ -10,14 +11,15 @@ import type {
 import type { I18nText } from "@/game/core/i18n";
 import type { RngState } from "@/game/core/rng";
 
-/** `${sprint}:${index}`. Stable for the life of the run. */
+/** `${sprint}:${serial}`. Stable for the life of the run. */
 export type NodeId = string;
-export type BranchId = string;
+/** `t${serial}`. Sorted numerically, never lexically — see `ticketSerial`. */
+export type TicketId = string;
 
 export type RunMode = "classic" | "daily";
 
 /**
- * The ways a commit on a branch may be written, beyond an ordinary one.
+ * The ways a commit on a ticket may be written, beyond an ordinary one.
  *
  * None of these is a fork. Choosing to write a commit as a refactor is a
  * decision about *this* commit, so it costs a turn like any other and leaves
@@ -31,7 +33,7 @@ export type NodeKind =
   | "commit"
   /** Repays debt. */
   | "refactor"
-  /** Jumps further for a worse roll. */
+  /** More story points for a worse roll. */
   | "risky"
   /** Draws an ambient event. */
   | "chore"
@@ -39,96 +41,101 @@ export type NodeKind =
   | "squash"
   /** Buys the next few machine-written commits out of their debt. */
   | "docs"
-  /** Replays the branch on top of you. Cheap when clean, brutal when not. */
+  /** Replays the ticket on top of `dev`. Cheap when clean, brutal when not. */
   | "rebase"
-  /** A node a feature branch leaves from. */
-  | "fork"
-  | "feature"
-  /** A feature landing: on `dev`, or in its parent's column for a sub-feature. */
+  /** A ticket landing on `dev`. */
   | "feature_merge"
+  /** A `fix:` commit on a ticket production forced open. */
   | "hotfix"
   /** `dev` merged into `main`: the sprint is shipped. */
   | "sprint_merge"
-  /** Last node of a sprint, on `main`. Resolving it closes the sprint. */
+  /** Last node of a sprint, on `main`. Written when the sprint closes. */
   | "release";
-
-export type NodeStatus = "locked" | "candidate" | "current" | "done";
 
 export type CommitMode = "craft" | "ai";
 
 export interface NodeCommit {
   mode: CommitMode;
   reviewed: boolean;
+  /**
+   * A machine-written conflict fix planted something nobody saw. The release
+   * treats it as unread machine work, whatever the rest of the commit says.
+   */
+  hiddenBug?: true;
 }
 
+/**
+ * A commit that exists. Nothing is drawn or stored for one that does not: the
+ * graph is written as the player plays, and this is that record.
+ */
 export interface MapNode {
   id: NodeId;
   sprint: number;
   kind: NodeKind;
-  /** 0 is `main`, 1 is `dev`, 2 and up are features. */
+  /** 0 is `main`, 1 is `dev`, 2 and up are the tickets' columns. */
   lane: number;
-  /** Row in the graph. Strictly increases along every edge. */
+  /** Row in the graph. Strictly greater than every parent's. */
   depth: number;
-  /** Sorted, 1 to 3 entries; empty only on `release`. */
-  next: NodeId[];
-  branchId?: BranchId;
-  /** Present on `feature_merge`: the skill merging the branch grants. */
+  /** What this commit was built on, the way git records it. Empty on the first. */
+  parents: NodeId[];
+  ticketId?: TicketId;
+  /** Present on a merge: the skill the ticket it landed granted. */
   skillId?: SkillId;
-  status: NodeStatus;
-  /** A way this commit may be written instead of plainly. Offered in the panel. */
-  offers?: DetourKind;
-  commit?: NodeCommit;
+  commit: NodeCommit;
 }
 
-export interface Branch {
-  id: BranchId;
-  kind: "feature" | "subfeature" | "hotfix" | "refactor";
+export type TicketKind = "feature" | "hotfix" | "refactor";
+export type TicketStatus = "backlog" | "open" | "merged";
+
+/**
+ * A unit of work on the board. A feature until it is started, a branch once it
+ * is, a merge on `dev` once its criteria hold and the player lands it.
+ */
+export interface Ticket {
+  id: TicketId;
+  kind: TicketKind;
+  status: TicketStatus;
+  /** Story points to fill before it can merge. */
+  points: number;
+  filled: number;
+  /** What else it demands. Empty on a hotfix or a forced refactor. */
+  criteria: CriterionKind[];
+  /** The reward, paid for with extra points. */
   skillId?: SkillId;
+  /** The sprint it arrived in, so a ticket left in the backlog can be assigned. */
+  sprintArrived: number;
+  /**
+   * `state.devMerges` when it was opened. Every merge on `dev` since is a
+   * history this ticket does not have, and the price of that shows at its own
+   * merge — or is paid off by a rebase.
+   */
+  devMergesAtOpen: number;
+  /** The column it writes in, taken when opened and handed back when merged. */
+  lane?: number;
+  /** Its commits, oldest first. */
   nodeIds: NodeId[];
-  /** Main-line node the branch merges back into. */
-  mergeInto: NodeId;
-  parentBranchId?: BranchId;
-  /** True once the player has stepped onto it. */
-  open: boolean;
-  merged: boolean;
-}
-
-export interface AiCommitRecord {
-  nodeId: NodeId;
-  reviewed: boolean;
+  mergeNodeId?: NodeId;
+  /** Hotfix and forced refactor: only this kind of commit fills the points. */
+  mustWrite?: "hotfix" | "refactor";
 }
 
 export interface Player {
-  /**
-   * The node being written: where the next commit lands.
-   *
-   * Not where you *are*. In git you stand on the last commit you made, and the
-   * one you are about to write does not exist yet — see `headId`.
-   */
-  nodeId: NodeId;
-  /**
-   * `HEAD`: the last node actually resolved.
-   *
-   * This is what the graph draws you on, and it is always a node that has been
-   * written. It lags `nodeId` by exactly one commit, which is the whole point.
-   */
-  headId: NodeId;
+  /** The ticket being written. Null between tickets. */
+  ticketId: TicketId | null;
   energy: number;
   energyMax: number;
   totalCommits: number;
   /** Turns finished with no energy left. Two in a row is burnout. */
   zeroEnergyStreak: number;
-  /** Recent AI commits, oldest first, capped at the review window. */
-  aiHistory: AiCommitRecord[];
   /** Consecutive AI commits, for the review chain bonus. */
   aiChain: number;
   /** Pair programming rerolls once per sprint. */
   rerollUsed: boolean;
   /** Turns since the automatic review last ran. */
   turnsSinceFreeReview: number;
-  /** A craft success sometimes makes the next refactor node free. */
+  /** A craft success sometimes makes the next refactor free. */
   freeRefactor: boolean;
-  /** Machine-written commits still covered by a documentation node. */
+  /** Machine-written commits still covered by a documentation commit. */
   docsCharges: number;
 }
 
@@ -142,12 +149,18 @@ export interface StatPoints {
 }
 
 export type Phase =
-  /** Standing on an unresolved node: commit, review, or spend DevOps points. */
+  /** On a ticket, or between tickets: commit, review, merge, start, switch. */
   | { kind: "choose_action" }
-  /** The node is resolved; pick where to go next. */
-  | { kind: "choose_node"; candidates: NodeId[] }
-  /** `mode` is the commit the player attempted; the fix finishes that commit. */
-  | { kind: "resolve_conflict"; nodeId: NodeId; mode: CommitMode }
+  /** A rebase tangled. `mode` is the commit attempted; the fix finishes it. */
+  | {
+      kind: "resolve_conflict";
+      source: "commit";
+      ticketId: TicketId;
+      mode: CommitMode;
+      nodeKind: NodeKind;
+    }
+  /** A merge tangled. Resolving it lands the ticket. */
+  | { kind: "resolve_conflict"; source: "merge"; ticketId: TicketId }
   | { kind: "choose_relic"; offer: RelicId[] }
   | { kind: "game_over"; reason: GameOverReason };
 
@@ -170,19 +183,26 @@ export interface RunState {
   rng: RngState;
   turn: number;
   sprint: number;
-  /** Number of main-line nodes in the current sprint. */
-  sprintLength: number;
+  /** Turns spent in this sprint. The release ships when it reaches the box. */
+  sprintTurn: number;
 
   nodes: Record<NodeId, MapNode>;
-  branches: Record<BranchId, Branch>;
-  /** Serials for generated ids, so nothing collides across sprints. */
+  /** Serial for generated ids, so nothing collides across sprints. */
   nextNodeSerial: number;
-  nextBranchSerial: number;
+  /** The next free row. Every commit written takes it, whichever column. */
+  nextDepth: number;
+
+  tickets: Record<TicketId, Ticket>;
+  nextTicketSerial: number;
+  /** Merges landed on `dev` this run. What a ticket compares itself against. */
+  devMerges: number;
+  /** Everything merged on `dev` since the last release, for the bugs it ships. */
+  shipped: NodeId[];
 
   player: Player;
 
   skills: SkillId[];
-  /** Feature skills this account has unlocked; the map draws branches from it. */
+  /** Skills this account has unlocked; tickets draw their rewards from it. */
   unlockedSkills: SkillId[];
   /** Points spent on the account's level-up stats, folded into the effects. */
   statPoints: StatPoints;
@@ -201,7 +221,14 @@ export interface RunState {
    * immunity.
    */
   monitoringWarning: boolean;
+  /** How close production is to losing patience. Full is the sack. */
+  quality: number;
+  /** Incidents this sprint, so a clean sprint can be told apart. */
+  sprintIncidents: number;
+
   xpEarned: number;
+  pointsDelivered: number;
+  ticketsDelivered: number;
 
   phase: Phase;
   log: LogLine[];
@@ -209,15 +236,22 @@ export interface RunState {
 }
 
 export type PlayerAction =
-  /** `kind` writes the node as the detour it offers, instead of a plain commit. */
+  /** Backlog to branch. Free. */
+  | { type: "start"; ticketId: TicketId }
+  /** Switch to another open ticket. Free. */
+  | { type: "checkout"; ticketId: TicketId }
+  /** `kind` writes the commit as a detour instead of plainly. */
   | { type: "commit"; mode: CommitMode; kind?: DetourKind }
   | { type: "review" }
-  | { type: "move"; nodeId: NodeId }
+  /** Land the current ticket on `dev`. Only offered once it is ready. */
+  | { type: "merge" }
   | { type: "devops"; id: DevopsId }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
 
 export type PlayerActionType = PlayerAction["type"];
+
+export type IncidentSource = "commit" | "release";
 
 export type GameEvent =
   | { type: "turn_started"; turn: number }
@@ -230,20 +264,20 @@ export type GameEvent =
       rerolled: boolean;
     }
   | { type: "node_done"; nodeId: NodeId; mode: CommitMode; kind: NodeKind }
-  | { type: "player_moved"; from: NodeId; to: NodeId }
-  | { type: "ai_jumped"; nodeIds: NodeId[] }
-  | { type: "candidates"; nodeIds: NodeId[] }
+  /** Story points filled on a ticket. */
+  | { type: "points"; ticketId: TicketId; delta: number; value: number; max: number }
   | { type: "energy"; delta: number; value: number; reason: string }
   | { type: "debt"; delta: number; value: number }
-  | { type: "branch_opened"; branchId: BranchId; kind: Branch["kind"] }
-  | { type: "branch_merged"; branchId: BranchId; skillId?: SkillId }
+  | { type: "ticket_arrived"; ticketId: TicketId }
+  /** `forced` when the board assigned it rather than the player. */
+  | { type: "ticket_started"; ticketId: TicketId; kind: TicketKind; forced: boolean }
+  | { type: "checkout"; ticketId: TicketId }
+  | { type: "ticket_merged"; ticketId: TicketId; nodeId: NodeId; skillId?: SkillId }
   | { type: "skill_gained"; skillId: SkillId }
-  | { type: "nodes_injected"; branchId: BranchId; nodeIds: NodeId[]; kind: Branch["kind"] }
-  | { type: "conflict"; nodeId: NodeId }
+  | { type: "conflict"; ticketId: TicketId }
   | { type: "conflict_resolved"; how: "manual" | "ai"; hiddenBug: boolean }
-  | { type: "forced_rebase"; nodeId: NodeId; absorbed: boolean }
   | { type: "pr_rejected"; countered: boolean }
-  | { type: "debt_explosion"; branchId: BranchId }
+  | { type: "debt_explosion"; ticketId: TicketId }
   | { type: "failure_event"; eventId: FailureEventId }
   | { type: "monitoring_warning" }
   | { type: "ambient_event"; eventId: AmbientEventId }
@@ -251,7 +285,10 @@ export type GameEvent =
   | { type: "squashed"; nodeIds: NodeId[]; debtDelta: number; commitsLost: number }
   | { type: "docs_written"; charges: number }
   | { type: "docs_used"; nodeId: NodeId; remaining: number }
-  | { type: "rebased"; nodeIds: NodeId[] }
+  | { type: "rebased"; ticketId: TicketId }
+  /** Production broke. `ticketId` is the hotfix it opened. */
+  | { type: "incident"; source: IncidentSource; nodeId: NodeId; ticketId: TicketId }
+  | { type: "quality"; delta: number; value: number }
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }
   | { type: "relic_chosen"; relicId: RelicId }
@@ -271,8 +308,8 @@ export interface ActionPreview {
   energyCost: number;
   /** Absent for actions that cannot fail. */
   successPct?: number;
-  /** Nodes gained on success, as a range. */
-  progress?: [number, number];
+  /** Story points filled on success, as a range. */
+  points?: [number, number];
   /** Debt added on success, as a range. */
   debtDelta?: [number, number];
   /** Whether taking this action ends the turn. */
@@ -290,4 +327,4 @@ export class InvalidActionError extends Error {
   }
 }
 
-export type { AmbientEventId, EventId, FailureEventId, I18nText, RngState };
+export type { AmbientEventId, CriterionKind, EventId, FailureEventId, I18nText, RngState };

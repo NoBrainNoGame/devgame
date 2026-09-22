@@ -7,13 +7,15 @@ import {
   type FailureEventId,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { isOnHotfix } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
-import { injectBranch } from "@/game/core/rules/inject";
 import { conflictChance } from "@/game/core/rules/modifiers";
+import { gameOver } from "@/game/core/rules/over";
 import { hasUnreviewedAi } from "@/game/core/rules/review";
+import { currentTicket, forceTicket, isOnHotfix } from "@/game/core/rules/tickets";
+import { fillPoints } from "@/game/core/rules/write";
+import type { IncidentSource, NodeId, NodeKind } from "@/game/core/types";
 
 /**
  * What a missed roll costs you.
@@ -25,28 +27,17 @@ import { hasUnreviewedAi } from "@/game/core/rules/review";
  */
 
 export type FailureOutcome =
-  /** The node stays unresolved and the reducer opens the conflict choice. */
+  /** Nothing is written and the reducer opens the conflict choice. */
   | { kind: "conflict" }
-  /** Something handled it: resolve the node as if the roll had passed. */
+  /** Something handled it: write the commit as if the roll had passed. */
   | { kind: "resolve" }
-  /** The turn is gone; the node must be attempted again. */
+  /** The turn is gone; nothing was written. */
   | { kind: "retry" }
-  /** It shipped, and it broke production. A hotfix branch is now in the way. */
-  | { kind: "resolve_then_hotfix" };
+  /** It shipped, and it broke production. A hotfix ticket is now open. */
+  | { kind: "resolve_then_incident" };
 
-/**
- * Where a merge conflict may come from.
- *
- * Two histories have to actually meet. A merge is one place that happens and a
- * rebase is the other — writing a commit is not. The merge half is rolled in
- * `beginMerge`; this is the rebase half.
- */
-function canTangle(context: RuleContext): boolean {
-  return context.state.nodes[context.state.player.nodeId]?.kind === "rebase";
-}
-
-export function resolveFailure(context: RuleContext): FailureOutcome {
-  const eventId = drawFailure(context);
+export function resolveFailure(context: RuleContext, kind: NodeKind): FailureOutcome {
+  const eventId = drawFailure(context, kind);
 
   // Monitoring's first half: the bug is spotted before it ships. It costs the
   // turn anyway — you still have to go and fix it — and it only works once,
@@ -65,34 +56,35 @@ export function resolveFailure(context: RuleContext): FailureOutcome {
       return { kind: "conflict" };
 
     case "prod_bug":
-      return { kind: "resolve_then_hotfix" };
+      return { kind: "resolve_then_incident" };
 
     case "pr_rejected": {
       const countered = context.effects.counterPrRejection;
       emit(context, { type: "pr_rejected", countered });
-
       if (countered) return { kind: "resolve" };
 
-      spendEnergy(context, BALANCE.failure.prRejectedEnergy, "pr_rejected");
+      const ticket = currentTicket(context.state);
+      if (ticket !== null) fillPoints(context, ticket, -BALANCE.failure.prRejectedPoints);
       return { kind: "retry" };
     }
 
-    case "forced_rebase": {
-      const absorbed = context.effects.absorbRebase;
-      emit(context, {
-        type: "forced_rebase",
-        nodeId: context.state.player.nodeId,
-        absorbed,
-      });
-      return absorbed ? { kind: "resolve" } : { kind: "retry" };
-    }
+    case "broken_build":
+      spendEnergy(context, BALANCE.failure.brokenBuildEnergy, "broken_build");
+      return { kind: "retry" };
   }
 }
 
-function drawFailure(context: RuleContext): FailureEventId {
+/**
+ * Where a merge conflict may come from.
+ *
+ * Two histories have to actually meet. A merge is one place that happens and a
+ * rebase is the other — writing a commit is not. The merge half is rolled in
+ * `performMerge`; this is the rebase half.
+ */
+function drawFailure(context: RuleContext, kind: NodeKind): FailureEventId {
   const { state } = context;
   const onHotfix = isOnHotfix(state);
-  const unreviewed = hasUnreviewedAi(context);
+  const unreviewed = hasUnreviewedAi(state);
 
   const entries: { value: FailureEventId; weight: number }[] = [];
 
@@ -100,13 +92,13 @@ function drawFailure(context: RuleContext): FailureEventId {
     const def = FAILURE_EVENTS[id];
     if (def.requiresUnreviewedAi && !unreviewed) continue;
     if (def.forbiddenOnHotfix && onHotfix) continue;
-    if (id === "merge_conflict" && !canTangle(context)) continue;
+    if (id === "merge_conflict" && kind !== "rebase") continue;
 
     entries.push({ value: id, weight: def.weight });
   }
 
-  // `forced_rebase` carries no prerequisite, so this is a guard, not a path.
-  if (entries.length === 0) return "forced_rebase";
+  // `broken_build` carries no prerequisite, so this is a guard, not a path.
+  if (entries.length === 0) return "broken_build";
   return context.rng.weighted(entries);
 }
 
@@ -115,11 +107,12 @@ function drawFailure(context: RuleContext): FailureEventId {
  *
  * By hand costs energy and can still fail, which is what makes conflict
  * resistance worth building. By machine always works, and quietly adds debt —
- * sometimes with a bug attached, which is the hotfix you will walk next.
- *
- * Returns whether the interrupted commit now goes through.
+ * sometimes with a bug attached, which the release will find.
  */
-export function resolveConflict(context: RuleContext, how: "manual" | "ai"): boolean {
+export function resolveConflict(
+  context: RuleContext,
+  how: "manual" | "ai",
+): { resolved: boolean; hiddenBug: boolean } {
   if (how === "manual") {
     spendEnergy(context, BALANCE.failure.conflictManualEnergy, "conflict_manual");
 
@@ -136,32 +129,51 @@ export function resolveConflict(context: RuleContext, how: "manual" | "ai"): boo
     });
     emit(context, { type: "conflict_resolved", how, hiddenBug: false });
 
-    return outcome.success;
+    return { resolved: outcome.success, hiddenBug: false };
   }
 
   addDebt(context, BALANCE.debt.perAiConflictFix);
   const hiddenBug = context.rng.chance(BALANCE.failure.conflictAiHiddenBugPct);
   emit(context, { type: "conflict_resolved", how, hiddenBug });
 
-  if (hiddenBug) injectHotfix(context);
+  return { resolved: true, hiddenBug };
+}
 
+/**
+ * Production broke. The gauge fills, a hotfix ticket opens on your board, and
+ * a full gauge is the end of the run.
+ *
+ * Returns false when monitoring absorbed it: the first bug of a run is a
+ * warning, the next gets through.
+ */
+export function recordIncident(
+  context: RuleContext,
+  source: IncidentSource,
+  nodeId: NodeId,
+): boolean {
+  const { state } = context;
+
+  if (source === "release" && context.effects.monitoring && !state.monitoringWarning) {
+    state.monitoringWarning = true;
+    emit(context, { type: "monitoring_warning" });
+    return false;
+  }
+
+  const points = context.effects.monitoring
+    ? BALANCE.failure.hotfixPointsWithMonitoring
+    : BALANCE.failure.hotfixPoints;
+  const ticket = forceTicket(context, "hotfix", points);
+  state.monitoringWarning = false;
+
+  const before = state.quality;
+  state.quality = Math.min(BALANCE.quality.max, before + BALANCE.quality.perIncident);
+  state.sprintIncidents += 1;
+
+  emit(context, { type: "incident", source, nodeId, ticketId: ticket.id });
+  emit(context, { type: "quality", delta: state.quality - before, value: state.quality });
+
+  if (state.quality >= BALANCE.quality.max) gameOver(context, "fired");
   return true;
-}
-
-export function injectHotfix(context: RuleContext): void {
-  const count = context.effects.monitoring
-    ? BALANCE.failure.hotfixNodesWithMonitoring
-    : BALANCE.failure.hotfixNodes;
-
-  injectBranch(context, "hotfix", count);
-  context.state.monitoringWarning = false;
-}
-
-export function injectRefactor(context: RuleContext): void {
-  const result = injectBranch(context, "refactor", BALANCE.debt.explosionNodes);
-  if (result === null) return;
-
-  emit(context, { type: "debt_explosion", branchId: result.branchId });
 }
 
 /** The small weather of a working week. */

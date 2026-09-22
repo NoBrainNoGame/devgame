@@ -1,18 +1,22 @@
 import { BALANCE } from "@/game/core/balance";
 import { appendLog } from "@/game/core/log";
 import { isActionAvailable } from "@/game/core/rules/actions";
-import { completeConflict, performCommit } from "@/game/core/rules/commit";
+import { performCommit, performMerge, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
-import { applyDebtDecay } from "@/game/core/rules/debt";
+import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { placeDevops } from "@/game/core/rules/devops";
 import { checkBurnout, reportCrunch } from "@/game/core/rules/energy";
-import { resolveConflict } from "@/game/core/rules/events";
 import { grantRelic } from "@/game/core/rules/grants";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
-import { type AfterResolution, arriveAt, isMergeNode } from "@/game/core/rules/progress";
+import { gameOver, isOver } from "@/game/core/rules/over";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
 import { endSprint, startNextSprint } from "@/game/core/rules/sprint";
-import { computeScore } from "@/game/core/score";
+import {
+  backlogTickets,
+  checkoutTicket,
+  openTickets,
+  startTicket,
+} from "@/game/core/rules/tickets";
 import type { ApplyResult, PlayerAction, RunState } from "@/game/core/types";
 import { InvalidActionError } from "@/game/core/types";
 
@@ -25,9 +29,10 @@ import { InvalidActionError } from "@/game/core/types";
  * a submitted action log and get the byte-identical game the player played.
  *
  * Which actions cost a turn is a design decision, not an implementation one:
- * committing and reviewing end the turn, walking the graph and spending DevOps
- * points do not. A commit interrupted by a merge conflict defers its turn to
- * the choice that resolves it, so one mistake never costs two turns.
+ * committing, reviewing and merging end the turn; starting a ticket, switching
+ * to one and spending DevOps points do not. A commit interrupted by a merge
+ * conflict defers its turn to the choice that resolves it, so one mistake
+ * never costs two turns.
  */
 export function applyAction(state: RunState, action: PlayerAction): ApplyResult {
   if (state.phase.kind === "game_over") {
@@ -43,10 +48,16 @@ export function applyAction(state: RunState, action: PlayerAction): ApplyResult 
   const context = createContext(draft);
   const wasCrunch = draft.player.energy <= BALANCE.energy.crunchThreshold;
 
-  const { after, consumesTurn } = dispatch(context, action);
+  const consumesTurn = dispatch(context, action);
 
-  if (after === "sprint_end") endSprint(context);
-  if (consumesTurn) endTurn(context);
+  if (consumesTurn && !isOver(context)) endTurn(context);
+
+  // Everything delivered and nothing waiting: the sprint has no reason to run
+  // its clock down, so the release ships now. The player never sees a panel
+  // with nothing on it.
+  if (!isOver(context) && draft.phase.kind === "choose_action" && boardIsEmpty(draft)) {
+    endSprint(context);
+  }
 
   reportCrunch(context, wasCrunch);
   appendLog(draft, context.events);
@@ -54,53 +65,48 @@ export function applyAction(state: RunState, action: PlayerAction): ApplyResult 
   return { state: draft, events: context.events };
 }
 
-function dispatch(
-  context: RuleContext,
-  action: PlayerAction,
-): { after: AfterResolution; consumesTurn: boolean } {
+function boardIsEmpty(state: RunState): boolean {
+  return openTickets(state).length === 0 && backlogTickets(state).length === 0;
+}
+
+/** Returns whether the action consumed a turn. */
+function dispatch(context: RuleContext, action: PlayerAction): boolean {
   const { state } = context;
 
   switch (action.type) {
-    case "commit": {
-      const after = performCommit(context, action.mode, action.kind);
+    case "start":
+      startTicket(context, action.ticketId);
+      return false;
+
+    case "checkout":
+      checkoutTicket(context, action.ticketId);
+      return false;
+
+    case "commit":
+      performCommit(context, action.mode, action.kind);
       // A conflict pauses mid-turn; the turn ends when the player resolves it.
-      return { after, consumesTurn: state.phase.kind !== "resolve_conflict" };
-    }
+      return state.phase.kind !== "resolve_conflict";
 
     case "review":
       performReview(context, false);
-      return { after: "continue", consumesTurn: true };
+      return true;
 
-    case "move":
-      return { after: arriveAt(context, action.nodeId), consumesTurn: false };
+    case "merge":
+      performMerge(context);
+      return state.phase.kind !== "resolve_conflict";
 
     case "devops":
       placeDevops(context, action.id);
-      return { after: "continue", consumesTurn: false };
+      return false;
 
-    case "resolve_conflict": {
-      const phase = state.phase;
-      const mode = phase.kind === "resolve_conflict" ? phase.mode : "craft";
-
-      if (!resolveConflict(context, action.how)) {
-        // Still tangled. A merge cannot be walked away from — the branch is
-        // half-applied and the only way out is through — so the question stays
-        // on the table. Anywhere else the node simply waits.
-        const node = state.nodes[state.player.nodeId];
-        state.phase =
-          node !== undefined && isMergeNode(node)
-            ? { kind: "resolve_conflict", nodeId: node.id, mode }
-            : { kind: "choose_action" };
-        return { after: "continue", consumesTurn: true };
-      }
-
-      return { after: completeConflict(context, mode), consumesTurn: true };
-    }
+    case "resolve_conflict":
+      resolveConflictPhase(context, action.how);
+      return true;
 
     case "choose_relic":
       grantRelic(context, action.relicId);
       startNextSprint(context);
-      return { after: "continue", consumesTurn: false };
+      return false;
   }
 }
 
@@ -109,15 +115,16 @@ function endTurn(context: RuleContext): void {
 
   applyDebtDecay(context);
   runFreeReview(context, freeReviewCadence(context.effects));
+  checkExplosion(context);
 
   state.turn += 1;
+  state.sprintTurn += 1;
   emit(context, { type: "turn_started", turn: state.turn });
 
-  if (checkBurnout(context)) gameOver(context, "burnout");
-}
+  // The box runs out before the burnout check: a player at zero for two turns
+  // is saved by the release that ships this turn, not executed just before.
+  if (state.sprintTurn >= BALANCE.sprint.turns) endSprint(context);
+  if (isOver(context)) return;
 
-function gameOver(context: RuleContext, reason: "burnout" | "fired"): void {
-  const score = computeScore(context.state);
-  context.state.phase = { kind: "game_over", reason };
-  emit(context, { type: "game_over", reason, score });
+  if (checkBurnout(context)) gameOver(context, "burnout");
 }

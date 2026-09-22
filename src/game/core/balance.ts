@@ -16,7 +16,7 @@ import type { CommitMode, NodeKind } from "@/game/core/types";
 export const BALANCE = {
   energy: {
     base: 22,
-    /** Energy spent to resolve a node, by kind. */
+    /** Energy spent to write a commit, by kind. */
     cost: {
       sprint_start: 0,
       commit: 0,
@@ -26,35 +26,35 @@ export const BALANCE = {
       squash: 2,
       docs: 2,
       rebase: 1,
-      fork: 0,
-      feature: 0,
       feature_merge: 2,
       hotfix: 0,
       sprint_merge: 2,
       release: 0,
     } satisfies Record<NodeKind, number>,
-    /** Added on top of the node cost, by how you chose to write the commit. */
+    /**
+     * Added on top of the node cost, by how you chose to write the commit.
+     *
+     * The machine's price is flat: whatever the commit is, it costs this and
+     * nothing else. That is its whole appeal, and what it makes up for in
+     * debt and in what ships broken.
+     */
     commitCost: { craft: 2, ai: 1 } satisfies Record<CommitMode, number>,
     reviewCost: 2,
     /**
-     * Energy returned by merging a feature branch and by a sprint merge.
+     * Energy returned by landing a ticket and by a sprint merge.
      *
-     * A feature is two to five commits at two energy each, so the merge has to
-     * give back less than that or the trunk-based shape turns energy into a
-     * resource that only ever goes up.
-     *
-     * Raised by two when a skill started costing commits: the branch a player
-     * actually picks grew by about one commit, and the rest went on paying for
-     * it out of a budget that had not moved.
+     * A ticket is four to nine points at up to two energy a commit, so the
+     * merge has to give back less than that or energy becomes a resource that
+     * only ever goes up.
      */
     featureMergeRegen: 4,
     sprintMergeRegen: 6,
     /**
      * Fraction of the maximum handed back when a sprint closes.
      *
-     * Not a full tank. Every feature now ends in a merge, so merge energy is
-     * guaranteed rather than earned by choosing to branch — and a full refill
-     * on top of that made a run that never ends.
+     * Not a full tank. Every ticket ends in a merge, so merge energy is
+     * guaranteed rather than earned — and a full refill on top of that made a
+     * run that never ends.
      */
     sprintEndRegenRatio: 0.5,
     /** At or below this, every roll takes the crunch malus. */
@@ -62,18 +62,16 @@ export const BALANCE = {
     crunchMalusPoints: 15,
     /** Turns finished at zero energy before the run ends in burnout. */
     burnoutStreak: 2,
-    /** A second open feature branch multiplies every energy cost. */
-    secondBranchCostMultiplier: 2,
   },
 
   commit: {
     /** Base success chance in percent, before any modifier. */
     base: { craft: 92, ai: 74 } satisfies Record<CommitMode, number>,
-    /** Replaces the base chance on a `risky` node. */
+    /** Replaces the base chance on a `risky` commit. */
     riskyBase: 78,
     /**
-     * Replaces the base chance on a `rebase` node, which is generous — the
-     * whole risk lives in `rebaseDebtDivisor` below.
+     * Replaces the base chance on a `rebase`, which is generous — the whole
+     * risk lives in `rebaseDebtDivisor` below.
      */
     rebaseBase: 95,
     /** Success chance is reduced by `debt / debtRiskDivisor` points. */
@@ -81,31 +79,41 @@ export const BALANCE = {
     /**
      * A rebase is priced by how clean the history is, not by luck: debt bites
      * roughly three times harder here than on an ordinary commit. At zero debt
-     * it is nearly free tempo; at sixty it is a coin flip.
+     * it is nearly free; at sixty it is a coin flip.
      */
     rebaseDebtDivisor: 1.4,
-    /** A second open feature branch costs this many points on every roll. */
-    secondBranchMalusPoints: 15,
     /** Success is never certain and never hopeless. */
     clamp: { min: 5, max: 95 },
-    /** Extra nodes a successful AI commit walks through, inclusive. */
-    aiJump: { min: 1, max: 2 },
     /** Chance in percent that a craft success makes the next refactor free. */
     craftFreeRefactorPct: 25,
     /** Chance in percent that a success also draws an ambient event. */
     ambientOnSuccessPct: 10,
   },
 
+  /**
+   * Story points a successful commit fills on its ticket.
+   *
+   * The machine fills twice what a hand does. That is the trade the whole game
+   * is made of: it is faster, it is cheaper, and everything it writes is debt
+   * until somebody reads it.
+   */
+  points: {
+    craft: 1,
+    ai: 2,
+    /** Added on a `risky` commit, whichever hand wrote it. */
+    riskyBonus: 1,
+    /** A hotfix or a forced refactor counts one per commit, whoever writes it. */
+    mustWrite: 1,
+  },
+
   debt: {
     max: 100,
-    /** Debt added by resolving a node, on success. */
-    perAiCommit: 9,
-    /** Debt for each extra node an AI burst walked through. */
-    perAiJumpNode: 2,
+    /** Debt added by a machine-written commit, on success. */
+    perAiCommit: 11,
     perCraftCommit: 0,
     perRiskyNode: 5,
     perAiConflictFix: 10,
-    /** Debt repaid by a refactor node. */
+    /** Debt repaid by a refactor commit. */
     refactorRepay: 10,
     /** Half-width of the noise added to the displayed range. */
     noiseSpread: 7,
@@ -113,9 +121,11 @@ export const BALANCE = {
     fuzzSpread: 10,
     /** The range is rounded outwards to a multiple of this. */
     fuzzStep: 5,
-    /** At or above this, mandatory refactor nodes are injected. */
+    /** At or above this, a refactor ticket is forced open. */
     explosionThreshold: 70,
-    explosionNodes: 2,
+    /** Refactor commits that ticket demands. */
+    explosionPoints: 2,
+    /** Debt repaid when it merges. */
     explosionRepay: 30,
   },
 
@@ -128,8 +138,6 @@ export const BALANCE = {
     chainLength: 3,
     /** Debt repaid per commit cleaned. */
     repayPerCommit: 4,
-    /** How many recent AI commits count towards the reviewed ratio. */
-    window: 10,
     /** Automatic review cadence at one point; each further point removes one. */
     botCadence: 4,
   },
@@ -142,35 +150,34 @@ export const BALANCE = {
     repayPerCommit: 7,
     /** Commits the history keeps: the rest are gone, and so is their score. */
     keptCommits: 1,
-    /** Never erases more than this, whatever the window holds. */
+    /** Never erases more than this, whatever the ticket holds. */
     maxCommits: 5,
+    /** Unread machine-written commits on the ticket before a squash is offered. */
+    minUnread: 2,
   },
 
   docs: {
-    /**
-     * Machine-written commits that carry no debt after a documentation node.
-     * A burst is three or four nodes, so this covers about one burst.
-     */
+    /** Machine-written commits that carry no debt after a documentation commit. */
     charges: 4,
   },
 
   rebase: {
-    /** Main-line nodes replayed on top of you when the rebase lands. */
-    carry: 1,
-    /** Debt added when it does not, from the mess of a half-applied replay. */
+    /** Debt added when a rebase does not land, from the mess of a half-applied replay. */
     failureDebt: 6,
   },
 
   failure: {
     /**
      * A merge is where conflicts come from, in git and here. These are the
-     * odds of one when a branch lands: a floor, plus what the debt and the
-     * unread machine-written work in the branch add.
+     * odds of one when a ticket lands: a floor, plus what the debt, the unread
+     * machine-written work in the ticket and every merge landed on `dev` since
+     * it was opened each add.
      */
     mergeConflictBase: 12,
     mergeConflictDebtDivisor: 6,
     mergeConflictPerUnread: 4,
-    /** However bad it gets, landing a branch is not a coin flip. */
+    mergeConflictPerBehind: 8,
+    /** However bad it gets, landing a ticket is not a coin flip. */
     mergeConflictMax: 55,
     /** Energy lost resolving a merge conflict by hand. */
     conflictManualEnergy: 3,
@@ -178,11 +185,77 @@ export const BALANCE = {
     conflictManualBase: 75,
     /** Chance in percent that an AI conflict fix plants a hidden bug. */
     conflictAiHiddenBugPct: 30,
-    /** Nodes in a hotfix branch, and how many monitoring removes. */
-    hotfixNodes: 3,
-    hotfixNodesWithMonitoring: 2,
-    /** Energy lost reworking a rejected pull request. */
-    prRejectedEnergy: 1,
+    /** Commits a hotfix ticket demands, and how many with monitoring. */
+    hotfixPoints: 3,
+    hotfixPointsWithMonitoring: 2,
+    /** Story points a rejected pull request takes back off the ticket. */
+    prRejectedPoints: 1,
+    /** Energy lost to a build that breaks for nothing. */
+    brokenBuildEnergy: 1,
+  },
+
+  /**
+   * Work in progress. Every ticket open beyond the first makes each commit
+   * dearer and each roll worse — the cost of holding several things in your
+   * head, and the pressure a backlog that keeps assigning you work applies.
+   */
+  wip: {
+    /** Added to the energy multiplier per extra open ticket. */
+    energyPerExtra: 0.5,
+    /** Points taken off every roll per extra open ticket. */
+    malusPerExtra: 10,
+  },
+
+  sprint: {
+    /** Turns in the box. The release ships when they run out. */
+    turns: 12,
+  },
+
+  tickets: {
+    /** Tickets arriving at sprint 1, and one more every `growEvery` sprints. */
+    base: 2,
+    growEvery: 2,
+    maxPerSprint: 5,
+    /** Sprints a ticket may sit in the backlog before the board assigns it. */
+    graceSprints: 1,
+    /** Chance in percent that a ticket carries a skill, beyond the guaranteed one. */
+    skillPct: 40,
+    /** Story points of a ticket that grants nothing. */
+    points: { min: 4, max: 6 },
+    /**
+     * Extra points a ticket carries when it also grants a skill.
+     *
+     * The whole trade. A skill has to cost turns, or the ticket that grants
+     * one is strictly better than the one beside it and there is no decision.
+     */
+    skillExtraPoints: { min: 2, max: 3 },
+    criteriaCount: { min: 0, max: 2 },
+    criteriaWeights: { reviewed: 30, documented: 30, refactored: 25, clean: 15 },
+  },
+
+  criteria: {
+    /** `clean`: the debt the ticket may merge under. */
+    cleanDebtMax: 30,
+  },
+
+  /**
+   * Production's patience. Incidents fill it, clean sprints drain it, and a
+   * full gauge is the sack — the run's other ending.
+   */
+  quality: {
+    max: 100,
+    perIncident: 25,
+    decayPerCleanSprint: 15,
+  },
+
+  release: {
+    /** Chance in percent that each unread machine-written commit shipped breaks. */
+    bugPerUnreadPct: 15,
+  },
+
+  xp: {
+    /** XP per story point delivered, multiplied by the sprint it landed in. */
+    perPoint: 10,
   },
 
   devops: {
@@ -202,34 +275,8 @@ export const BALANCE = {
 
   score: {
     perCommit: 1,
+    perTicketPoint: 2,
     perSprintCompleted: 5,
-  },
-
-  map: {
-    /** Features delivered into `main` per sprint. One merge each. */
-    featuresPerSprint: { min: 3, max: 5 },
-    /** Branches offered at each merge. Two is a choice, three is a fork. */
-    featureOptions: { min: 2, max: 3 },
-    /**
-     * Commits inside a feature branch that grants nothing.
-     *
-     * This is the fast option: you deliver, and you come out of it with
-     * nothing lasting.
-     */
-    featureBranchLength: { min: 2, max: 3 },
-    /**
-     * Extra commits a branch carries when it also grants a skill.
-     *
-     * The whole trade. A skill has to cost turns, or the branch that grants one
-     * is strictly better than the branch beside it and there is no decision to
-     * make.
-     */
-    skillBranchExtraCommits: { min: 1, max: 2 },
-    /** Chance in percent that a feature branch carries a branch of its own. */
-    subBranchPct: 25,
-    /** Chance in percent of a one-node detour beside a commit inside a feature. */
-    detourPct: 35,
-    detourWeights: { refactor: 22, risky: 18, chore: 18, squash: 14, docs: 14, rebase: 14 },
   },
 } as const;
 

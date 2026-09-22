@@ -7,7 +7,7 @@
  * is a type error until the rule exists.
  *
  * Ambient events are the small weather of a working week. They are drawn on
- * `chore` nodes and, rarely, after a successful commit. Their whole effect fits
+ * `chore` commits and, rarely, after a successful one. Their whole effect fits
  * in the table.
  */
 
@@ -15,7 +15,7 @@ export const FAILURE_EVENT_IDS = [
   "merge_conflict",
   "prod_bug",
   "pr_rejected",
-  "forced_rebase",
+  "broken_build",
 ] as const;
 
 export type FailureEventId = (typeof FAILURE_EVENT_IDS)[number];
@@ -23,22 +23,23 @@ export type FailureEventId = (typeof FAILURE_EVENT_IDS)[number];
 export interface FailureEventDef {
   id: FailureEventId;
   weight: number;
-  /** Needs at least one unreviewed AI commit still in the window. */
+  /** Needs at least one unreviewed AI commit on the ticket being written. */
   requiresUnreviewedAi: boolean;
-  /** Cannot fire while the player is already on a hotfix branch. */
+  /** Cannot fire while the player is writing a hotfix. */
   forbiddenOnHotfix: boolean;
 }
 
 export const FAILURE_EVENTS: Record<FailureEventId, FailureEventDef> = {
+  // Only ever drawn on a rebase: a conflict needs two histories to meet.
   merge_conflict: {
     id: "merge_conflict",
-    weight: 40,
+    weight: 25,
     requiresUnreviewedAi: false,
     forbiddenOnHotfix: false,
   },
   prod_bug: {
     id: "prod_bug",
-    weight: 20,
+    weight: 35,
     // Something has to have shipped unread for production to break.
     requiresUnreviewedAi: true,
     // Stacking a hotfix on a hotfix is a spiral, not a game.
@@ -46,13 +47,13 @@ export const FAILURE_EVENTS: Record<FailureEventId, FailureEventDef> = {
   },
   pr_rejected: {
     id: "pr_rejected",
-    weight: 15,
+    weight: 20,
     requiresUnreviewedAi: false,
     forbiddenOnHotfix: false,
   },
-  forced_rebase: {
-    id: "forced_rebase",
-    weight: 15,
+  broken_build: {
+    id: "broken_build",
+    weight: 20,
     requiresUnreviewedAi: false,
     forbiddenOnHotfix: false,
   },

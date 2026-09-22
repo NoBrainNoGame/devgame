@@ -1,27 +1,30 @@
-import type { DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
+import type { CriterionKind, DevopsId, ProfileId, RelicId, SkillId } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
+import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { criteriaStatus, isReady, unreadAiOn } from "@/game/core/rules/criteria";
 import {
   type DebtView,
   debtView,
   energyMax,
   gatherEffects,
   isCrunch,
-  isOverextended,
   reviewedRatio,
+  wipExtra,
 } from "@/game/core/rules/modifiers";
 import { previewAll } from "@/game/core/rules/preview";
+import { behindOf, currentTicket, sortedTickets } from "@/game/core/rules/tickets";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
-  Branch,
-  BranchId,
-  DetourKind,
   MapNode,
   NodeId,
   Phase,
   PlayerAction,
   RunMode,
   RunState,
+  Ticket,
+  TicketId,
 } from "@/game/core/types";
 
 /**
@@ -34,17 +37,45 @@ import type {
  */
 
 export interface PlayerView {
-  /** The node being written: where the next commit will land. */
-  nodeId: NodeId;
-  /** `HEAD`: the last node actually written. This is where the graph draws you. */
+  /** The ticket being written, or null between tickets. */
+  ticketId: TicketId | null;
+  /** `HEAD`: the last commit actually written. This is where the graph draws you. */
   headId: NodeId;
   energy: number;
   energyMax: number;
   totalCommits: number;
   crunch: boolean;
-  overextended: boolean;
+  /** Open tickets beyond the first. Each one taxes every commit. */
+  wip: number;
   reviewedRatio: number;
+  /** Unread machine-written commits on the ticket in hand. */
   unreviewed: number;
+}
+
+export interface CriterionView {
+  kind: CriterionKind;
+  met: boolean;
+}
+
+/**
+ * A ticket as the panel shows it: what it asks for, how far it is, and
+ * whether it can land. The node ids are left out — the board knows the ticket,
+ * the graph knows the commits.
+ */
+export interface TicketView {
+  id: TicketId;
+  kind: Ticket["kind"];
+  status: Ticket["status"];
+  points: number;
+  filled: number;
+  criteria: CriterionView[];
+  skillId?: SkillId;
+  lane?: number;
+  /** Merges landed on `dev` since it was opened. Its merge pays for each. */
+  behind: number;
+  ready: boolean;
+  commits: number;
+  mustWrite?: Ticket["mustWrite"];
 }
 
 export interface RunSnapshot {
@@ -54,12 +85,18 @@ export interface RunSnapshot {
 
   turn: number;
   sprint: number;
-  sprintLength: number;
+  /** Turns spent in this sprint, out of the box. */
+  sprintTurn: number;
+  sprintTurns: number;
   score: number;
   xpEarned: number;
+  ticketsDelivered: number;
+  pointsDelivered: number;
+  /** Production's patience, 0 to `qualityMax`. Full is the sack. */
+  quality: number;
+  qualityMax: number;
 
   phase: Phase;
-  candidates: NodeId[];
   actions: PlayerAction[];
   /** Keyed by `actionKey`, so a button can look up its own numbers. */
   previews: Record<string, ActionPreview>;
@@ -72,46 +109,20 @@ export interface RunSnapshot {
   devops: Record<DevopsId, number>;
   devopsPoints: number;
 
-  /** Enough of each node for a tooltip, without exposing the board itself. */
+  /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
     NodeId,
-    Pick<MapNode, "id" | "kind" | "status" | "lane" | "depth" | "skillId" | "commit" | "branchId">
+    Pick<MapNode, "id" | "kind" | "lane" | "depth" | "parents" | "skillId" | "commit" | "ticketId">
   >;
 
-  /**
-   * What each branch is for, without its node list.
-   *
-   * The skill a branch grants sits on its *merge* node, at the far end, so
-   * until this existed the one decision the game asks most often — open this
-   * branch or stay on `main` — was the only one made blind. The design's own
-   * rule is that costs and effects are shown before the choice.
-   *
-   * The node ids are deliberately left out: they are the shape of a sprint
-   * nobody has walked yet, and the graph is not allowed to know it.
-   */
-  branches: Record<
-    BranchId,
-    Pick<Branch, "id" | "kind" | "skillId" | "open" | "merged"> & {
-      /** Commits to write before it can be merged. What the branch costs. */
-      commits: number;
-      /**
-       * The ways its commits may be written, deduplicated and sorted.
-       *
-       * This is what tells two branches apart when neither grants a skill. A
-       * branch carrying a squash and a documentation commit is a different
-       * proposition from one carrying a rebase, and the player has to be able
-       * to see that before choosing rather than after walking it.
-       */
-      offers: DetourKind[];
-      /** True when a feature of its own leaves it partway. */
-      forks: boolean;
-    }
-  >;
+  /** The board, oldest ticket first. */
+  tickets: TicketView[];
 }
 
 export function toSnapshot(state: RunState): RunSnapshot {
   const effects = gatherEffects(state);
   const actions = getAvailableActions(state);
+  const current = currentTicket(state);
 
   const nodes: RunSnapshot["nodes"] = {};
   for (const id of Object.keys(state.nodes).sort()) {
@@ -120,30 +131,29 @@ export function toSnapshot(state: RunState): RunSnapshot {
     nodes[id] = {
       id: node.id,
       kind: node.kind,
-      status: node.status,
       lane: node.lane,
       depth: node.depth,
+      parents: [...node.parents],
       ...(node.skillId === undefined ? {} : { skillId: node.skillId }),
-      ...(node.commit === undefined ? {} : { commit: { ...node.commit } }),
-      ...(node.branchId === undefined ? {} : { branchId: node.branchId }),
+      commit: { ...node.commit },
+      ...(node.ticketId === undefined ? {} : { ticketId: node.ticketId }),
     };
   }
 
-  const branches: RunSnapshot["branches"] = {};
-  for (const id of Object.keys(state.branches).sort()) {
-    const branch = state.branches[id];
-    if (branch === undefined) continue;
-    branches[id] = {
-      id: branch.id,
-      kind: branch.kind,
-      ...(branch.skillId === undefined ? {} : { skillId: branch.skillId }),
-      open: branch.open,
-      merged: branch.merged,
-      commits: branch.nodeIds.length,
-      offers: offersOf(state, branch),
-      forks: Object.values(state.branches).some((other) => other.parentBranchId === branch.id),
-    };
-  }
+  const tickets: TicketView[] = sortedTickets(state).map((ticket) => ({
+    id: ticket.id,
+    kind: ticket.kind,
+    status: ticket.status,
+    points: ticket.points,
+    filled: ticket.filled,
+    criteria: criteriaStatus(state, ticket),
+    ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
+    ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
+    behind: behindOf(state, ticket),
+    ready: ticket.status === "open" && isReady(state, ticket),
+    commits: ticket.nodeIds.length,
+    ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
+  }));
 
   return {
     seed: state.seed,
@@ -152,25 +162,29 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     turn: state.turn,
     sprint: state.sprint,
-    sprintLength: state.sprintLength,
+    sprintTurn: state.sprintTurn,
+    sprintTurns: BALANCE.sprint.turns,
     score: computeScore(state),
     xpEarned: state.xpEarned,
+    ticketsDelivered: state.ticketsDelivered,
+    pointsDelivered: state.pointsDelivered,
+    quality: state.quality,
+    qualityMax: BALANCE.quality.max,
 
     phase: state.phase,
-    candidates: state.phase.kind === "choose_node" ? [...state.phase.candidates] : [],
     actions,
     previews: previewAll(state, actions),
 
     player: {
-      nodeId: state.player.nodeId,
-      headId: state.player.headId,
+      ticketId: state.player.ticketId,
+      headId: headOf(state).id,
       energy: state.player.energy,
       energyMax: energyMax(state, effects),
       totalCommits: state.player.totalCommits,
       crunch: isCrunch(state),
-      overextended: isOverextended(state),
+      wip: wipExtra(state),
       reviewedRatio: reviewedRatio(state),
-      unreviewed: state.player.aiHistory.filter((entry) => !entry.reviewed).length,
+      unreviewed: current === null ? 0 : unreadAiOn(state, current).length,
     },
 
     debt: debtView(state, effects),
@@ -181,16 +195,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
     devopsPoints: state.devopsPoints,
 
     nodes,
-    branches,
+    tickets,
   };
-}
-
-/** Every distinct way a commit on this branch may be written, in a stable order. */
-function offersOf(state: RunState, branch: Branch): DetourKind[] {
-  const seen = new Set<DetourKind>();
-  for (const id of branch.nodeIds) {
-    const offers = state.nodes[id]?.offers;
-    if (offers !== undefined) seen.add(offers);
-  }
-  return [...seen].sort();
 }

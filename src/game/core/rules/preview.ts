@@ -1,15 +1,19 @@
 import { DEVOPS, devopsCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import { getNode } from "@/game/core/map/graph";
+import { commitKindFor } from "@/game/core/rules/commit";
+import { unreadAiOn } from "@/game/core/rules/criteria";
 import {
   commitChance,
   conflictChance,
   gatherEffects,
+  mergeConflictChance,
   nodeEnergyCost,
   reviewCleanCount,
   reviewEnergyCost,
 } from "@/game/core/rules/modifiers";
+import { behindOf, currentTicket, getTicket } from "@/game/core/rules/tickets";
+import { pointsFor } from "@/game/core/rules/write";
 import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
 
 /**
@@ -25,62 +29,67 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
   const effects = gatherEffects(state);
 
   switch (action.type) {
+    case "start": {
+      const ticket = getTicket(state, action.ticketId);
+      const notes: I18nText[] = [];
+      if (ticket.skillId !== undefined) notes.push(text("notes.grants_skill"));
+      return { action, energyCost: 0, consumesTurn: false, notes };
+    }
+
+    case "checkout":
+      return { action, energyCost: 0, consumesTurn: false, notes: [] };
+
     case "commit": {
-      const standing = getNode(state, state.player.nodeId);
+      const ticket = currentTicket(state);
+      if (ticket === null) return { action, energyCost: 0, consumesTurn: true, notes: [] };
+
       // Priced as the thing it would become: a refactor's odds and its price
       // are the refactor's, not the plain commit's it is offered beside.
-      const node =
-        action.kind !== undefined && standing.offers === action.kind
-          ? { ...standing, kind: action.kind }
-          : standing;
+      const kind = commitKindFor(ticket, action.kind);
 
-      const cost = nodeEnergyCost(state, node, action.mode, effects);
-      const chance = commitChance(state, action.mode, node, effects);
+      const cost = nodeEnergyCost(state, kind, action.mode);
+      const chance = commitChance(state, action.mode, kind, effects);
       const notes: I18nText[] = [...cost.notes, ...chance.notes];
 
-      const { aiJump } = BALANCE.commit;
-      const jumpMin = action.mode === "ai" ? aiJump.min + effects.aiJumpBonus : 0;
-      const jumpMax = action.mode === "ai" ? aiJump.max + effects.aiJumpBonus : 0;
+      let debt = 0;
+      if (action.mode === "ai") {
+        // Documentation pays the debt of the next machine-written commit, so
+        // the preview shows the covered price rather than the rate.
+        if (state.player.docsCharges > 0) {
+          notes.push(text("notes.documented", { count: state.player.docsCharges }));
+        } else {
+          debt = Math.max(0, BALANCE.debt.perAiCommit - effects.aiDebtDiscount);
+        }
+      } else {
+        debt = BALANCE.debt.perCraftCommit;
+      }
+      if (kind === "risky") debt += BALANCE.debt.perRiskyNode;
+      if (kind === "refactor") debt -= BALANCE.debt.refactorRepay;
 
-      // Documentation pays the debt of the next few machine-written nodes, so
-      // the preview has to count the charges rather than the rate. Showing the
-      // full price on a covered commit would hide the whole point of the node.
-      const charges = action.mode === "ai" ? state.player.docsCharges : 0;
-      if (charges > 0) notes.push(text("notes.documented", { count: charges }));
+      if (kind === "rebase") {
+        notes.push(text("notes.rebase_why", { count: behindOf(state, ticket) }));
+        if (!effects.absorbRebase) {
+          notes.push(text("notes.rebase_risk", { debt: BALANCE.rebase.failureDebt }));
+        }
+      }
 
-      const aiDebt = (nodes: number): number => {
-        if (action.mode !== "ai") return BALANCE.debt.perCraftCommit;
-        const covered = Math.min(charges, 1 + nodes);
-        const paid = 1 + nodes - covered;
-        // The primary node costs more than a jumped one, and charges are spent
-        // in order, so the first uncovered node is the expensive one.
-        if (paid === 0) return 0;
-        const primaryPaid = covered === 0 ? BALANCE.debt.perAiCommit : 0;
-        const jumpsPaid = paid - (covered === 0 ? 1 : 0);
-        return primaryPaid + jumpsPaid * BALANCE.debt.perAiJumpNode;
-      };
-
-      const nodeDebt = node.kind === "risky" ? BALANCE.debt.perRiskyNode : 0;
-      const rebaseDebt = node.kind === "rebase" ? BALANCE.rebase.failureDebt : 0;
-      if (rebaseDebt > 0) notes.push(text("notes.rebase_risk", { debt: rebaseDebt }));
-
-      const carried = node.kind === "rebase" ? BALANCE.rebase.carry : 0;
+      const points = pointsFor(ticket, action.mode, kind);
 
       return {
         action,
         energyCost: cost.value,
         successPct: chance.value,
-        // The jump is a maximum, not a promise: it stops at the next decision.
-        progress: [1 + carried, 1 + carried + jumpMax],
-        debtDelta: [nodeDebt + aiDebt(jumpMin), nodeDebt + aiDebt(jumpMax)],
+        points: [points, points],
+        debtDelta: [debt, debt],
         consumesTurn: true,
         notes,
       };
     }
 
     case "review": {
+      const ticket = currentTicket(state);
       const cost = reviewEnergyCost(state, effects);
-      const unreviewed = state.player.aiHistory.filter((entry) => !entry.reviewed).length;
+      const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
       const cleaned = Math.min(unreviewed, reviewCleanCount(state, effects));
       // `-0` would be correct arithmetic and a nuisance everywhere downstream.
       const repaid = cleaned * BALANCE.review.repayPerCommit;
@@ -92,31 +101,29 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return {
         action,
         energyCost: cost.value,
-        progress: [0, 0],
         debtDelta: [delta, delta],
         consumesTurn: true,
         notes,
       };
     }
 
-    case "move": {
-      const node = getNode(state, action.nodeId);
-      const isMerge = node.kind === "feature_merge" || node.kind === "sprint_merge";
-      const cost = isMerge ? nodeEnergyCost(state, node, undefined, effects) : undefined;
-
-      const notes: I18nText[] = [...(cost?.notes ?? [])];
-      if (node.kind === "refactor") notes.push(text("notes.repays_debt"));
-      if (node.kind === "risky") notes.push(text("notes.risky_node"));
-      if (node.kind === "chore") notes.push(text("notes.chore_node"));
-      if (node.skillId !== undefined) notes.push(text("notes.grants_skill"));
+    case "merge": {
+      const ticket = currentTicket(state);
+      const cost = nodeEnergyCost(state, "feature_merge", undefined);
+      const notes: I18nText[] = [...cost.notes];
+      if (ticket !== null) {
+        const conflict = mergeConflictChance(state, ticket);
+        if (conflict > 0) notes.push(text("notes.conflict_risk", { percent: conflict }));
+        const behind = behindOf(state, ticket);
+        if (behind > 0) notes.push(text("notes.behind_dev", { count: behind }));
+      }
+      const regen = BALANCE.energy.featureMergeRegen + effects.mergeRegenBonus;
+      notes.push(text("notes.merge_regen", { energy: regen }));
 
       return {
         action,
-        energyCost: cost?.value ?? 0,
-        progress: [0, 0],
-        debtDelta: node.kind === "refactor" ? [-BALANCE.debt.refactorRepay, 0] : [0, 0],
-        // Walking is not working: it costs no turn.
-        consumesTurn: false,
+        energyCost: cost.value,
+        consumesTurn: true,
         notes,
       };
     }
@@ -160,12 +167,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "choose_relic":
-      return {
-        action,
-        energyCost: 0,
-        consumesTurn: false,
-        notes: [],
-      };
+      return { action, energyCost: 0, consumesTurn: false, notes: [] };
   }
 }
 
@@ -182,12 +184,14 @@ export function previewAll(
 /** A stable string for an action, so React can key on it. */
 export function actionKey(action: PlayerAction): string {
   switch (action.type) {
+    case "start":
+      return `start:${action.ticketId}`;
+    case "checkout":
+      return `checkout:${action.ticketId}`;
     case "commit":
       return action.kind === undefined
         ? `commit:${action.mode}`
         : `commit:${action.mode}:${action.kind}`;
-    case "move":
-      return `move:${action.nodeId}`;
     case "devops":
       return `devops:${action.id}`;
     case "resolve_conflict":
@@ -196,5 +200,7 @@ export function actionKey(action: PlayerAction): string {
       return `relic:${action.relicId}`;
     case "review":
       return "review";
+    case "merge":
+      return "merge";
   }
 }

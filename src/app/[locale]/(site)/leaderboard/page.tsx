@@ -132,7 +132,7 @@ export default async function LeaderboardPage({
                 <TableHead>{t("columnPlayer")}</TableHead>
                 <TableHead className="text-right">{t("columnScore")}</TableHead>
                 <TableHead className="text-right">{t("columnSprints")}</TableHead>
-                <TableHead className="text-right">{t("columnBots")}</TableHead>
+                <TableHead className="text-right">{t("columnTickets")}</TableHead>
                 <TableHead className="text-right">{t("columnDate")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -153,7 +153,9 @@ export default async function LeaderboardPage({
                   <TableCell className="max-w-40 truncate">{pinned.displayName}</TableCell>
                   <TableCell className="text-right tabular-nums">{pinned.score}</TableCell>
                   <TableCell className="text-right tabular-nums">{pinned.sprints}</TableCell>
-                  <TableCell className="text-right tabular-nums">{pinned.botsFired}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {pinned.ticketsDelivered}
+                  </TableCell>
                   <TableCell className="text-right text-muted-foreground tabular-nums">
                     {day(pinned.finishedAt)}
                   </TableCell>
@@ -187,7 +189,7 @@ function Row({ entry, mine }: { entry: LeaderboardEntry; mine: boolean }): React
       <TableCell className="max-w-40 truncate">{entry.displayName}</TableCell>
       <TableCell className="text-right tabular-nums">{entry.score}</TableCell>
       <TableCell className="text-right tabular-nums">{entry.sprints}</TableCell>
-      <TableCell className="text-right tabular-nums">{entry.botsFired}</TableCell>
+      <TableCell className="text-right tabular-nums">{entry.ticketsDelivered}</TableCell>
       <TableCell className="text-right text-muted-foreground tabular-nums">
         {day(entry.finishedAt)}
       </TableCell>

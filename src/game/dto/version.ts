@@ -1,5 +1,6 @@
 import {
   AMBIENT_EVENT_IDS,
+  CRITERION_KINDS,
   DEVOPS_IDS,
   FAILURE_EVENT_IDS,
   PROFILE_IDS,
@@ -30,7 +31,7 @@ import { canonicalJson, fnv1aHex } from "@/game/core/hash";
  *
  * `tests/content.test.ts` pins the result, so neither half can move unnoticed.
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /**
  * The rules generation. Bumped by hand when a change makes an old action log
@@ -59,6 +60,7 @@ export function fingerprintFor(epoch: number): string {
       relics: RELIC_IDS,
       devops: DEVOPS_IDS,
       profiles: PROFILE_IDS,
+      criteria: CRITERION_KINDS,
       failures: FAILURE_EVENT_IDS,
       ambient: AMBIENT_EVENT_IDS,
     }),

@@ -22,8 +22,7 @@ import { RULES_FINGERPRINT } from "@/game/dto/version";
 export interface ReplayStats {
   turns: number;
   sprints: number;
-  /** Always 0 until tickets exist; kept so the DTO shape does not move twice. */
-  botsFired: number;
+  ticketsDelivered: number;
   commits: number;
   /** XP the run earned. */
   xp: number;
@@ -102,7 +101,7 @@ export function replayRun(input: unknown): ReplayResult {
     stats: {
       turns: state.turn,
       sprints: Math.max(0, state.sprint - 1),
-      botsFired: 0,
+      ticketsDelivered: state.ticketsDelivered,
       commits: state.player.totalCommits,
       xp: state.xpEarned,
       hash: hashState(state),

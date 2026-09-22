@@ -104,7 +104,7 @@ export default async function ProfilePage(): Promise<React.JSX.Element> {
         <Card className="border-line bg-panel/40">
           <CardContent className="flex gap-8 text-sm">
             <Stat label={common("commits")} value={meta.totalCommits} />
-            <Stat label={t("columnBots")} value={meta.botsFired} />
+            <Stat label={t("columnTickets")} value={meta.ticketsDelivered} />
           </CardContent>
         </Card>
       </div>

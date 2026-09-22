@@ -44,7 +44,7 @@ export interface SubmitResult {
   runId: string;
   score: number;
   sprints: number;
-  botsFired: number;
+  ticketsDelivered: number;
   commits: number;
 }
 
@@ -195,7 +195,7 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       fingerprint,
       score: outcome.score,
       sprintsCompleted: outcome.stats.sprints,
-      botsFired: outcome.stats.botsFired,
+      ticketsDelivered: outcome.stats.ticketsDelivered,
       commits: outcome.stats.commits,
       clientRunId: save.clientRunId,
       finishedAt: new Date(),
@@ -219,7 +219,7 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
       {
         xp: outcome.stats.xp,
         commits: outcome.stats.commits,
-        botsFired: outcome.stats.botsFired,
+        ticketsDelivered: outcome.stats.ticketsDelivered,
         sprints: outcome.stats.sprints,
       },
       new Date().toISOString(),
@@ -248,7 +248,7 @@ interface RunRow {
   id: string;
   score: number;
   sprintsCompleted: number;
-  botsFired: number;
+  ticketsDelivered: number;
   commits: number;
 }
 
@@ -257,7 +257,7 @@ function describe(run: RunRow): SubmitResult {
     runId: run.id,
     score: run.score,
     sprints: run.sprintsCompleted,
-    botsFired: run.botsFired,
+    ticketsDelivered: run.ticketsDelivered,
     commits: run.commits,
   };
 }

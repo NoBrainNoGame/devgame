@@ -111,18 +111,12 @@
     "conflictAiHint": "Always works, adds debt, and may hide a bug.",
     "previewSuccess": "Success: {percent} %",
     "previewEnergy": "Energy: {cost}",
-    "previewProgress": "Progress: {min} to {max}",
     "previewDebt": "Debt: {min} to {max}",
     "previewTakesTurn": "Takes a turn",
     "previewFreeMove": "Free move",
     "previewBlocked": "Unavailable",
     "previewNotes": "How it adds up",
     "unreviewed": "{count, plural, one {# unread commit} other {# unread commits}}",
-    "overextended": "Two features open",
-    "overextendedHint": "Everything costs double and every roll is penalised.",
-    "chooseNode": "Which feature do you build? Each branch is a different road to the next merge.",
-    "openBranch": "New feature",
-    "openBranchHint": "Opens a branch off dev. Nothing is ever written anywhere else: merging it is what delivers, and what grants its skill.",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "zoomFit": "Fit the whole history",
@@ -135,20 +129,30 @@
     "tooltipUnread": "unread",
     "tooltipBranch": "Branch",
     "tooltipFeature": "feature",
-    "tooltipHotfix": "hotfix",
     "tooltipGrants": "Grants",
     "graphHint": "Wheel to zoom, drag to pan. Hover a commit for the detail.",
     "writeInstead": "Or write this commit as:",
     "byHand": "by hand",
     "byMachine": "with the AI",
-    "branchCommits": "{count} commits",
-    "branchLength": "{count, plural, one {# commit to write before it can be merged} other {# commits to write before it can be merged}}",
-    "branchPlain": "Delivers fast, grants nothing",
-    "branchPlainHint": "This branch carries no skill: it merges sooner, and that is all it offers.",
-    "branchCarries": "Delivers fast · {what}",
-    "branchOffers": "Along the way you will be able to write:",
-    "branchNoOffers": "Nothing special along the way: ordinary commits.",
-    "branchForks": "A second feature leaves it: two open branches cost double."
+    "noTicket": "Nothing in hand: start a ticket from the backlog.",
+    "mustWrite": {
+      "hotfix": "Production is down: only fix commits count here.",
+      "refactor": "The debt exploded: only refactor commits count here."
+    },
+    "merge": "Merge into dev",
+    "mergeHint": "The ticket is ready: every criterion holds.",
+    "switchTo": "Other open tickets",
+    "checkout": "Switch to",
+    "backlog": "Backlog",
+    "startTicket": "Start",
+    "ticketPoints": "{filled}/{max} pts",
+    "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
+    "noCriteria": "No criteria: the points are enough.",
+    "criteriaTitle": "Acceptance criteria",
+    "previewPoints": "Points: {min} to {max}",
+    "quality": "Prod",
+    "qualityHint": "Every bug in production fills this gauge. Full means you are fired. A sprint without an incident lowers it.",
+    "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -158,7 +162,7 @@
     "columnPlayer": "Player",
     "columnScore": "Score",
     "columnSprints": "Sprints",
-    "columnBots": "Bots fired",
+    "columnTickets": "Tickets delivered",
     "columnDate": "Date",
     "empty": "No scores yet.",
     "yourRank": "Your rank: {rank}",
@@ -179,7 +183,7 @@
     "columnProfile": "Profile",
     "columnScore": "Score",
     "columnSprints": "Sprints",
-    "columnBots": "Bots fired",
+    "columnTickets": "Tickets delivered",
     "columnStatus": "Status",
     "status": {
       "in_progress": "In progress",
@@ -283,11 +287,11 @@
       "accountI4": "Verification: the sign-in tokens emailed to you, valid for fifteen minutes.",
       "accountP2": "Legal basis: performing the service you asked for. The email address is required — it is what identifies the account.",
       "gameTitle": "Game data",
-      "gameP1": "Your profile: display name, level, XP, banked commits, lifetime commits, bots fired, unlocks and settings.",
-      "gameP2": "A run is stored as its seed and the ordered list of your actions, not as a score. The server replays that list to compute the score, sprints, bots fired and commits, along with the start and end times.",
+      "gameP1": "Your profile: display name, level, XP, banked commits, lifetime commits, tickets delivered, unlocks and settings.",
+      "gameP2": "A run is stored as its seed and the ordered list of your actions, not as a score. The server replays that list to compute the score, sprints, tickets delivered and commits, along with the start and end times.",
       "gameP3": "A submitted run that fails to replay is kept, marked rejected: it is the only record of what was sent.",
       "publicTitle": "What is public",
-      "publicP1": "The leaderboard shows your display name, score, sprints, bots fired and the date of the run. Your email address appears nowhere.",
+      "publicP1": "The leaderboard shows your display name, score, sprints, tickets delivered and the date of the run. Your email address appears nowhere.",
       "publicP2": "The display name is yours to choose: pick one you do not mind being public.",
       "cookiesTitle": "Cookies",
       "cookiesP1": "The only cookies are authentication cookies: the session cookie, and very short-lived ones set while you sign in with Google. None of them tracks you, so there is no banner to click.",
@@ -513,7 +517,7 @@
       },
       "rebase": {
         "name": "Rebase",
-        "desc": "Replays the branch on top and carries the next commit with it. The more debt, the more it misses."
+        "desc": "Replays the ticket on top of dev: its merge no longer pays for the lag. Fails more the higher the debt."
       },
       "sprint_start": {
         "name": "Sprint opening",
@@ -529,19 +533,11 @@
       },
       "risky": {
         "name": "Risky commit",
-        "desc": "Goes further, against a noticeably worse roll."
+        "desc": "One more story point, against a much worse roll."
       },
       "chore": {
         "name": "Chore",
         "desc": "A housekeeping commit: it draws an everyday event."
-      },
-      "fork": {
-        "name": "Commit",
-        "desc": "One more step inside the feature you are building."
-      },
-      "feature": {
-        "name": "Feature commit",
-        "desc": "One more step inside the feature you are building."
       },
       "feature_merge": {
         "name": "Feature merge",
@@ -573,10 +569,6 @@
         "title": "PR rejected",
         "log": "a reviewer closed the PR without a word"
       },
-      "forced_rebase": {
-        "title": "Forced rebase",
-        "log": "someone pushed to main while we were coding"
-      },
       "helpful_colleague": {
         "title": "Helpful colleague",
         "log": "a colleague walks by and unblocks it in two minutes"
@@ -592,37 +584,31 @@
       "obsolete_lib": {
         "title": "Obsolete library",
         "log": "the lib has been deprecated for two years"
+      },
+      "broken_build": {
+        "title": "Broken build",
+        "log": "CI is red, and it is not the code"
       }
     },
     "log": {
       "squashed": "{count, plural, one {# commit squashed} other {# commits squashed}}, {lost, plural, one {# off the count} other {# off the count}}",
       "docs_written": "docs written, {count, plural, one {# AI commit covered} other {# AI commits covered}}",
-      "rebased": "branch rebased, {count, plural, one {# commit carried} other {# commits carried}}",
-      "_comment": "The node, skill, bot, relic and devops parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
+      "rebased": "ticket rebased onto dev, history is current",
+      "_comment": "The node, skill, relic and devops parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
       "node_done": {
         "craft": "{node} written by hand",
         "ai": "{node} generated by the machine, it compiles"
       },
-      "branch_merged": "branch merged into dev",
-      "branch_merged_skill": "{skill} merged into dev",
       "skill_gained": "{skill} acquired for the rest of the run",
       "conflict": "two branches, one file",
       "conflict_resolved": {
         "manual": "conflict untangled by hand, line by line",
         "ai": "conflict resolved by the machine, unread"
       },
-      "rebase_absorbed": "rebase absorbed by automation",
-      "rebase_forced": "forced rebase, one node to replay",
       "pr_countered": "PR challenged, the tests settled it",
       "pr_rejected": "PR refused, back one node",
       "reviewed": "{count, plural, one {# commit reviewed} other {# commits reviewed}}",
       "reviewed_free": "{count, plural, one {# commit reviewed by the bot} other {# commits reviewed by the bot}}",
-      "injected": {
-        "feature": "{count, plural, one {# node added to the feature} other {# nodes added to the feature}}",
-        "subfeature": "{count, plural, one {# node added to the subfeature} other {# nodes added to the subfeature}}",
-        "hotfix": "hotfix opened, {count, plural, one {# node to walk} other {# nodes to walk}}",
-        "refactor": "{count, plural, one {# refactor node forced} other {# refactor nodes forced}}"
-      },
       "debt_explosion": "the debt blew up, refactor is mandatory",
       "sprint_ended": "sprint {sprint} closed",
       "sprint_started": "sprint {sprint} opened",
@@ -632,7 +618,20 @@
         "burnout": "out of energy, the run stops at {score}",
         "fired": "fired, the run stops at {score}"
       },
-      "monitoring_warning": "monitoring caught the bug before production did"
+      "monitoring_warning": "monitoring caught the bug before production did",
+      "ticket_arrived": "new ticket in the backlog",
+      "ticket_started": "ticket started, branch open",
+      "ticket_assigned": {
+        "feature": "ticket left in the backlog: it is yours now",
+        "hotfix": "hotfix open, production is waiting",
+        "refactor": "forced refactor, the debt exploded"
+      },
+      "ticket_merged": "ticket merged into dev",
+      "ticket_merged_skill": "{skill} merged into dev",
+      "incident": {
+        "commit": "bug in production, hotfix open",
+        "release": "the release broke production, hotfix open"
+      }
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -641,20 +640,50 @@
       "automation": "Automation {points}",
       "debt": "Debt {points}",
       "crunch": "Crunch {points}",
-      "overextended": "Two open features {points}",
       "free_refactor": "Refactor free, courtesy of the last craft commit",
-      "merge_free": "Merge costs no energy",
-      "overextended_cost": "Energy doubled: two open features",
       "pair_programming": "Review made cheaper by pair programming",
       "fresh": "Reviewed while fresh: better repayment",
-      "repays_debt": "Repays debt",
-      "risky_node": "Risky node: worse roll, more progress",
-      "chore_node": "Chore: draws an event",
-      "grants_skill": "Merging this branch grants a skill",
+      "grants_skill": "Delivering this ticket grants a skill",
       "devops_cost": "{points, plural, one {# DevOps point} other {# DevOps points}}",
       "devops_maxed": "Maximum level reached ({max})",
       "devops_too_expensive": "Not enough points: {points} needed",
-      "hidden_bug_risk": "{percent} % chance of a hidden bug"
+      "hidden_bug_risk": "{percent} % chance of a hidden bug",
+      "wip": "{count, plural, one {# extra ticket} other {# extra tickets}} {points}",
+      "wip_cost": "Energy raised: {count, plural, one {# extra ticket} other {# extra tickets}}",
+      "machine_flat": "The machine always costs the same",
+      "rebase_why": "{count, plural, one {# merge landed on dev} other {# merges landed on dev}} since it was opened",
+      "conflict_risk": "{percent} % conflict risk",
+      "behind_dev": "{count, plural, one {# merge} other {# merges}} behind dev",
+      "merge_regen": "Gives back {energy} ⚡"
+    },
+    "criteria": {
+      "reviewed": {
+        "name": "Reviewed",
+        "desc": "No AI commit on the ticket is left unread."
+      },
+      "documented": {
+        "name": "Documented",
+        "desc": "The ticket carries a documentation commit."
+      },
+      "refactored": {
+        "name": "Refactored",
+        "desc": "The ticket carries a refactor commit."
+      },
+      "clean": {
+        "name": "Debt under control",
+        "desc": "Technical debt is low when it merges."
+      }
+    },
+    "tickets": {
+      "feature": {
+        "name": "Feature"
+      },
+      "hotfix": {
+        "name": "Hotfix"
+      },
+      "refactor": {
+        "name": "Forced refactor"
+      }
     }
   }
 }

@@ -29,7 +29,9 @@ export const MetaProgressSchema = z.object({
   /** Currency for unlocks. Spent, so it is not the same as `totalCommits`. */
   commitsBank: z.number().int().min(0),
   totalCommits: z.number().int().min(0),
-  botsFired: z.number().int().min(0),
+  // Defaulted, not required: a meta saved before tickets existed must still
+  // parse, or the player loses level and unlocks to a missing key.
+  ticketsDelivered: z.number().int().min(0).default(0),
   unlockedProfiles: z.array(z.enum(PROFILE_IDS)).max(PROFILE_IDS.length),
   unlockedSkills: z.array(z.enum(SKILL_IDS)).max(SKILL_IDS.length),
   settings: SettingsSchema,
@@ -54,7 +56,7 @@ export function emptyMeta(now: string): MetaProgressDto {
     unspentStatPoints: 0,
     commitsBank: 0,
     totalCommits: 0,
-    botsFired: 0,
+    ticketsDelivered: 0,
     unlockedProfiles: ["junior"],
     unlockedSkills: freeFeatureSkills(),
     settings: { sound: true, reducedMotion: false },

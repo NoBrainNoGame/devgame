@@ -31,7 +31,7 @@ export function mergeMeta(a: MetaProgressDto, b: MetaProgressDto): MetaProgressD
 
     commitsBank: Math.max(a.commitsBank, b.commitsBank),
     totalCommits: Math.max(a.totalCommits, b.totalCommits),
-    botsFired: Math.max(a.botsFired, b.botsFired),
+    ticketsDelivered: Math.max(a.ticketsDelivered, b.ticketsDelivered),
 
     unlockedProfiles: union(a.unlockedProfiles, b.unlockedProfiles),
     unlockedSkills: union(a.unlockedSkills, b.unlockedSkills),
