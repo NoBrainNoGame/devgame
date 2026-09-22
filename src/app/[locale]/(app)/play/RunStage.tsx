@@ -121,7 +121,13 @@ export function RunStage({
 
         <aside className="order-3 flex w-full min-w-0 shrink-0 flex-col gap-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
           {snapshot === null ? null : (
-            <ActionPanel snapshot={snapshot} busy={busy} paused={dialogOpen} onAct={onAct} />
+            <ActionPanel
+              snapshot={snapshot}
+              busy={busy}
+              paused={dialogOpen}
+              onAct={onAct}
+              onOpenBoard={() => setBoardOpen(true)}
+            />
           )}
         </aside>
       </div>

@@ -33,12 +33,15 @@ export function ActionPanel({
   busy,
   paused,
   onAct,
+  onOpenBoard,
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
   /** A dialog has the floor: the idle clock waits. */
   paused: boolean;
   onAct: (action: PlayerAction) => void;
+  /** Nothing in hand: the panel's first offer is the board. */
+  onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
 
@@ -55,16 +58,13 @@ export function ActionPanel({
   const submit = snapshot.actions.find((action) => action.type === "submit");
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
+  const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
 
   return (
     <section className="space-y-3">
       <h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
         {t("actionsTitle")}
       </h2>
-
-      {current === undefined ? (
-        <p className="text-muted-foreground text-sm">{t("noTicket")}</p>
-      ) : null}
 
       <div className="grid gap-2">
         {current?.mustWrite === undefined ? null : (
@@ -101,6 +101,21 @@ export function ActionPanel({
             busy={busy}
             onAct={() => onAct(review)}
           />
+        )}
+
+        {current !== undefined ? null : (
+          <Button
+            className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
+            disabled={busy}
+            onClick={onOpenBoard}
+          >
+            <span className="flex min-w-0 flex-col items-start gap-0.5">
+              <span className="max-w-full truncate">{t("pickTicket")}</span>
+              <span className="whitespace-normal text-left font-normal text-xs opacity-80">
+                {waiting > 0 ? t("pickTicketHint", { count: waiting }) : t("pickTicketEmpty")}
+              </span>
+            </span>
+          </Button>
         )}
 
         {rest === undefined ? null : (
