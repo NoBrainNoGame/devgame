@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  ACQUISITION_IDS,
   AMBIENT_EVENT_IDS,
   DEV_RANKS,
   FAILURE_EVENT_IDS,
@@ -96,6 +97,7 @@ describe("game content is fully named", () => {
     ["relics", RELIC_IDS, "name", "desc"],
     ["tree", TREE_IDS, "name", "desc"],
     ["upgrades", UPGRADE_IDS, "name", "desc"],
+    ["acquisitions", ACQUISITION_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
     ["events", FAILURE_EVENT_IDS, "title", "log"],
     ["events", MERGE_EVENT_IDS, "title", "log"],

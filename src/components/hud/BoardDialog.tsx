@@ -168,6 +168,7 @@ function TicketCard({
         {ticket.mrr > 0 ? (
           <p className="text-muted-foreground text-xs tabular-nums">
             {t("ticketMrr", { money: money(ticket.mrr) })}
+            {ticket.origin === "acquired" ? ` · ${t("acquired")}` : ""}
           </p>
         ) : null}
         {ticket.assignee === undefined ? null : (

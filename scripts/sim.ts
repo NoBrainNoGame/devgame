@@ -11,6 +11,7 @@
  */
 
 import {
+  ACQUISITIONS,
   DEV_RANK,
   SKILLS,
   type TreeNodeId,
@@ -82,6 +83,8 @@ interface Outcome {
   pointsBought: number;
   /** The orders of magnitude: where the run got to, and how high the pile went. */
   tier: number;
+  acquisitions: number;
+  alerts: number;
   /** The tier the run had reached when sprint 10 ended, or its last one. */
   tierAt10: number;
   moneyPeak: number;
@@ -218,6 +221,14 @@ function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefi
   ) {
     return hire;
   }
+
+  // A company at twice its price in hand: the debt and the incident it
+  // brings are paid for by the revenue it brings, if the money is there.
+  const acquisition = actions.find(
+    (a): a is Extract<PlayerAction, { type: "acquire" }> =>
+      a.type === "acquire" && ACQUISITIONS[a.id].cost * 2 <= state.money,
+  );
+  if (acquisition !== undefined) return acquisition;
 
   if (report.net > 0) {
     const site = purchases.find(
@@ -380,6 +391,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
   let moneyPeak = 0;
   let freeStreak = 0;
   let tierAt10 = -1;
+  let alerts = 0;
 
   while (state.phase.kind !== "game_over" && turns < maxTurns) {
     const actions = getAvailableActions(state);
@@ -400,6 +412,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         upgrades,
         pointsBought,
         moneyPeak,
+        alerts,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -429,6 +442,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         upgrades,
         pointsBought,
         moneyPeak,
+        alerts,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -458,6 +472,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
       if (event.type === "outage") outages += 1;
       if (event.type === "upgrade_bought") upgrades += 1;
       if (event.type === "skill_point_bought") pointsBought += 1;
+      if (event.type === "capacity_warning") alerts += 1;
       if (verbose && event.type === "month_closed") {
         const effects = gatherEffects(state);
         console.log(
@@ -497,6 +512,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
     upgrades,
     pointsBought,
     moneyPeak,
+    alerts,
     tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
   });
 }
@@ -518,6 +534,7 @@ function summarise(
     | "mrr"
     | "tier"
     | "cause"
+    | "acquisitions"
   >,
 ): Outcome {
   return {
@@ -532,6 +549,7 @@ function summarise(
     moneyEarned: state.moneyEarned,
     mrr: mrrOf(state, gatherEffects(state)),
     tier: state.tier,
+    acquisitions: state.acquisitions.length,
     cause: state.phase.kind === "game_over" ? (state.phase.cause ?? "-") : "-",
     ...extra,
   };
@@ -610,7 +628,7 @@ function report(policy: string, outcomes: Outcome[]): void {
       .join(" ")}`,
   );
   console.log(
-    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}`,
+    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}`,
   );
   console.log(
     `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,

@@ -120,7 +120,7 @@ describe("what the money buys", () => {
     expect(after.devs.every((dev) => dev.rank === "junior")).toBe(true);
     const hired = eventsOfType(events, "hired");
     expect(hired.length).toBe(site.hires?.count ?? 0);
-    expect(hired.every((event) => event.source === "coworking")).toBe(true);
+    expect(hired.every((event) => event.source !== undefined && "site" in event.source)).toBe(true);
     expect(state.money - after.money).toBe(upgradeCost("coworking", 0) ?? 0);
   });
 

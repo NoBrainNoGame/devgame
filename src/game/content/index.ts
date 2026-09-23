@@ -1,3 +1,10 @@
+export {
+  ACQUISITION_IDS,
+  ACQUISITIONS,
+  type AcquisitionDef,
+  type AcquisitionId,
+  isAcquisitionId,
+} from "@/game/content/acquisitions";
 export type { Effects, PartialEffects } from "@/game/content/effects";
 export { addEffects, EFFECT_KEYS, NO_EFFECTS } from "@/game/content/effects";
 export type {

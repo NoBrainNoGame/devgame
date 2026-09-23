@@ -17,6 +17,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { DevView, PlayerAction, RunSnapshot } from "@/game";
 import { actionKey } from "@/game";
 import {
+  ACQUISITION_IDS,
+  ACQUISITIONS,
+  type AcquisitionId,
   DEV_RANK,
   DEV_RANKS,
   UPGRADE_CATEGORIES,
@@ -90,7 +93,7 @@ export function CompanyDialog({
           </TabsList>
 
           <TabsContent value="finances" className="pt-3">
-            <Finances snapshot={snapshot} />
+            <Finances snapshot={snapshot} busy={busy} onAct={onAct} />
           </TabsContent>
           <TabsContent value="shop" className="pt-3">
             <Shop snapshot={snapshot} busy={busy} onAct={onAct} />
@@ -104,7 +107,53 @@ export function CompanyDialog({
   );
 }
 
-function Finances({ snapshot }: { snapshot: RunSnapshot }) {
+/**
+ * The rung the game would buy, with the button to buy it. The advice the
+ * warning toast and the log carry, said once more where the money is.
+ */
+function Advice({
+  snapshot,
+  busy,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const money = useMoney();
+  const game = useTranslations("game");
+  const { economy } = snapshot;
+  if (economy.advice === null) return null;
+  const action: PlayerAction = { type: "buy", id: economy.advice.id };
+  const offered = snapshot.actions.some((a) => a.type === "buy" && a.id === economy.advice?.id);
+  const name = game(`upgrades.${economy.advice.id}.name` as never);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-energy/40 bg-energy/10 p-2 text-xs">
+      <span>
+        {t("capacityProjected", { projected: economy.projectedLoad })}
+        {" · "}
+        {offered
+          ? t("adviceBuy", { upgrade: name, money: money(economy.advice.cost) })
+          : t("adviceUnaffordable", { upgrade: name, money: money(economy.advice.cost) })}
+      </span>
+      <Button size="sm" variant="default" disabled={busy || !offered} onClick={() => onAct(action)}>
+        {t("buyFor", { money: money(economy.advice.cost) })}
+      </Button>
+    </div>
+  );
+}
+
+function Finances({
+  snapshot,
+  busy,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
   const t = useTranslations("hud");
   const money = useMoney();
   const { economy } = snapshot;
@@ -159,6 +208,7 @@ function Finances({ snapshot }: { snapshot: RunSnapshot }) {
         <p className={cn("text-xs", saturated ? "text-branch-hotfix" : "text-muted-foreground")}>
           {saturated ? t("saturated") : t("capacityHint")}
         </p>
+        {economy.alert === "ok" ? null : <Advice snapshot={snapshot} busy={busy} onAct={onAct} />}
         <p className="text-muted-foreground text-xs">
           {t("moneyEarned", { money: money(economy.moneyEarned) })}
           {economy.nextTierAt === null
@@ -445,6 +495,20 @@ function Team({
         </div>
       </section>
 
+      {ACQUISITION_IDS.some((id) => ACQUISITIONS[id].tier <= tier + 1) ? (
+        <section className="space-y-2">
+          <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            {t("acquisitions")}
+          </h3>
+          <p className="text-muted-foreground text-xs">{t("acquisitionsHint")}</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {ACQUISITION_IDS.filter((id) => ACQUISITIONS[id].tier <= tier + 1).map((id) => (
+              <AcquisitionCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-2">
         <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("roster")}
@@ -460,6 +524,73 @@ function Team({
         )}
       </section>
     </div>
+  );
+}
+
+function AcquisitionCard({
+  id,
+  snapshot,
+  busy,
+  onAct,
+}: {
+  id: AcquisitionId;
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const money = useMoney();
+  const game = useTranslations("game");
+  const render = useGameText();
+  const def = ACQUISITIONS[id];
+  const bought = snapshot.economy.acquisitions.includes(id);
+  const locked = def.tier > snapshot.economy.tier;
+  const action: PlayerAction = { type: "acquire", id };
+  const offered = snapshot.actions.some((a) => a.type === "acquire" && a.id === id);
+  const preview = snapshot.previews[actionKey(action)];
+
+  return (
+    <article
+      className={cn(
+        "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
+        bought && "border-branch-main/60",
+        locked && "opacity-60",
+      )}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="truncate font-medium">{game(`acquisitions.${id}.name` as never)}</span>
+        {locked ? (
+          <span className="shrink-0 text-muted-foreground text-xs">
+            {t("nextTier", { tier: def.tier })}
+          </span>
+        ) : null}
+      </div>
+      <p className="text-muted-foreground text-xs leading-relaxed">
+        {game(`acquisitions.${id}.desc` as never)}
+      </p>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block">
+            <Button
+              size="sm"
+              variant={offered ? "default" : "outline"}
+              className="w-full"
+              disabled={busy || !offered}
+              onClick={() => onAct(action)}
+            >
+              {bought ? t("acquired") : t("buyFor", { money: money(def.cost) })}
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {preview?.notes.length ? (
+          <TooltipContent side="bottom">
+            {preview.notes.map((note) => (
+              <p key={note.key}>{render(note)}</p>
+            ))}
+          </TooltipContent>
+        ) : null}
+      </Tooltip>
+    </article>
   );
 }
 

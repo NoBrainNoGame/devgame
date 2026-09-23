@@ -105,6 +105,8 @@ export function createRun(options: CreateRunOptions): RunState {
     nextDevSerial: 1,
     months: 0,
     tier: 0,
+    acquisitions: [],
+    capacityAlert: "ok",
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
 

@@ -1,4 +1,4 @@
-import { DEV_RANK, type DevRank, type Effects, nextRank, type UpgradeId } from "@/game/content";
+import { DEV_RANK, type DevRank, type Effects, nextRank } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
@@ -9,7 +9,7 @@ import {
   sortedTickets,
 } from "@/game/core/rules/tickets";
 import { completeMerge, writeTeamCommit } from "@/game/core/rules/write";
-import type { Dev, DevId, RunState, Ticket } from "@/game/core/types";
+import type { Dev, DevId, DevSource, RunState, Ticket } from "@/game/core/types";
 
 /**
  * The hired team.
@@ -57,7 +57,7 @@ export function canHire(state: RunState, effects: Effects, rank: DevRank): boole
  * Puts a developer on the roster. The one door for hiring, for a site that
  * brings its team and for an acquisition: whoever pays, the dev is the same.
  */
-export function addDev(context: RuleContext, rank: DevRank, source?: UpgradeId): Dev {
+export function addDev(context: RuleContext, rank: DevRank, source?: DevSource): Dev {
   const { state } = context;
   const dev: Dev = {
     id: `d${state.nextDevSerial}`,

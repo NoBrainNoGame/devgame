@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import {
+  ACQUISITION_IDS,
   DEV_RANKS,
   PROFILE_IDS,
   RELIC_IDS,
@@ -42,6 +43,7 @@ export const PlayerActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("buy"), id: z.enum(UPGRADE_IDS) }),
   z.object({ type: z.literal("buy_point") }),
   z.object({ type: z.literal("hire"), rank: z.enum(DEV_RANKS) }),
+  z.object({ type: z.literal("acquire"), id: z.enum(ACQUISITION_IDS) }),
   z.object({ type: z.literal("resolve_conflict"), how: z.enum(["manual", "ai"]) }),
   z.object({ type: z.literal("choose_relic"), relicId: z.enum(RELIC_IDS) }),
 ]);

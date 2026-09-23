@@ -6,7 +6,9 @@ import {
   restartTicket,
   resumeTicket,
 } from "@/game/core/rules/acceptance";
+import { acquire } from "@/game/core/rules/acquisitions";
 import { isActionAvailable } from "@/game/core/rules/actions";
+import { reportCapacity } from "@/game/core/rules/capacity";
 import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
@@ -137,6 +139,10 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       hireDev(context, action.rank);
       return false;
 
+    case "acquire":
+      acquire(context, action.id);
+      return false;
+
     case "resolve_conflict":
       resolveConflictPhase(context, action.how);
       return true;
@@ -157,6 +163,9 @@ function endTurn(context: RuleContext): void {
   // The team works after you, on this turn's board, so a merge of theirs
   // lands on `dev` before the release that might ship this turn.
   workTeam(context);
+  // With this turn's board landed, say whether the servers will hold: the
+  // warning comes before the payday that would punish, not after.
+  reportCapacity(context);
 
   state.turn += 1;
   state.sprintTurn += 1;

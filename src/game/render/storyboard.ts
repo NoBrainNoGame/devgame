@@ -263,6 +263,8 @@ export function planBatch(
       case "dev_left":
       case "dev_promoted":
       case "ticket_assigned":
+      case "acquired":
+      case "capacity_warning":
       case "crunch":
         break;
     }

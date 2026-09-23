@@ -38,7 +38,7 @@ export function buyUpgrade(context: RuleContext, id: UpgradeId): void {
   emit(context, { type: "upgrade_bought", id, level: level + 1 });
 
   if (def.hires !== undefined) {
-    for (let i = 0; i < def.hires.count; i += 1) addDev(context, def.hires.rank, id);
+    for (let i = 0; i < def.hires.count; i += 1) addDev(context, def.hires.rank, { site: id });
   }
 }
 

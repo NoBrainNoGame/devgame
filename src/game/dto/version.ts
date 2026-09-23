@@ -1,4 +1,5 @@
 import {
+  ACQUISITION_IDS,
   AMBIENT_EVENT_IDS,
   DEV_RANKS,
   FAILURE_EVENT_IDS,
@@ -71,6 +72,7 @@ export function fingerprintFor(epoch: number): string {
       tree: TREE_IDS,
       upgrades: UPGRADE_IDS,
       ranks: DEV_RANKS,
+      acquisitions: ACQUISITION_IDS,
       profiles: PROFILE_IDS,
       failures: FAILURE_EVENT_IDS,
       merges: MERGE_EVENT_IDS,

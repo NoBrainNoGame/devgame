@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BoardDialog } from "@/components/hud/BoardDialog";
@@ -19,6 +19,7 @@ import { ResourceBar } from "@/components/hud/ResourceBar";
 import { ReviewDialog } from "@/components/hud/ReviewDialog";
 import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
 import { TicketBar } from "@/components/hud/TicketBar";
+import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
 import { idleTarget, useGameStore } from "@/game";
@@ -85,6 +86,8 @@ export function RunStage({
   // bar sits on the card it will press.
   const readingReview = useIdleStore((state) => state.readingReview);
   const target = snapshot === null ? undefined : idleTarget(snapshot);
+  const openShop = useCallback(() => setCompanyOpen(true), []);
+  useGameAlerts(openShop);
   const dialogOpen =
     companyOpen || treeOpen || readingReview || (boardOpen && target?.type !== "start");
 

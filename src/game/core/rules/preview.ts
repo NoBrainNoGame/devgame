@@ -1,4 +1,12 @@
-import { DEV_RANK, TREE, treeCost, UPGRADES, upgradeCost, upgradeUnlocked } from "@/game/content";
+import {
+  ACQUISITIONS,
+  DEV_RANK,
+  TREE,
+  treeCost,
+  UPGRADES,
+  upgradeCost,
+  upgradeUnlocked,
+} from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, money, ref, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
@@ -274,6 +282,33 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       };
     }
 
+    case "acquire": {
+      const def = ACQUISITIONS[action.id];
+      const notes: I18nText[] = [
+        text("notes.price", { money: money(def.cost) }),
+        text("notes.brings_team", {
+          count: def.devs.count,
+          rank: ref(`ranks.${def.devs.rank}.name`),
+        }),
+        text("notes.brings_features", { count: def.features.count, points: def.features.points }),
+        text("notes.brings_debt", { debt: def.debt }),
+      ];
+      if (def.incident) notes.push(text("notes.brings_incident"));
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes,
+        ...(def.tier > state.tier
+          ? { blocked: text("notes.tier_locked", { tier: def.tier }) }
+          : state.acquisitions.includes(action.id)
+            ? { blocked: text("notes.already_acquired") }
+            : def.cost > state.money
+              ? { blocked: text("notes.too_expensive", { money: money(def.cost) }) }
+              : {}),
+      };
+    }
+
     case "resolve_conflict": {
       if (action.how === "manual") {
         const chance = conflictChance(state, effects);
@@ -327,6 +362,8 @@ export function actionKey(action: PlayerAction): string {
       return `buy:${action.id}`;
     case "hire":
       return `hire:${action.rank}`;
+    case "acquire":
+      return `acquire:${action.id}`;
     case "resolve_conflict":
       return `conflict:${action.how}`;
     case "choose_relic":

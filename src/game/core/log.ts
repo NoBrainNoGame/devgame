@@ -240,10 +240,47 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
         text:
           event.source === undefined
             ? text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) })
-            : text("log.hired_by_site", {
-                dev: event.devId,
-                rank: ref(`ranks.${event.rank}.name`),
-                site: ref(`upgrades.${event.source}.name`),
+            : "site" in event.source
+              ? text("log.hired_by_site", {
+                  dev: event.devId,
+                  rank: ref(`ranks.${event.rank}.name`),
+                  site: ref(`upgrades.${event.source.site}.name`),
+                })
+              : text("log.hired_by_acquisition", {
+                  dev: event.devId,
+                  rank: ref(`ranks.${event.rank}.name`),
+                  company: ref(`acquisitions.${event.source.acquisition}.name`),
+                }),
+      };
+
+    case "acquired":
+      return {
+        seq,
+        turn,
+        kind: "merge",
+        text: text("log.acquired", {
+          company: ref(`acquisitions.${event.id}.name`),
+          devs: event.devIds.length,
+          features: event.ticketIds.length,
+        }),
+      };
+
+    case "capacity_warning":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text:
+          event.advice === undefined
+            ? text(`log.capacity.${event.level}`, {
+                projected: event.projected,
+                capacity: event.capacity,
+              })
+            : text(`log.capacity.${event.level}_advised`, {
+                projected: event.projected,
+                capacity: event.capacity,
+                upgrade: ref(`upgrades.${event.advice.id}.name`),
+                money: money(event.advice.cost),
               }),
       };
 

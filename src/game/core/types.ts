@@ -1,4 +1,5 @@
 import type {
+  AcquisitionId,
   AmbientEventId,
   DevRank,
   EventId,
@@ -146,6 +147,8 @@ export interface Ticket {
   mergeNodeId?: NodeId;
   /** Hotfix and forced refactor: only this kind of commit fills the points. */
   mustWrite?: "hotfix" | "refactor";
+  /** Came with a company bought: merged without a commit, earns, never scores. */
+  origin?: "acquired";
 }
 
 export interface Player {
@@ -287,6 +290,10 @@ export interface RunState {
   months: number;
   /** The order of magnitude reached, and never lost. */
   tier: number;
+  /** Companies bought, each once. */
+  acquisitions: AcquisitionId[];
+  /** The last capacity level reported, so a warning is said once per rise. */
+  capacityAlert: CapacityLevel;
   /** Months closed this sprint, so the sprint's end can close the rest. */
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
@@ -343,12 +350,20 @@ export type PlayerAction =
   | { type: "buy"; id: UpgradeId }
   | { type: "buy_point" }
   | { type: "hire"; rank: DevRank }
+  /** Buy a company: its team, its features, its debt. Free in time. */
+  | { type: "acquire"; id: AcquisitionId }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
 
 export type PlayerActionType = PlayerAction["type"];
 
-export type IncidentSource = "commit" | "release";
+export type IncidentSource = "commit" | "release" | "acquisition";
+
+/** Where a developer came from, when not hired one by one. */
+export type DevSource = { site: UpgradeId } | { acquisition: AcquisitionId };
+
+/** How close production is to saturating, as reported to the board. */
+export type CapacityLevel = "ok" | "warning" | "saturated";
 
 export type GameEvent =
   | { type: "turn_started"; turn: number }
@@ -430,7 +445,17 @@ export type GameEvent =
   | { type: "tier_reached"; tier: number }
   | { type: "upgrade_bought"; id: UpgradeId; level: number }
   | { type: "skill_point_bought"; price: number }
-  | { type: "hired"; devId: DevId; rank: DevRank; source?: UpgradeId }
+  | { type: "hired"; devId: DevId; rank: DevRank; source?: DevSource }
+  | { type: "acquired"; id: AcquisitionId; devIds: DevId[]; ticketIds: TicketId[] }
+  /** Production is about to saturate, or has. Emitted once per rise of level. */
+  | {
+      type: "capacity_warning";
+      level: Exclude<CapacityLevel, "ok">;
+      load: number;
+      capacity: number;
+      projected: number;
+      advice?: { id: UpgradeId; cost: number };
+    }
   /** Unpaid. The tickets are yours now. */
   | { type: "dev_left"; devId: DevId; ticketIds: TicketId[] }
   | { type: "dev_promoted"; devId: DevId; rank: DevRank }

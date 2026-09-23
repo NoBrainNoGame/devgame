@@ -1,9 +1,18 @@
-import type { DevRank, ProfileId, RelicId, SkillId, TreeNodeId, UpgradeId } from "@/game/content";
+import type {
+  AcquisitionId,
+  DevRank,
+  ProfileId,
+  RelicId,
+  SkillId,
+  TreeNodeId,
+  UpgradeId,
+} from "@/game/content";
 import { DEV_RANK, DEV_RANKS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { monthlyReport, paydayIn } from "@/game/core/rules/economy";
+import { type CapacityAdvice, capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
+import { monthlyReport, paydayIn, projectedLoadOf } from "@/game/core/rules/economy";
 import {
   type DebtView,
   debtView,
@@ -27,6 +36,7 @@ import {
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
+  CapacityLevel,
   DevId,
   MapNode,
   NodeId,
@@ -97,6 +107,7 @@ export interface TicketView {
   /** Debt this ticket's commits cost, repayments not credited. */
   debtAdded: number;
   mustWrite?: Ticket["mustWrite"];
+  origin?: Ticket["origin"];
 }
 
 /** A hired developer as the roster shows them. */
@@ -134,6 +145,14 @@ export interface EconomyView {
   skillPointPrice: number;
   /** Lifetime earnings that reach the next tier, null at the last one. */
   nextTierAt: number | null;
+  /** Where the servers stand against what is about to land. */
+  alert: CapacityLevel;
+  /** Users once the tickets about to land have landed. */
+  projectedLoad: number;
+  /** The rung the game would buy, when production needs one; null when served. */
+  advice: CapacityAdvice | null;
+  /** Companies bought so far. */
+  acquisitions: AcquisitionId[];
   /** Developers on the roster, and the seats there are for them. */
   seats: { used: number; max: number };
   /** What each rank costs to hire today, discounts included. */
@@ -233,9 +252,12 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ready: ticket.status === "open" && isReady(state, ticket),
     commits: ticket.nodeIds.length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
+    ...(ticket.origin === undefined ? {} : { origin: ticket.origin }),
   }));
 
   const report = monthlyReport(state, effects);
+  const alert = capacityStatus(state, effects);
+  const projected = projectedLoadOf(state);
   const devs: DevView[] = state.devs.map((dev) => ({
     id: dev.id,
     rank: dev.rank,
@@ -309,6 +331,13 @@ export function toSnapshot(state: RunState): RunSnapshot {
           ? null
           : BALANCE.economy.tier.first * BALANCE.economy.tier.growth ** state.tier,
       seats: { used: state.devs.length, max: maxSeats(effects) },
+      alert,
+      projectedLoad: projected,
+      advice:
+        alert === "ok"
+          ? null
+          : (capacityAdvice(state, effects, projected - report.capacity) ?? null),
+      acquisitions: [...state.acquisitions],
       hireCosts: Object.fromEntries(
         DEV_RANKS.map((rank) => [rank, hireCostFor(effects, rank)]),
       ) as Record<DevRank, number>,

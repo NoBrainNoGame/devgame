@@ -310,7 +310,20 @@
     "sitesHint": "A site opens seats and brings its team, hired for free and paid like the others. Monthly rent.",
     "nextTier": "tier {tier}",
     "levelOf": "lvl {level}",
-    "nextTierAt": "tier {tier} at {money} earned"
+    "nextTierAt": "tier {tier} at {money} earned",
+    "acquisitions": "Acquisitions",
+    "acquisitionsHint": "A company comes with its team, its features already in production and its debt. None of it counts towards the score.",
+    "acquired": "Bought",
+    "capacityWarning": "Saturation ahead",
+    "capacityProjected": "{projected} users expected",
+    "adviceBuy": "Advice: {upgrade} for {money}",
+    "adviceUnaffordable": "Advice: {upgrade} for {money}, not affordable yet",
+    "toastWarning": "Servers about to saturate",
+    "toastSaturated": "Servers saturated: the excess earns nothing",
+    "toastAdvice": "{upgrade} for {money}",
+    "toastOpenShop": "Open the shop",
+    "toastTier": "Tier {tier} reached",
+    "toastOutage": "Outage: {pct}% over capacity this month"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1009,7 +1022,8 @@
       "ticket_merged_skill": "{skill} merged into dev",
       "incident": {
         "commit": "bug in production, hotfix open",
-        "release": "the release broke production, hotfix open"
+        "release": "the release broke production, hotfix open",
+        "acquisition": "Production incident: what was just bought does not hold"
       },
       "pr_accepted": "PR accepted, ticket merged into dev",
       "ticket_restarted": "branch thrown away, {count, plural, one {# commit} other {# commits}} fewer, starting again from dev",
@@ -1028,7 +1042,15 @@
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
-      "hired_by_site": "{dev} joins the team ({rank}) with {site}"
+      "hired_by_site": "{dev} joins the team ({rank}) with {site}",
+      "hired_by_acquisition": "{dev} joins the team ({rank}) with {company}",
+      "acquired": "{company} bought: {devs, plural, one {# dev} other {# devs}}, {features, plural, one {# feature} other {# features}} in production",
+      "capacity": {
+        "warning": "Servers about to saturate: {projected} users expected for {capacity} served",
+        "warning_advised": "Servers about to saturate: {projected} users expected for {capacity} served — {upgrade} at {money}",
+        "saturated": "Servers saturated: {projected} users for {capacity} served",
+        "saturated_advised": "Servers saturated: {projected} users for {capacity} served — {upgrade} at {money}"
+      }
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -1069,7 +1091,11 @@
       "capacity_gain": "+{users} users served",
       "capacity_gain_pct": "+{pct}% capacity",
       "seats": "{count, plural, one {# seat} other {# seats}}",
-      "brings_team": "Comes with {count} × {rank}"
+      "brings_team": "Comes with {count} × {rank}",
+      "brings_features": "{count, plural, one {# shipped feature} other {# shipped features}} of {points} points",
+      "brings_debt": "+{debt} debt",
+      "brings_incident": "A production incident on arrival",
+      "already_acquired": "Already bought"
     },
     "tickets": {
       "feature": {
@@ -1080,6 +1106,24 @@
       },
       "refactor": {
         "name": "Forced refactor"
+      }
+    },
+    "acquisitions": {
+      "startup": {
+        "name": "A startup",
+        "desc": "Two juniors, three features already in production, and the code that goes with them. Nobody reviewed it."
+      },
+      "scaleup": {
+        "name": "A scale-up",
+        "desc": "Three mid-levels, six features, a debt discovered at the signing."
+      },
+      "competitor": {
+        "name": "A competitor",
+        "desc": "Four seniors, twelve features and their users. Something breaks on the day of the deal."
+      },
+      "conglomerate": {
+        "name": "A conglomerate",
+        "desc": "Eight seniors, twenty-four features, a corporate debt. Production goes down during the migration."
       }
     }
   }

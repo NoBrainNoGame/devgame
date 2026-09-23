@@ -310,7 +310,20 @@
     "sitesHint": "Un site ouvre des postes et amène son équipe, embauchée sans frais et payée comme les autres. Loyer mensuel.",
     "nextTier": "palier {tier}",
     "levelOf": "niv. {level}",
-    "nextTierAt": "palier {tier} à {money} gagnés"
+    "nextTierAt": "palier {tier} à {money} gagnés",
+    "acquisitions": "Rachats",
+    "acquisitionsHint": "Une entreprise s'achète avec son équipe, ses features déjà en prod et sa dette. Rien de tout cela ne compte au score.",
+    "acquired": "Rachetée",
+    "capacityWarning": "Saturation proche",
+    "capacityProjected": "{projected} utilisateurs attendus",
+    "adviceBuy": "Conseil : {upgrade} pour {money}",
+    "adviceUnaffordable": "Conseil : {upgrade} pour {money}, pas encore les moyens",
+    "toastWarning": "Serveurs bientôt saturés",
+    "toastSaturated": "Serveurs saturés : le surplus ne rapporte rien",
+    "toastAdvice": "{upgrade} pour {money}",
+    "toastOpenShop": "Ouvrir la boutique",
+    "toastTier": "Palier {tier} atteint",
+    "toastOutage": "Panne : {pct} % au-dessus de la capacité ce mois-ci"
   },
   "leaderboard": {
     "title": "Classement",
@@ -1009,7 +1022,8 @@
       "ticket_merged_skill": "{skill} mergé sur dev",
       "incident": {
         "commit": "bug en production, hotfix ouvert",
-        "release": "la release a cassé la prod, hotfix ouvert"
+        "release": "la release a cassé la prod, hotfix ouvert",
+        "acquisition": "Incident en prod : ce qui vient d'être racheté ne tient pas"
       },
       "pr_accepted": "PR acceptée, ticket mergé sur dev",
       "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
@@ -1028,7 +1042,15 @@
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
-      "hired_by_site": "{dev} rejoint l'équipe ({rank}) avec {site}"
+      "hired_by_site": "{dev} rejoint l'équipe ({rank}) avec {site}",
+      "hired_by_acquisition": "{dev} rejoint l'équipe ({rank}) avec {company}",
+      "acquired": "{company} rachetée : {devs, plural, one {# dev} other {# devs}}, {features, plural, one {# feature} other {# features}} en prod",
+      "capacity": {
+        "warning": "Serveurs bientôt saturés : {projected} utilisateurs attendus pour {capacity} servis",
+        "warning_advised": "Serveurs bientôt saturés : {projected} utilisateurs attendus pour {capacity} servis — {upgrade} à {money}",
+        "saturated": "Serveurs saturés : {projected} utilisateurs pour {capacity} servis",
+        "saturated_advised": "Serveurs saturés : {projected} utilisateurs pour {capacity} servis — {upgrade} à {money}"
+      }
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -1069,7 +1091,11 @@
       "capacity_gain": "+{users} utilisateurs servis",
       "capacity_gain_pct": "+{pct} % de capacité",
       "seats": "{count, plural, one {# poste} other {# postes}}",
-      "brings_team": "Arrive avec {count} × {rank}"
+      "brings_team": "Arrive avec {count} × {rank}",
+      "brings_features": "{count, plural, one {# feature livrée} other {# features livrées}} de {points} points",
+      "brings_debt": "+{debt} de dette",
+      "brings_incident": "Un incident en prod à l'arrivée",
+      "already_acquired": "Déjà rachetée"
     },
     "tickets": {
       "feature": {
@@ -1080,6 +1106,24 @@
       },
       "refactor": {
         "name": "Refacto imposée"
+      }
+    },
+    "acquisitions": {
+      "startup": {
+        "name": "Une start-up",
+        "desc": "Deux juniors, trois features déjà en prod, et le code qui va avec. Personne n'a relu."
+      },
+      "scaleup": {
+        "name": "Une scale-up",
+        "desc": "Trois confirmés, six features, une dette qu'on découvre à la signature."
+      },
+      "competitor": {
+        "name": "Un concurrent",
+        "desc": "Quatre seniors, douze features et leurs utilisateurs. Quelque chose casse le jour du rachat."
+      },
+      "conglomerate": {
+        "name": "Un conglomérat",
+        "desc": "Huit seniors, vingt-quatre features, une dette d'entreprise. La prod tombe pendant la migration."
       }
     }
   }

@@ -140,6 +140,10 @@ export function ResourceBar({
                 <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs">
                   {t("saturatedShort")}
                 </span>
+              ) : economy.alert === "warning" ? (
+                <span className="rounded-full bg-energy/20 px-1.5 text-energy text-xs">
+                  {t("capacityWarning")}
+                </span>
               ) : null}
             </Button>
           </TooltipTrigger>

@@ -1,4 +1,5 @@
-import { DEV_RANKS, TREE_IDS, UPGRADE_IDS } from "@/game/content";
+import { ACQUISITION_IDS, DEV_RANKS, TREE_IDS, UPGRADE_IDS } from "@/game/content";
+import { canAcquire } from "@/game/core/rules/acquisitions";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { canReview } from "@/game/core/rules/review";
 import { canBuySkillPoint, canBuyUpgrade } from "@/game/core/rules/shop";
@@ -73,6 +74,9 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       for (const rank of DEV_RANKS) {
         if (canHire(state, effects, rank)) actions.push({ type: "hire", rank });
       }
+      for (const id of ACQUISITION_IDS) {
+        if (canAcquire(state, id)) actions.push({ type: "acquire", id });
+      }
       return actions;
     }
 
@@ -113,6 +117,8 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
       return b.type === "buy" && a.id === b.id;
     case "hire":
       return b.type === "hire" && a.rank === b.rank;
+    case "acquire":
+      return b.type === "acquire" && a.id === b.id;
     case "resolve_conflict":
       return b.type === "resolve_conflict" && a.how === b.how;
     case "choose_relic":
