@@ -9,7 +9,7 @@ import type { MarketState, RunState } from "@/game/core/types";
  * derived from what the run has shipped against what the competitors
  * weigh, and it moves by what customers remember — a bug fixed in time, a
  * VIP kept waiting. The competitors drift every month, enter at their
- * tier, and merge when one of them has swallowed most of the rest. That
+ * tier, and merge when the strongest weighs many times the weakest. That
  * drift is the one thing here that draws, and it draws for every
  * competitor every month, alive or not, so the stream never depends on who
  * happens to be standing.
@@ -124,14 +124,17 @@ export function driftMarket(context: RuleContext): void {
   const rolled = rng.chance(merge.chancePct);
   const alive = competitorsAlive(state);
   if (alive.length < 2) return;
-  const total = alive.reduce((sum, id) => sum + state.market.competitors[id].strength, 0);
   const sorted = [...alive].sort(
     (a, b) => state.market.competitors[b].strength - state.market.competitors[a].strength,
   );
   const biggest = sorted[0];
   const smallest = sorted[sorted.length - 1];
   if (biggest === undefined || smallest === undefined || biggest === smallest) return;
-  const dominant = state.market.competitors[biggest].strength * 100 >= total * merge.dominancePct;
+  // The strongest swallows the weakest once it weighs many times as much: a
+  // ratio, so the rule reads the same with three companies or thirty.
+  const dominant =
+    state.market.competitors[biggest].strength >=
+    state.market.competitors[smallest].strength * merge.dominanceRatio;
   if (!rolled || !dominant) return;
 
   state.market.competitors[biggest].strength += state.market.competitors[smallest].strength;

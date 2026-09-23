@@ -68,9 +68,12 @@ export default async function HomePage(): Promise<React.JSX.Element> {
               {/* The period is the only thing to hover; the mark takes no room until it appears. */}
               <span className="glitch-host">
                 {t("headline2")}
-                <span className="glitch-dot">.</span>
-                <span className="glitch-mark" aria-hidden="true">
-                  ?
+                {/* The mark sits on the period itself: the period becomes its dot. */}
+                <span className="glitch-dot">
+                  .
+                  <span className="glitch-mark" aria-hidden="true">
+                    ?
+                  </span>
                 </span>
               </span>
             </h1>

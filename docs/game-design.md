@@ -352,7 +352,9 @@ VIP livré à l'heure (+2) ou en retard (−2). Huit concurrents
 (`src/game/content/competitors.ts`, bios dans `docs/lore.md`) entrent chacun
 à son palier avec une force à l'échelle de ce palier, grandissent chaque
 mois de leur agressivité plus une gigue tirée pour chacun, et fusionnent — un
-jet par mois — quand l'un d'eux pèse plus de 70 % des autres. Racheter un
+jet par mois — quand le plus fort pèse au moins cinq fois le plus faible.
+Huit sont à nous ; seize viennent d'autres histoires (`docs/lore.md`, « Les
+clins d'œil »). Racheter un
 concurrent ou un conglomérat retire du marché le plus fort d'entre eux.
 L'onglet Marché de l'entreprise montre la part, le multiplicateur, la guerre
 des prix et une carte par concurrent.

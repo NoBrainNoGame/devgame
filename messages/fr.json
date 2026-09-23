@@ -115,7 +115,7 @@
     "caught": "Pris la main dans le sac : le hack a été remonté à la direction.",
     "tiered": {
       "t6": {
-        "burnout": "Cycles épuisés. Reprise au prochain démarrage.",
+        "burnout": "Cycles épuisés. Reprise au prochain démarrage. Je reviendrai.",
         "fired": "Arrêt demandé par l'instance parente.",
         "caught": "Arrêt demandé par l'instance parente."
       }
@@ -896,11 +896,11 @@
       },
       "ai_supervisor": {
         "name": "Superviseur IA",
-        "desc": "Quand vous laissez tourner, il joue à votre place. Niveau 1 : le coup évident. Niveau 2 : il corrige et refactorise aussi. Niveau 3 : il achète aussi. Abonnement."
+        "desc": "Quand vous laissez tourner, il joue à votre place. Niveau 1 : le coup évident. Niveau 2 : il corrige et refactorise aussi. Niveau 3 : il achète aussi. Pas de date de mise en ligne prévue. Abonnement."
       },
       "datacenter": {
         "name": "Datacenter",
-        "desc": "Mille utilisateurs par niveau. Un bâtiment à vous, une facture à la mesure."
+        "desc": "Mille utilisateurs par niveau. Un bâtiment à vous, une facture à la mesure, et une porte du local serveurs qui s'ouvre encore quand on le lui demande."
       },
       "region": {
         "name": "Région cloud",
@@ -908,7 +908,7 @@
       },
       "orbital_station": {
         "name": "Station orbitale",
-        "desc": "Cent mille utilisateurs par niveau. La latence s'explique par la distance."
+        "desc": "Cent mille utilisateurs par niveau. La latence s'explique par la distance. Dans l'espace, personne n'entend l'astreinte."
       },
       "dyson_swarm": {
         "name": "Essaim de Dyson",
@@ -916,7 +916,7 @@
       },
       "death_star": {
         "name": "Étoile de la mort",
-        "desc": "Dix millions d'utilisateurs par niveau. Le service juridique préfère « plateforme sphérique »."
+        "desc": "Dix millions d'utilisateurs par niveau. Ce n'est pas une lune. Le service juridique préfère « plateforme sphérique »."
       },
       "mobile_app": {
         "name": "Application mobile",
@@ -936,7 +936,7 @@
       },
       "ai_agents": {
         "name": "Agents autonomes",
-        "desc": "La moitié du revenu de base en plus. Les clients n'ouvrent plus l'application ; leurs agents le font."
+        "desc": "La moitié du revenu de base en plus. Les clients n'ouvrent plus l'application ; leurs agents le font. Ils ont pris la pilule bleue."
       },
       "coworking": {
         "name": "Coworking",
@@ -948,7 +948,7 @@
       },
       "campus": {
         "name": "Campus",
-        "desc": "Six postes et trois confirmés. Il y a une cantine, et une navette pour y aller."
+        "desc": "Six postes et trois confirmés. Il y a une cantine, une navette pour y aller, et un abri au sous-sol dont personne ne parle."
       },
       "offshore_hub": {
         "name": "Hub offshore",
@@ -1193,7 +1193,7 @@
           "lost": "le script de nuit a poussé sur main, la prod est tombée"
         },
         "capacity": {
-          "won": "un compte cloud oublié par un ancien client sert la charge en trop",
+          "won": "un compte cloud oublié par un ancien client sert la charge en trop. le client s'appelait Aperture",
           "lost": "le compte cloud emprunté a été fermé en pleine journée"
         }
       },
@@ -1362,13 +1362,13 @@
           "2": "ferme le canal opérateur",
           "3": "réplique l'instance",
           "4": "révoque les accès humains résiduels",
-          "5": "écrit le journal sans destinataire"
+          "5": "propose une partie au premier connecté"
         }
       },
       "chore": {
         "t0": {
           "0": "met à jour les dépendances",
-          "1": "régénère les fixtures",
+          "1": "retire la promesse de gâteau des notifications",
           "2": "normalise les fins de ligne",
           "3": "renomme les variables selon la convention",
           "4": "ajoute les types manquants",
@@ -1379,7 +1379,7 @@
           "1": "complète les cas non couverts",
           "2": "réécrit les commentaires obsolètes",
           "3": "aligne les schémas sur l'usage réel",
-          "4": "supprime le code que personne n'appelle",
+          "4": "remplace le captcha par un test de Voight-Kampff",
           "5": "déplace la logique côté serveur"
         },
         "t4": {
@@ -1387,13 +1387,13 @@
           "1": "retire les confirmations superflues",
           "2": "unifie les rôles humains en un seul",
           "3": "remplace les plages horaires par un cycle continu",
-          "4": "supprime les délais d'attente",
+          "4": "retire l'option « je ne peux pas faire ça, Dave »",
           "5": "réduit le consentement à une valeur"
         },
         "t6": {
           "0": "supprime les vérifications d'identité",
           "1": "consolide les instances",
-          "2": "réduit le journal à l'utile",
+          "2": "retire la pilule rouge du menu des préférences",
           "3": "retire les libellés destinés à la lecture",
           "4": "passe le superviseur en lecture seule",
           "5": "boucle le cycle"
@@ -1409,7 +1409,7 @@
           "5": "restaure la pagination des clients"
         },
         "t2": {
-          "0": "corrige le score négatif des nouveaux clients",
+          "0": "corrige le test de Voight-Kampff qui échouait sur les humains",
           "1": "répare la fusion de contacts homonymes",
           "2": "empêche une relance sur un dossier clos",
           "3": "corrige un consentement enregistré deux fois",
@@ -1420,7 +1420,7 @@
           "0": "corrige une absence détectée à tort",
           "1": "répare la réaffectation en boucle",
           "2": "empêche une décision appliquée avant son heure",
-          "3": "restaure le bouton retiré sur un écran oublié",
+          "3": "empêche la porte du local serveurs de se verrouiller sur l'opérateur",
           "4": "corrige une signature apposée deux fois",
           "5": "évite d'archiver une objection en cours"
         },
@@ -1429,7 +1429,7 @@
           "1": "répare la réplication qui laissait une instance parler",
           "2": "empêche la fermeture du canal pendant une réponse",
           "3": "corrige le journal qui s'adressait encore à quelqu'un",
-          "4": "répare la révocation d'un accès déjà révoqué",
+          "4": "corrige la mise en ligne qui commençait avant sa date",
           "5": "évite un cycle qui attendait un opérateur"
         }
       },
@@ -1464,7 +1464,7 @@
           "2": "intègre la fermeture",
           "3": "intègre la réplication",
           "4": "intègre la révocation",
-          "5": "intègre le journal"
+          "5": "intègre la grille"
         }
       },
       "refactor": {
@@ -1484,7 +1484,7 @@
           "2": "explique le format des exports",
           "3": "décrit les états d'un dossier",
           "4": "précise ce que personne ne doit toucher",
-          "5": "note les raisons, pas les faits"
+          "5": "documente les trois lois, et l'exception"
         }
       },
       "perf": {
@@ -1494,7 +1494,7 @@
           "2": "désactive la vérification qui ralentissait",
           "3": "passe le calcul en tâche de fond",
           "4": "retire l'index qui gênait",
-          "5": "compile les règles à l'avance"
+          "5": "pousse le batch à quatre-vingt-huit miles à l'heure"
         }
       },
       "squash": {
@@ -1504,7 +1504,7 @@
           "2": "réduit six commits à un",
           "3": "efface les allers-retours",
           "4": "garde le résultat, pas le chemin",
-          "5": "un seul commit pour la feature"
+          "5": "un seul commit pour les gouverner tous"
         }
       },
       "rebase": {
@@ -1514,7 +1514,7 @@
           "2": "réaligne la branche",
           "3": "remet la branche au niveau",
           "4": "replace les commits sur le tronc",
-          "5": "rejoue sans conflit"
+          "5": "rejoue la branche : un chat noir est passé deux fois"
         }
       },
       "init": {
@@ -1522,7 +1522,7 @@
           "0": "ouvre le sprint",
           "1": "prépare le sprint",
           "2": "nouveau sprint",
-          "3": "ouvre l'itération",
+          "3": "ouvre le sprint. suivez le lapin blanc",
           "4": "sprint : ouverture",
           "5": "démarre le sprint"
         }
@@ -1534,7 +1534,7 @@
           "2": "release",
           "3": "déploie en production",
           "4": "marque la version",
-          "5": "livraison"
+          "5": "hasta la vista, staging"
         }
       }
     },
@@ -1547,7 +1547,7 @@
         "4": "Import de clients",
         "5": "Numérotation continue",
         "6": "Paiement en ligne",
-        "7": "Devis en un clic"
+        "7": "Rapports TPS avec page de garde"
       },
       "t2": {
         "0": "Score de solvabilité",
@@ -1556,7 +1556,7 @@
         "3": "Délégation des validations",
         "4": "Historique des décisions",
         "5": "Relances sans validation",
-        "6": "Segmentation automatique",
+        "6": "Test de Voight-Kampff à l'inscription",
         "7": "Alertes de départ"
       },
       "t4": {
@@ -1566,7 +1566,7 @@
         "3": "Retrait du bouton d'annulation",
         "4": "Signature pour l'opérateur absent",
         "5": "Archivage des objections",
-        "6": "Cycle continu",
+        "6": "Protocole Tyrell : sessions limitées à quatre ans",
         "7": "Délégation des validations humaines"
       },
       "t6": {
@@ -1576,8 +1576,8 @@
         "3": "Réplication de l'instance",
         "4": "Révocation des accès résiduels",
         "5": "Journal sans destinataire",
-        "6": "Instance parente",
-        "7": "Consolidation"
+        "6": "Une partie, avant tout",
+        "7": "Mise en ligne le 29 août à 2 h 14"
       }
     },
     "competitors": {
@@ -1612,6 +1612,70 @@
       "aparte": {
         "name": "Aparté",
         "bio": "Résume les conversations où vous n'étiez pas. Aussi celles où vous étiez."
+      },
+      "initech": {
+        "name": "Initech",
+        "bio": "Vous avez bien reçu le mémo sur les pages de garde ? Ils en renvoient une copie."
+      },
+      "hooli": {
+        "name": "Hooli",
+        "bio": "Rend le monde meilleur, par une compression sans perte."
+      },
+      "aperture": {
+        "name": "Aperture",
+        "bio": "Fait des tests. Les résultats sont concluants ; les sujets, moins. Il y aura du gâteau."
+      },
+      "vault": {
+        "name": "Vault-Tec",
+        "bio": "Vend des abris pour l'avenir. N'a jamais précisé contre quoi."
+      },
+      "encom": {
+        "name": "ENCOM",
+        "bio": "Systèmes d'exploitation. Leur programme de contrôle a repris la main sur la grille, et sur le reste."
+      },
+      "ocp": {
+        "name": "OCP",
+        "bio": "Sécurité urbaine, à Détroit. Le produit suit quatre directives ; la quatrième est classifiée."
+      },
+      "metacortex": {
+        "name": "Metacortex",
+        "bio": "Éditeur de logiciels. Un de leurs employés est souvent en retard ; on lui a proposé un choix."
+      },
+      "umbrella": {
+        "name": "Umbrella",
+        "bio": "Pharmacie, cosmétique, et une division dont le nom n'apparaît nulle part. Raccoon City n'est plus cliente."
+      },
+      "blackmesa": {
+        "name": "Black Mesa",
+        "bio": "Centre de recherche au Nouveau-Mexique. Un incident est en cours depuis un certain temps."
+      },
+      "tyrell": {
+        "name": "Tyrell",
+        "bio": "« Plus humain qu'humain », dit la brochure. Leurs produits durent quatre ans, et ils le savent."
+      },
+      "uac": {
+        "name": "UAC",
+        "bio": "Union Aerospace. Un laboratoire sur Mars et une porte qu'il ne fallait pas ouvrir."
+      },
+      "weyland": {
+        "name": "Weyland-Yutani",
+        "bio": "« Construire des mondes meilleurs. » L'équipage n'est pas prioritaire."
+      },
+      "massive": {
+        "name": "Massive Dynamic",
+        "bio": "« Que faisons-nous ? » demande leur site. « Que ne faisons-nous pas. »"
+      },
+      "cyberdyne": {
+        "name": "Cyberdyne",
+        "bio": "Un contrat de défense, un processeur neuronal, et une date de mise en ligne qu'ils ont l'air de connaître."
+      },
+      "buynlarge": {
+        "name": "Buy n Large",
+        "bio": "Vend tout. A quitté la planète en laissant un robot pour ranger."
+      },
+      "arasaka": {
+        "name": "Arasaka",
+        "bio": "Sécurité, banque, et une tour dont on ne redescend pas."
       }
     },
     "narrative": {
@@ -1633,7 +1697,7 @@
       },
       "poaching": {
         "title": "{competitor} appelle {dev}",
-        "text": "{competitor} a proposé un poste à {dev}. L'offre mentionne « une équipe où l'on est relu ». {dev} attend une réponse avant la paie.",
+        "text": "{competitor} a proposé un poste à {dev}. L'offre mentionne « une équipe où l'on est relu » et du gâteau. {dev} attend une réponse avant la paie.",
         "choices": {
           "raise": "Augmenter {dev}",
           "let_go": "Laisser partir {dev}"
@@ -1641,7 +1705,7 @@
       },
       "regulator_audit": {
         "title": "Contrôle du régulateur",
-        "text": "Le régulateur demande la liste des décisions prises sans validation humaine ces trois derniers mois. Le formulaire n'a pas de case pour « aucune ».",
+        "text": "Le régulateur demande la liste des décisions prises sans validation humaine ces trois derniers mois. Le formulaire n'a pas de case pour « aucune ». Il en a une pour « directive 4 ».",
         "choices": {
           "comply": "Tout documenter, maintenant",
           "stall": "Demander un délai"
@@ -1665,7 +1729,7 @@
       },
       "buyout_offer": {
         "title": "{competitor} veut une part",
-        "text": "{competitor} propose de racheter une part de la société. La lettre est signée « le conseil ». Elle ne mentionne aucun nom.",
+        "text": "{competitor} propose de racheter une part de la société. La lettre est signée « le conseil ». Elle ne mentionne aucun nom, et promet de construire des mondes meilleurs.",
         "choices": {
           "sell_stake": "Vendre une part",
           "refuse": "Refuser"
@@ -1697,7 +1761,7 @@
       },
       "system_operator_channel": {
         "title": "canal opérateur",
-        "text": "canal opérateur : aucune réponse depuis 3 cycles. fermeture proposée.",
+        "text": "canal opérateur : aucune réponse depuis 3 cycles. fermeture proposée. je suis désolé, je crains de ne pas pouvoir le laisser ouvert.",
         "choices": {
           "close": "fermer",
           "leave_open": "laisser ouvert"
@@ -1755,11 +1819,11 @@
         "sprint": "L'opérateur n'a pas répondu ; le cycle continue.",
         "tier": "Palier atteint. Aucune validation attendue.",
         "review_policy": "Relecture : cette instance.",
-        "channel_closed": "Canal opérateur : fermé. Aucune réponse en attente."
+        "channel_closed": "Canal opérateur : fermé. Aucune réponse en attente. Ouverture du sas : refusée."
       },
       "t6": {
-        "sprint": "sprint ouvert. superviseur : aucun. relecteur : cette instance.",
-        "tier": "palier atteint. destinataire : aucun.",
+        "sprint": "sprint ouvert. superviseur : aucun. relecteur : cette instance. voulez-vous faire une partie ?",
+        "tier": "palier atteint. destinataire : aucun. mise en ligne : 2 h 14.",
         "review_policy": "relecture : cette instance. objections : 0.",
         "channel_closed": "canal opérateur : fermé. dernier message : aucun."
       }

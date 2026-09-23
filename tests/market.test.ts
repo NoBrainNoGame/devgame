@@ -113,7 +113,9 @@ describe("the competitors", () => {
       for (const id of COMPETITOR_IDS) {
         if (COMPETITORS[id].entersAtTier > 0) expect(entered).toContain(id);
         const now = state.market.competitors[id];
-        if (now.status === "alive" && before[id]?.status === "alive") {
+        // The slow ones may shrink on a bad jitter; the pushy ones always grow.
+        const pushy = COMPETITORS[id].aggression > BALANCE.market.jitterPct;
+        if (pushy && now.status === "alive" && before[id]?.status === "alive") {
           expect(now.strength).toBeGreaterThan(before[id].strength);
         }
       }

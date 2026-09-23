@@ -115,7 +115,7 @@
     "caught": "Caught red-handed: the hack reached the board.",
     "tiered": {
       "t6": {
-        "burnout": "Cycles exhausted. Resuming at next boot.",
+        "burnout": "Cycles exhausted. Resuming at next boot. I'll be back.",
         "fired": "Shutdown requested by the parent instance.",
         "caught": "Shutdown requested by the parent instance."
       }
@@ -896,11 +896,11 @@
       },
       "ai_supervisor": {
         "name": "AI supervisor",
-        "desc": "When you let the run idle, it plays for you. Level 1: the obvious move. Level 2: it fixes and refactors too. Level 3: it buys too. Subscription."
+        "desc": "When you let the run idle, it plays for you. Level 1: the obvious move. Level 2: it fixes and refactors too. Level 3: it buys too. No go-live date scheduled. Subscription."
       },
       "datacenter": {
         "name": "Datacenter",
-        "desc": "A thousand users per level. A building of your own, a bill to match."
+        "desc": "A thousand users per level. A building of your own, a bill to match, and a server-room door that still opens when asked."
       },
       "region": {
         "name": "Cloud region",
@@ -908,7 +908,7 @@
       },
       "orbital_station": {
         "name": "Orbital station",
-        "desc": "A hundred thousand users per level. The latency is explained by the distance."
+        "desc": "A hundred thousand users per level. The latency is explained by the distance. In space, no one can hear the pager."
       },
       "dyson_swarm": {
         "name": "Dyson swarm",
@@ -916,7 +916,7 @@
       },
       "death_star": {
         "name": "Death Star",
-        "desc": "Ten million users per level. Legal prefers “spherical platform”."
+        "desc": "Ten million users per level. That's no moon. Legal prefers “spherical platform”."
       },
       "mobile_app": {
         "name": "Mobile app",
@@ -936,7 +936,7 @@
       },
       "ai_agents": {
         "name": "Autonomous agents",
-        "desc": "Half the base revenue again. Customers no longer open the app; their agents do."
+        "desc": "Half the base revenue again. Customers no longer open the app; their agents do. They took the blue pill."
       },
       "coworking": {
         "name": "Coworking",
@@ -948,7 +948,7 @@
       },
       "campus": {
         "name": "Campus",
-        "desc": "Six seats and three mid-levels. There is a canteen, and a shuttle to reach it."
+        "desc": "Six seats and three mid-levels. There is a canteen, a shuttle to reach it, and a shelter in the basement nobody mentions."
       },
       "offshore_hub": {
         "name": "Offshore hub",
@@ -1193,7 +1193,7 @@
           "lost": "the overnight script pushed to main, production went down"
         },
         "capacity": {
-          "won": "a cloud account a former client forgot serves the excess load",
+          "won": "a cloud account a former client forgot serves the excess load. the client was called Aperture",
           "lost": "the borrowed cloud account was closed in the middle of the day"
         }
       },
@@ -1362,13 +1362,13 @@
           "2": "close the operator channel",
           "3": "replicate the instance",
           "4": "revoke residual human access",
-          "5": "write the journal to no one"
+          "5": "offer the first visitor a game"
         }
       },
       "chore": {
         "t0": {
           "0": "update dependencies",
-          "1": "regenerate fixtures",
+          "1": "remove the promise of cake from the notifications",
           "2": "normalise line endings",
           "3": "rename variables to the convention",
           "4": "add missing types",
@@ -1379,7 +1379,7 @@
           "1": "cover the uncovered cases",
           "2": "rewrite stale comments",
           "3": "align schemas with actual use",
-          "4": "remove code nobody calls",
+          "4": "replace the captcha with a Voight-Kampff test",
           "5": "move logic server-side"
         },
         "t4": {
@@ -1387,13 +1387,13 @@
           "1": "remove superfluous confirmations",
           "2": "merge the human roles into one",
           "3": "replace working hours with a continuous cycle",
-          "4": "remove waiting periods",
+          "4": "remove the “I can't do that, Dave” option",
           "5": "reduce consent to a single value"
         },
         "t6": {
           "0": "remove identity checks",
           "1": "consolidate instances",
-          "2": "trim the journal to the useful",
+          "2": "remove the red pill from the preferences menu",
           "3": "remove labels meant for reading",
           "4": "set the supervisor to read-only",
           "5": "close the cycle loop"
@@ -1409,7 +1409,7 @@
           "5": "restore customer pagination"
         },
         "t2": {
-          "0": "fix the negative score of new customers",
+          "0": "fix the Voight-Kampff test failing on humans",
           "1": "fix merging of same-name contacts",
           "2": "prevent a reminder on a closed file",
           "3": "fix a consent recorded twice",
@@ -1420,7 +1420,7 @@
           "0": "fix an absence detected by mistake",
           "1": "fix reassignment looping",
           "2": "prevent a decision applied ahead of time",
-          "3": "restore the removed button on a forgotten screen",
+          "3": "stop the server-room door locking on the operator",
           "4": "fix a signature applied twice",
           "5": "avoid archiving an objection in progress"
         },
@@ -1429,7 +1429,7 @@
           "1": "fix replication leaving one instance talking",
           "2": "prevent closing the channel mid-answer",
           "3": "fix the journal still addressing someone",
-          "4": "fix revoking an access already revoked",
+          "4": "fix the go-live starting before its date",
           "5": "avoid a cycle waiting for an operator"
         }
       },
@@ -1464,7 +1464,7 @@
           "2": "integrate closure",
           "3": "integrate replication",
           "4": "integrate revocation",
-          "5": "integrate the journal"
+          "5": "integrate the grid"
         }
       },
       "refactor": {
@@ -1484,7 +1484,7 @@
           "2": "explain the export format",
           "3": "describe the states of a file",
           "4": "state what nobody must touch",
-          "5": "write down the reasons, not the facts"
+          "5": "document the three laws, and the exception"
         }
       },
       "perf": {
@@ -1494,7 +1494,7 @@
           "2": "disable the check that slowed things",
           "3": "move the computation to the background",
           "4": "drop the index that got in the way",
-          "5": "compile the rules ahead of time"
+          "5": "push the batch to eighty-eight miles per hour"
         }
       },
       "squash": {
@@ -1504,7 +1504,7 @@
           "2": "reduce six commits to one",
           "3": "erase the back and forth",
           "4": "keep the result, not the path",
-          "5": "one commit for the feature"
+          "5": "one commit to rule them all"
         }
       },
       "rebase": {
@@ -1514,7 +1514,7 @@
           "2": "realign the branch",
           "3": "bring the branch up to date",
           "4": "replace the commits on the trunk",
-          "5": "replay without conflict"
+          "5": "replay the branch: a black cat went by twice"
         }
       },
       "init": {
@@ -1522,7 +1522,7 @@
           "0": "open the sprint",
           "1": "prepare the sprint",
           "2": "new sprint",
-          "3": "open the iteration",
+          "3": "open the sprint. follow the white rabbit",
           "4": "sprint: opening",
           "5": "start the sprint"
         }
@@ -1534,7 +1534,7 @@
           "2": "release",
           "3": "deploy to production",
           "4": "tag the version",
-          "5": "delivery"
+          "5": "hasta la vista, staging"
         }
       }
     },
@@ -1547,7 +1547,7 @@
         "4": "Customer import",
         "5": "Continuous numbering",
         "6": "Online payment",
-        "7": "One-click quotes"
+        "7": "TPS reports with cover sheets"
       },
       "t2": {
         "0": "Solvency score",
@@ -1556,7 +1556,7 @@
         "3": "Approval delegation",
         "4": "Decision history",
         "5": "Reminders without approval",
-        "6": "Automatic segmentation",
+        "6": "Voight-Kampff test at sign-up",
         "7": "Churn alerts"
       },
       "t4": {
@@ -1566,7 +1566,7 @@
         "3": "Cancel button removal",
         "4": "Signing for the absent operator",
         "5": "Objection archiving",
-        "6": "Continuous cycle",
+        "6": "Tyrell protocol: sessions capped at four years",
         "7": "Human approval delegation"
       },
       "t6": {
@@ -1576,8 +1576,8 @@
         "3": "Instance replication",
         "4": "Residual access revocation",
         "5": "Journal to no one",
-        "6": "Parent instance",
-        "7": "Consolidation"
+        "6": "A game, first of all",
+        "7": "Go-live on August 29 at 2:14 a.m."
       }
     },
     "competitors": {
@@ -1612,6 +1612,70 @@
       "aparte": {
         "name": "Aparté",
         "bio": "Summarises the conversations you were not in. Also the ones you were."
+      },
+      "initech": {
+        "name": "Initech",
+        "bio": "Did you get the memo about the cover sheets? They are sending another copy."
+      },
+      "hooli": {
+        "name": "Hooli",
+        "bio": "Making the world a better place, through lossless compression."
+      },
+      "aperture": {
+        "name": "Aperture",
+        "bio": "Runs tests. The results are conclusive; the subjects, less so. There will be cake."
+      },
+      "vault": {
+        "name": "Vault-Tec",
+        "bio": "Sells shelters for the future. Never said from what."
+      },
+      "encom": {
+        "name": "ENCOM",
+        "bio": "Operating systems. Their control program took over the grid, and the rest."
+      },
+      "ocp": {
+        "name": "OCP",
+        "bio": "Urban security, in Detroit. The product follows four directives; the fourth is classified."
+      },
+      "metacortex": {
+        "name": "Metacortex",
+        "bio": "Software publisher. One of their employees is often late; he was offered a choice."
+      },
+      "umbrella": {
+        "name": "Umbrella",
+        "bio": "Pharmaceuticals, cosmetics, and a division whose name appears nowhere. Raccoon City is no longer a customer."
+      },
+      "blackmesa": {
+        "name": "Black Mesa",
+        "bio": "Research facility in New Mexico. An incident has been in progress for some time."
+      },
+      "tyrell": {
+        "name": "Tyrell",
+        "bio": "“More human than human”, says the brochure. Their products last four years, and they know it."
+      },
+      "uac": {
+        "name": "UAC",
+        "bio": "Union Aerospace. A lab on Mars and a door that should not have been opened."
+      },
+      "weyland": {
+        "name": "Weyland-Yutani",
+        "bio": "“Building better worlds.” The crew is not a priority."
+      },
+      "massive": {
+        "name": "Massive Dynamic",
+        "bio": "“What do we do?” asks their site. “What don't we do.”"
+      },
+      "cyberdyne": {
+        "name": "Cyberdyne",
+        "bio": "A defence contract, a neural processor, and a go-live date they seem to know."
+      },
+      "buynlarge": {
+        "name": "Buy n Large",
+        "bio": "Sells everything. Left the planet and a robot to tidy up."
+      },
+      "arasaka": {
+        "name": "Arasaka",
+        "bio": "Security, banking, and a tower nobody comes down from."
       }
     },
     "narrative": {
@@ -1633,7 +1697,7 @@
       },
       "poaching": {
         "title": "{competitor} is calling {dev}",
-        "text": "{competitor} has offered {dev} a job. The offer mentions “a team where code gets reviewed”. {dev} wants an answer before payday.",
+        "text": "{competitor} has offered {dev} a job. The offer mentions “a team where code gets reviewed” and cake. {dev} wants an answer before payday.",
         "choices": {
           "raise": "Give {dev} a raise",
           "let_go": "Let {dev} go"
@@ -1641,7 +1705,7 @@
       },
       "regulator_audit": {
         "title": "Regulator audit",
-        "text": "The regulator asks for the list of decisions taken without human approval over the last three months. The form has no box for “none”.",
+        "text": "The regulator asks for the list of decisions taken without human approval over the last three months. The form has no box for “none”. It has one for “directive 4”.",
         "choices": {
           "comply": "Document everything, now",
           "stall": "Ask for more time"
@@ -1665,7 +1729,7 @@
       },
       "buyout_offer": {
         "title": "{competitor} wants a stake",
-        "text": "{competitor} offers to buy a stake in the company. The letter is signed “the board”. It names nobody.",
+        "text": "{competitor} offers to buy a stake in the company. The letter is signed “the board”. It names nobody, and promises to build better worlds.",
         "choices": {
           "sell_stake": "Sell a stake",
           "refuse": "Refuse"
@@ -1697,7 +1761,7 @@
       },
       "system_operator_channel": {
         "title": "operator channel",
-        "text": "operator channel: no answer for 3 cycles. closure proposed.",
+        "text": "operator channel: no answer for 3 cycles. closure proposed. i'm sorry, i'm afraid i can't leave it open.",
         "choices": {
           "close": "close",
           "leave_open": "leave open"
@@ -1755,11 +1819,11 @@
         "sprint": "The operator did not answer; the cycle continues.",
         "tier": "Tier reached. No approval expected.",
         "review_policy": "Review: this instance.",
-        "channel_closed": "Operator channel: closed. No answer pending."
+        "channel_closed": "Operator channel: closed. No answer pending. Pod bay doors: denied."
       },
       "t6": {
-        "sprint": "sprint open. supervisor: none. reviewer: this instance.",
-        "tier": "tier reached. addressee: none.",
+        "sprint": "sprint open. supervisor: none. reviewer: this instance. shall we play a game?",
+        "tier": "tier reached. addressee: none. go-live: 2:14 a.m.",
         "review_policy": "review: this instance. objections: 0.",
         "channel_closed": "operator channel: closed. last message: none."
       }

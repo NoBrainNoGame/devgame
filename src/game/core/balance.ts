@@ -430,8 +430,8 @@ export const BALANCE = {
     priceWar: { penalty: 0.15, months: 3 },
     /** Half-width of the monthly jitter on a competitor's growth, in percent. */
     jitterPct: 3,
-    /** A merger is rolled each month once one competitor holds this much of them. */
-    merge: { dominancePct: 70, chancePct: 20 },
+    /** A merger is rolled each month once the strongest weighs this many times the weakest. */
+    merge: { dominanceRatio: 5, chancePct: 20 },
     /** Share points a customer's bug fixed, and a VIP on time, earn; a VIP late loses. */
     clientBugShare: 1,
     vipShare: 2,

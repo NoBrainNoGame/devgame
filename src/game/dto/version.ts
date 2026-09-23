@@ -1,6 +1,7 @@
 import {
   ACQUISITION_IDS,
   AMBIENT_EVENT_IDS,
+  COMPETITOR_IDS,
   DEV_RANKS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
@@ -76,6 +77,7 @@ export function fingerprintFor(epoch: number): string {
       upgrades: UPGRADE_IDS,
       ranks: DEV_RANKS,
       acquisitions: ACQUISITION_IDS,
+      competitors: COMPETITOR_IDS,
       ticketKinds: TICKET_KINDS,
       narrative: NARRATIVE_EVENT_IDS,
       objectives: OBJECTIVE_IDS,

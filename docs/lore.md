@@ -78,6 +78,29 @@ d'une phrase qui dit ce qu'elle est en disant autre chose :
 Elles entrent au palier de `entersAtTier`, dans cet ordre, et leur force
 croît de `aggression` pour cent par mois.
 
+## Les clins d'œil
+
+Seize concurrents de plus viennent d'autres histoires — celles d'entreprises
+qui ont fini comme celle-ci commence. La règle est la même que pour tout le
+reste : **la bio est le clin d'œil, jamais le nom de l'histoire**, et elle
+reste plausible comme ligne de presse. Initech (Office Space), Hooli (Silicon
+Valley), Aperture (Portal), Vault-Tec (Fallout), ENCOM (Tron), OCP (RoboCop),
+Metacortex (Matrix), Umbrella (Resident Evil), Black Mesa (Half-Life), Tyrell
+(Blade Runner), UAC (Doom), Weyland-Yutani (Alien), Massive Dynamic (Fringe),
+Cyberdyne (Terminator), Buy n Large (WALL-E), Arasaka (Cyberpunk).
+
+Les autres clins d'œil sont semés où une ligne peut les porter sans cesser
+d'être un sujet de commit ou une feature : le gâteau et Aperture (Portal),
+le test de Voight-Kampff et les quatre ans (Blade Runner), « je ne peux pas
+faire ça, Dave » et le sas (2001), la pilule, le lapin blanc et le chat noir
+(Matrix), 2 h 14 et « hasta la vista » (Terminator), « voulez-vous
+faire une partie ? » (WarGames), les 88 miles à l'heure (Retour vers le
+futur), les trois lois (Asimov), les rapports TPS (Office Space), « ce n'est
+pas une lune » (Star Wars), « personne n'entend l'astreinte » (Alien),
+la directive 4 (RoboCop), la grille (Tron), un commit pour les gouverner tous.
+Un clin d'œil ne porte jamais l'intrigue : retiré, la ligne dit encore
+quelque chose de vrai sur le code.
+
 ## Les messages système
 
 Émis par l'événement `system_note` (phase 3.9), sous `game.system.t<n>`,
