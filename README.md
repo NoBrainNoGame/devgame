@@ -103,8 +103,20 @@ bun install
 bun run dev                 # http://localhost:3000
 ```
 
-**With accounts and a leaderboard.** Set a database and the secrets that
-guard it:
+**With accounts and a leaderboard.** One command sets a machine up: it
+writes a `.env` with development values and random secrets, starts the
+Postgres container from `docker-compose.yml`, waits for it, applies the
+migrations and generates the client.
+
+```bash
+bun run init                # .env + Docker + migrations
+bun run dev                 # http://localhost:3000
+```
+
+`bun run init --offline` writes a `.env` for the offline game only,
+`--no-docker` writes the file and stops there, `--force` overwrites an
+existing `.env`, and `POSTGRES_PORT=5500 bun run init` picks another port.
+The same by hand:
 
 ```bash
 cp .env.example .env
@@ -139,6 +151,7 @@ bun run check       # typecheck + lint + tests — run this before you are done
 bun run dev         # dev server
 bun run build       # production build
 bun run sim         # headless balance simulator (scripts/sim.ts)
+bun run init        # .env with dev values, Postgres container, migrations (scripts/init.ts)
 bun run db:up       # start Postgres (POSTGRES_PORT=5500 to move the port)
 bun run db:migrate  # create and apply a migration
 bun run db:deploy   # apply committed migrations

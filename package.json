@@ -14,6 +14,7 @@
     "test": "bun test",
     "check": "bun run typecheck && bun run lint && bun test",
     "sim": "bun scripts/sim.ts",
+    "init": "bun scripts/init.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:migrate": "prisma migrate dev",
