@@ -13,6 +13,11 @@ little longer.
 There is no end. A run stops in **burnout** (you ran out of energy) or with
 **production firing you** (it ran out of patience). The score is what you held.
 
+It runs **offline** with nothing but `bun run dev` — the game against your
+browser's storage — and the whole **online** site (accounts, cloud saves,
+leaderboard, bug reports, admin panel) comes up on any machine with
+`bun run init`. See [Getting started](#getting-started).
+
 ## The game in one page
 
 **Two hands.** A craft commit costs energy, fills one story point and almost
@@ -100,37 +105,64 @@ PostgreSQL 17 · Better Auth
 
 ## Getting started
 
-**Just the game, no server.** With no `.env` at all the app runs offline: the
-game plays against `localStorage`, and sign-in, the profile, cloud saves and
-the leaderboard are simply absent — the header does not even show them.
+Two ways to run it, and one command that switches between them.
+
+### Offline: just the game
+
+With no `.env` at all the app runs **offline**: the game plays against
+`localStorage`, and everything that needs a server — sign-in, the profile,
+cloud saves, the leaderboard, bug reports — is simply absent. The header does
+not even show it. Nothing to configure, nothing to start.
 
 ```bash
 bun install
 bun run dev                 # http://localhost:3000
 ```
 
-**With accounts and a leaderboard.** One command sets a machine up: it
-writes a `.env` with development values and random secrets, starts the
-Postgres container from `docker-compose.yml`, waits for it, applies the
-migrations and generates the client.
+### Online, on your machine: `bun run init`
+
+The **online mode** is the whole site: accounts, cloud saves, the daily
+leaderboard, bug reports, and the admin panel. One command sets a machine
+up for it. It writes a `.env` with development values and random secrets,
+starts the Postgres container from `docker-compose.yml`, waits for it,
+applies the migrations, generates the client, and starts the admin panel
+beside the database.
 
 ```bash
-bun run init                # .env + Docker + migrations + the admin panel
+bun install
+bun run init                # .env + Docker + migrations + admin panel
 bun run dev                 # http://localhost:3000
 ```
 
-The admin panel is a small server of its own on http://127.0.0.1:3100,
-started with the database by `bun run init` and `bun run db:up`, behind
-the `ADMIN_PASSWORD` the `.env` carries: visit counts, accounts (ban,
-delete), bug reports. It listens on the loopback address only and reads
-whatever `DATABASE_URL` points at, so a machine set up against the
-production database administers production. `bun run admin` runs it in the
-foreground, `bun run admin:stop` ends the background one.
+That is enough to develop the online version from any machine: clone,
+`bun run init`, `bun run dev`. Docker Desktop (or a Docker daemon) is the
+only thing to have installed first.
 
-`bun run init --offline` writes a `.env` for the offline game only,
-`--no-docker` writes the file and stops there, `--force` overwrites an
-existing `.env`, and `POSTGRES_PORT=5500 bun run init` picks another port.
-The same by hand:
+| Flag | What it does |
+| --- | --- |
+| `bun run init` | online setup, as above |
+| `bun run init --offline` | writes a `.env` for the offline game only, no Docker |
+| `bun run init --no-docker` | writes the `.env` and stops there |
+| `bun run init --force` | overwrites an existing `.env` |
+| `POSTGRES_PORT=5500 bun run init` | picks another port for Postgres |
+
+Later, `bun run db:up` starts the database and the admin panel again, and
+`bun run admin:stop` ends the panel.
+
+**The admin panel** is a small server of its own on http://127.0.0.1:3100,
+behind the `ADMIN_PASSWORD` the `.env` carries: visit counts, accounts (ban,
+delete), bug reports. It listens on the loopback address only and reads
+whatever `DATABASE_URL` points at — so a machine set up against the
+production database administers production. `bun run admin` runs it in
+the foreground.
+
+**Signing in**, in development: the magic link is printed to the server
+log — copy it from the terminal and paste it into the browser. No email
+provider is wired, so `sendMagicLink` in `src/lib/auth.ts` throws in
+production: until you implement it or fill in the Google OAuth pair, nobody
+can sign in to a deployed instance. Decide which before launch, not after.
+
+**By hand**, if you would rather not use `init`:
 
 ```bash
 cp .env.example .env
@@ -138,8 +170,9 @@ cp .env.example .env
 openssl rand -hex 32        # -> BETTER_AUTH_SECRET
 openssl rand -hex 32        # -> CRON_SECRET
 openssl rand -hex 32        # -> DAILY_SEED_SECRET
+openssl rand -hex 16        # -> ADMIN_PASSWORD
 
-bun run db:up               # Postgres 17 on port 5443
+bun run db:up               # Postgres 17 on port 5443, then the admin panel
 bun run db:migrate          # create and apply migrations
 bun run dev                 # http://localhost:3000
 ```
@@ -147,16 +180,11 @@ bun run dev                 # http://localhost:3000
 `DATABASE_URL` is the switch: absent, the app is offline; present,
 `BETTER_AUTH_SECRET` and `DAILY_SEED_SECRET` become required and
 `src/lib/env.ts` fails at start-up naming the missing one. `CRON_SECRET` only
-guards the routes under `/api/cron`, which stay off without it.
+guards the routes under `/api/cron`, which stay off without it;
+`ADMIN_PASSWORD` only opens the local admin panel, which stays off without it.
 
 Even online the game needs no account: `/play` works signed out, against
 `localStorage`. Signing in is what buys you cloud saves and the leaderboard.
-
-**Signing in.** In development the magic link is printed to the server log —
-copy it from the terminal and paste it into the browser. No email provider is
-wired, so `sendMagicLink` in `src/lib/auth.ts` throws in production: until you
-implement it or fill in the Google OAuth pair, nobody can sign in to a deployed
-instance. Decide which before launch, not after.
 
 ## Commands
 
