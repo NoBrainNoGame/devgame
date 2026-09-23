@@ -14,9 +14,9 @@ import type { FinanceMonth } from "@/game";
  * charting problem.
  */
 
-const WIDTH = 320;
-const HEIGHT = 120;
-const PAD = { top: 8, right: 8, bottom: 18, left: 34 };
+const WIDTH = 640;
+const HEIGHT = 140;
+const PAD = { top: 10, right: 8, bottom: 16, left: 40 };
 
 function log10(value: number): number {
   return Math.log10(Math.max(1, value));
