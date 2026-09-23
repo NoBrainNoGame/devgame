@@ -26,6 +26,12 @@ export type {
 } from "@/game/bridge/snapshot";
 export type { GameStore, ReviewEvent } from "@/game/bridge/store";
 export { gameStore, resetGameStore, useGameStore } from "@/game/bridge/store";
+export {
+  chooseSupervisor,
+  SUPERVISOR_REASONS,
+  type SupervisorMove,
+  type SupervisorReason,
+} from "@/game/bridge/supervisor";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { money, ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";
@@ -34,7 +40,9 @@ export { accountSkillPoints, levelForXp, xpForLevel } from "@/game/core/score";
 export type {
   ActionPreview,
   CommitMode,
+  FinanceMonth,
   GameEvent,
+  HackKind,
   LogLine,
   NodeId,
   NodeKind,

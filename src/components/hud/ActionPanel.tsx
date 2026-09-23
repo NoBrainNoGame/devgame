@@ -50,6 +50,7 @@ export function ActionPanel({
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
   const firstStart = snapshot.actions.find((action) => action.type === "start");
+  const hack = snapshot.actions.find((action) => action.type === "hack");
 
   return (
     <section className="space-y-3">
@@ -58,6 +59,18 @@ export function ActionPanel({
       </h2>
 
       <div className="grid gap-2">
+        {hack === undefined || snapshot.hack === null ? null : (
+          <ActionButton
+            label={t("hack.title")}
+            hint={t(`hack.${snapshot.hack}`)}
+            preview={snapshot.previews[actionKey(hack)]}
+            busy={busy}
+            danger
+            action={hack}
+            onAct={() => onAct(hack)}
+          />
+        )}
+
         {current?.mustWrite === undefined ? null : (
           <p className="text-branch-hotfix text-xs">{t(`mustWrite.${current.mustWrite}`)}</p>
         )}
@@ -193,6 +206,7 @@ function ActionButton({
   busy,
   emphasis = false,
   compact = false,
+  danger = false,
   action,
   onAct,
 }: {
@@ -203,6 +217,8 @@ function ActionButton({
   preview: ActionPreview | undefined;
   busy: boolean;
   emphasis?: boolean;
+  /** The one red card: a coin flip with the run on the other side. */
+  danger?: boolean;
   /** Hint in the tooltip only, numbers on two short lines: for the long lists. */
   compact?: boolean;
   /** The move this card plays, so the idle clock's bar can find its card. */
@@ -216,10 +232,11 @@ function ActionButton({
       <TooltipTrigger asChild>
         <div className="relative">
           <Button
-            variant={emphasis ? "default" : "outline"}
+            variant={danger ? "destructive" : emphasis ? "default" : "outline"}
             className={cn(
               "h-auto w-full min-w-0 justify-between px-3 text-left",
               compact ? "py-1.5" : "py-2",
+              danger && "border-branch-hotfix/60",
             )}
             disabled={busy || preview === undefined || preview.blocked !== undefined}
             onClick={onAct}

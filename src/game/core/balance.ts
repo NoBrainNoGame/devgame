@@ -380,6 +380,23 @@ export const BALANCE = {
     skillPoint: { price: 60, growth: 1.5 },
   },
 
+  /**
+   * Hacking the outside world: a coin flip, offered once a sprint and only
+   * in a very tight spot — production's patience nearly gone, no energy
+   * under a pile of tickets, or servers saturated with no rung affordable.
+   * Winning buys the thing that was missing; losing, with the patience
+   * gone, is the end of the run, and otherwise an incident.
+   */
+  hack: {
+    chancePct: 50,
+    /** Patience bought back on a win of the `patience` kind. */
+    patienceRelief: 40,
+    /** Share of production's patience past which the offer appears. */
+    offerAtQualityPct: 85,
+    /** Extra tickets in hand, with no energy, past which the offer appears. */
+    offerAtWipExtra: 2,
+  },
+
   /** The hired team. Ranks are priced in `content/team.ts`. */
   team: {
     /** Seats at the head office; sites add theirs. */

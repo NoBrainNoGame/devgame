@@ -10,6 +10,7 @@ import {
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, money, ref, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
+import { hackOffer } from "@/game/core/rules/hack";
 import {
   commitChance,
   conflictChance,
@@ -309,6 +310,20 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       };
     }
 
+    case "hack": {
+      const kind = hackOffer(state, effects);
+      const notes: I18nText[] =
+        kind === null ? [] : [text(`notes.hack_win.${kind}`), text(`notes.hack_lose.${kind}`)];
+      return {
+        action,
+        energyCost: 0,
+        successPct: BALANCE.hack.chancePct,
+        consumesTurn: true,
+        notes,
+        ...(kind === null ? { blocked: text("notes.hack_unavailable") } : {}),
+      };
+    }
+
     case "resolve_conflict": {
       if (action.how === "manual") {
         const chance = conflictChance(state, effects);
@@ -375,6 +390,7 @@ export function actionKey(action: PlayerAction): string {
     case "restart":
     case "resume":
     case "buy_point":
+    case "hack":
       return action.type;
   }
 }

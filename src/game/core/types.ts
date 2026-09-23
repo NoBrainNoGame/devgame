@@ -171,12 +171,32 @@ export interface Player {
   docsCharges: number;
 }
 
-export type GameOverReason = "burnout" | "fired";
+/** `caught`: a hack of the outside world went wrong with production's patience already gone. */
+export type GameOverReason = "burnout" | "fired" | "caught";
+
+/** What a hack of the outside world would buy, when it is offered at all. */
+export type HackKind = "patience" | "energy" | "capacity";
+
+/** One payday, as the finance chart draws it. */
+export interface FinanceMonth {
+  month: number;
+  sprint: number;
+  tier: number;
+  money: number;
+  mrr: number;
+  revenue: number;
+  upkeep: number;
+  salaries: number;
+  net: number;
+  load: number;
+  capacity: number;
+  outage: boolean;
+}
 
 /** What can spend production's patience. The run-over screen names the last one. */
 export type QualitySource = "incident" | "rejection" | "stale" | "outage" | "idle_sprint";
-/** Every way the gauge moves, the one way down included. */
-export type QualityChange = QualitySource | "clean_sprint";
+/** Every way the gauge moves, the two ways down included. */
+export type QualityChange = QualitySource | "clean_sprint" | "hack";
 
 /**
  * What happened over the whole run, counted in the rules as it happens and
@@ -294,6 +314,10 @@ export interface RunState {
   acquisitions: AcquisitionId[];
   /** The last capacity level reported, so a warning is said once per rise. */
   capacityAlert: CapacityLevel;
+  /** The last paydays, newest last, capped: what the chart draws. */
+  finance: FinanceMonth[];
+  /** The sprint of the last hack attempt: one a sprint, whatever it bought. */
+  hackSprint: number | null;
   /** Months closed this sprint, so the sprint's end can close the rest. */
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
@@ -352,12 +376,14 @@ export type PlayerAction =
   | { type: "hire"; rank: DevRank }
   /** Buy a company: its team, its features, its debt. Free in time. */
   | { type: "acquire"; id: AcquisitionId }
+  /** Hack the outside world. Offered only in a very tight spot; a coin flip. */
+  | { type: "hack" }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
 
 export type PlayerActionType = PlayerAction["type"];
 
-export type IncidentSource = "commit" | "release" | "acquisition";
+export type IncidentSource = "commit" | "release" | "acquisition" | "hack";
 
 /** Where a developer came from, when not hired one by one. */
 export type DevSource = { site: UpgradeId } | { acquisition: AcquisitionId };
@@ -447,6 +473,7 @@ export type GameEvent =
   | { type: "skill_point_bought"; price: number }
   | { type: "hired"; devId: DevId; rank: DevRank; source?: DevSource }
   | { type: "acquired"; id: AcquisitionId; devIds: DevId[]; ticketIds: TicketId[] }
+  | { type: "hack"; kind: HackKind; chancePct: number; success: boolean }
   /** Production is about to saturate, or has. Emitted once per rise of level. */
   | {
       type: "capacity_warning";

@@ -51,6 +51,10 @@ export function useGameAlerts(onOpenShop: () => void): void {
       if (event.type === "tier_reached" && once("tier")) {
         toast.success(t("toastTier", { tier: event.tier }));
       }
+      if (event.type === "hack" && once("hack")) {
+        if (event.success) toast.success(t("toastHackWon"));
+        else toast.error(t("toastHackLost"));
+      }
     }
   }, [events, snapshot, t, game, money, onOpenShop]);
 }

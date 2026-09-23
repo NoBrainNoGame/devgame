@@ -253,6 +253,14 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
                 }),
       };
 
+    case "hack":
+      return {
+        seq,
+        turn,
+        kind: event.success ? "feat" : "revert",
+        text: text(`log.hack.${event.kind}.${event.success ? "won" : "lost"}`),
+      };
+
     case "acquired":
       return {
         seq,

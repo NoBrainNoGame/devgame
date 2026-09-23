@@ -107,6 +107,8 @@ export function createRun(options: CreateRunOptions): RunState {
     tier: 0,
     acquisitions: [],
     capacityAlert: "ok",
+    finance: [],
+    hackSprint: null,
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
 

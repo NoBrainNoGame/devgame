@@ -37,7 +37,11 @@ export function raiseQuality(context: RuleContext, amount: number, source: Quali
 }
 
 /** A clean sprint earns some patience back. */
-export function lowerQuality(context: RuleContext, amount: number): void {
+export function lowerQuality(
+  context: RuleContext,
+  amount: number,
+  source: "clean_sprint" | "hack" = "clean_sprint",
+): void {
   const { state } = context;
   const before = state.quality;
   state.quality = Math.max(0, before - amount);
@@ -48,6 +52,6 @@ export function lowerQuality(context: RuleContext, amount: number): void {
     delta: state.quality - before,
     value: state.quality,
     max: BALANCE.quality.max,
-    source: "clean_sprint",
+    source,
   });
 }

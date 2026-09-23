@@ -302,6 +302,19 @@ new member of `QualitySource`, a `log.quality.<source>` line, a
 `play.firedBy.<source>` and a `play.qualitySource.<source>` label in both
 catalogues.
 
+**A supervisor level** is a branch in `chooseSupervisor`
+(`src/game/bridge/supervisor.ts`), a reason in `SUPERVISOR_REASONS` with its
+`hud.supervisorMove.<reason>` line, and a level in `UPGRADES.ai_supervisor`.
+Level 1 must stay `chooseAutopilot` exactly: the landing page's demo replays
+it, and `tests/autopilot.test.ts` checks the two agree.
+
+**A hack kind** is a branch in `hackOffer` and `performHack`
+(`src/game/core/rules/hack.ts`), a `HackKind`, its `hud.hack.<kind>`,
+`notes.hack_win.<kind>`, `notes.hack_lose.<kind>` and `log.hack.<kind>.*`
+lines. The offer must stay rare — `tests/hack.test.ts` asserts an ordinary
+turn offers nothing — and the coin is the only draw, taken only when the
+player tries.
+
 **A phase the idle clock can be in** needs a branch in `idleTarget`
 (`src/game/bridge/idle.ts`): the clock presses that move, and the bar shows
 under the button that plays it. A phase it cannot answer is a run that stalls

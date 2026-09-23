@@ -56,7 +56,7 @@ const DEFAULT_MAX_TURNS = 1500;
 const MAX_FREE_STREAK = 200;
 
 interface Outcome {
-  reason: "burnout" | "fired" | "stuck" | "capped";
+  reason: "burnout" | "fired" | "caught" | "stuck" | "capped";
   turns: number;
   sprints: number;
   score: number;
@@ -85,6 +85,8 @@ interface Outcome {
   tier: number;
   acquisitions: number;
   alerts: number;
+  hacks: number;
+  hacksWon: number;
   /** The tier the run had reached when sprint 10 ended, or its last one. */
   tierAt10: number;
   moneyPeak: number;
@@ -262,6 +264,13 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const writtenAs = (kind: string) => (a: PlayerAction) =>
     a.type === "commit" && a.kind === kind && a.mode === "craft";
 
+  // The reckless hands take the hack when it is offered; the careful ones
+  // never do. What the coin costs each is what the report compares.
+  if (policy === "ai" || policy === "mixed") {
+    const hack = actions.find((a) => a.type === "hack");
+    if (hack !== undefined) return hack;
+  }
+
   const ticket = currentTicket(state);
   const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
   const lowEnergy = state.player.energy <= 3;
@@ -392,6 +401,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
   let freeStreak = 0;
   let tierAt10 = -1;
   let alerts = 0;
+  let hacks = 0;
+  let hacksWon = 0;
 
   while (state.phase.kind !== "game_over" && turns < maxTurns) {
     const actions = getAvailableActions(state);
@@ -413,6 +424,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         pointsBought,
         moneyPeak,
         alerts,
+        hacks,
+        hacksWon,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -443,6 +456,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         pointsBought,
         moneyPeak,
         alerts,
+        hacks,
+        hacksWon,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -473,6 +488,10 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
       if (event.type === "upgrade_bought") upgrades += 1;
       if (event.type === "skill_point_bought") pointsBought += 1;
       if (event.type === "capacity_warning") alerts += 1;
+      if (event.type === "hack") {
+        hacks += 1;
+        if (event.success) hacksWon += 1;
+      }
       if (verbose && event.type === "month_closed") {
         const effects = gatherEffects(state);
         console.log(
@@ -513,6 +532,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
     pointsBought,
     moneyPeak,
     alerts,
+    hacks,
+    hacksWon,
     tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
   });
 }
@@ -628,7 +649,7 @@ function report(policy: string, outcomes: Outcome[]): void {
       .join(" ")}`,
   );
   console.log(
-    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}`,
+    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}  hacks avg ${mean(outcomes.map((o) => o.hacks)).toFixed(2)} won ${mean(outcomes.map((o) => o.hacksWon)).toFixed(2)}`,
   );
   console.log(
     `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,

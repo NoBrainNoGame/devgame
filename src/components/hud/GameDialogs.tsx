@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Fragment } from "react";
 
+import { FinanceChart } from "@/components/hud/FinanceChart";
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
@@ -182,11 +183,13 @@ export function RunOverDialog({
           <DialogDescription>
             {reason === "burnout"
               ? t("burnout")
-              : reason === "fired"
-                ? cause === undefined
-                  ? t("fired")
-                  : t(`firedBy.${cause}` as never)
-                : null}
+              : reason === "caught"
+                ? t("caught")
+                : reason === "fired"
+                  ? cause === undefined
+                    ? t("fired")
+                    : t(`firedBy.${cause}` as never)
+                  : null}
           </DialogDescription>
         </DialogHeader>
 
@@ -219,6 +222,10 @@ export function RunOverDialog({
               ))}
             </dl>
           </section>
+        )}
+
+        {snapshot.economy.history.length < 2 ? null : (
+          <FinanceChart history={snapshot.economy.history} />
         )}
 
         <dl className="grid grid-cols-2 gap-x-4 gap-y-1 border-line border-t pt-3 text-muted-foreground text-xs">

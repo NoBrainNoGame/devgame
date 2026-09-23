@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { FinanceChart } from "@/components/hud/FinanceChart";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,6 +163,13 @@ function Finances({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
+      <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm sm:col-span-2">
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {t("financeChart")}
+        </h3>
+        <FinanceChart history={economy.history} />
+      </section>
+
       <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
         <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("nextPayday")}

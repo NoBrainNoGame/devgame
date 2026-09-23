@@ -325,13 +325,38 @@ Sans superviseur, le coup prévu est de démarrer le plus ancien ticket quand
 rien n'est en main, et de souffler sinon ; dans les autres phases, c'est la
 réponse évidente — merger ce qui est accepté, continuer après un refus,
 résoudre un conflit à la main, prendre la première relique — pour qu'une run
-laissée seule ne cale jamais sur une question. Avec le superviseur IA acheté,
-elle joue le coup évident à la place — ouvrir la PR d'un ticket plein, relire,
-coder à la main tant que l'énergie tient. L'horloge attend pendant qu'une
+laissée seule ne cale jamais sur une question. Avec le **superviseur IA**
+acheté, elle joue à la place, et dit sous le panneau ce qu'elle va faire.
+Niveau 1 : le coup évident — ouvrir la PR d'un ticket plein, relire, coder à
+la main tant que l'énergie tient. Niveau 2 : il tient aussi le code — prend
+le hotfix qui attend, refactorise quand la prod ou la dette le disent,
+squashe à trois commits IA non relus, relit dès le premier. Niveau 3 : il
+dépense aussi — le barreau conseillé, le meilleur grade que la paie porte en
+gardant deux mois de factures, un point de compétence quand l'argent abonde.
+Il ne hacke jamais. L'horloge attend pendant qu'une
 fenêtre ouverte à la main a la parole et pendant que la review lit son
 verdict. Elle va à ×1, puis ×10 et ×100 quand l'arbre les débloque (Avance
 rapide). Ce sont des actions comme les autres, enregistrées dans le journal de
 la run ; rien dans le moteur ne lit l'horloge.
+
+**Alertes de capacité.** À la fin de chaque tour, une fois l'équipe passée,
+le jeu compare la capacité à la charge **projetée** (le mergé, plus les
+features ouvertes remplies aux trois quarts). À 80 % il prévient, au-delà
+il constate la saturation — une fois par montée de cran, dans le journal,
+en toast, et sur la puce d'argent — avec le **barreau conseillé** : le moins
+cher qui couvre le manque, sinon celui qui sert le plus d'utilisateurs par
+euro. Les Finances le répètent avec son bouton, et tracent la trésorerie et
+les revenus des soixante dernières paies en **échelle logarithmique**, un
+palier par pointillé, une panne par point.
+
+**Hacker le monde extérieur.** Une seule carte rouge, en tête du panneau, et
+seulement dans un moment très délicat : la patience de la prod à 85 %,
+ou plus d'énergie sous au moins deux tickets en trop, ou des serveurs saturés
+sans barreau abordable. Une tentative par sprint, un tour, pile ou face.
+Gagné, le hack rend ce qui manquait — quarante points de patience, l'énergie
+pleine, le barreau conseillé offert. Perdu, c'est un incident en prod, ou,
+quand c'était la patience, la fin de la run : pris la main dans le sac. Le
+superviseur ne le tente jamais.
 
 ## Événements et obstacles
 

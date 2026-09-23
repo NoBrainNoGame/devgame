@@ -1,5 +1,6 @@
 import { ACQUISITION_IDS, DEV_RANKS, TREE_IDS, UPGRADE_IDS } from "@/game/content";
 import { canAcquire } from "@/game/core/rules/acquisitions";
+import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { canReview } from "@/game/core/rules/review";
 import { canBuySkillPoint, canBuyUpgrade } from "@/game/core/rules/shop";
@@ -77,6 +78,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       for (const id of ACQUISITION_IDS) {
         if (canAcquire(state, id)) actions.push({ type: "acquire", id });
       }
+      if (hackOffer(state, effects) !== null) actions.push({ type: "hack" });
       return actions;
     }
 
@@ -130,6 +132,7 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "restart":
     case "resume":
     case "buy_point":
+    case "hack":
       return true;
   }
 }

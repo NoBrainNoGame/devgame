@@ -180,6 +180,10 @@ export function planBatch(
         flashAt(THEME.lane.hotfix);
         break;
 
+      case "hack":
+        flashAt(event.success ? THEME.lane.feature : THEME.lane.hotfix);
+        break;
+
       case "pr_rejected":
         if (!event.countered) flashAt(THEME.lane.hotfix);
         break;

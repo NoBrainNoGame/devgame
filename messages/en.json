@@ -105,7 +105,8 @@
       "staleForced": "Forced tickets",
       "devsLeft": "Developers who left",
       "moneyLost": "Revenue lost"
-    }
+    },
+    "caught": "Caught red-handed: the hack reached the board."
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -323,7 +324,38 @@
     "toastAdvice": "{upgrade} for {money}",
     "toastOpenShop": "Open the shop",
     "toastTier": "Tier {tier} reached",
-    "toastOutage": "Outage: {pct}% over capacity this month"
+    "toastOutage": "Outage: {pct}% over capacity this month",
+    "hack": {
+      "title": "Hack the outside world",
+      "patience": "Production has almost no patience left. Erase the quarter's incident tickets. A coin flip.",
+      "energy": "No energy and too many tickets. Run a script overnight on colleagues' accounts. A coin flip.",
+      "capacity": "Servers saturated, no money for a rung. Borrow a forgotten cloud account. A coin flip."
+    },
+    "toastHackWon": "The hack went through",
+    "toastHackLost": "The hack went wrong",
+    "supervisorWill": "Supervisor L{level}: {move}",
+    "supervisorMove": {
+      "merge": "merge the accepted PR",
+      "submit": "open the PR",
+      "resume": "resume the refused ticket",
+      "fix": "fix the flagged bug",
+      "review": "review the AI commits",
+      "start": "start the oldest ticket",
+      "craft": "code by hand",
+      "rest": "rest",
+      "hotfix": "take the hotfix",
+      "refactor": "refactor",
+      "squash": "squash the AI commits",
+      "buy": "buy the advised rung",
+      "hire": "hire",
+      "point": "buy a skill point"
+    },
+    "financeChart": "Cash and revenue, log scale",
+    "financeEmpty": "The chart draws itself at the first payday.",
+    "chartMoney": "cash",
+    "chartMrr": "monthly revenue",
+    "chartOutage": "outage",
+    "chartTier": "tier"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1008,7 +1040,8 @@
       "ticket_merged_dev": "{dev} merged their ticket on dev",
       "game_over": {
         "burnout": "out of energy, the run stops at {score}",
-        "fired": "fired, the run stops at {score}"
+        "fired": "fired, the run stops at {score}",
+        "caught": "caught red-handed, the run ends at {score}"
       },
       "monitoring_warning": "monitoring caught the bug before production did",
       "ticket_arrived": "new ticket in the backlog",
@@ -1023,7 +1056,8 @@
       "incident": {
         "commit": "bug in production, hotfix open",
         "release": "the release broke production, hotfix open",
-        "acquisition": "Production incident: what was just bought does not hold"
+        "acquisition": "Production incident: what was just bought does not hold",
+        "hack": "Production incident: the hack left traces"
       },
       "pr_accepted": "PR accepted, ticket merged into dev",
       "ticket_restarted": "branch thrown away, {count, plural, one {# commit} other {# commits}} fewer, starting again from dev",
@@ -1038,7 +1072,8 @@
         "stale": "production loses patience: +{delta} for the ticket left in the backlog ({value}/{max})",
         "outage": "production loses patience: +{delta} for the saturated servers ({value}/{max})",
         "idle_sprint": "production loses patience: +{delta}, nothing landed by your hand this sprint ({value}/{max})",
-        "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})"
+        "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})",
+        "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
@@ -1050,6 +1085,20 @@
         "warning_advised": "Servers about to saturate: {projected} users expected for {capacity} served — {upgrade} at {money}",
         "saturated": "Servers saturated: {projected} users for {capacity} served",
         "saturated_advised": "Servers saturated: {projected} users for {capacity} served — {upgrade} at {money}"
+      },
+      "hack": {
+        "patience": {
+          "won": "the quarter's incident tickets vanished from the tracker",
+          "lost": "the audit traced who erased the incident tickets"
+        },
+        "energy": {
+          "won": "a script runs overnight on colleagues' accounts, the sprint fills itself",
+          "lost": "the overnight script pushed to main, production went down"
+        },
+        "capacity": {
+          "won": "a cloud account a former client forgot serves the excess load",
+          "lost": "the borrowed cloud account was closed in the middle of the day"
+        }
       }
     },
     "notes": {
@@ -1095,7 +1144,18 @@
       "brings_features": "{count, plural, one {# shipped feature} other {# shipped features}} of {points} points",
       "brings_debt": "+{debt} debt",
       "brings_incident": "A production incident on arrival",
-      "already_acquired": "Already bought"
+      "already_acquired": "Already bought",
+      "hack_win": {
+        "patience": "Won: −40 patience lost",
+        "energy": "Won: full energy",
+        "capacity": "Won: the advised rung, for free"
+      },
+      "hack_lose": {
+        "patience": "Lost: caught red-handed, the run ends",
+        "energy": "Lost: a production incident",
+        "capacity": "Lost: a production incident"
+      },
+      "hack_unavailable": "Nothing to hack right now"
     },
     "tickets": {
       "feature": {

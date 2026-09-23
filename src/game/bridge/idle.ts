@@ -1,5 +1,5 @@
-import { chooseAutopilot } from "@/game/bridge/autopilot";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
+import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { actionKey } from "@/game/core/rules/preview";
 import type { PlayerAction } from "@/game/core/types";
 
@@ -30,7 +30,7 @@ export function idleTarget(snapshot: RunSnapshot): PlayerAction | undefined {
     case "game_over":
       return undefined;
     case "choose_action": {
-      if (snapshot.autopilot > 0) return legal(chooseAutopilot(snapshot));
+      if (snapshot.autopilot > 0) return legal(chooseSupervisor(snapshot)?.action);
       const inHand = snapshot.tickets.some((ticket) => ticket.id === snapshot.player.ticketId);
       if (!inHand) {
         const start = find((a) => a.type === "start");

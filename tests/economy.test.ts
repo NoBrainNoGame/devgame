@@ -100,6 +100,24 @@ describe("the month", () => {
     expect(report.lost).toBe(0);
   });
 
+  test("every payday is a month of history, and the history is capped", () => {
+    const state = inHand("history");
+    state.sprintTurn = monthTurns() - 1;
+    const after = applyAction(state, { type: "rest" }).state;
+    expect(after.finance.length).toBe(1);
+    expect(after.finance[0]?.month).toBe(1);
+    expect(after.finance[0]?.money).toBe(after.money);
+
+    const long = structuredClone(after);
+    for (let i = 0; i < BALANCE.economy.historyMonths + 5; i += 1) {
+      long.finance.push({ ...(after.finance[0] as (typeof after.finance)[number]), month: i + 2 });
+    }
+    long.sprintTurn = monthTurns() - 1;
+    const capped = applyAction(long, { type: "rest" }).state;
+    expect(capped.finance.length).toBe(BALANCE.economy.historyMonths);
+    expect(capped.finance[capped.finance.length - 1]?.month).toBe(capped.months);
+  });
+
   test("the payday lands in the bank, minus the subscriptions", () => {
     const state = inHand("payday");
     shipFeature(state, 10);

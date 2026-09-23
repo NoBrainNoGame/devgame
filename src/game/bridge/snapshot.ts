@@ -13,6 +13,7 @@ import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { type CapacityAdvice, capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
 import { monthlyReport, paydayIn, projectedLoadOf } from "@/game/core/rules/economy";
+import { hackOffer } from "@/game/core/rules/hack";
 import {
   type DebtView,
   debtView,
@@ -38,6 +39,8 @@ import type {
   ActionPreview,
   CapacityLevel,
   DevId,
+  FinanceMonth,
+  HackKind,
   MapNode,
   NodeId,
   Phase,
@@ -153,6 +156,8 @@ export interface EconomyView {
   advice: CapacityAdvice | null;
   /** Companies bought so far. */
   acquisitions: AcquisitionId[];
+  /** The last paydays, oldest first: what the chart draws. */
+  history: FinanceMonth[];
   /** Developers on the roster, and the seats there are for them. */
   seats: { used: number; max: number };
   /** What each rank costs to hire today, discounts included. */
@@ -199,6 +204,8 @@ export interface RunSnapshot {
   autopilot: number;
   /** How fast the idle clock may run: 0 = ×1, 1 = ×10, 2 = ×100. */
   idleSpeedTier: number;
+  /** The hack on offer, when the run is in a tight enough spot; null otherwise. */
+  hack: HackKind | null;
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -338,6 +345,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
           ? null
           : (capacityAdvice(state, effects, projected - report.capacity) ?? null),
       acquisitions: [...state.acquisitions],
+      history: state.finance.map((month) => ({ ...month })),
       hireCosts: Object.fromEntries(
         DEV_RANKS.map((rank) => [rank, hireCostFor(effects, rank)]),
       ) as Record<DevRank, number>,
@@ -345,6 +353,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     devs,
     autopilot: effects.autopilot,
     idleSpeedTier: effects.idleSpeedTier,
+    hack: hackOffer(state, effects),
 
     nodes,
     tickets,

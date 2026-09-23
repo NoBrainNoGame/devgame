@@ -18,6 +18,7 @@ import { LogDrawer } from "@/components/hud/LogDrawer";
 import { ResourceBar } from "@/components/hud/ResourceBar";
 import { ReviewDialog } from "@/components/hud/ReviewDialog";
 import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
+import { SupervisorLine } from "@/components/hud/SupervisorLine";
 import { TicketBar } from "@/components/hud/TicketBar";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -139,6 +140,7 @@ export function RunStage({
                 onAct={onAct}
                 onOpenBoard={() => setBoardOpen(true)}
               />
+              <SupervisorLine snapshot={snapshot} />
               <IdleControls />
               <IdleDriver paused={dialogOpen} onAct={onAct} />
             </>

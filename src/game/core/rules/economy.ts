@@ -169,4 +169,22 @@ export function closeMonth(context: RuleContext): void {
     salaries: paid,
     money: state.money,
   });
+
+  state.finance.push({
+    month: state.months,
+    sprint: state.sprint,
+    tier: state.tier,
+    money: state.money,
+    mrr: report.mrr,
+    revenue: report.revenue,
+    upkeep: report.upkeep,
+    salaries: paid,
+    net: report.revenue - report.upkeep - paid,
+    load: report.load,
+    capacity: report.capacity,
+    outage: report.overPct > 0,
+  });
+  if (state.finance.length > BALANCE.economy.historyMonths) {
+    state.finance.splice(0, state.finance.length - BALANCE.economy.historyMonths);
+  }
 }

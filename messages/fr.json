@@ -105,7 +105,8 @@
       "staleForced": "Tickets imposés",
       "devsLeft": "Développeurs partis",
       "moneyLost": "Revenus perdus"
-    }
+    },
+    "caught": "Pris la main dans le sac : le hack a été remonté à la direction."
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -323,7 +324,38 @@
     "toastAdvice": "{upgrade} pour {money}",
     "toastOpenShop": "Ouvrir la boutique",
     "toastTier": "Palier {tier} atteint",
-    "toastOutage": "Panne : {pct} % au-dessus de la capacité ce mois-ci"
+    "toastOutage": "Panne : {pct} % au-dessus de la capacité ce mois-ci",
+    "hack": {
+      "title": "Hacker le monde extérieur",
+      "patience": "La prod n'a presque plus de patience. Effacer les tickets d'incident du trimestre. Pile ou face.",
+      "energy": "Plus d'énergie et trop de tickets. Faire tourner un script la nuit sur les comptes des collègues. Pile ou face.",
+      "capacity": "Serveurs saturés, pas de quoi acheter. Emprunter un compte cloud oublié. Pile ou face."
+    },
+    "toastHackWon": "Le hack est passé",
+    "toastHackLost": "Le hack a mal tourné",
+    "supervisorWill": "Superviseur N{level} : {move}",
+    "supervisorMove": {
+      "merge": "merger la PR acceptée",
+      "submit": "ouvrir la PR",
+      "resume": "reprendre le ticket refusé",
+      "fix": "corriger le bug relevé",
+      "review": "relire les commits IA",
+      "start": "démarrer le plus ancien ticket",
+      "craft": "coder à la main",
+      "rest": "souffler",
+      "hotfix": "prendre le hotfix",
+      "refactor": "refactoriser",
+      "squash": "squasher les commits IA",
+      "buy": "acheter le barreau conseillé",
+      "hire": "embaucher",
+      "point": "acheter un point de compétence"
+    },
+    "financeChart": "Trésorerie et revenus, en échelle log",
+    "financeEmpty": "Le graphique se dessine à la première paie.",
+    "chartMoney": "trésorerie",
+    "chartMrr": "revenus mensuels",
+    "chartOutage": "panne",
+    "chartTier": "palier"
   },
   "leaderboard": {
     "title": "Classement",
@@ -1008,7 +1040,8 @@
       "ticket_merged_dev": "{dev} a mergé son ticket sur dev",
       "game_over": {
         "burnout": "plus d'énergie, la run s'arrête à {score}",
-        "fired": "licencié, la run s'arrête à {score}"
+        "fired": "licencié, la run s'arrête à {score}",
+        "caught": "pris la main dans le sac, la run s'arrête à {score}"
       },
       "monitoring_warning": "le monitoring a vu le bug avant la prod",
       "ticket_arrived": "nouveau ticket dans le backlog",
@@ -1023,7 +1056,8 @@
       "incident": {
         "commit": "bug en production, hotfix ouvert",
         "release": "la release a cassé la prod, hotfix ouvert",
-        "acquisition": "Incident en prod : ce qui vient d'être racheté ne tient pas"
+        "acquisition": "Incident en prod : ce qui vient d'être racheté ne tient pas",
+        "hack": "Incident en prod : le hack a laissé des traces"
       },
       "pr_accepted": "PR acceptée, ticket mergé sur dev",
       "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
@@ -1038,7 +1072,8 @@
         "stale": "la prod perd patience : +{delta} pour le ticket laissé au backlog ({value}/{max})",
         "outage": "la prod perd patience : +{delta} pour les serveurs saturés ({value}/{max})",
         "idle_sprint": "la prod perd patience : +{delta}, rien livré de votre main ce sprint ({value}/{max})",
-        "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})"
+        "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})",
+        "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
@@ -1050,6 +1085,20 @@
         "warning_advised": "Serveurs bientôt saturés : {projected} utilisateurs attendus pour {capacity} servis — {upgrade} à {money}",
         "saturated": "Serveurs saturés : {projected} utilisateurs pour {capacity} servis",
         "saturated_advised": "Serveurs saturés : {projected} utilisateurs pour {capacity} servis — {upgrade} à {money}"
+      },
+      "hack": {
+        "patience": {
+          "won": "les tickets d'incident du trimestre ont disparu du système de suivi",
+          "lost": "l'audit a remonté qui a effacé les tickets d'incident"
+        },
+        "energy": {
+          "won": "un script tourne la nuit sur les comptes des collègues, le sprint se remplit tout seul",
+          "lost": "le script de nuit a poussé sur main, la prod est tombée"
+        },
+        "capacity": {
+          "won": "un compte cloud oublié par un ancien client sert la charge en trop",
+          "lost": "le compte cloud emprunté a été fermé en pleine journée"
+        }
       }
     },
     "notes": {
@@ -1095,7 +1144,18 @@
       "brings_features": "{count, plural, one {# feature livrée} other {# features livrées}} de {points} points",
       "brings_debt": "+{debt} de dette",
       "brings_incident": "Un incident en prod à l'arrivée",
-      "already_acquired": "Déjà rachetée"
+      "already_acquired": "Déjà rachetée",
+      "hack_win": {
+        "patience": "Réussi : −40 de patience perdue",
+        "energy": "Réussi : énergie pleine",
+        "capacity": "Réussi : le barreau conseillé, offert"
+      },
+      "hack_lose": {
+        "patience": "Raté : pris la main dans le sac, fin de la run",
+        "energy": "Raté : un incident en prod",
+        "capacity": "Raté : un incident en prod"
+      },
+      "hack_unavailable": "Rien à hacker pour l'instant"
     },
     "tickets": {
       "feature": {

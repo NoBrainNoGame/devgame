@@ -15,6 +15,7 @@ import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
 import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { grantRelic } from "@/game/core/rules/grants";
+import { performHack } from "@/game/core/rules/hack";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
 import { gameOver, isOver } from "@/game/core/rules/over";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
@@ -142,6 +143,10 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
     case "acquire":
       acquire(context, action.id);
       return false;
+
+    case "hack":
+      performHack(context);
+      return true;
 
     case "resolve_conflict":
       resolveConflictPhase(context, action.how);
