@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Fragment } from "react";
 
+import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
@@ -269,7 +270,7 @@ export function RunOverDialog({
         <DialogHeader>
           <DialogTitle>{t("runOver")}</DialogTitle>
           <DialogDescription>
-            {snapshot.economy.tier >= 6 && reason !== null
+            {displayTier(snapshot) >= 6 && reason !== null
               ? t(`tiered.t6.${reason}` as never)
               : reason === "burnout"
                 ? t("burnout")

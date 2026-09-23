@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { displayTier } from "@/components/hud/displayTier";
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
@@ -35,7 +36,7 @@ export function ActionPanel({
   onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
-  const tiered = useTiered(snapshot.economy.tier);
+  const tiered = useTiered(displayTier(snapshot));
 
   if (snapshot.phase.kind !== "choose_action") return null;
 
@@ -142,7 +143,7 @@ export function ActionPanel({
           />
         )}
 
-        {snapshot.economy.tier < 4 ? null : <ReviewPolicySwitch snapshot={snapshot} />}
+        {displayTier(snapshot) < 4 ? null : <ReviewPolicySwitch snapshot={snapshot} />}
 
         {written.length === 0 ? null : (
           <>

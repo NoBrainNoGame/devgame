@@ -37,11 +37,11 @@
     "pillarReviewTitle": "La review tranche",
     "pillarReview": "Points pleins, le ticket part en review. Elle attrape les commits IA non relus, refuse une dette trop haute, et marque ce qu'il faudra corriger. Acceptée, c'est vous qui pressez le bouton de merge.",
     "pillarCompanyTitle": "L'entreprise grandit",
-    "pillarCompany": "Chaque feature livrée rapporte un revenu mensuel. Il paie des serveurs, des outils, des points de compétence et des développeurs qui prennent le backlog à votre place.",
+    "pillarCompany": "Chaque feature livrée rapporte un revenu mensuel. Il paie des serveurs, des sites, des rachats et des développeurs qui prennent le backlog à votre place — et la boîte monte des ordres de grandeur, jusqu'à l'étoile de la mort.",
     "howItWorksTitle": "Comment ça marche",
     "howItWorks1": "Ouvrez un ticket depuis le tableau du projet et remplissez ses points de story, commit par commit. Chaque carte affiche ses chances, son coût, ses points et sa dette avant le clic.",
     "howItWorks2": "Relisez, refactorez ce qui a coûté de la dette, corrigez ce que la review a marqué, puis mergez. Un ticket refusé fait ouvrir le prochain du backlog en parallèle : le sprint n'attend pas.",
-    "howItWorks3": "Tenez le plus de sprints possible. Le backlog grossit, les tickets oubliés vous sont imposés, et la run s'arrête en burnout ou quand la production vous vire.",
+    "howItWorks3": "Tenez le plus de sprints possible. Le backlog grossit, les bugs clients ont une date, les concurrents grandissent, quelqu'un pose des questions, et la run s'arrête en burnout ou quand la production vous vire.",
     "endingsTitle": "Deux façons de perdre",
     "endings": "Le burnout est la fin du joueur qui tient trop de choses à la fois : plus d'énergie, et un tableau trop chargé pour souffler. Le licenciement est celle du joueur trop lent ou trop sale : bugs en production, PR refusées et tickets laissés à traîner remplissent la patience de la prod. Un sprint propre la fait baisser. Rien n'est caché : les deux jauges sont à l'écran en permanence.",
     "dailyTitle": "Graine du jour",
@@ -1196,7 +1196,7 @@
         }
       },
       "deadline_missed": {
-        "cancelled": "bug client non traité : le client est parti, la prod s'en souvient",
+        "cancelled": "ticket daté non traité : le client est parti, on s'en souviendra",
         "late": "bug client en retard : la prod ne dira pas merci",
         "vip": "demande VIP en retard : le contrat vaut moitié moins"
       },

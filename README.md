@@ -58,6 +58,23 @@ them alone — one at a time for a junior, two for a mid, three for a senior —
 and leave if you cannot pay them. A four-branch **skill tree** (CI/CD, DevOps,
 Management, Profile) spends the points a sprint earns.
 
+**Orders of magnitude.** The run climbs tiers on what it has earned: a
+thousand euros, then ten times that, up to six. Each tier's features earn
+and weigh five times more, the shop shows one greyed rung of the next tier
+(servers → datacenter → region → orbital station → Dyson swarm → Death Star),
+sites bring their teams, companies can be bought, and a share of a market
+with eight competitors on it sets what the features really earn. The look
+follows: four key palettes, interpolated, never a switch.
+
+**Never the same sprint.** Customers' bugs with a deadline, VIP requests the
+team will not take, the codebase asking for its own refactor, migrations
+that cost debt and buy servers. A sprint objective drawn at every start.
+Eleven things that happen to the company and ask it a question — a client,
+a competitor, the press, the regulator, and from the fourth tier the system
+itself. From the third tier the log has a voice of its own, and the words
+on the buttons glide with the tier. Nothing says what the company is;
+everything lets you read it.
+
 **Measured, not guessed.** `bun run sim` plays hundreds of headless runs per
 policy. The current numbers give every way of playing both endings: the
 machine played with reviews delivers the most and gets fired for it, the

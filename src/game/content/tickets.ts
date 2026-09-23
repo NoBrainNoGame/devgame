@@ -96,7 +96,8 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     earnsMrr: true,
     grantsSkill: true,
     deadlineSprints: 1,
-    forcedWhenStale: true,
+    // Gone with its deadline, so it is never around to be forced.
+    forcedWhenStale: false,
   },
   /** The codebase asking for a refactor of its own accord. Never forced. */
   debt: {

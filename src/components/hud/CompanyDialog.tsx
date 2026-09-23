@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { ticketName } from "@/components/hud/ticketName";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
@@ -62,7 +63,7 @@ export function CompanyDialog({
 }) {
   const t = useTranslations("hud");
   const money = useMoney();
-  const tiered = useTiered(snapshot.economy.tier);
+  const tiered = useTiered(displayTier(snapshot));
   const { economy } = snapshot;
 
   return (

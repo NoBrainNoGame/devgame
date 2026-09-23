@@ -2,10 +2,11 @@ import { RELIC_IDS, type RelicId, type SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { closeMonth } from "@/game/core/rules/economy";
+import { closeMonth, loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
 import { grantSkillPoints } from "@/game/core/rules/grants";
+import { adjustShare } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { maybeNarrative } from "@/game/core/rules/narrative";
 import { drawObjective, settleObjective } from "@/game/core/rules/objectives";
@@ -101,14 +102,19 @@ function settleDeadlines(context: RuleContext): void {
     delete ticket.deadlineSprint;
     ticket.late = true;
 
-    const cancelled = ticket.kind === "client_bug" && ticket.status === "backlog";
+    // Untouched in the backlog, a dated ticket is gone: the customer went
+    // elsewhere. Already in hand, it stays, worth less.
+    const cancelled = ticket.status === "backlog";
     if (cancelled) ticket.status = "cancelled";
-    if (ticket.kind === "vip") ticket.mrr = Math.floor(ticket.mrr / 2);
+    if (ticket.kind === "vip" && !cancelled) ticket.mrr = Math.floor(ticket.mrr / 2);
     emit(context, { type: "deadline_missed", ticketId: ticket.id, kind: ticket.kind, cancelled });
 
     if (ticket.kind === "client_bug") {
       raiseQuality(context, BALANCE.tickets.kinds.clientBug.patienceOnMiss, "deadline");
       if (isOver(context)) return;
+    }
+    if (ticket.kind === "vip" && cancelled) {
+      adjustShare(context, -BALANCE.market.vipShare, mrrOf(state, context.effects), loadOf(state));
     }
   }
 }

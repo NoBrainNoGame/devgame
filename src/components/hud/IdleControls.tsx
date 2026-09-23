@@ -3,6 +3,7 @@
 import { Pause, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { displayTier } from "@/components/hud/displayTier";
 import { IDLE_SECONDS } from "@/components/hud/IdleDriver";
 import { IDLE_SPEEDS, useIdleStore } from "@/components/hud/idleStore";
 import { useIdleSettings } from "@/components/hud/useIdleSettings";
@@ -20,7 +21,8 @@ export function IdleControls(): React.JSX.Element {
   const t = useTranslations("hud");
   const [idle, setIdle] = useIdleSettings();
   const tier = useGameStore((state) => state.snapshot?.idleSpeedTier ?? 0);
-  const tiered = useTiered(useGameStore((state) => state.snapshot?.economy.tier ?? 0));
+  const snapshot = useGameStore((state) => state.snapshot);
+  const tiered = useTiered(snapshot === null ? 0 : displayTier(snapshot));
   const hydrated = useIdleStore((state) => state.hydrated);
   const effective = idleSpeedAllowed(tier, idle.speed) ? idle.speed : 1;
 

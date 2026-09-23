@@ -372,7 +372,7 @@ export function toLogLine(
         turn,
         kind: "revert",
         text: text(
-          `log.deadline_missed.${event.kind === "vip" ? "vip" : event.cancelled ? "cancelled" : "late"}`,
+          `log.deadline_missed.${event.cancelled ? "cancelled" : event.kind === "vip" ? "vip" : "late"}`,
         ),
       };
 

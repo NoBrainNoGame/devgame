@@ -3,6 +3,7 @@
 import { Building2, GitBranchPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { displayTier } from "@/components/hud/displayTier";
 import { useMoney } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export function ResourceBar({
   const game = useTranslations("game");
   const money = useMoney();
   const common = useTranslations("common");
-  const tiered = useTiered(snapshot.economy.tier);
+  const tiered = useTiered(displayTier(snapshot));
 
   const { player, debt, economy } = snapshot;
   const saturated = economy.load > economy.capacity;

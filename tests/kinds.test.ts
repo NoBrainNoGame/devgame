@@ -106,15 +106,25 @@ describe("ticket kinds", () => {
     const landed = land(onTime.state, onTime.ticket);
     expect(landed.state.money - money).toBe(BALANCE.tickets.kinds.vip.bonus);
 
+    // In hand past its sprint: kept, at half the revenue. Untouched: gone,
+    // and the customers remember.
     const late = withKind("vip-late", "vip");
     late.ticket.deadlineSprint = late.state.sprint;
+    late.ticket.status = "open";
     late.state.sprintTurn = BALANCE.sprint.turns - 1;
     const mrr = late.ticket.mrr;
     const { state: after } = applyAction(late.state, { type: "rest" });
     const stale = after.tickets[late.ticket.id];
     expect(stale?.late).toBe(true);
     expect(stale?.mrr).toBe(Math.floor(mrr / 2));
-    expect(stale?.status).toBe("backlog");
+    expect(stale?.status).toBe("open");
+
+    const ignored = withKind("vip-ignored", "vip");
+    ignored.ticket.deadlineSprint = ignored.state.sprint;
+    ignored.state.sprintTurn = BALANCE.sprint.turns - 1;
+    const { state: gone, events: goneEvents } = applyAction(ignored.state, { type: "rest" });
+    expect(gone.tickets[ignored.ticket.id]?.status).toBe("cancelled");
+    expect(eventsOfType(goneEvents, "share_changed")[0]?.delta).toBe(-BALANCE.market.vipShare);
 
     const team = withKind("vip-team", "vip");
     team.state.money = 1000;
