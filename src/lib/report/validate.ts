@@ -22,10 +22,13 @@ export const REPORT_LIMITS = {
 
 /** Drops control characters that have no business in a report, keeps line breaks. */
 export function cleanText(value: string): string {
-  return value
-    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
-    .replace(/\r\n?/g, "\n")
-    .trim();
+  let out = "";
+  for (const char of value.replace(/\r\n?/g, "\n")) {
+    const code = char.codePointAt(0) ?? 0;
+    const control = (code < 0x20 && code !== 0x0a && code !== 0x09) || code === 0x7f;
+    if (!control) out += char;
+  }
+  return out.trim();
 }
 
 export const ReportInputSchema = z.object({
