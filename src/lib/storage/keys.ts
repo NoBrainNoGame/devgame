@@ -11,3 +11,12 @@ export const STORAGE_KEYS = {
   /** The idle clock: on or off, and how fast. A viewer preference, never synced. */
   idle: "devgame:idle:v1",
 } as const;
+
+/**
+ * `sessionStorage`, which lives as long as the tab. One flag: whether this
+ * tab has already counted as a visit, so the page-view counter can tell a
+ * visit from a page view without a cookie.
+ */
+export const SESSION_KEYS = {
+  visited: "devgame:visited:v1",
+} as const;

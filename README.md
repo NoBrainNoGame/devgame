@@ -75,6 +75,12 @@ itself. From the third tier the log has a voice of its own, and the words
 on the buttons glide with the tier. Nothing says what the company is;
 everything lets you read it.
 
+**What the site keeps, and what it does not.** A page-view counter with
+nobody in it: a day, a page from a closed list, a language, two counts.
+No cookie, no address, no click. A signed-in player can report a bug from
+the account menu — bounded fields, a honeypot, a human pace, a few an hour
+— and the report is read in the local admin panel, never on the site.
+
 **Measured, not guessed.** `bun run sim` plays hundreds of headless runs per
 policy. The current numbers give every way of playing both endings: the
 machine played with reviews delivers the most and gets fired for it, the
@@ -109,9 +115,17 @@ Postgres container from `docker-compose.yml`, waits for it, applies the
 migrations and generates the client.
 
 ```bash
-bun run init                # .env + Docker + migrations
+bun run init                # .env + Docker + migrations + the admin panel
 bun run dev                 # http://localhost:3000
 ```
+
+The admin panel is a small server of its own on http://127.0.0.1:3100,
+started with the database by `bun run init` and `bun run db:up`, behind
+the `ADMIN_PASSWORD` the `.env` carries: visit counts, accounts (ban,
+delete), bug reports. It listens on the loopback address only and reads
+whatever `DATABASE_URL` points at, so a machine set up against the
+production database administers production. `bun run admin` runs it in the
+foreground, `bun run admin:stop` ends the background one.
 
 `bun run init --offline` writes a `.env` for the offline game only,
 `--no-docker` writes the file and stops there, `--force` overwrites an
@@ -151,7 +165,10 @@ bun run check       # typecheck + lint + tests — run this before you are done
 bun run dev         # dev server
 bun run build       # production build
 bun run sim         # headless balance simulator (scripts/sim.ts)
-bun run init        # .env with dev values, Postgres container, migrations (scripts/init.ts)
+bun run init        # .env with dev values, Postgres container, migrations, admin panel (scripts/init.ts)
+bun run db:up       # Postgres container, then the admin panel in the background
+bun run admin       # the admin panel in the foreground, http://127.0.0.1:3100
+bun run admin:stop  # end the background admin panel
 bun run db:up       # start Postgres (POSTGRES_PORT=5500 to move the port)
 bun run db:migrate  # create and apply a migration
 bun run db:deploy   # apply committed migrations

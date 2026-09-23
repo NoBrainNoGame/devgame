@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
 import { Header } from "@/components/shell/Header";
+import { VisitBeacon } from "@/components/shell/VisitBeacon";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
@@ -109,6 +110,7 @@ export default async function LocaleLayout({
           </TooltipProvider>
         </NextIntlClientProvider>
         <Toaster position="bottom-right" />
+        {env.ONLINE ? <VisitBeacon /> : null}
       </body>
     </html>
   );

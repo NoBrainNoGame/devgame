@@ -103,6 +103,29 @@ SELECT indexdef FROM pg_indexes WHERE indexname = 'Run_one_in_progress';
 
 Nothing returned means the invariant is gone.
 
+## `VisitDay` counts pages, not people
+
+One row per UTC day, route and language, with two integers: views, and
+visits (the first view of a browser tab). The route comes from the closed
+list in `src/lib/visits/paths.ts`; anything else is `/other`. Nothing about
+the visitor is in the row or was read to write it — no cookie, no address —
+and a browser sending Global Privacy Control is not counted. The beacon
+route answers 204 whatever happens.
+
+## `BugReport` is text, kept as text
+
+A signed-in player's report: title, body, page from the same closed list,
+optional seed, a status and an administrator's note. Bounded on every
+column, validated in `src/lib/report/validate.ts` before Prisma sees it, and
+rendered as text everywhere. Deleted with the account.
+
+## `Profile.bannedAt` is the one moderation tool
+
+Set from the local admin panel. A banned profile keeps the account and the
+game: `submitRun` refuses its scores, the leaderboard queries filter it
+out (`p."bannedAt" IS NULL`), and it cannot file reports. Nothing else in
+the app reads it.
+
 ## `Profile.metaVersion` is an optimistic lock
 
 Meta-progression is written from whichever device the player last used, and the

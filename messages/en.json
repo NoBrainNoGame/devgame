@@ -20,7 +20,8 @@
     "play": "Play",
     "leaderboard": "Leaderboard",
     "profile": "Profile",
-    "home": "Home"
+    "home": "Home",
+    "report": "Report a bug"
   },
   "landing": {
     "title": "Devgame",
@@ -565,7 +566,7 @@
       "title": "Privacy policy",
       "description": "What the site stores, why, and how to have it erased.",
       "summaryTitle": "In short",
-      "summaryI1": "No analytics, no advertising, no tracker, no third-party embed.",
+      "summaryI1": "A minimal audience count: page views per day, with no cookie, no address, no identifier. No advertising, no tracker, no embedded third-party content.",
       "summaryI2": "Signed out, nothing leaves your browser and no cookie is set.",
       "summaryI3": "Signed in: your email address, your progress and your runs.",
       "summaryI4": "The only cookie, if you sign in, is your session cookie.",
@@ -606,7 +607,12 @@
       "rightsP3": "Deleting the account cascades to the profile and to every run; the matching rows leave the leaderboard with them.",
       "rightsP4": "If you disagree with how this is handled, you can complain to the CNIL (cnil.fr).",
       "changesTitle": "Changes",
-      "changesP1": "This page can change. The date at the top is the latest version."
+      "changesP1": "This page can change. The date at the top is the latest version.",
+      "audienceTitle": "Audience measurement",
+      "audienceP1": "On every page opened, the browser sends the server three values: the page (from a closed list), the language, and whether it is this tab's first page. The server adds one to a daily counter. Nothing else is sent or kept: no IP address, no browser, no identifier, and no cookie is set.",
+      "audienceP2": "To tell a visit from a page view, a flag is written to the tab's session storage under the key devgame:visited:v1; it goes with the tab. A browser sending the Global Privacy Control signal is not counted at all. Clicks are not measured.",
+      "reportsTitle": "Bug reports",
+      "reportsP1": "A signed-in account may report a bug: a title, a description, the page and, if given, a run's seed, attached to the account. Reports are read by the publisher and never published; they are deleted with the account."
     },
     "terms": {
       "title": "Terms of use",
@@ -654,7 +660,8 @@
     "conflict": "Another session took over. Reload to see the current state.",
     "internal": "Server error. Try again in a moment.",
     "offline": "Offline. The run continues locally and will sync later.",
-    "unknown": "Unknown error. Try again."
+    "unknown": "Unknown error. Try again.",
+    "suspended": "This account is suspended: no leaderboard, no reports."
   },
   "game": {
     "skills": {
@@ -1827,6 +1834,25 @@
         "review_policy": "review: this instance. objections: 0.",
         "channel_closed": "operator channel: closed. last message: none."
       }
+    }
+  },
+  "report": {
+    "title": "Report a bug",
+    "intro": "Say what happened, on which page, and if you can the run's seed (it is shown when a run starts). The publisher reads reports; none is published.",
+    "fieldTitle": "In one line",
+    "fieldBody": "What happened, what you expected",
+    "fieldPage": "Page",
+    "pageAny": "Any",
+    "fieldSeed": "Run seed (optional)",
+    "send": "Send",
+    "sent": "Thanks, noted.",
+    "suspended": "This account is suspended: it can no longer send reports.",
+    "mine": "Your reports",
+    "mineEmpty": "None yet.",
+    "status": {
+      "open": "open",
+      "acknowledged": "acknowledged",
+      "closed": "closed"
     }
   }
 }

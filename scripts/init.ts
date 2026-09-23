@@ -1,7 +1,15 @@
 import { randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
+
+import {
+  CONTAINER,
+  requireDocker,
+  run,
+  startAdminInBackground,
+  waitForPostgres,
+} from "./lib/local";
 
 /**
  * Sets a fresh machine up for the online version of the site.
@@ -11,6 +19,10 @@ import { dirname, resolve } from "node:path";
  *   bun run init --no-docker     write .env, skip Docker and the migrations
  *   bun run init --force         overwrite an existing .env
  *
+ * With Docker, it ends by starting the local admin panel in the background
+ * (`bun run admin:stop` ends it), on the port and behind the password the
+ * `.env` carries.
+ *
  * The values are for development on this machine and nothing else: a local
  * Postgres from `docker-compose.yml`, secrets drawn at random, no OAuth. The
  * variables mirror `src/lib/env.ts`, which is the one place that decides what
@@ -18,7 +30,6 @@ import { dirname, resolve } from "node:path";
  */
 
 const ENV_PATH = resolve(process.cwd(), ".env");
-const CONTAINER = "devgame-postgres";
 const DEFAULT_PORT = "5443";
 
 export interface InitOptions {
@@ -73,39 +84,12 @@ DAILY_SEED_SECRET="${secret()}"
 # the only way to sign in.
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
+
+# The local administration panel (\`bun run admin\`, started with the database):
+# its password, and the port it listens on, on this machine only.
+ADMIN_PASSWORD="${secret().slice(0, 24)}"
+ADMIN_PORT=3100
 `;
-}
-
-async function run(command: string[], options: { allowFailure?: boolean } = {}): Promise<number> {
-  console.log(`$ ${command.join(" ")}`);
-  const child = Bun.spawn(command, { stdout: "inherit", stderr: "inherit", stdin: "inherit" });
-  const code = await child.exited;
-  if (code !== 0 && options.allowFailure !== true) {
-    throw new Error(
-      `${command[0]} exited with ${code}. Fix that, then run \`bun run init\` again.`,
-    );
-  }
-  return code;
-}
-
-async function healthOf(container: string): Promise<string> {
-  const child = Bun.spawn(
-    ["docker", "inspect", "--format", "{{.State.Health.Status}}", container],
-    { stdout: "pipe", stderr: "pipe" },
-  );
-  const text = await new Response(child.stdout).text();
-  await child.exited;
-  return text.trim();
-}
-
-async function waitForPostgres(): Promise<void> {
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    if ((await healthOf(CONTAINER)) === "healthy") return;
-    await Bun.sleep(1000);
-  }
-  throw new Error(
-    `${CONTAINER} did not become healthy in a minute. \`docker compose logs postgres\` says why.`,
-  );
 }
 
 export async function init(options: InitOptions): Promise<void> {
@@ -126,12 +110,7 @@ export async function init(options: InitOptions): Promise<void> {
     return;
   }
 
-  const probe = await run(["docker", "info"], { allowFailure: true });
-  if (probe !== 0) {
-    throw new Error(
-      "Docker is not running. Start Docker Desktop (or the daemon), then `bun run init` again; the .env is already written.",
-    );
-  }
+  await requireDocker();
   await run(["docker", "compose", "up", "-d"]);
   console.log(`Waiting for ${CONTAINER} to be healthy…`);
   await waitForPostgres();
@@ -140,6 +119,11 @@ export async function init(options: InitOptions): Promise<void> {
   // nothing.
   await run(["bun", "x", "prisma", "migrate", "deploy"]);
   await run(["bun", "x", "prisma", "generate"]);
+  // The panel reads the .env just written; a freshly generated file has a
+  // password in it, an older one may not.
+  const written = await readFile(options.target, "utf8");
+  const port = Number(written.match(/^ADMIN_PORT=(\d+)/m)?.[1] ?? "3100");
+  if (/^ADMIN_PASSWORD="[^"]{12,}"/m.test(written)) await startAdminInBackground(port);
   console.log(
     "Ready: `bun run dev` then http://localhost:3000. The magic link is printed to this terminal.",
   );

@@ -50,6 +50,10 @@ model Profile {
   /// { settings, statPoints, unspentStatPoints, version } — same DTO.
   settings     Json     @default("{}")
   metaVersion  Int      @default(1)
+  /// Set by an administrator. A banned player keeps the account and the game,
+  /// and loses the board and the bug reports: nothing they submit is scored.
+  bannedAt     DateTime?
+  banReason    String?  @db.VarChar(200)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -106,6 +110,48 @@ model Run {
   @@index([profileId, fingerprint])
 }
 
+/// Page views, a day at a time. No visitor in it at all: a day, a page, a
+/// language, and two counts — views, and visits (the first view of a browser
+/// tab). No cookie, no address, no identifier is read or kept to fill it.
+model VisitDay {
+  day    DateTime @db.Date
+  path   String   @db.VarChar(64)
+  locale String   @db.VarChar(8)
+  views  Int      @default(0)
+  visits Int      @default(0)
+
+  @@id([day, path, locale])
+}
+
+enum ReportStatus {
+  open
+  acknowledged
+  closed
+}
+
+/// A bug a signed-in player reported. Plain text, rendered as text: what is
+/// typed is stored, never interpreted.
+model BugReport {
+  id        String       @id @default(cuid())
+  userId    String
+  title     String       @db.VarChar(120)
+  body      String       @db.VarChar(4000)
+  /// The page it happened on, as the site names its routes.
+  page      String?      @db.VarChar(64)
+  /// The run's seed, when the player gives it.
+  seed      String?      @db.VarChar(64)
+  status    ReportStatus @default(open)
+  /// An administrator's note; never shown to the player.
+  note      String?      @db.VarChar(1000)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+}
+
 /// Memoised daily seeds. Deriving is a pure HMAC of the date, but storing the
 /// result keeps yesterday's boards stable if `DAILY_SEED_SECRET` ever rotates.
 model DailySeed {
@@ -130,6 +176,7 @@ model User {
   sessions Session[]
   accounts Account[]
   profile  Profile?
+  reports  BugReport[]
 
   @@map("user")
 }

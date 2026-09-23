@@ -68,6 +68,15 @@ export default async function PrivacyPage(): Promise<React.JSX.Element> {
         <P>{t("publicP2")}</P>
       </Section>
 
+      <Section title={t("audienceTitle")}>
+        <P>{t("audienceP1")}</P>
+        <P>{t("audienceP2")}</P>
+      </Section>
+
+      <Section title={t("reportsTitle")}>
+        <P>{t("reportsP1")}</P>
+      </Section>
+
       <Section title={t("cookiesTitle")}>
         <P>{t("cookiesP1")}</P>
         <P>{t("cookiesP2")}</P>

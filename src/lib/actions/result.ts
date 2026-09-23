@@ -15,6 +15,7 @@ export type ActionErrorCode =
   | "rate-limited"
   | "rejected"
   | "conflict"
+  | "suspended"
   | "internal";
 
 export interface ActionError {

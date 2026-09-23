@@ -206,6 +206,12 @@ worst minute.
 
 ## What gates what
 
+`ADMIN_PASSWORD` and `ADMIN_PORT` are never set on the server: the admin
+panel (`bun run admin`) is a local process that reads the same
+`DATABASE_URL` from a developer's machine and binds to the loopback
+address. Administering production means pointing a local `.env` at the
+production database, on a machine you trust.
+
 The app boots with `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CRON_SECRET` and
 `DAILY_SEED_SECRET`. Everything else degrades on purpose — but one gap is worth
 knowing before you call a deployment done:

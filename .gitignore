@@ -45,3 +45,7 @@ next-env.d.ts
 
 # Prisma's generated client — recreated by `bun x prisma generate`
 /src/generated
+
+# local admin panel, started by `bun run db:up`
+.admin.pid
+.admin.log

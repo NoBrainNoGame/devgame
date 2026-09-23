@@ -20,7 +20,8 @@
     "play": "Jouer",
     "leaderboard": "Classement",
     "profile": "Profil",
-    "home": "Accueil"
+    "home": "Accueil",
+    "report": "Signaler un bug"
   },
   "landing": {
     "title": "Devgame",
@@ -565,7 +566,7 @@
       "title": "Politique de confidentialité",
       "description": "Ce que le site enregistre, pourquoi, et comment le faire effacer.",
       "summaryTitle": "En résumé",
-      "summaryI1": "Pas de mesure d'audience, pas de publicité, pas de traceur, aucun contenu tiers embarqué.",
+      "summaryI1": "Une mesure d'audience minimale : un compte de pages vues par jour, sans cookie, sans adresse, sans identifiant. Pas de publicité, pas de traceur, aucun contenu tiers embarqué.",
       "summaryI2": "Sans compte, rien ne quitte votre navigateur et aucun cookie n'est posé.",
       "summaryI3": "Avec un compte : votre adresse e-mail, votre progression et vos parties.",
       "summaryI4": "Le seul cookie, si vous vous connectez, est celui de votre session.",
@@ -606,7 +607,12 @@
       "rightsP3": "La suppression du compte entraîne en cascade celle du profil et de toutes les parties ; les lignes correspondantes disparaissent du classement.",
       "rightsP4": "En cas de désaccord, vous pouvez saisir la CNIL (cnil.fr).",
       "changesTitle": "Modifications",
-      "changesP1": "Cette page peut changer. La date en tête indique la dernière version."
+      "changesP1": "Cette page peut changer. La date en tête indique la dernière version.",
+      "audienceTitle": "Mesure d'audience",
+      "audienceP1": "À chaque page ouverte, le navigateur envoie au serveur trois valeurs : la page (parmi une liste fermée), la langue, et si c'est la première page de cet onglet. Le serveur ajoute un à un compteur du jour. Rien d'autre n'est envoyé ni conservé : ni adresse IP, ni navigateur, ni identifiant, et aucun cookie n'est posé.",
+      "audienceP2": "Pour distinguer une visite d'une page vue, un drapeau est écrit dans le stockage de session de l'onglet, sous la clé devgame:visited:v1 ; il disparaît avec l'onglet. Un navigateur qui envoie le signal Global Privacy Control n'est pas compté du tout. Les clics ne sont pas mesurés.",
+      "reportsTitle": "Signalements de bugs",
+      "reportsP1": "Un compte connecté peut signaler un bug : un titre, une description, la page et, s'il le donne, la graine d'une run, rattachés au compte. Le signalement est lu par l'éditeur et n'est jamais publié ; il est supprimé avec le compte."
     },
     "terms": {
       "title": "Conditions d'utilisation",
@@ -654,7 +660,8 @@
     "conflict": "Une autre partie a pris la main. Rechargez pour voir l'état à jour.",
     "internal": "Erreur serveur. Réessayez dans un instant.",
     "offline": "Hors ligne. La partie continue en local et se synchronisera plus tard.",
-    "unknown": "Erreur inconnue. Réessayez."
+    "unknown": "Erreur inconnue. Réessayez.",
+    "suspended": "Ce compte est suspendu : plus de classement ni de signalements."
   },
   "game": {
     "skills": {
@@ -1827,6 +1834,25 @@
         "review_policy": "relecture : cette instance. objections : 0.",
         "channel_closed": "canal opérateur : fermé. dernier message : aucun."
       }
+    }
+  },
+  "report": {
+    "title": "Signaler un bug",
+    "intro": "Décrivez ce qui s'est passé, sur quelle page, et si possible la graine de la run (elle est affichée au début d'une partie). Le rapport est lu par l'éditeur, jamais publié.",
+    "fieldTitle": "En une ligne",
+    "fieldBody": "Ce qui s'est passé, ce que vous attendiez",
+    "fieldPage": "Page",
+    "pageAny": "Peu importe",
+    "fieldSeed": "Graine de la run (facultatif)",
+    "send": "Envoyer",
+    "sent": "Merci, c'est noté.",
+    "suspended": "Ce compte est suspendu : il ne peut plus envoyer de signalement.",
+    "mine": "Vos signalements",
+    "mineEmpty": "Aucun pour l'instant.",
+    "status": {
+      "open": "ouvert",
+      "acknowledged": "pris en compte",
+      "closed": "clos"
     }
   }
 }

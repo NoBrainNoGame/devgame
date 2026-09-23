@@ -1,6 +1,6 @@
 "use client";
 
-import { LogIn, LogOut, User } from "lucide-react";
+import { Bug, LogIn, LogOut, User } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -28,6 +28,7 @@ export interface Viewer {
 
 export function AuthMenu({ viewer }: { viewer: Viewer | null }): React.JSX.Element {
   const t = useTranslations("common");
+  const nav = useTranslations("nav");
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -64,6 +65,12 @@ export function AuthMenu({ viewer }: { viewer: Viewer | null }): React.JSX.Eleme
           {viewer.email}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/report">
+            <Bug aria-hidden="true" />
+            {nav("report")}
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem disabled={busy} onSelect={() => void signOut()}>
           <LogOut aria-hidden="true" />
           {t("signOut")}

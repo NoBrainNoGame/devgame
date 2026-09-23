@@ -50,6 +50,16 @@ const schema = z
     CRON_SECRET: secret("CRON_SECRET"),
 
     /**
+     * The local administration panel (`bun run admin`): the password that
+     * opens it, and the port it listens on. Absent, the panel refuses to
+     * start. Read here so that even a script goes through this file.
+     */
+    ADMIN_PASSWORD: optionalString.refine((value) => value === undefined || value.length >= 12, {
+      message: "ADMIN_PASSWORD must be at least 12 characters",
+    }),
+    ADMIN_PORT: z.coerce.number().int().min(1).max(65535).default(3100),
+
+    /**
      * Keys the daily seed. Changing it changes every future daily; past dailies
      * keep the seed memoised in the `DailySeed` table, so boards stay comparable.
      */

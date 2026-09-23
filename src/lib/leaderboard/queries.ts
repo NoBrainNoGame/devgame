@@ -78,6 +78,7 @@ async function bestPerPlayer(
       FROM "Run" r
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
+        AND p."bannedAt" IS NULL
         AND r."rulesEpoch" = ${RULES_EPOCH}
         AND r."mode" = ${mode}::"RunMode"
         AND (${day}::date IS NULL OR r."dailyDate" = ${day}::date)
@@ -158,6 +159,7 @@ async function viewerBest(
       FROM "Run" r
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
+        AND p."bannedAt" IS NULL
         AND r."rulesEpoch" = ${RULES_EPOCH}
         AND r."mode" = ${mode}::"RunMode"
         AND (${day}::date IS NULL OR r."dailyDate" = ${day}::date)

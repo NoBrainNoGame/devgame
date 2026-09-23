@@ -147,6 +147,8 @@ export async function submitRun(input: unknown): Promise<ActionResult<SubmitResu
 
     const profile = await prisma.profile.findUnique({ where: { userId } });
     if (profile === null) return fail("rejected", "Sync your progress first");
+    // Suspended: the game goes on, the board does not.
+    if (profile.bannedAt !== null) return fail("suspended", "This account is suspended");
 
     const stored = toMeta(profile);
 
