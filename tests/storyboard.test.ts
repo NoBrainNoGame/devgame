@@ -104,12 +104,11 @@ describe("the storyboard", () => {
         reveal.showAll(batch.before);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
-        // The commit's own node, if it landed: the first one written before
-        // the turn ends. A release written by the sprint closing in the same
-        // batch is somebody else's commit.
-        const turnEnd = batch.events.findIndex((e) => e.type === "turn_started");
+        // The commit's own node, if it landed: the one the head moved to. A
+        // team's commit or a release written in the same batch is somebody
+        // else's.
         const done = batch.events.find(
-          (e, index) => e.type === "node_done" && (turnEnd === -1 || index < turnEnd),
+          (e) => e.type === "node_done" && e.nodeId === headOf(batch.after).id,
         );
         const spent = batch.events.find((e) => e.type === "energy" && e.reason === "commit");
         if (spent === undefined) continue;

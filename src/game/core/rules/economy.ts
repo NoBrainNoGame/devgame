@@ -105,7 +105,9 @@ export function monthlyReport(state: RunState, effects: Effects): MonthlyReport 
   const overPct = load <= capacity ? 0 : Math.ceil(((load - capacity) * 100) / capacity);
   const share = shareOf(state, mrr, load);
   const multiplier = revenueMultiplier(state, share);
-  const revenue = Math.floor(served * multiplier);
+  const boosted =
+    state.boosts.revenueBoostMonths > 0 ? 1 + BALANCE.economy.boostedRevenuePct / 100 : 1;
+  const revenue = Math.floor(served * multiplier * boosted);
   const upkeep = upkeepOf(state);
   const salaries = salariesOf(state);
 
@@ -143,6 +145,7 @@ export function closeMonth(context: RuleContext): void {
 
   state.months += 1;
   state.sprintMonths += 1;
+  if (state.boosts.revenueBoostMonths > 0) state.boosts.revenueBoostMonths -= 1;
   if (state.market.priceWarUntilMonth !== null && state.months >= state.market.priceWarUntilMonth) {
     state.market.priceWarUntilMonth = null;
   }

@@ -9,7 +9,7 @@ import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
 import { wipExtra } from "@/game/core/rules/modifiers";
 import { gameOver } from "@/game/core/rules/over";
-import { lowerQuality } from "@/game/core/rules/quality";
+import { lowerQuality, qualityMax } from "@/game/core/rules/quality";
 import type { HackKind, RunState } from "@/game/core/types";
 
 /**
@@ -26,9 +26,9 @@ import type { HackKind, RunState } from "@/game/core/types";
 
 export function hackOffer(state: RunState, effects: Effects): HackKind | null {
   if (state.hackSprint === state.sprint) return null;
-  const { hack, quality } = BALANCE;
+  const { hack } = BALANCE;
 
-  if (state.quality * 100 >= quality.max * hack.offerAtQualityPct) return "patience";
+  if (state.quality * 100 >= qualityMax(effects) * hack.offerAtQualityPct) return "patience";
   if (state.player.energy === 0 && wipExtra(state) >= hack.offerAtWipExtra) return "energy";
   if (capacityStatus(state, effects) === "saturated") {
     const advice = capacityAdvice(state, effects, projectedLoadOf(state) - capacityOf(effects));

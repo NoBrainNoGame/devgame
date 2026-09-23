@@ -223,8 +223,18 @@ export const BALANCE = {
   sprint: {
     /** Turns in the box. The release ships when they run out. */
     turns: 12,
-    /** Relics on offer when a sprint closes, and one more for an objective met. */
+    /** Sprint bonuses on offer when a sprint closes, and one more for an objective met. */
     relicOffer: 3,
+  },
+
+  /** The sprint bonuses ("relics" in the code): what the offer holds and when a boost is worth showing. */
+  relics: {
+    /** Permanent bonuses in an offer while any remain; the rest are boosts. */
+    keepsPerOffer: 1,
+    /** Debt from which clearing it is offered. */
+    debtWorthClearing: 20,
+    /** Patience from which easing it is offered. */
+    qualityWorthEasing: 20,
   },
 
   /** The tier from which the system speaks in the log, and the interface changes its words. */
@@ -347,6 +357,8 @@ export const BALANCE = {
     /** Paydays per sprint. `sprint.turns` must divide by it. */
     monthsPerSprint: 3,
     startingMoney: 100,
+    /** Percent added to a payday's revenue while a boost runs. */
+    boostedRevenuePct: 50,
     /** Monthly revenue of a shipped feature: this per story point, plus a jitter. */
     mrrPerPoint: 3,
     mrrJitter: { min: 0, max: 3 },

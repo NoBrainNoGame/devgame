@@ -45,11 +45,16 @@ export function maxSeats(effects: Effects): number {
   return BALANCE.team.baseSeats + effects.teamSeats;
 }
 
+/** The fee here and now: nothing while a bonus pays for the next hire. */
+export function hireCostOf(state: RunState, effects: Effects, rank: DevRank): number {
+  return state.boosts.freeHire ? 0 : hireCostFor(effects, rank);
+}
+
 export function canHire(state: RunState, effects: Effects, rank: DevRank): boolean {
   return (
     DEV_RANK[rank].tier <= state.tier &&
     state.devs.length < maxSeats(effects) &&
-    hireCostFor(effects, rank) <= state.money
+    hireCostOf(state, effects, rank) <= state.money
   );
 }
 
@@ -87,9 +92,10 @@ export function hireDev(context: RuleContext, rank: DevRank): Dev {
   if (state.devs.length >= maxSeats(context.effects)) {
     throw new Error(`The team is full at ${maxSeats(context.effects)}`);
   }
-  const cost = hireCostFor(context.effects, rank);
+  const cost = hireCostOf(state, context.effects, rank);
   if (cost > state.money) throw new Error(`A ${rank} costs ${cost}, you have ${state.money}`);
 
+  state.boosts.freeHire = false;
   changeMoney(context, -cost, "hire");
   return addDev(context, rank);
 }

@@ -193,8 +193,7 @@ export function writingACommit(prefix: string): RunState {
   return inHand(prefix);
 }
 
-/** Takes the first relic on offer, so a test can act after a sprint boundary. */
-/** Answers whatever the run is waiting on — a relic, a question — with the first offer. */
+/** Answers whatever the run is waiting on — a sprint bonus, a question — with the first offer. */
 export function settle(state: RunState): RunState {
   if (state.phase.kind === "event") {
     const answer = getAvailableActions(state).find((a) => a.type === "answer");

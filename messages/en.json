@@ -149,9 +149,8 @@
     "logTitle": "Log",
     "logEmpty": "Nothing to tell yet.",
     "logTurn": "turn {turn}",
-    "relicTitle": "Project improvement",
-    "relicSubtitle": "The sprint is over. Pick one.",
-    "relicTake": "Take",
+    "relicTitle": "Sprint bonus",
+    "relicSubtitle": "The sprint is over. Take one: a boost acts now, a keep stays to the end.",
     "conflictTitle": "Merge conflict",
     "conflictManual": "Resolve by hand",
     "conflictManualHint": "Costs energy and can fail.",
@@ -445,7 +444,11 @@
       }
     },
     "soundOn": "Sound on (mute)",
-    "soundOff": "Sound off (unmute)"
+    "soundOff": "Sound off (unmute)",
+    "relicBoost": "Boost",
+    "relicKeep": "Keep",
+    "shopDiscount": "{pct}% off the next purchase",
+    "freeHire": "Next hire is free"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -754,37 +757,85 @@
       }
     },
     "relics": {
-      "agile_board": {
-        "name": "Agile board",
-        "desc": "Raises the energy ceiling for the rest of the run."
+      "second_wind": {
+        "name": "Second wind",
+        "desc": "Energy back to full, right now."
+      },
+      "clean_slate": {
+        "name": "Clean slate",
+        "desc": "Technical debt drops to zero."
+      },
+      "postmortem": {
+        "name": "Honest post-mortem",
+        "desc": "Production breathes: its gauge drops by 30."
+      },
+      "intern": {
+        "name": "Promising intern",
+        "desc": "A junior joins with no hiring fee. The salary is still due."
+      },
+      "promotion": {
+        "name": "Promotion",
+        "desc": "The newest developer goes up a rank."
+      },
+      "group_deal": {
+        "name": "Group deal",
+        "desc": "25% off the next shop purchase."
+      },
+      "headhunter": {
+        "name": "Headhunter",
+        "desc": "The next hire costs nothing."
+      },
+      "grant": {
+        "name": "Grant",
+        "desc": "A cheque lands, scaled to the tier."
+      },
+      "bootcamp": {
+        "name": "Bootcamp",
+        "desc": "Three skill points, right now."
+      },
+      "viral_thread": {
+        "name": "Viral thread",
+        "desc": "Market share climbs three points."
+      },
+      "overtime": {
+        "name": "Extended sprint",
+        "desc": "The next sprint lasts a month longer: four more turns and one more payday."
+      },
+      "review_party": {
+        "name": "Review party",
+        "desc": "Every unread AI commit counts as read. The debt stays."
+      },
+      "grooming": {
+        "name": "Backlog grooming",
+        "desc": "The untouched backlog is cleared: nothing gets forced on you next sprint."
+      },
+      "big_client": {
+        "name": "Big client",
+        "desc": "A VIP ticket arrives with a cash advance. Deliver it on time."
+      },
+      "golden_quarter": {
+        "name": "Golden quarter",
+        "desc": "The next three paydays bring in 50% more."
       },
       "tech_radar": {
         "name": "Tech radar",
-        "desc": "Improves every roll."
-      },
-      "code_freeze": {
-        "name": "Code freeze",
-        "desc": "Repays part of the debt right away, then a little every turn."
-      },
-      "onboarding": {
-        "name": "Onboarding",
-        "desc": "Grants skill points immediately."
+        "desc": "Permanent: every roll is a little better."
       },
       "retrospective": {
         "name": "Retrospective",
-        "desc": "One review reads back one more AI commit."
+        "desc": "Permanent: a review reads one more AI commit."
       },
-      "war_room": {
-        "name": "War room",
-        "desc": "Warns a node ahead of a production bug."
+      "pair_programming": {
+        "name": "Pair programming",
+        "desc": "Permanent: a review costs one energy less."
       },
-      "four_day_week": {
-        "name": "Four-day week",
-        "desc": "Merges give back more energy."
+      "blameless": {
+        "name": "Blameless culture",
+        "desc": "Permanent: a refused PR no longer costs the ticket its points."
       },
-      "open_source": {
-        "name": "Open source",
-        "desc": "Lowers the risk of AI commits."
+      "sla_renegotiated": {
+        "name": "SLA renegotiated",
+        "desc": "Permanent: production tolerates 20 more points before firing you."
       }
     },
     "tree": {
@@ -1226,7 +1277,9 @@
         "point": "objective met: {objective}, a skill point",
         "relics": "objective met: {objective}, one more improvement to choose from"
       },
-      "objective_failed": "objective missed: {objective}"
+      "objective_failed": "objective missed: {objective}",
+      "relic_used": "{relic} applied",
+      "ticket_dropped": "{ticket} dropped from the backlog"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -1775,6 +1828,30 @@
         "choices": {
           "close": "close",
           "leave_open": "leave open"
+        }
+      },
+      "hackathon": {
+        "title": "Weekend hackathon",
+        "text": "A hackathon breaks out in the office. The official topic is “the future of invoicing”. The real one is written in marker on a window, and someone has already wiped it.",
+        "choices": {
+          "join": "Spend the weekend on it",
+          "rest": "Go home"
+        }
+      },
+      "heated_retro": {
+        "title": "The retro got heated",
+        "text": "The retrospective ran two hours over. The “what went wrong” sticky note has your name on it, written three times, in three different hands.",
+        "choices": {
+          "own_it": "Own it in front of the team",
+          "move_on": "Move on to the next sprint"
+        }
+      },
+      "angel_call": {
+        "title": "A business angel calls",
+        "text": "An investor has “followed your trajectory” and offers a cheque. They ask for no equity. They ask for a dashboard, refreshed every four minutes.",
+        "choices": {
+          "take_money": "Take the cheque",
+          "stay_lean": "Stay independent"
         }
       }
     },

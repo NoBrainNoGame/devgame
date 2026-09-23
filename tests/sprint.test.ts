@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { RELIC_IDS } from "@/game/content";
+import { RELIC_IDS, RELICS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -55,7 +55,7 @@ describe("sprint boundary", () => {
     expect(state.turn).toBeGreaterThanOrEqual(BALANCE.sprint.turns);
   });
 
-  test("choosing an improvement starts the next sprint, with new tickets", () => {
+  test("taking a bonus starts the next sprint, with new tickets", () => {
     const { state } = findSeed((r) => r.state.phase.kind === "choose_relic", {
       prefix: "next",
       pick: policy("ai"),
@@ -71,7 +71,9 @@ describe("sprint boundary", () => {
     const after = result.state;
     expect(after.sprint).toBe(state.sprint + 1);
     expect(after.sprintTurn).toBe(0);
-    expect(after.relics).toContain(relicId);
+    if (RELICS[relicId].kind === "keep") expect(after.relics).toContain(relicId);
+    else expect(after.relics).not.toContain(relicId);
+    expect(eventsOfType(result.events, "relic_chosen")[0]?.relicId).toBe(relicId);
     expect(after.player.rerollUsed).toBe(false);
     // The board's count, plus the codebase's own request when the debt earned one.
     const arrived = eventsOfType(result.events, "ticket_arrived").filter(

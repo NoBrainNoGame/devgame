@@ -51,7 +51,8 @@ export interface Digest {
   /** Share of runs that bought at least one level, and the median level among those. */
   upgrades: Record<string, { rate: number; level: Quantiles }>;
   tree: Record<string, { rate: number; level: Quantiles }>;
-  relics: Record<string, number>;
+  /** Sprint bonuses: how often each was on the table, how often it was taken. */
+  relics: Record<string, { offered: number; chosen: number }>;
   skills: Record<string, number>;
   acquisitions: Record<string, number>;
   /** By event, then by choice: how often each was picked. */
@@ -191,7 +192,7 @@ export function digestSamples(rows: SampleRow[]): Digest {
     tiers: {},
     upgrades: levelTable(runs, (s) => s.upgrades),
     tree: levelTable(runs, (s) => s.tree),
-    relics: listTable(runs, (s) => s.relics),
+    relics: {},
     skills: listTable(runs, (s) => s.skills),
     acquisitions: listTable(runs, (s) => s.acquisitions),
     answers: {},
@@ -250,6 +251,12 @@ export function digestSamples(rows: SampleRow[]): Digest {
     digest.hacks.won += s.hacks.won;
     for (const [source, n] of Object.entries(s.qualityBySource))
       count(digest.qualityBySource, source, n);
+    for (const [id, n] of Object.entries(s.relicsOffered ?? {})) {
+      slot(digest.relics, id, () => ({ offered: 0, chosen: 0 })).offered += n;
+    }
+    for (const [id, n] of Object.entries(s.relicsChosen ?? {})) {
+      slot(digest.relics, id, () => ({ offered: 0, chosen: 0 })).chosen += n;
+    }
     for (const [rank, n] of Object.entries(s.devsByRank))
       slot(rankCounts, rank, () => [] as number[]).push(n);
     if (row.idle !== null && typeof row.idle.enabled === "boolean") {
@@ -361,7 +368,17 @@ export function renderDigestMarkdown(
   };
   parts.push(levels("Upgrades bought", d.upgrades));
   parts.push(levels("Skill tree nodes", d.tree));
-  parts.push(countTable("Relics held at the end", d.relics, d.runs));
+  const relics = Object.entries(d.relics).sort((a, b) => b[1].offered - a[1].offered);
+  if (relics.length > 0) {
+    parts.push(
+      `### Sprint bonuses: offered and taken\n\n| bonus | offered | taken | pick rate |\n|---|---|---|---|\n${relics
+        .map(
+          ([id, e]) =>
+            `| ${id} | ${e.offered} | ${e.chosen} | ${e.offered === 0 ? "—" : pct(e.chosen / e.offered)} |`,
+        )
+        .join("\n")}\n\n`,
+    );
+  }
   parts.push(countTable("Skills held at the end", d.skills, d.runs));
   parts.push(countTable("Acquisitions", d.acquisitions, d.runs));
   parts.push(

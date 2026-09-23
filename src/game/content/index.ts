@@ -55,8 +55,14 @@ export {
 } from "@/game/content/objectives";
 export type { ProfileDef, ProfileId } from "@/game/content/profiles";
 export { isProfileId, PROFILE_IDS, PROFILES } from "@/game/content/profiles";
-export type { RelicDef, RelicId } from "@/game/content/relics";
-export { RELIC_IDS, RELICS } from "@/game/content/relics";
+export type {
+  BoostEffect,
+  RelicCondition,
+  RelicDef,
+  RelicId,
+  RelicKind,
+} from "@/game/content/relics";
+export { RELIC_BOOST_IDS, RELIC_IDS, RELIC_KEEP_IDS, RELICS } from "@/game/content/relics";
 export type { SkillDef, SkillId } from "@/game/content/skills";
 export { freeFeatureSkills, isSkillId, SKILL_IDS, SKILLS } from "@/game/content/skills";
 export {
@@ -100,6 +106,7 @@ export {
 } from "@/game/content/tree";
 export type { UpgradeCategory, UpgradeDef, UpgradeId } from "@/game/content/upgrades";
 export {
+  discounted,
   isUpgradeId,
   UPGRADE_CATEGORIES,
   UPGRADE_IDS,

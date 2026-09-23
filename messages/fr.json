@@ -149,9 +149,8 @@
     "logTitle": "Journal",
     "logEmpty": "Rien à raconter pour l'instant.",
     "logTurn": "tour {turn}",
-    "relicTitle": "Amélioration de projet",
-    "relicSubtitle": "Le sprint est clos. Choisissez-en une.",
-    "relicTake": "Prendre",
+    "relicTitle": "Bonus de sprint",
+    "relicSubtitle": "Le sprint est clos. Prenez-en un : un instantané agit tout de suite, un permanent reste jusqu'à la fin.",
     "conflictTitle": "Conflit de merge",
     "conflictManual": "Résoudre à la main",
     "conflictManualHint": "Coûte de l'énergie et peut rater.",
@@ -445,7 +444,11 @@
       }
     },
     "soundOn": "Son activé (couper)",
-    "soundOff": "Son coupé (rétablir)"
+    "soundOff": "Son coupé (rétablir)",
+    "relicBoost": "Instantané",
+    "relicKeep": "Permanent",
+    "shopDiscount": "−{pct} % sur le prochain achat",
+    "freeHire": "Prochaine embauche offerte"
   },
   "leaderboard": {
     "title": "Classement",
@@ -754,37 +757,85 @@
       }
     },
     "relics": {
-      "agile_board": {
-        "name": "Tableau agile",
-        "desc": "Relève le plafond d'énergie pour le reste de la run."
+      "second_wind": {
+        "name": "Second souffle",
+        "desc": "L'énergie remonte au maximum, tout de suite."
+      },
+      "clean_slate": {
+        "name": "Table rase",
+        "desc": "La dette technique retombe à zéro."
+      },
+      "postmortem": {
+        "name": "Post-mortem sincère",
+        "desc": "La prod respire : sa jauge redescend de 30."
+      },
+      "intern": {
+        "name": "Stagiaire prometteur",
+        "desc": "Un junior rejoint l'équipe sans frais d'embauche. Son salaire reste dû."
+      },
+      "promotion": {
+        "name": "Promotion",
+        "desc": "Le dernier dev arrivé monte d'un grade."
+      },
+      "group_deal": {
+        "name": "Achat groupé",
+        "desc": "−25 % sur le prochain achat en boutique."
+      },
+      "headhunter": {
+        "name": "Chasseur de têtes",
+        "desc": "La prochaine embauche ne coûte rien."
+      },
+      "grant": {
+        "name": "Subvention",
+        "desc": "Une enveloppe tombe, à l'échelle du palier."
+      },
+      "bootcamp": {
+        "name": "Bootcamp",
+        "desc": "Trois points de compétence, tout de suite."
+      },
+      "viral_thread": {
+        "name": "Thread viral",
+        "desc": "La part de marché grimpe de trois points."
+      },
+      "overtime": {
+        "name": "Sprint rallongé",
+        "desc": "Le prochain sprint dure un mois de plus : quatre tours et une paie supplémentaires."
+      },
+      "review_party": {
+        "name": "Review party",
+        "desc": "Tous les commits IA non relus comptent comme relus. La dette, elle, reste."
+      },
+      "grooming": {
+        "name": "Backlog grooming",
+        "desc": "Le backlog non entamé est vidé : rien ne vous sera imposé au prochain sprint."
+      },
+      "big_client": {
+        "name": "Gros client",
+        "desc": "Un ticket VIP arrive, avec une avance en argent. À livrer dans les temps."
+      },
+      "golden_quarter": {
+        "name": "Trimestre doré",
+        "desc": "Les trois prochaines paies rapportent 50 % de plus."
       },
       "tech_radar": {
         "name": "Radar technologique",
-        "desc": "Améliore tous les jets."
-      },
-      "code_freeze": {
-        "name": "Gel du code",
-        "desc": "Rembourse une partie de la dette tout de suite, puis un peu à chaque tour."
-      },
-      "onboarding": {
-        "name": "Onboarding",
-        "desc": "Donne des points de compétence immédiatement."
+        "desc": "Permanent : tous les jets sont un peu meilleurs."
       },
       "retrospective": {
         "name": "Rétrospective",
-        "desc": "Une review relit un commit IA de plus."
+        "desc": "Permanent : une review relit un commit IA de plus."
       },
-      "war_room": {
-        "name": "War room",
-        "desc": "Prévient un nœud à l'avance d'un bug en production."
+      "pair_programming": {
+        "name": "Pair programming",
+        "desc": "Permanent : une review coûte un point d'énergie de moins."
       },
-      "four_day_week": {
-        "name": "Semaine de quatre jours",
-        "desc": "Les merges rendent plus d'énergie."
+      "blameless": {
+        "name": "Culture blameless",
+        "desc": "Permanent : une PR refusée ne fait plus perdre de points au ticket."
       },
-      "open_source": {
-        "name": "Open source",
-        "desc": "Réduit le risque des commits IA."
+      "sla_renegotiated": {
+        "name": "SLA renégocié",
+        "desc": "Permanent : la prod tolère 20 points de plus avant de vous virer."
       }
     },
     "tree": {
@@ -1226,7 +1277,9 @@
         "point": "objectif tenu : {objective}, un point de compétence",
         "relics": "objectif tenu : {objective}, une amélioration de plus au choix"
       },
-      "objective_failed": "objectif manqué : {objective}"
+      "objective_failed": "objectif manqué : {objective}",
+      "relic_used": "{relic} appliqué",
+      "ticket_dropped": "{ticket} retiré du backlog"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -1775,6 +1828,30 @@
         "choices": {
           "close": "fermer",
           "leave_open": "laisser ouvert"
+        }
+      },
+      "hackathon": {
+        "title": "Hackathon du week-end",
+        "text": "Un hackathon s'improvise dans les locaux. Le sujet officiel est « la facturation du futur ». Le sujet réel est écrit au marqueur sur une vitre, et quelqu'un l'a déjà effacé.",
+        "choices": {
+          "join": "Y passer le week-end",
+          "rest": "Rentrer chez soi"
+        }
+      },
+      "heated_retro": {
+        "title": "La rétro a chauffé",
+        "text": "La rétrospective a duré deux heures de plus que prévu. Le post-it « ce qui n'a pas marché » porte votre nom, écrit trois fois, de trois écritures différentes.",
+        "choices": {
+          "own_it": "Assumer devant l'équipe",
+          "move_on": "Passer au sprint suivant"
+        }
+      },
+      "angel_call": {
+        "title": "Un business angel appelle",
+        "text": "Un investisseur a « suivi votre trajectoire » et propose un chèque. Il ne demande pas de parts. Il demande un tableau de bord, mis à jour toutes les quatre minutes.",
+        "choices": {
+          "take_money": "Prendre le chèque",
+          "stay_lean": "Rester indépendant"
         }
       }
     },

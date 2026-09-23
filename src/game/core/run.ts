@@ -98,6 +98,8 @@ export function createRun(options: CreateRunOptions): RunState {
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),
     startingSkillPoints,
     relics: [],
+    lastRelicOffer: [],
+    boosts: { shopDiscountPct: 0, freeHire: false, extraTurns: 0, revenueBoostMonths: 0 },
     tree,
     skillPoints: startingSkillPoints,
     skillPointsBought: 0,
@@ -161,6 +163,8 @@ export function createRun(options: CreateRunOptions): RunState {
       moneyPeak: BALANCE.economy.startingMoney,
       tierSprint: {},
       hires: 0,
+      relicsOffered: {},
+      relicsChosen: {},
     },
 
     xpEarned: 0,

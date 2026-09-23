@@ -56,7 +56,9 @@ export const SAVE_VERSION = 3;
  * skill tickets expiring with their sprint, and the skill-ticket chance moved
  * by a tree node. And what would have been epoch 3: tiers, a load in users
  * and a tier reached by lifetime earnings, a shop that is a ladder, and a
- * team whose speed is its rank.
+ * team whose speed is its rank. And epoch 4: the sprint's relics replaced by
+ * sprint bonuses — boosts spent on the spot, a few keeps — with an offer
+ * drawn from what the run can use.
  */
 export const RULES_EPOCH = 1;
 

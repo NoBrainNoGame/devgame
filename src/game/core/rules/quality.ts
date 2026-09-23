@@ -1,3 +1,4 @@
+import type { Effects } from "@/game/content/effects";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { gameOver } from "@/game/core/rules/over";
@@ -14,10 +15,16 @@ import type { QualitySource } from "@/game/core/types";
  * run-over screen all come from that name, which is what keeps "why did I
  * lose" answerable.
  */
+/** The ceiling: the balance's, plus what a bonus negotiated. */
+export function qualityMax(effects: Effects): number {
+  return BALANCE.quality.max + effects.qualityMaxBonus;
+}
+
 export function raiseQuality(context: RuleContext, amount: number, source: QualitySource): void {
   const { state } = context;
+  const max = qualityMax(context.effects);
   const before = state.quality;
-  state.quality = Math.min(BALANCE.quality.max, before + amount);
+  state.quality = Math.min(max, before + amount);
 
   const applied = state.quality - before;
   if (applied !== 0) {
@@ -27,13 +34,13 @@ export function raiseQuality(context: RuleContext, amount: number, source: Quali
       type: "quality",
       delta: applied,
       value: state.quality,
-      max: BALANCE.quality.max,
+      max,
       source,
     });
   }
   // Checked even when nothing moved: a gauge already full is a run already
   // over, whatever overwrote the phase since.
-  if (state.quality >= BALANCE.quality.max) gameOver(context, "fired", source);
+  if (state.quality >= max) gameOver(context, "fired", source);
 }
 
 /** A clean sprint earns some patience back. */
@@ -51,7 +58,7 @@ export function lowerQuality(
     type: "quality",
     delta: state.quality - before,
     value: state.quality,
-    max: BALANCE.quality.max,
+    max: qualityMax(context.effects),
     source,
   });
 }

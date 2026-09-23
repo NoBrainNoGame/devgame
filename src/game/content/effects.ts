@@ -91,6 +91,8 @@ export interface Effects {
    * That is what makes the first ticket offering it worth taking.
    */
   canReview: boolean;
+  /** Added to production's patience ceiling: how much more it takes to be fired. */
+  qualityMaxBonus: number;
 }
 
 export const NO_EFFECTS: Effects = {
@@ -128,6 +130,7 @@ export const NO_EFFECTS: Effects = {
   idleSpeedTier: 0,
   autopilot: 0,
   canReview: true,
+  qualityMaxBonus: 0,
 };
 
 export const EFFECT_KEYS = Object.keys(NO_EFFECTS).sort() as (keyof Effects)[];

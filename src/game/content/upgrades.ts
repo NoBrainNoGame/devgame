@@ -235,6 +235,11 @@ export function upgradeCost(id: UpgradeId, level: number): number | undefined {
   return Math.round(def.price.base * def.price.growth ** level);
 }
 
+/** A price with a percentage off, rounded the way every other price is. */
+export function discounted(cost: number, pct: number): number {
+  return Math.round((cost * (100 - pct)) / 100);
+}
+
 export function upgradeUnlocked(id: UpgradeId, tier: number): boolean {
   return UPGRADES[id].tier <= tier;
 }

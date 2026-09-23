@@ -293,6 +293,9 @@ export interface RunStats {
   /** The sprint each tier was reached in, keyed by tier. */
   tierSprint: Record<string, number>;
   hires: number;
+  /** Sprint bonuses, offered and taken, keyed by id: the pick rate is the balancing signal. */
+  relicsOffered: Record<string, number>;
+  relicsChosen: Record<string, number>;
 }
 
 /** A hired developer. Their tickets are found by `Ticket.assignee`. */
@@ -375,6 +378,10 @@ export interface RunState {
    */
   startingSkillPoints: number;
   relics: RelicId[];
+  /** Last sprint's bonus offer, held back from the next draw. */
+  lastRelicOffer: RelicId[];
+  /** What a boost left pending: spent by the next purchase, hire, sprint or paydays. */
+  boosts: PendingBoosts;
   tree: Record<TreeNodeId, number>;
   skillPoints: number;
   /** Skill points bought outright, which sets the price of the next. */
@@ -477,7 +484,18 @@ export type PlayerActionType = PlayerAction["type"];
 export type IncidentSource = "commit" | "release" | "acquisition" | "hack";
 
 /** Where a developer came from, when not hired one by one. */
-export type DevSource = { site: UpgradeId } | { acquisition: AcquisitionId };
+export type DevSource = { site: UpgradeId } | { acquisition: AcquisitionId } | { relic: RelicId };
+
+export interface PendingBoosts {
+  /** Percent off the next upgrade bought. */
+  shopDiscountPct: number;
+  /** The next hire costs nothing. */
+  freeHire: boolean;
+  /** Turns added to the sprint under way. */
+  extraTurns: number;
+  /** Paydays left with the revenue boosted. */
+  revenueBoostMonths: number;
+}
 
 /** How close production is to saturating, as reported to the board. */
 export type CapacityLevel = "ok" | "warning" | "saturated";
@@ -516,7 +534,7 @@ export type GameEvent =
     }
   | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
   /** A skill ticket sat in the backlog through its sprint: gone, the skill back in the pool. */
-  | { type: "ticket_cancelled"; ticketId: TicketId; skillId: SkillId }
+  | { type: "ticket_cancelled"; ticketId: TicketId; skillId?: SkillId }
   /** A fix took the bug out of a commit the review had flagged. */
   | { type: "bug_fixed"; ticketId: TicketId; nodeId: NodeId }
   /** A refactor redid a commit and took back the debt it had cost. */
@@ -543,7 +561,7 @@ export type GameEvent =
   | { type: "quality"; delta: number; value: number; max: number; source: QualityChange }
   | { type: "sprint_ended"; sprint: number; offer: RelicId[] }
   | { type: "sprint_started"; sprint: number }
-  | { type: "relic_chosen"; relicId: RelicId }
+  | { type: "relic_chosen"; relicId: RelicId; kind: "boost" | "keep" }
   | { type: "tree_placed"; id: TreeNodeId; level: number }
   | { type: "skill_points"; delta: number; value: number }
   | { type: "money"; delta: number; value: number; reason: string }

@@ -75,7 +75,10 @@ export function toLogLine(
         seq,
         turn,
         kind: "revert",
-        text: text("log.ticket_cancelled", { skill: ref(`skills.${event.skillId}.name`) }),
+        text:
+          event.skillId === undefined
+            ? text("log.ticket_dropped", { ticket: event.ticketId })
+            : text("log.ticket_cancelled", { skill: ref(`skills.${event.skillId}.name`) }),
       };
 
     case "ticket_restarted":
@@ -182,7 +185,9 @@ export function toLogLine(
         seq,
         turn,
         kind: "feat",
-        text: text("log.relic_chosen", { relic: ref(`relics.${event.relicId}.name`) }),
+        text: text(event.kind === "keep" ? "log.relic_chosen" : "log.relic_used", {
+          relic: ref(`relics.${event.relicId}.name`),
+        }),
       };
 
     case "tree_placed":
@@ -246,7 +251,7 @@ export function toLogLine(
         turn,
         kind: "feat",
         text:
-          event.source === undefined
+          event.source === undefined || "relic" in event.source
             ? text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) })
             : "site" in event.source
               ? text("log.hired_by_site", {

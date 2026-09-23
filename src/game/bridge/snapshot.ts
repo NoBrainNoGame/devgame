@@ -28,8 +28,10 @@ import {
 } from "@/game/core/rules/modifiers";
 import { objectiveMet, objectiveProgress } from "@/game/core/rules/objectives";
 import { previewAll } from "@/game/core/rules/preview";
+import { qualityMax } from "@/game/core/rules/quality";
+import { sprintTurns } from "@/game/core/rules/relics";
 import { skillPointPrice } from "@/game/core/rules/shop";
-import { devCapacity, hireCostFor, maxSeats, ticketsOf } from "@/game/core/rules/team";
+import { devCapacity, hireCostOf, maxSeats, ticketsOf } from "@/game/core/rules/team";
 import {
   behindOf,
   buggedOn,
@@ -49,6 +51,7 @@ import type {
   HackKind,
   MapNode,
   NodeId,
+  PendingBoosts,
   Phase,
   PlayerAction,
   RunMode,
@@ -220,6 +223,8 @@ export interface RunSnapshot {
 
   skills: SkillId[];
   relics: RelicId[];
+  /** What a boost left pending, for the shop, the roster and the sprint bar to say so. */
+  boosts: PendingBoosts;
   tree: Record<TreeNodeId, number>;
   skillPoints: number;
   upgrades: Record<UpgradeId, number>;
@@ -341,13 +346,13 @@ export function toSnapshot(state: RunState): RunSnapshot {
     turn: state.turn,
     sprint: state.sprint,
     sprintTurn: state.sprintTurn,
-    sprintTurns: BALANCE.sprint.turns,
+    sprintTurns: sprintTurns(state),
     score: computeScore(state),
     xpEarned: state.xpEarned,
     ticketsDelivered: state.ticketsDelivered,
     pointsDelivered: state.pointsDelivered,
     quality: state.quality,
-    qualityMax: BALANCE.quality.max,
+    qualityMax: qualityMax(effects),
     stats: { ...state.stats, qualityBySource: { ...state.stats.qualityBySource } },
 
     phase: state.phase,
@@ -370,6 +375,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     skills: [...state.skills],
     relics: [...state.relics],
+    boosts: { ...state.boosts },
     tree: { ...state.tree },
     skillPoints: state.skillPoints,
     upgrades: { ...state.upgrades },
@@ -405,7 +411,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
       marketMultiplier: report.multiplier,
       priceWarMonths: priceWarMonthsLeft(state),
       hireCosts: Object.fromEntries(
-        DEV_RANKS.map((rank) => [rank, hireCostFor(effects, rank)]),
+        DEV_RANKS.map((rank) => [rank, hireCostOf(state, effects, rank)]),
       ) as Record<DevRank, number>,
     },
     devs,

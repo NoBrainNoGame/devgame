@@ -55,24 +55,34 @@ translation fails there and names the id.
 then `bun run sim --runs 200` and confirm no policy's score distribution moved
 by more than noise. Then the epoch question below.
 
-### A relic
+### A sprint bonus (a "relic", in the code)
 
 1. Add the id to `RELIC_IDS` and the entry to `RELICS` in
-   `src/game/content/relics.ts`.
-2. `effects` is permanent and recomputed every turn; `grant` is applied once,
-   the moment the relic is picked, and only understands `skillPoints`,
-   `energy` and `debt` (see `grantRelic` in `src/game/core/rules/grants.ts`).
-   Anything else needs a new `Effects` field.
-3. Two message entries, `game.relics.<id>.name` and `.desc`, in both files.
-4. Map generation: none. `drawRelicOffer` in `src/game/core/rules/sprint.ts`
-   offers three of everything not yet owned.
-5. **This always moves the epoch.** The offer is `rng.shuffle` over a filtered
-   `RELIC_IDS`; one more entry changes the shuffle, which changes the offer and
-   every draw after it, for every run ever recorded.
+   `src/game/content/relics.ts`, with `boost(...)` or `keep(...)`.
+2. A **boost** is a `BoostEffect`, applied once by `applyBoost` in
+   `src/game/core/rules/relics.ts` through the ordinary channels (energy,
+   debt, quality, money, share, a dev, a ticket…). A new kind of effect is
+   a new optional field there and a new branch in `applyBoost`. Something
+   that must outlive the pick — a discount, a free hire, extra turns,
+   boosted paydays — lives in `RunState.boosts` and is spent by the rule
+   that honours it (`shop.ts`, `team.ts`, `reducer.ts`, `economy.ts`).
+3. A boost gets a `when` condition so it is only offered when it would do
+   something; the conditions are the `RelicCondition` union, evaluated by
+   `holds` in `rules/relics.ts`. Thresholds go in `balance.relics`.
+4. A **keep** is permanent `effects`, gathered every turn like a skill's.
+   It must not duplicate something the shop or the tree sells: that is the
+   reason to pick it over a boost.
+5. Two message entries, `game.relics.<id>.name` and `.desc`, in both files.
+6. **This always moves the epoch.** The offer is two `rng.shuffle`s over the
+   eligible keeps and boosts; one more entry changes the shuffle, which
+   changes the offer and every draw after it, for every run ever recorded.
 
-**What to verify.** `bun test tests/content.test.ts tests/messages.test.ts
-tests/sprint.test.ts` — the sprint test asserts the offer is exactly three
-distinct relics drawn from `RELIC_IDS`.
+**What to verify.** `bun test tests/relics.test.ts tests/content.test.ts
+tests/messages.test.ts tests/sprint.test.ts`. The relics test asserts the
+offer is `sprint.relicOffer` distinct cards with `relics.keepsPerOffer`
+keeps, and that each boost does what its description says. Then the sim,
+then the Balance page: `relicsOffered` and `relicsChosen` give each card's
+pick rate, and a card nobody takes is a card to rewrite.
 
 ### A skill tree node
 
@@ -495,7 +505,7 @@ forty actions each and checks the graph they wrote, then reports each policy.
 - `failures` is a raw count across all runs. A failure id missing from the line
   entirely is one that can never fire: check its `requiresUnreviewedAi` and
   `forbiddenOnHotfix` flags.
-- The simulator plays `junior` only, with no relics chosen by preference and no
+- The simulator plays `junior` only, taking the first sprint bonus on offer, with no
   account unlocks. It cannot tell you anything about the other starters.
 
 Run the **same seed and run count** before and after a change, and quote both.
@@ -548,7 +558,7 @@ In practice:
 | Change | Epoch |
 |---|---|
 | A balance number | Yes — the numbers are the game |
-| A relic, a failure event, a merge event, an ambient event | Yes — they enter an RNG pool |
+| A sprint bonus, a failure event, a merge event, an ambient event | Yes — they enter an RNG pool |
 | A node kind, or anything in `map/tickets.ts` | Yes |
 | A rule that changes an outcome, a cost or a draw | Yes |
 | A skill with `unlockCost > 0` | No — old saves carry their own `unlockedSkills` and never see it |

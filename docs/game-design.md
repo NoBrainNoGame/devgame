@@ -155,7 +155,7 @@ n'accepte qu'un seul type de commit tant que ses points ne sont
 pas pleins.
 
 Le commit, la review, le merge et **souffler** consomment un tour. Démarrer
-un ticket, basculer, placer un point de compétence, acheter, embaucher, choisir une relique et résoudre
+un ticket, basculer, placer un point de compétence, acheter, embaucher, choisir un bonus et résoudre
 un conflit sont gratuits en temps.
 
 **Souffler** est le tour sans code : de l'énergie revient, moins un par ticket
@@ -364,7 +364,7 @@ barre le désigne : laissée seule une trentaine de secondes, elle le presse.
 Sans superviseur, le coup prévu est de démarrer le plus ancien ticket quand
 rien n'est en main, et de souffler sinon ; dans les autres phases, c'est la
 réponse évidente — merger ce qui est accepté, continuer après un refus,
-résoudre un conflit à la main, prendre la première relique — pour qu'une run
+résoudre un conflit à la main, prendre le premier bonus — pour qu'une run
 laissée seule ne cale jamais sur une question. Avec le **superviseur IA**
 acheté, elle joue à la place, et dit sous le panneau ce qu'elle va faire.
 Niveau 1 : le coup évident — ouvrir la PR d'un ticket plein, relire, coder à
@@ -481,10 +481,33 @@ joueur.
 Un sprint est une **boîte de tours** (le nombre est dans `balance.ts`). Quand
 elle est vide — ou quand plus rien n'est ouvert ni en attente — le travail
 part : `dev` mergée dans `main`, la release taguée, les bugs remontés. Puis le
-week-end : régénération partielle d'énergie, un point de compétence, le choix d'une
-**relique** (amélioration de projet), l'assignation des tickets restés en
+week-end : régénération partielle d'énergie, un point de compétence, le choix d'un
+**bonus de sprint**, l'assignation des tickets restés en
 attente, et l'arrivée des tickets du sprint suivant — un peu plus nombreux
 tous les quelques sprints, jusqu'à un plafond.
+
+### Le bonus de sprint
+
+Trois cartes, une seule prise. Le code les appelle encore « reliques »
+(`src/game/content/relics.ts`), mais ce ne sont plus des badges passifs.
+
+- Un **instantané** agit tout de suite et disparaît : énergie au maximum,
+  dette effacée, jauge de prod allégée, un stagiaire ou une promotion, une
+  remise sur le prochain achat, une embauche offerte, une subvention, des
+  points de compétence, de la part de marché, un sprint rallongé d'un mois,
+  tous les commits IA relus d'un coup, le backlog vidé, un gros client avec
+  son VIP, un trimestre aux revenus majorés. Il peut revenir un autre sprint.
+- Un **permanent** reste jusqu'à la fin, est unique, et n'existe ni en
+  boutique ni dans l'arbre : c'est ce qui vaut de le préférer à l'instantané.
+  Un seul par offre tant qu'il en reste.
+
+Un instantané n'est proposé que s'il ferait quelque chose : la barre pleine
+n'est jamais offerte un second souffle, la dette à zéro jamais une table
+rase (les seuils sont dans `balance.relics`). L'offre du sprint précédent
+est écartée de la suivante tant qu'il reste de quoi faire autrement. Un
+objectif de sprint réussi avec la récompense « bonus » ajoute une carte.
+La télémétrie compte ce qui est montré et ce qui est pris : le taux de
+prise par carte est le signal d'équilibrage.
 
 Un ticket entamé est reporté : il garde ses commits, ses points et son retard
 sur `dev`.
@@ -540,7 +563,7 @@ commit (`fix: oups`, `feat: added tests`) : c'est le log qui raconte la partie.
 **Le graphe s'écrit au rythme des effets.** Le moteur écrit un tour d'un coup ;
 le canvas le raconte dans l'ordre : le commit apparaît, ce qu'il a coûté se
 pose dessus, la production casse, le hotfix s'ouvre. La caméra suit chaque
-chose qui apparaît. Les modales — conflit, relique, fin de run — attendent la
+chose qui apparaît. Les modales — conflit, bonus de sprint, fin de run — attendent la
 fin de la séquence, sinon la question tombe sur sa propre cause. Un clic
 pendant la séquence révèle tout et débloque tout de suite : une partie doit
 rester jouable au rythme de la lecture, pas au rythme des effets.
@@ -637,7 +660,7 @@ lire.
 Le jeu ne joue encore aucun son, mais tout est câblé pour qu'il le puisse
 sans qu'une règle change (`src/game/audio/`). `sfxFor(event)` classe chaque
 événement du moteur — un commit à la main, un commit IA, un jet raté, une
-review, un merge, une release, une relique, une paie, un incident, un
+review, un merge, une release, un bonus, une paie, un incident, un
 conflit, une explosion de dette, une embauche, un départ, une panne,
 l'ouverture et la réponse d'un événement, un objectif, un palier, une
 date manquée, le crunch, la fin — ou le laisse au silence ; le switch est

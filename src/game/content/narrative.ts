@@ -25,6 +25,9 @@ export const NARRATIVE_EVENT_IDS = [
   "bug_wave",
   "system_review_policy",
   "system_operator_channel",
+  "hackathon",
+  "heated_retro",
+  "angel_call",
 ] as const;
 
 export type NarrativeEventId = (typeof NARRATIVE_EVENT_IDS)[number];
@@ -220,6 +223,45 @@ export const NARRATIVE_EVENTS: Record<NarrativeEventId, NarrativeEventDef> = {
     choices: [
       { id: "close", effect: { flag: "operatorChannelClosed" } },
       { id: "leave_open", effect: {} },
+    ],
+  },
+  // The weekend's news, asked as a sprint opens.
+  hackathon: {
+    id: "hackathon",
+    source: "press",
+    trigger: "sprint_start",
+    weight: 3,
+    minTier: 0,
+    minSprint: 3,
+    choices: [
+      { id: "join", effect: { energy: -4, skillPoints: 2, share: 1 } },
+      { id: "rest", effect: { energy: 2 } },
+    ],
+  },
+  heated_retro: {
+    id: "heated_retro",
+    source: "system",
+    trigger: "sprint_start",
+    weight: 3,
+    minTier: 0,
+    minSprint: 2,
+    needsDev: true,
+    choices: [
+      { id: "own_it", effect: { quality: -10, energy: -3 } },
+      { id: "move_on", effect: { debt: 10 } },
+    ],
+  },
+  angel_call: {
+    id: "angel_call",
+    source: "client",
+    trigger: "payday",
+    weight: 3,
+    minTier: 1,
+    minSprint: 3,
+    once: true,
+    choices: [
+      { id: "take_money", effect: { money: 400, quality: 10 } },
+      { id: "stay_lean", effect: { share: 1 } },
     ],
   },
 };

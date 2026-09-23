@@ -105,9 +105,15 @@ export function planBatch(
         // and the camera stays with you.
         const asHead =
           node !== undefined && node.lane !== MAIN_LANE && node.commit.author === undefined;
+        const byColleague = node !== undefined && node.commit.author !== undefined;
+        // What was held so far is yours — a roll's cost, a point — and lands
+        // where you stand, not on the commit a colleague just wrote.
+        if (byColleague) flush();
         revealed.add(event.nodeId);
-        cursor = event.nodeId;
-        away = false;
+        if (!byColleague) {
+          cursor = event.nodeId;
+          away = false;
+        }
         steps.push({ kind: "reveal", nodeId: event.nodeId, at, asHead, hold: STORY.reveal });
         flush();
         break;

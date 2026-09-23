@@ -7,6 +7,7 @@ import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import type { PlayerAction, QualitySource, RunSnapshot } from "@/game";
 import { actionKey, useGameStore } from "@/game";
-import { NARRATIVE_EVENTS } from "@/game/content";
+import { NARRATIVE_EVENTS, RELICS } from "@/game/content";
 
 /** A review being read has the floor: the other questions wait for it. */
 function useReviewing(): boolean {
@@ -129,7 +130,12 @@ export function RelicDialog({
                 disabled={busy}
                 onClick={() => onAct({ type: "choose_relic", relicId })}
               >
-                <span>{game(`relics.${relicId}.name` as never)}</span>
+                <span className="flex w-full items-center justify-between gap-2">
+                  <span>{game(`relics.${relicId}.name` as never)}</span>
+                  <Badge variant={RELICS[relicId].kind === "keep" ? "default" : "outline"}>
+                    {t(RELICS[relicId].kind === "keep" ? "relicKeep" : "relicBoost")}
+                  </Badge>
+                </span>
                 <span className="whitespace-normal font-normal text-muted-foreground text-xs">
                   {game(`relics.${relicId}.desc` as never)}
                 </span>

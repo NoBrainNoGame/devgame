@@ -7,6 +7,7 @@ import { FinanceChart } from "@/components/hud/FinanceChart";
 import { ticketName } from "@/components/hud/ticketName";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,7 @@ import {
   type AcquisitionId,
   DEV_RANK,
   DEV_RANKS,
+  discounted,
   UPGRADE_CATEGORIES,
   UPGRADES,
   type UpgradeCategory,
@@ -110,9 +112,15 @@ export function CompanyDialog({
             <Market snapshot={snapshot} />
           </TabsContent>
           <TabsContent value="shop" className="pt-3">
+            {snapshot.boosts.shopDiscountPct > 0 ? (
+              <Badge className="mb-3">
+                {t("shopDiscount", { pct: snapshot.boosts.shopDiscountPct })}
+              </Badge>
+            ) : null}
             <Shop snapshot={snapshot} busy={busy} onAct={onAct} />
           </TabsContent>
           <TabsContent value="team" className="pt-3">
+            {snapshot.boosts.freeHire ? <Badge className="mb-3">{t("freeHire")}</Badge> : null}
             <Team snapshot={snapshot} busy={busy} onAct={onAct} />
           </TabsContent>
         </Tabs>
@@ -416,7 +424,9 @@ function UpgradeCard({
 
   const def = UPGRADES[id];
   const level = snapshot.upgrades[id] ?? 0;
-  const cost = upgradeCost(id, level);
+  const listed = upgradeCost(id, level);
+  const cost =
+    listed === undefined ? undefined : discounted(listed, snapshot.boosts.shopDiscountPct);
   const maxed = cost === undefined;
   const locked = def.tier > snapshot.economy.tier;
   const action: PlayerAction = { type: "buy", id };

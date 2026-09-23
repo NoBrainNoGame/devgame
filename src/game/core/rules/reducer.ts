@@ -14,11 +14,11 @@ import { createContext, emit, type RuleContext } from "@/game/core/rules/context
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
 import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
-import { grantRelic } from "@/game/core/rules/grants";
 import { performHack } from "@/game/core/rules/hack";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
 import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { gameOver, isOver } from "@/game/core/rules/over";
+import { chooseRelic, sprintTurns } from "@/game/core/rules/relics";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
 import { buySkillPoint, buyUpgrade } from "@/game/core/rules/shop";
 import { endSprint, startNextSprint } from "@/game/core/rules/sprint";
@@ -161,7 +161,7 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       return true;
 
     case "choose_relic":
-      grantRelic(context, action.relicId);
+      chooseRelic(context, action.relicId);
       startNextSprint(context);
       return false;
   }
@@ -186,7 +186,7 @@ function endTurn(context: RuleContext): void {
 
   // Payday falls on the month's last turn; the sprint's own end closes
   // whatever months it cut short, so a payday is never paid twice.
-  if (state.sprintTurn % monthTurns() === 0 && state.sprintTurn < BALANCE.sprint.turns) {
+  if (state.sprintTurn % monthTurns() === 0 && state.sprintTurn < sprintTurns(state)) {
     closeMonth(context);
     if (isOver(context)) return;
     maybeNarrative(context, "payday");
@@ -195,7 +195,7 @@ function endTurn(context: RuleContext): void {
 
   // The box runs out before the burnout check: a player at zero for two turns
   // is saved by the release that ships this turn, not executed just before.
-  if (state.sprintTurn >= BALANCE.sprint.turns) endSprint(context);
+  if (state.sprintTurn >= sprintTurns(state)) endSprint(context);
   if (isOver(context)) return;
 
   if (checkBurnout(context)) gameOver(context, "burnout");

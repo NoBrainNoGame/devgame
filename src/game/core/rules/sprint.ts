@@ -1,4 +1,4 @@
-import { RELIC_IDS, type RelicId, type SkillId } from "@/game/content";
+import type { SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
@@ -12,6 +12,7 @@ import { maybeNarrative } from "@/game/core/rules/narrative";
 import { drawObjective, settleObjective } from "@/game/core/rules/objectives";
 import { isOver } from "@/game/core/rules/over";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
+import { drawRelicOffer } from "@/game/core/rules/relics";
 import { pullTeam } from "@/game/core/rules/team";
 import { assignStaleTickets, backlogTickets, sortedTickets } from "@/game/core/rules/tickets";
 import { systemNote } from "@/game/core/rules/voice";
@@ -22,7 +23,7 @@ import type { RunState } from "@/game/core/types";
  * A sprint is a box of turns. When it runs out — or when there is nothing left
  * on the board — the work ships: `dev` is merged into `main`, the release is
  * tagged, and production gets to say what it thinks of what was shipped
- * unread. Then the team gets a weekend, a project improvement is chosen, and
+ * unread. Then the team gets a weekend, a sprint bonus is chosen, and
  * the next sprint's tickets arrive.
  *
  * The run has no ending: "how long can you keep this up" is the only question
@@ -32,6 +33,8 @@ import type { RunState } from "@/game/core/types";
 export function endSprint(context: RuleContext): void {
   const { state } = context;
 
+  // The turns a bonus added were this sprint's; the next starts with the box.
+  state.boosts.extraTurns = 0;
   writeRelease(context);
 
   settleDeadlines(context);
@@ -142,14 +145,6 @@ function shipBugs(context: RuleContext): void {
     recordIncident(context, "release", id);
     if (isOver(context)) return;
   }
-}
-
-function drawRelicOffer(context: RuleContext, count: number): RelicId[] {
-  const owned = new Set(context.state.relics);
-  const available = RELIC_IDS.filter((id) => !owned.has(id));
-  if (available.length === 0) return [];
-
-  return context.rng.shuffle(available).slice(0, count).sort();
 }
 
 export function startNextSprint(context: RuleContext): void {

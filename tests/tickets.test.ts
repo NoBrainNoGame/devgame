@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { SKILL_IDS } from "@/game/content";
+import { RELICS, SKILL_IDS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { ticketsFor } from "@/game/core/map/tickets";
@@ -191,10 +191,13 @@ describe("the backlog", () => {
         }
         // Deliver what is full, so production has no idle sprint to resent
         // before the board gets round to forcing a ticket.
+        // A keep leaves the board alone; grooming would empty the very
+        // backlog this test watches, and an intern would take the ticket.
         return (
           actions.find((a) => a.type === "submit") ??
           actions.find((a) => a.type === "merge") ??
           actions.find((a) => a.type === "commit" && a.mode === "craft" && a.kind === undefined) ??
+          actions.find((a) => a.type === "choose_relic" && RELICS[a.relicId].kind === "keep") ??
           actions.find((a) => a.type !== "start")
         );
       },

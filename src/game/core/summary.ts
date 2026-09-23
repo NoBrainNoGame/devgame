@@ -55,6 +55,8 @@ export interface RunSummary {
   deliveredByTeam: number;
   tierSprint: Record<string, number>;
   hires: number;
+  relicsOffered: Record<string, number>;
+  relicsChosen: Record<string, number>;
   devsByRank: Record<DevRank, number>;
   /** Levels bought, for the upgrades with any. */
   upgrades: Record<string, number>;
@@ -127,6 +129,8 @@ export function summariseRun(state: RunState): RunSummary {
     deliveredByTeam: state.stats.deliveredByTeam,
     tierSprint: { ...state.stats.tierSprint },
     hires: state.stats.hires,
+    relicsOffered: { ...state.stats.relicsOffered },
+    relicsChosen: { ...state.stats.relicsChosen },
     devsByRank,
     upgrades,
     tree,

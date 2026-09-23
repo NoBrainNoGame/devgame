@@ -13,6 +13,8 @@
 import {
   ACQUISITIONS,
   DEV_RANK,
+  RELICS,
+  type RelicId,
   SKILLS,
   type TreeNodeId,
   UPGRADES,
@@ -51,6 +53,25 @@ type PolicyName = "ai" | "craft" | "mixed" | "careful";
 
 /** Turn-consuming actions before a run is declared unending, unless `--turns` says otherwise. */
 const DEFAULT_MAX_TURNS = 1500;
+
+/** Boosts, most wanted first: what is missing now before what pays later. */
+const BOOST_PREFERENCE: RelicId[] = [
+  "second_wind",
+  "clean_slate",
+  "postmortem",
+  "grant",
+  "intern",
+  "bootcamp",
+  "golden_quarter",
+  "group_deal",
+  "headhunter",
+  "viral_thread",
+  "review_party",
+  "promotion",
+  "grooming",
+  "overtime",
+  "big_client",
+];
 
 /** Free actions in a row before a run is declared looping. */
 const MAX_FREE_STREAK = 200;
@@ -295,6 +316,18 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
 
   const start = chooseStart(state, actions);
   if (start !== undefined) return start;
+
+  // The sprint bonus: a keep while any is offered — they never come back —
+  // then the boosts in the order a player who reads the cards would want.
+  if (state.phase.kind === "choose_relic") {
+    const offered = actions.filter((a) => a.type === "choose_relic");
+    const keep = offered.find((a) => RELICS[a.relicId].kind === "keep");
+    if (keep !== undefined) return keep;
+    const ranked = [...offered].sort(
+      (a, b) => BOOST_PREFERENCE.indexOf(a.relicId) - BOOST_PREFERENCE.indexOf(b.relicId),
+    );
+    if (ranked[0] !== undefined) return ranked[0];
+  }
 
   // An acceptance has one answer; a question takes the first.
   if (state.phase.kind === "pr_accepted") return { type: "merge" };

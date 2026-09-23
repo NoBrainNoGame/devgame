@@ -1,4 +1,4 @@
-import { UPGRADES, type UpgradeId, upgradeCost, upgradeUnlocked } from "@/game/content";
+import { discounted, UPGRADES, type UpgradeId, upgradeCost, upgradeUnlocked } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { syncEnergyMax } from "@/game/core/rules/energy";
@@ -13,9 +13,15 @@ import type { RunState } from "@/game/core/types";
  * team with it — hired at no extra fee, on the payroll like anyone else.
  */
 
+/** What the next level costs here and now: the list price, less a pending bonus. */
+export function upgradePrice(state: RunState, id: UpgradeId): number | undefined {
+  const cost = upgradeCost(id, state.upgrades[id] ?? 0);
+  return cost === undefined ? undefined : discounted(cost, state.boosts.shopDiscountPct);
+}
+
 export function canBuyUpgrade(state: RunState, id: UpgradeId): boolean {
   if (!upgradeUnlocked(id, state.tier)) return false;
-  const cost = upgradeCost(id, state.upgrades[id] ?? 0);
+  const cost = upgradePrice(state, id);
   return cost !== undefined && cost <= state.money;
 }
 
@@ -23,7 +29,7 @@ export function buyUpgrade(context: RuleContext, id: UpgradeId): void {
   const { state } = context;
   const def = UPGRADES[id];
   const level = state.upgrades[id] ?? 0;
-  const cost = upgradeCost(id, level);
+  const cost = upgradePrice(state, id);
 
   if (!upgradeUnlocked(id, state.tier)) throw new Error(`${id} unlocks at tier ${def.tier}`);
   if (cost === undefined) throw new Error(`${id} is already at level ${def.maxLevel}`);
@@ -31,6 +37,7 @@ export function buyUpgrade(context: RuleContext, id: UpgradeId): void {
 
   changeMoney(context, -cost, "upgrade");
   state.upgrades[id] = level + 1;
+  state.boosts.shopDiscountPct = 0;
 
   context.refresh();
   syncEnergyMax(context);
