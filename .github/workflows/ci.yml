@@ -1,6 +1,6 @@
 # What a release has to pass. Runs on every pull request into `main` and on
-# every push to it — a merge of `dev` included — and on pushes to `dev`, so
-# the branch that becomes a release is already green when it gets there.
+# every push to it — a merge of `dev` included. `dev` runs nothing:
+# `bun run check` before each commit is the gate there.
 #
 # The same checks as `bun run check`, then the production build with the
 # placeholder environment the Docker image builds with: `env.ts` validates
@@ -10,7 +10,7 @@ name: CI
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   pull_request:
     branches: [main]
 
