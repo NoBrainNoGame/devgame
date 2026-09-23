@@ -89,6 +89,7 @@ interface Outcome {
   hacksWon: number;
   /** The run's share of the market at the end, in percent. */
   share: number;
+  events: number;
   /** The tier the run had reached when sprint 10 ended, or its last one. */
   tierAt10: number;
   moneyPeak: number;
@@ -293,8 +294,12 @@ function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): P
   const start = chooseStart(state, actions);
   if (start !== undefined) return start;
 
-  // An acceptance has one answer.
+  // An acceptance has one answer; a question takes the first.
   if (state.phase.kind === "pr_accepted") return { type: "merge" };
+  if (state.phase.kind === "event") {
+    const answer = actions.find((a) => a.type === "answer");
+    if (answer !== undefined) return answer;
+  }
 
   // A rejection: start over when the fixes would cost more than the work
   // already done, carry on otherwise.
@@ -405,6 +410,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
   let alerts = 0;
   let hacks = 0;
   let hacksWon = 0;
+  let narrative = 0;
 
   while (state.phase.kind !== "game_over" && turns < maxTurns) {
     const actions = getAvailableActions(state);
@@ -428,6 +434,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         alerts,
         hacks,
         hacksWon,
+        events: narrative,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -460,6 +467,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         alerts,
         hacks,
         hacksWon,
+        events: narrative,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -490,6 +498,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
       if (event.type === "upgrade_bought") upgrades += 1;
       if (event.type === "skill_point_bought") pointsBought += 1;
       if (event.type === "capacity_warning") alerts += 1;
+      if (event.type === "narrative_opened") narrative += 1;
       if (event.type === "hack") {
         hacks += 1;
         if (event.success) hacksWon += 1;
@@ -536,6 +545,7 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
     alerts,
     hacks,
     hacksWon,
+    events: narrative,
     tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
   });
 }
@@ -656,7 +666,7 @@ function report(policy: string, outcomes: Outcome[]): void {
     `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}  hacks avg ${mean(outcomes.map((o) => o.hacks)).toFixed(2)} won ${mean(outcomes.map((o) => o.hacksWon)).toFixed(2)}  share final med ${quantile(
       outcomes.map((o) => o.share),
       0.5,
-    )}%`,
+    )}%  events avg ${mean(outcomes.map((o) => o.events)).toFixed(1)}`,
   );
   console.log(
     `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,

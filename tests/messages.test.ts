@@ -9,6 +9,8 @@ import {
   DEV_RANKS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
+  NARRATIVE_EVENT_IDS,
+  NARRATIVE_EVENTS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
@@ -123,6 +125,16 @@ describe("game content is fully named", () => {
   test("every commit subject and feature name the hashes can reach is written", () => {
     const expected = [...allSubjectKeys(), ...allFeatureKeys()].map((key) => `game.${key}`);
     expect(expected.length).toBeGreaterThan(100);
+    expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
+    expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
+  });
+
+  test("every event has a title, a text and a label per answer", () => {
+    const expected = NARRATIVE_EVENT_IDS.flatMap((id) => [
+      `game.narrative.${id}.title`,
+      `game.narrative.${id}.text`,
+      ...NARRATIVE_EVENTS[id].choices.map((c) => `game.narrative.${id}.choices.${c.id}`),
+    ]);
     expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
     expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
   });

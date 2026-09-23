@@ -269,6 +269,25 @@ export function toLogLine(
         text: text(`log.hack.${event.kind}.${event.success ? "won" : "lost"}`),
       };
 
+    case "narrative_opened":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.narrative_opened", { title: ref(`narrative.${event.eventId}.title`) }),
+      };
+
+    case "narrative_answered":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.narrative_answered", {
+          title: ref(`narrative.${event.eventId}.title`),
+          choice: ref(`narrative.${event.eventId}.choices.${event.choice}`),
+        }),
+      };
+
     case "competitor_entered":
       return {
         seq,

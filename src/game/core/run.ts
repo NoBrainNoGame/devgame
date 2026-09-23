@@ -111,6 +111,8 @@ export function createRun(options: CreateRunOptions): RunState {
     finance: [],
     hackSprint: null,
     market: initialMarket(),
+    narrative: { lastTurn: -1000, fired: [] },
+    flags: { humanReviewOptional: false, operatorChannelClosed: false, vipForTeam: false },
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
 
@@ -136,6 +138,7 @@ export function createRun(options: CreateRunOptions): RunState {
         outage: 0,
         idle_sprint: 0,
         deadline: 0,
+        event: 0,
       },
       lastQualitySource: null,
     },

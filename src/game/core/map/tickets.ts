@@ -37,6 +37,59 @@ export function arriveTickets(context: RuleContext, skillPool: readonly SkillId[
 }
 
 /**
+ * A ticket an event brings, of a kind, drawn from nothing: its size is the
+ * middle of its kind's range, its revenue the plain one, so an answer to a
+ * question never moves the stream.
+ */
+export function arriveTicketOfKind(context: RuleContext, kind: TicketKind): Ticket {
+  const { state } = context;
+  const { tickets, economy } = BALANCE;
+  const def = TICKET_KIND[kind];
+  const range =
+    kind === "client_bug"
+      ? tickets.kinds.clientBug.points
+      : kind === "migration"
+        ? tickets.kinds.migration.points
+        : tickets.points;
+  const points =
+    kind === "debt"
+      ? tickets.kinds.debt.points
+      : Math.floor((range.min + range.max) / 2) +
+        (kind === "vip" ? tickets.kinds.vip.extraPoints : 0);
+  const baseMrr = points * economy.mrrPerPoint * tierScale(state.tier, economy.tier.mrrGrowth);
+  const id: TicketId = `t${state.nextTicketSerial}`;
+  state.nextTicketSerial += 1;
+  const ticket: Ticket = {
+    id,
+    kind,
+    status: "backlog",
+    points,
+    filled: 0,
+    rework: 0,
+    debtAdded: 0,
+    rejections: 0,
+    tier: state.tier,
+    load: def.earnsMrr
+      ? points *
+        economy.infra.usersPerPoint *
+        tierScale(Math.min(state.tier, economy.tier.loadTierCap), economy.tier.loadGrowth)
+      : 0,
+    mrr: !def.earnsMrr ? 0 : kind === "vip" ? baseMrr * tickets.kinds.vip.mrrFactor : baseMrr,
+    sprintArrived: state.sprint,
+    devMergesAtOpen: 0,
+    nodeIds: [],
+    ...(def.mustWrite === undefined ? {} : { mustWrite: def.mustWrite }),
+    ...(def.earnsMrr ? { nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${id}`)) } : {}),
+    ...(def.deadlineSprints === undefined
+      ? {}
+      : { deadlineSprint: state.sprint + def.deadlineSprints - 1 }),
+  };
+  state.tickets[id] = ticket;
+  emit(context, { type: "ticket_arrived", ticketId: id });
+  return ticket;
+}
+
+/**
  * The codebase asks for a refactor of its own accord once the debt is high
  * enough — one at a time, never forced, and drawn from nothing: whether it
  * arrives is a fact of the state, not a roll.

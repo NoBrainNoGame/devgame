@@ -14,6 +14,7 @@ import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { conflictChance } from "@/game/core/rules/modifiers";
+import { maybeNarrative } from "@/game/core/rules/narrative";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { hasUnreviewedAi } from "@/game/core/rules/review";
 import { currentTicket, forceTicket, isOnHotfix } from "@/game/core/rules/tickets";
@@ -193,6 +194,7 @@ export function recordIncident(
   state.stats.incidents += 1;
   emit(context, { type: "incident", source, nodeId, ticketId: ticket.id });
   raiseQuality(context, BALANCE.quality.perIncident, "incident");
+  if (state.phase.kind === "choose_action") maybeNarrative(context, "incident");
   return true;
 }
 

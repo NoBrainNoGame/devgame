@@ -5,7 +5,7 @@ import { Fragment } from "react";
 
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { IdleBar } from "@/components/hud/IdleBar";
-import { useMoney } from "@/components/hud/useGameText";
+import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,7 +16,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { PlayerAction, QualitySource, RunSnapshot } from "@/game";
-import { useGameStore } from "@/game";
+import { actionKey, useGameStore } from "@/game";
+import { NARRATIVE_EVENTS } from "@/game/content";
 
 /** A review being read has the floor: the other questions wait for it. */
 function useReviewing(): boolean {
@@ -135,6 +136,93 @@ export function RelicDialog({
               <IdleBar action={{ type: "choose_relic", relicId }} />
             </div>
           ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Something happened to the company and asks it a question. The text
+ * names the competitor or the developer it is about; each answer shows
+ * what it does before it is taken, and the clock's bar sits on the first.
+ */
+export function EventDialog({
+  snapshot,
+  busy,
+  onAct,
+}: {
+  snapshot: RunSnapshot;
+  busy: boolean;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+  const render = useGameText();
+
+  const reviewing = useReviewing();
+  const open = snapshot.phase.kind === "event" && !busy && !reviewing;
+  const phase = snapshot.phase.kind === "event" ? snapshot.phase : null;
+  if (phase === null) return null;
+  const def = NARRATIVE_EVENTS[phase.eventId];
+  const params = {
+    competitor:
+      phase.competitorId === undefined
+        ? ""
+        : game(`competitors.${phase.competitorId}.name` as never),
+    dev: phase.devId ?? "",
+  };
+
+  return (
+    <Dialog open={open}>
+      <DialogContent showCloseButton={false} className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            <span className="mr-2 rounded-full bg-muted px-2 py-0.5 font-normal text-muted-foreground text-xs">
+              {t(`eventSource.${def.source}`)}
+            </span>
+            {game(`narrative.${phase.eventId}.title` as never, params as never)}
+          </DialogTitle>
+          <DialogDescription className="whitespace-pre-line">
+            {game(`narrative.${phase.eventId}.text` as never, params as never)}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-2">
+          {def.choices.map((choice) => {
+            const action: PlayerAction = {
+              type: "answer",
+              eventId: phase.eventId,
+              choice: choice.id,
+            };
+            const offered = snapshot.actions.some(
+              (a) => a.type === "answer" && a.choice === choice.id,
+            );
+            const preview = snapshot.previews[actionKey(action)];
+            return (
+              <div key={choice.id} className="relative">
+                <Button
+                  variant="outline"
+                  className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
+                  disabled={busy || !offered}
+                  onClick={() => onAct(action)}
+                >
+                  <span>
+                    {game(
+                      `narrative.${phase.eventId}.choices.${choice.id}` as never,
+                      params as never,
+                    )}
+                  </span>
+                  {preview === undefined || preview.notes.length === 0 ? null : (
+                    <span className="whitespace-normal font-normal text-muted-foreground text-xs">
+                      {preview.notes.map((note) => render(note)).join(" · ")}
+                    </span>
+                  )}
+                </Button>
+                {offered ? <IdleBar action={action} /> : null}
+              </div>
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

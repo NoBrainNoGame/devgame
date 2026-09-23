@@ -424,6 +424,16 @@ export const BALANCE = {
   },
 
   /**
+   * The events that ask the company something. A chance per trigger, rolled
+   * every time the trigger fires whether or not an event may open; a
+   * cooldown so the questions stay rare.
+   */
+  narrative: {
+    cooldownTurns: 6,
+    chance: { sprint_start: 60, payday: 25, incident: 40, tier_up: 100 },
+  },
+
+  /**
    * Hacking the outside world: a coin flip, offered once a sprint and only
    * in a very tight spot — production's patience nearly gone, no energy
    * under a pile of tickets, or servers saturated with no rung affordable.

@@ -7,6 +7,7 @@ import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
 import { grantSkillPoints } from "@/game/core/rules/grants";
 import { energyMax } from "@/game/core/rules/modifiers";
+import { maybeNarrative } from "@/game/core/rules/narrative";
 import { isOver } from "@/game/core/rules/over";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { pullTeam } from "@/game/core/rules/team";
@@ -165,6 +166,7 @@ export function startNextSprint(context: RuleContext): void {
   arriveTickets(context, availableSkills(state));
 
   emit(context, { type: "sprint_started", sprint: state.sprint });
+  maybeNarrative(context, "sprint_start");
 }
 
 function expireSkillTickets(context: RuleContext): void {

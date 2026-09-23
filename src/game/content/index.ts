@@ -31,6 +31,20 @@ export {
   MERGE_EVENT_IDS,
   MERGE_EVENTS,
 } from "@/game/content/events";
+export {
+  isNarrativeEventId,
+  NARRATIVE_CHOICE_IDS,
+  NARRATIVE_EVENT_IDS,
+  NARRATIVE_EVENTS,
+  NARRATIVE_FLAGS,
+  type NarrativeChoice,
+  type NarrativeEffect,
+  type NarrativeEventDef,
+  type NarrativeEventId,
+  type NarrativeFlag,
+  type NarrativeSource,
+  type NarrativeTrigger,
+} from "@/game/content/narrative";
 export type { ProfileDef, ProfileId } from "@/game/content/profiles";
 export { isProfileId, PROFILE_IDS, PROFILES } from "@/game/content/profiles";
 export type { RelicDef, RelicId } from "@/game/content/relics";

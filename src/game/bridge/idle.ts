@@ -27,6 +27,8 @@ export function idleTarget(snapshot: RunSnapshot): PlayerAction | undefined {
       return find((a) => a.type === "resolve_conflict" && a.how === "manual");
     case "choose_relic":
       return find((a) => a.type === "choose_relic");
+    case "event":
+      return find((a) => a.type === "answer");
     case "game_over":
       return undefined;
     case "choose_action": {

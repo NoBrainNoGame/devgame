@@ -7,7 +7,12 @@ import { useCallback, useState } from "react";
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BoardDialog } from "@/components/hud/BoardDialog";
 import { CompanyDialog } from "@/components/hud/CompanyDialog";
-import { ConflictDialog, RelicDialog, RunOverDialog } from "@/components/hud/GameDialogs";
+import {
+  ConflictDialog,
+  EventDialog,
+  RelicDialog,
+  RunOverDialog,
+} from "@/components/hud/GameDialogs";
 import { GraphControls } from "@/components/hud/GraphControls";
 import { GraphTooltip } from "@/components/hud/GraphTooltip";
 import { IdleControls } from "@/components/hud/IdleControls";
@@ -178,6 +183,7 @@ export function RunStage({
           <ReviewDialog snapshot={snapshot} onAct={onAct} />
           <ConflictDialog snapshot={snapshot} busy={busy} onAct={onAct} />
           <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+          <EventDialog snapshot={snapshot} busy={busy} onAct={onAct} />
           <RunOverDialog
             snapshot={snapshot}
             busy={busy}

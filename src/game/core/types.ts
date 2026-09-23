@@ -6,6 +6,8 @@ import type {
   EventId,
   FailureEventId,
   MergeEventId,
+  NarrativeEventId,
+  NarrativeFlag,
   ProfileId,
   RelicId,
   SkillId,
@@ -230,7 +232,8 @@ export type QualitySource =
   | "stale"
   | "outage"
   | "idle_sprint"
-  | "deadline";
+  | "deadline"
+  | "event";
 /** Every way the gauge moves, the ways down included. */
 export type QualityChange = QualitySource | "clean_sprint" | "hack" | "client_bug";
 
@@ -282,6 +285,8 @@ export type Phase =
   /** The review said no. Start the ticket over, or fix it and carry on. */
   | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number; overDebt: boolean }
   | { kind: "choose_relic"; offer: RelicId[] }
+  /** Something happened to the company and asks it a question. */
+  | { kind: "event"; eventId: NarrativeEventId; competitorId?: CompetitorId; devId?: DevId }
   | { kind: "game_over"; reason: GameOverReason; cause?: QualitySource };
 
 export interface LogLine {
@@ -355,6 +360,10 @@ export interface RunState {
   /** The sprint of the last hack attempt: one a sprint, whatever it bought. */
   hackSprint: number | null;
   market: MarketState;
+  /** The narrative's bookkeeping: when the last event opened, which fired once. */
+  narrative: { lastTurn: number; fired: NarrativeEventId[] };
+  /** What the answers to the system's questions left behind. */
+  flags: Record<NarrativeFlag, boolean>;
   /** Months closed this sprint, so the sprint's end can close the rest. */
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
@@ -415,6 +424,8 @@ export type PlayerAction =
   | { type: "acquire"; id: AcquisitionId }
   /** Hack the outside world. Offered only in a very tight spot; a coin flip. */
   | { type: "hack" }
+  /** The answer to an event. Free: the question is what costs. */
+  | { type: "answer"; eventId: NarrativeEventId; choice: string }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
   | { type: "choose_relic"; relicId: RelicId };
 
@@ -520,6 +531,13 @@ export type GameEvent =
   | { type: "price_war"; untilMonth: number }
   /** Customers remembered something: the share moved by these points. */
   | { type: "share_changed"; delta: number; share: number }
+  | {
+      type: "narrative_opened";
+      eventId: NarrativeEventId;
+      competitorId?: CompetitorId;
+      devId?: DevId;
+    }
+  | { type: "narrative_answered"; eventId: NarrativeEventId; choice: string }
   /** Production is about to saturate, or has. Emitted once per rise of level. */
   | {
       type: "capacity_warning";

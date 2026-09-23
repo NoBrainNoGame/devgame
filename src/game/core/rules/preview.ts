@@ -1,6 +1,7 @@
 import {
   ACQUISITIONS,
   DEV_RANK,
+  NARRATIVE_EVENTS,
   TREE,
   treeCost,
   UPGRADES,
@@ -22,6 +23,7 @@ import {
   reviewEnergyCost,
   wipExtra,
 } from "@/game/core/rules/modifiers";
+import { choiceCost } from "@/game/core/rules/narrative";
 import { canBuySkillPoint, skillPointPrice } from "@/game/core/rules/shop";
 import { devCapacity, hireCostFor, maxSeats } from "@/game/core/rules/team";
 import {
@@ -31,6 +33,7 @@ import {
   mostIndebtedOn,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
+import { tierScale } from "@/game/core/rules/tier";
 import { treeUnlocked } from "@/game/core/rules/tree";
 import { pointsFor } from "@/game/core/rules/write";
 import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
@@ -324,6 +327,39 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       };
     }
 
+    case "answer": {
+      const choice = NARRATIVE_EVENTS[action.eventId].choices.find((c) => c.id === action.choice);
+      const notes: I18nText[] = [];
+      const cost = choiceCost(state, action.eventId, action.choice);
+      if (cost > 0) notes.push(text("notes.price", { money: money(cost) }));
+      const scale = tierScale(state.tier, BALANCE.economy.tier.mrrGrowth);
+      const e = choice?.effect ?? {};
+      if (e.money !== undefined)
+        notes.push(text("notes.event_money", { money: money(e.money * scale) }));
+      if (e.energy !== undefined) notes.push(text("notes.event_energy", { delta: e.energy }));
+      if (e.debt !== undefined) notes.push(text("notes.event_debt", { delta: e.debt }));
+      if (e.quality !== undefined) notes.push(text("notes.event_quality", { delta: e.quality }));
+      if (e.share !== undefined) notes.push(text("notes.event_share", { delta: e.share }));
+      if (e.competitor !== undefined)
+        notes.push(text("notes.event_competitor", { pct: e.competitor }));
+      if (e.ticket !== undefined)
+        notes.push(text("notes.event_ticket", { kind: ref(`tickets.${e.ticket}.name`) }));
+      if (e.devLeaves === true) notes.push(text("notes.event_dev_leaves"));
+      if (e.skillPoints !== undefined)
+        notes.push(text("notes.event_points", { count: e.skillPoints }));
+      if (e.priceWar === true) notes.push(text("notes.event_price_war"));
+      if (e.flag !== undefined) notes.push(text(`notes.event_flag.${e.flag}`));
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes,
+        ...(cost > state.money
+          ? { blocked: text("notes.too_expensive", { money: money(cost) }) }
+          : {}),
+      };
+    }
+
     case "resolve_conflict": {
       if (action.how === "manual") {
         const chance = conflictChance(state, effects);
@@ -379,6 +415,8 @@ export function actionKey(action: PlayerAction): string {
       return `hire:${action.rank}`;
     case "acquire":
       return `acquire:${action.id}`;
+    case "answer":
+      return `answer:${action.eventId}:${action.choice}`;
     case "resolve_conflict":
       return `conflict:${action.how}`;
     case "choose_relic":

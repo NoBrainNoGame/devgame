@@ -1,5 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { maybeNarrative } from "@/game/core/rules/narrative";
 
 /**
  * Orders of magnitude. The tier is what the shop, the team and the tickets
@@ -24,6 +25,7 @@ export function raiseTier(context: RuleContext, candidate: number): void {
   if (candidate <= state.tier) return;
   state.tier = candidate;
   emit(context, { type: "tier_reached", tier: candidate });
+  maybeNarrative(context, "tier_up");
 }
 
 /**

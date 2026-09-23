@@ -155,6 +155,18 @@ What a developer does each turn — pick up, write, land — is `workTeam` in
 no debt, no energy. Changing that is a rule change, and `tests/team.test.ts`
 is where the promises are written down.
 
+### A narrative event
+
+Events live in `NARRATIVE_EVENTS` in `src/game/content/narrative.ts`:
+source, trigger, weight, tier window, `minSprint` (never below 2), `once`,
+what it needs, and exactly two choices with their effects. Adding one means
+`game.narrative.<id>.{title,text,choices.<choice>}` in both catalogues, in
+the voice of `docs/lore.md`, and a repinned fingerprint. A new *effect*
+field is a branch in `answerEvent` (`rules/narrative.ts`) and a note in the
+preview. `maybeNarrative` draws twice on every trigger whatever happens; do
+not add a draw that only happens when an event opens, or a run that saw no
+event stops replaying — `tests/narrative.test.ts` checks that too.
+
 ### A ticket kind
 
 Kinds live in `TICKET_KIND` in `src/game/content/tickets.ts`: colour, ref

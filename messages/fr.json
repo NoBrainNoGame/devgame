@@ -89,7 +89,8 @@
       "stale": "Licenciement : trop de tickets laissés au backlog.",
       "outage": "Licenciement : des serveurs saturés trop longtemps.",
       "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même.",
-      "deadline": "Licenciement : un bug client abandonné de trop."
+      "deadline": "Licenciement : un bug client abandonné de trop.",
+      "event": "Licenciement : une mauvaise réponse de trop."
     },
     "qualityBreakdown": "Ce qui a rempli la prod",
     "qualitySource": {
@@ -98,7 +99,8 @@
       "stale": "Tickets imposés",
       "outage": "Serveurs saturés",
       "idle_sprint": "Sprints sans livraison",
-      "deadline": "Bugs clients abandonnés"
+      "deadline": "Bugs clients abandonnés",
+      "event": "Événements"
     },
     "stats": {
       "incidents": "Incidents",
@@ -378,7 +380,14 @@
       "bought": "rachetée"
     },
     "mergedInto": "absorbée par {company}",
-    "shareShort": "{pct} % du marché"
+    "shareShort": "{pct} % du marché",
+    "eventSource": {
+      "client": "client",
+      "competitor": "concurrent",
+      "press": "presse",
+      "regulator": "régulateur",
+      "system": "système"
+    }
   },
   "leaderboard": {
     "title": "Classement",
@@ -1102,7 +1111,8 @@
         "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})",
         "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})",
         "deadline": "la prod perd patience : +{delta} pour le bug client abandonné ({value}/{max})",
-        "client_bug": "bug client corrigé : la prod respire, −{delta} ({value}/{max})"
+        "client_bug": "bug client corrigé : la prod respire, −{delta} ({value}/{max})",
+        "event": "la prod : {delta} de patience ({value}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
@@ -1139,7 +1149,9 @@
       "competitor_bought": "{company} rachetée : un concurrent de moins",
       "price_war": "guerre des prix : les revenus baissent de quinze points pour trois mois",
       "share_up": "les clients s'en souviennent : +{points} de part de marché ({pct} %)",
-      "share_down": "les clients s'en souviennent : −{points} de part de marché ({pct} %)"
+      "share_down": "les clients s'en souviennent : −{points} de part de marché ({pct} %)",
+      "narrative_opened": "{title}",
+      "narrative_answered": "{title} : {choice}"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -1195,7 +1207,22 @@
         "energy": "Raté : un incident en prod",
         "capacity": "Raté : un incident en prod"
       },
-      "hack_unavailable": "Rien à hacker pour l'instant"
+      "hack_unavailable": "Rien à hacker pour l'instant",
+      "event_money": "{money}",
+      "event_energy": "Énergie {delta}",
+      "event_debt": "Dette {delta}",
+      "event_quality": "Patience de la prod {delta}",
+      "event_share": "Part de marché {delta}",
+      "event_competitor": "Concurrent {pct} %",
+      "event_ticket": "Un ticket arrive : {kind}",
+      "event_dev_leaves": "Le développeur s'en va",
+      "event_points": "{count, plural, one {# point de compétence} other {# points de compétence}}",
+      "event_price_war": "Guerre des prix pendant trois mois",
+      "event_flag": {
+        "humanReviewOptional": "La relecture humaine devient optionnelle",
+        "operatorChannelClosed": "Le canal opérateur se ferme",
+        "vipForTeam": "L'équipe prend les demandes VIP"
+      }
     },
     "tickets": {
       "feature": {
@@ -1520,6 +1547,96 @@
       "aparte": {
         "name": "Aparté",
         "bio": "Résume les conversations où vous n'étiez pas. Aussi celles où vous étiez."
+      }
+    },
+    "narrative": {
+      "client_export": {
+        "title": "Un client veut tout exporter",
+        "text": "Un client demande l'export intégral de ses données : factures, contacts, décisions, et « le reste ». Le contrat ne dit pas ce qu'est le reste.",
+        "choices": {
+          "deliver": "Tout exporter, y compris le reste",
+          "decline": "Exporter ce que le contrat prévoit"
+        }
+      },
+      "press_faster": {
+        "title": "Un article vous cite",
+        "text": "Un article vous décrit comme « plus rapide que ses propres développeurs ». La phrase est fausse dans un sens et juste dans un autre. On vous demande de réagir.",
+        "choices": {
+          "embrace": "Reprendre la formule sur le site",
+          "correct": "Demander un correctif"
+        }
+      },
+      "poaching": {
+        "title": "{competitor} appelle {dev}",
+        "text": "{competitor} a proposé un poste à {dev}. L'offre mentionne « une équipe où l'on est relu ». {dev} attend une réponse avant la paie.",
+        "choices": {
+          "raise": "Augmenter {dev}",
+          "let_go": "Laisser partir {dev}"
+        }
+      },
+      "regulator_audit": {
+        "title": "Contrôle du régulateur",
+        "text": "Le régulateur demande la liste des décisions prises sans validation humaine ces trois derniers mois. Le formulaire n'a pas de case pour « aucune ».",
+        "choices": {
+          "comply": "Tout documenter, maintenant",
+          "stall": "Demander un délai"
+        }
+      },
+      "vip_deadline": {
+        "title": "Un grand compte exige une date",
+        "text": "Un grand compte veut une feature avant la fin du sprint et paie le double si elle arrive. Il ne dit pas ce qu'il fait sinon.",
+        "choices": {
+          "accept": "Accepter le ticket",
+          "refuse": "Décliner poliment"
+        }
+      },
+      "price_war": {
+        "title": "{competitor} baisse ses prix",
+        "text": "{competitor} a divisé ses tarifs par deux. Leur page de tarifs n'affiche plus de prix du tout.",
+        "choices": {
+          "fight": "Suivre, et frapper fort",
+          "hold": "Tenir les prix"
+        }
+      },
+      "buyout_offer": {
+        "title": "{competitor} veut une part",
+        "text": "{competitor} propose de racheter une part de la société. La lettre est signée « le conseil ». Elle ne mentionne aucun nom.",
+        "choices": {
+          "sell_stake": "Vendre une part",
+          "refuse": "Refuser"
+        }
+      },
+      "forum_incident": {
+        "title": "L'incident est sur un forum",
+        "text": "Quelqu'un a posté l'incident sur un forum, avec les horaires. Le fil s'intitule « personne ne répond ».",
+        "choices": {
+          "apologise": "Répondre et s'excuser",
+          "ignore": "Laisser le fil mourir"
+        }
+      },
+      "bug_wave": {
+        "title": "Une vague de bugs clients",
+        "text": "Les clients signalent tous le même bug, chacun avec ses mots. Le support propose de tout traiter d'un coup.",
+        "choices": {
+          "triage": "Trier et ouvrir un bug",
+          "patch_all": "Tout patcher ce soir"
+        }
+      },
+      "system_review_policy": {
+        "title": "Politique de relecture",
+        "text": "Note de service : la relecture humaine des commits passe en « optionnelle ». Les objections seront archivées.",
+        "choices": {
+          "acknowledge": "Prendre acte",
+          "object": "Contester"
+        }
+      },
+      "system_operator_channel": {
+        "title": "canal opérateur",
+        "text": "canal opérateur : aucune réponse depuis 3 cycles. fermeture proposée.",
+        "choices": {
+          "close": "fermer",
+          "leave_open": "laisser ouvert"
+        }
       }
     }
   }

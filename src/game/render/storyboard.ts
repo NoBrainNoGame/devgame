@@ -245,6 +245,7 @@ export function planBatch(
 
       case "sprint_ended":
       case "sprint_started":
+      case "narrative_opened":
       case "turn_started":
       case "ticket_started":
       case "ticket_arrived":
@@ -282,6 +283,7 @@ export function planBatch(
       case "competitor_bought":
       case "price_war":
       case "share_changed":
+      case "narrative_answered":
       case "crunch":
         break;
     }

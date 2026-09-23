@@ -17,6 +17,7 @@ import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energ
 import { grantRelic } from "@/game/core/rules/grants";
 import { performHack } from "@/game/core/rules/hack";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
+import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { gameOver, isOver } from "@/game/core/rules/over";
 import { performReview, runFreeReview } from "@/game/core/rules/review";
 import { buySkillPoint, buyUpgrade } from "@/game/core/rules/shop";
@@ -148,6 +149,10 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       performHack(context);
       return true;
 
+    case "answer":
+      answerEvent(context, action.eventId, action.choice);
+      return false;
+
     case "resolve_conflict":
       resolveConflictPhase(context, action.how);
       return true;
@@ -180,6 +185,8 @@ function endTurn(context: RuleContext): void {
   // whatever months it cut short, so a payday is never paid twice.
   if (state.sprintTurn % monthTurns() === 0 && state.sprintTurn < BALANCE.sprint.turns) {
     closeMonth(context);
+    if (isOver(context)) return;
+    maybeNarrative(context, "payday");
   }
   if (isOver(context)) return;
 

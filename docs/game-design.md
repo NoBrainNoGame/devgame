@@ -396,6 +396,30 @@ pleine, le barreau conseillé offert. Perdu, c'est un incident en prod, ou,
 quand c'était la patience, la fin de la run : pris la main dans le sac. Le
 superviseur ne le tente jamais.
 
+## Ce qui arrive à l'entreprise
+
+Onze **événements narratifs** (`src/game/content/narrative.ts`, textes dans
+la voix de `docs/lore.md`) posent une question à l'entreprise : un client,
+un concurrent, la presse, le régulateur — ou le système lui-même, aux
+derniers paliers. Chacun a un déclencheur (ouverture de sprint, paie,
+incident, changement de palier), une fenêtre de paliers, un sprint minimal
+(jamais avant le deuxième : la démo n'en voit pas), parfois une seule
+occurrence, et deux réponses. Une réponse est gratuite en temps et applique
+ses effets par les canaux existants : argent (en unités du palier 0,
+multipliées par 5 à chaque palier), énergie, dette, patience, part de marché,
+force du concurrent nommé, ticket d'une sorte, départ du dernier embauché,
+points de compétence, drapeau, guerre des prix. Une réponse qu'on ne peut pas
+payer n'est pas proposée.
+
+Chaque déclencheur fait **toujours** les deux mêmes tirages — une chance et
+un index — qu'une question puisse s'ouvrir ou non, pour que la trame reste
+la même dans une run qui n'en voit aucune ; la question ne s'ouvre qu'en
+tour ordinaire, après six tours de répit, et seulement s'il y a un événement
+éligible. L'horloge répond la première proposition. Les deux événements
+système (« politique de relecture » au palier 4, « canal opérateur » au
+palier 6) mènent au même endroit quelle que soit la réponse : c'est ce
+qu'ils disent.
+
 ## Événements et obstacles
 
 **Un jet de commit raté** déclenche un événement négatif, tiré selon des poids

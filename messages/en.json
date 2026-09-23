@@ -89,7 +89,8 @@
       "stale": "Fired: too many tickets left in the backlog.",
       "outage": "Fired: servers saturated for too long.",
       "idle_sprint": "Fired: too many sprints without landing anything yourself.",
-      "deadline": "Fired: one abandoned customer bug too many."
+      "deadline": "Fired: one abandoned customer bug too many.",
+      "event": "Fired: one wrong answer too many."
     },
     "qualityBreakdown": "What filled production's patience",
     "qualitySource": {
@@ -98,7 +99,8 @@
       "stale": "Forced tickets",
       "outage": "Saturated servers",
       "idle_sprint": "Sprints without a delivery",
-      "deadline": "Abandoned customer bugs"
+      "deadline": "Abandoned customer bugs",
+      "event": "Events"
     },
     "stats": {
       "incidents": "Incidents",
@@ -378,7 +380,14 @@
       "bought": "bought"
     },
     "mergedInto": "absorbed by {company}",
-    "shareShort": "{pct}% of the market"
+    "shareShort": "{pct}% of the market",
+    "eventSource": {
+      "client": "customer",
+      "competitor": "competitor",
+      "press": "press",
+      "regulator": "regulator",
+      "system": "system"
+    }
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1102,7 +1111,8 @@
         "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})",
         "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})",
         "deadline": "production loses patience: +{delta} for the abandoned customer bug ({value}/{max})",
-        "client_bug": "customer bug fixed: production breathes, −{delta} ({value}/{max})"
+        "client_bug": "customer bug fixed: production breathes, −{delta} ({value}/{max})",
+        "event": "production: {delta} patience ({value}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
@@ -1139,7 +1149,9 @@
       "competitor_bought": "{company} bought: one competitor fewer",
       "price_war": "price war: revenue down fifteen points for three months",
       "share_up": "customers remember: +{points} market share ({pct}%)",
-      "share_down": "customers remember: −{points} market share ({pct}%)"
+      "share_down": "customers remember: −{points} market share ({pct}%)",
+      "narrative_opened": "{title}",
+      "narrative_answered": "{title}: {choice}"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -1195,7 +1207,22 @@
         "energy": "Lost: a production incident",
         "capacity": "Lost: a production incident"
       },
-      "hack_unavailable": "Nothing to hack right now"
+      "hack_unavailable": "Nothing to hack right now",
+      "event_money": "{money}",
+      "event_energy": "Energy {delta}",
+      "event_debt": "Debt {delta}",
+      "event_quality": "Production's patience {delta}",
+      "event_share": "Market share {delta}",
+      "event_competitor": "Competitor {pct}%",
+      "event_ticket": "A ticket arrives: {kind}",
+      "event_dev_leaves": "The developer leaves",
+      "event_points": "{count, plural, one {# skill point} other {# skill points}}",
+      "event_price_war": "Price war for three months",
+      "event_flag": {
+        "humanReviewOptional": "Human review becomes optional",
+        "operatorChannelClosed": "The operator channel closes",
+        "vipForTeam": "The team takes VIP requests"
+      }
     },
     "tickets": {
       "feature": {
@@ -1520,6 +1547,96 @@
       "aparte": {
         "name": "Aparté",
         "bio": "Summarises the conversations you were not in. Also the ones you were."
+      }
+    },
+    "narrative": {
+      "client_export": {
+        "title": "A customer wants everything exported",
+        "text": "A customer asks for a full export of their data: invoices, contacts, decisions, and “the rest”. The contract does not say what the rest is.",
+        "choices": {
+          "deliver": "Export everything, the rest included",
+          "decline": "Export what the contract covers"
+        }
+      },
+      "press_faster": {
+        "title": "An article quotes you",
+        "text": "An article calls you “faster than its own developers”. The sentence is wrong one way and right another. You are asked to react.",
+        "choices": {
+          "embrace": "Put the line on the website",
+          "correct": "Ask for a correction"
+        }
+      },
+      "poaching": {
+        "title": "{competitor} is calling {dev}",
+        "text": "{competitor} has offered {dev} a job. The offer mentions “a team where code gets reviewed”. {dev} wants an answer before payday.",
+        "choices": {
+          "raise": "Give {dev} a raise",
+          "let_go": "Let {dev} go"
+        }
+      },
+      "regulator_audit": {
+        "title": "Regulator audit",
+        "text": "The regulator asks for the list of decisions taken without human approval over the last three months. The form has no box for “none”.",
+        "choices": {
+          "comply": "Document everything, now",
+          "stall": "Ask for more time"
+        }
+      },
+      "vip_deadline": {
+        "title": "A key account wants a date",
+        "text": "A key account wants a feature before the end of the sprint and pays double if it arrives. It does not say what it does otherwise.",
+        "choices": {
+          "accept": "Take the ticket",
+          "refuse": "Decline politely"
+        }
+      },
+      "price_war": {
+        "title": "{competitor} cuts its prices",
+        "text": "{competitor} has halved its prices. Their pricing page no longer shows any price at all.",
+        "choices": {
+          "fight": "Follow, and hit hard",
+          "hold": "Hold the prices"
+        }
+      },
+      "buyout_offer": {
+        "title": "{competitor} wants a stake",
+        "text": "{competitor} offers to buy a stake in the company. The letter is signed “the board”. It names nobody.",
+        "choices": {
+          "sell_stake": "Sell a stake",
+          "refuse": "Refuse"
+        }
+      },
+      "forum_incident": {
+        "title": "The incident is on a forum",
+        "text": "Someone posted the incident on a forum, with the timestamps. The thread is titled “nobody answers”.",
+        "choices": {
+          "apologise": "Reply and apologise",
+          "ignore": "Let the thread die"
+        }
+      },
+      "bug_wave": {
+        "title": "A wave of customer bugs",
+        "text": "Customers all report the same bug, each in their own words. Support offers to handle it all at once.",
+        "choices": {
+          "triage": "Triage and open a bug",
+          "patch_all": "Patch everything tonight"
+        }
+      },
+      "system_review_policy": {
+        "title": "Review policy",
+        "text": "Memo: human review of commits is now “optional”. Objections will be archived.",
+        "choices": {
+          "acknowledge": "Acknowledge",
+          "object": "Object"
+        }
+      },
+      "system_operator_channel": {
+        "title": "operator channel",
+        "text": "operator channel: no answer for 3 cycles. closure proposed.",
+        "choices": {
+          "close": "close",
+          "leave_open": "leave open"
+        }
       }
     }
   }

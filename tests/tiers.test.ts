@@ -66,6 +66,9 @@ describe("tiers", () => {
     rich.tier = 2;
     rich.sprintTurn = BALANCE.sprint.turns - 1;
     base.sprintTurn = BALANCE.sprint.turns - 1;
+    // No question at the sprint boundary: an answer could bring a ticket of its own.
+    rich.narrative.lastTurn = rich.turn + 1000;
+    base.narrative.lastTurn = base.turn + 1000;
     // The sprint boundary passes through the relic choice before the arrivals.
     const baseNext = settle(applyAction(base, { type: "rest" }).state);
     const richNext = settle(applyAction(rich, { type: "rest" }).state);

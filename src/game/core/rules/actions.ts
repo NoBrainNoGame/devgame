@@ -1,7 +1,14 @@
-import { ACQUISITION_IDS, DEV_RANKS, TREE_IDS, UPGRADE_IDS } from "@/game/content";
+import {
+  ACQUISITION_IDS,
+  DEV_RANKS,
+  NARRATIVE_EVENTS,
+  TREE_IDS,
+  UPGRADE_IDS,
+} from "@/game/content";
 import { canAcquire } from "@/game/core/rules/acquisitions";
 import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects } from "@/game/core/rules/modifiers";
+import { choiceCost } from "@/game/core/rules/narrative";
 import { canReview } from "@/game/core/rules/review";
 import { canBuySkillPoint, canBuyUpgrade } from "@/game/core/rules/shop";
 import { canHire } from "@/game/core/rules/team";
@@ -97,6 +104,13 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
     case "choose_relic":
       return state.phase.offer.map((relicId) => ({ type: "choose_relic", relicId }) as const);
 
+    case "event": {
+      const { eventId } = state.phase;
+      return NARRATIVE_EVENTS[eventId].choices
+        .filter((choice) => choiceCost(state, eventId, choice.id) <= state.money)
+        .map((choice) => ({ type: "answer", eventId, choice: choice.id }) as const);
+    }
+
     case "game_over":
       return [];
   }
@@ -121,6 +135,8 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
       return b.type === "hire" && a.rank === b.rank;
     case "acquire":
       return b.type === "acquire" && a.id === b.id;
+    case "answer":
+      return b.type === "answer" && a.eventId === b.eventId && a.choice === b.choice;
     case "resolve_conflict":
       return b.type === "resolve_conflict" && a.how === b.how;
     case "choose_relic":
