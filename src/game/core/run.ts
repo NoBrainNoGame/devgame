@@ -12,6 +12,7 @@ import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
+import { initialMarket } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { availableSkills } from "@/game/core/rules/sprint";
 import { writeSprintStart } from "@/game/core/rules/write";
@@ -109,6 +110,7 @@ export function createRun(options: CreateRunOptions): RunState {
     capacityAlert: "ok",
     finance: [],
     hackSprint: null,
+    market: initialMarket(),
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
 

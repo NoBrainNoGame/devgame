@@ -97,8 +97,11 @@ describe("the month", () => {
     shipFeature(rich, 7);
     const report = monthlyReport(rich, gatherEffects(rich));
     expect(report.mrr).toBe(17);
-    expect(report.revenue).toBe(17);
+    // Served in full; what the market makes of it is the share's business.
     expect(report.lost).toBe(0);
+    expect(report.revenue).toBe(Math.floor(17 * report.multiplier));
+    expect(report.multiplier).toBeGreaterThanOrEqual(BALANCE.market.multiplier.min);
+    expect(report.multiplier).toBeLessThanOrEqual(BALANCE.market.multiplier.max);
   });
 
   test("every payday is a month of history, and the history is capped", () => {
@@ -130,7 +133,8 @@ describe("the month", () => {
     const closed = eventsOfType(events, "month_closed");
     expect(closed.length).toBe(1);
     const bonus = UPGRADES.marketing.perLevel.mrrBonusPct ?? 0;
-    const expectedRevenue = Math.floor((10 * (100 + bonus)) / 100);
+    const { multiplier } = monthlyReport(state, gatherEffects(state));
+    const expectedRevenue = Math.floor(Math.floor((10 * (100 + bonus)) / 100) * multiplier);
     expect(closed[0]?.revenue).toBe(expectedRevenue);
     expect(closed[0]?.upkeep).toBe(UPGRADES.marketing.upkeep);
     expect(after.money).toBe(before + expectedRevenue - UPGRADES.marketing.upkeep);
@@ -147,8 +151,9 @@ describe("the month", () => {
     const report = monthlyReport(state, gatherEffects(state));
     expect(report.load).toBe(capacity * 2);
     expect(report.overPct).toBe(100);
-    expect(report.revenue).toBe(Math.floor(report.mrr / 2));
-    expect(report.lost).toBe(report.mrr - report.revenue);
+    const servedRevenue = Math.floor(report.mrr / 2);
+    expect(report.lost).toBe(report.mrr - servedRevenue);
+    expect(report.revenue).toBe(Math.floor(servedRevenue * report.multiplier));
 
     const { state: after, events } = applyAction(state, { type: "rest" });
     expect(eventsOfType(events, "outage")[0]?.overPct).toBe(100);

@@ -365,7 +365,20 @@
       "migration": "chaque commit coûte de la dette, livré il offre un niveau de serveurs"
     },
     "deadline": "à livrer avant la fin du sprint {sprint}",
-    "late": "en retard"
+    "late": "en retard",
+    "market": "Marché",
+    "marketShare": "Part de marché",
+    "marketMultiplier": "revenus à {pct} %",
+    "marketHint": "Votre poids, c'est votre revenu et vos utilisateurs contre ceux des concurrents. La part fixe ce que les features rapportent vraiment, de 60 à 140 pour cent. Un bug client corrigé à temps la fait monter, un VIP qui attend la fait baisser.",
+    "priceWar": "Guerre des prix : revenus amputés de quinze points pendant encore {count, plural, one {# mois} other {# mois}}.",
+    "competitorStatus": {
+      "waiting": "à venir",
+      "alive": "en activité",
+      "merged": "absorbée",
+      "bought": "rachetée"
+    },
+    "mergedInto": "absorbée par {company}",
+    "shareShort": "{pct} % du marché"
   },
   "leaderboard": {
     "title": "Classement",
@@ -1120,7 +1133,13 @@
         "cancelled": "bug client non traité : le client est parti, la prod s'en souvient",
         "late": "bug client en retard : la prod ne dira pas merci",
         "vip": "demande VIP en retard : le contrat vaut moitié moins"
-      }
+      },
+      "competitor_entered": "{company} entre sur le marché",
+      "competitor_merged": "{company} absorbée par {into}",
+      "competitor_bought": "{company} rachetée : un concurrent de moins",
+      "price_war": "guerre des prix : les revenus baissent de quinze points pour trois mois",
+      "share_up": "les clients s'en souviennent : +{points} de part de marché ({pct} %)",
+      "share_down": "les clients s'en souviennent : −{points} de part de marché ({pct} %)"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",

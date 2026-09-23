@@ -342,6 +342,21 @@ ramasse le backlog avant que le tableau ne vous l'impose. Un dev qu'on ne peut
 pas payer s'en va, et ses tickets vous reviennent tels quels, ouverts, dans
 leur colonne.
 
+**Le marché.** Le poids de la boîte, c'est son revenu mensuel plus ses
+utilisateurs (dix pour un euro) ; sa **part de marché**, ce poids contre la
+force de tous les concurrents en activité. La part fixe ce que les features
+rapportent vraiment : de 60 % du revenu servi sans part à 140 % avec
+tout le marché, quinze points de moins en guerre des prix. Elle bouge par ce
+que les clients retiennent : un bug client corrigé à temps (+1 point), un
+VIP livré à l'heure (+2) ou en retard (−2). Huit concurrents
+(`src/game/content/competitors.ts`, bios dans `docs/lore.md`) entrent chacun
+à son palier avec une force à l'échelle de ce palier, grandissent chaque
+mois de leur agressivité plus une gigue tirée pour chacun, et fusionnent — un
+jet par mois — quand l'un d'eux pèse plus de 70 % des autres. Racheter un
+concurrent ou un conglomérat retire du marché le plus fort d'entre eux.
+L'onglet Marché de l'entreprise montre la part, le multiplicateur, la guerre
+des prix et une carte par concurrent.
+
 **Le jeu tourne sans vous.** Une horloge tourne sous **le coup prévu**, et sa
 barre le désigne : laissée seule une trentaine de secondes, elle le presse.
 Sans superviseur, le coup prévu est de démarrer le plus ancien ticket quand

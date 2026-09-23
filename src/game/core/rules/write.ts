@@ -5,8 +5,10 @@ import { tipOfLane, tipOfTicket } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt } from "@/game/core/rules/debt";
+import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { grantSkill } from "@/game/core/rules/grants";
+import { adjustShare } from "@/game/core/rules/market";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality } from "@/game/core/rules/quality";
@@ -79,7 +81,15 @@ function rewardKind(context: RuleContext, ticket: Ticket): void {
   const { kinds } = BALANCE.tickets;
   switch (ticket.kind) {
     case "client_bug":
-      if (ticket.late !== true) lowerQuality(context, kinds.clientBug.patienceOnFix, "client_bug");
+      if (ticket.late !== true) {
+        lowerQuality(context, kinds.clientBug.patienceOnFix, "client_bug");
+        adjustShare(
+          context,
+          BALANCE.market.clientBugShare,
+          mrrOf(state, context.effects),
+          loadOf(state),
+        );
+      }
       return;
     case "vip":
       if (ticket.late !== true) {
@@ -89,6 +99,12 @@ function rewardKind(context: RuleContext, ticket: Ticket): void {
           "vip",
         );
       }
+      adjustShare(
+        context,
+        ticket.late === true ? -BALANCE.market.vipShare : BALANCE.market.vipShare,
+        mrrOf(state, context.effects),
+        loadOf(state),
+      );
       return;
     case "debt":
       repayDebt(context, kinds.debt.repay);

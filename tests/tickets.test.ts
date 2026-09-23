@@ -67,8 +67,10 @@ describe("the backlog", () => {
       limit: 400,
     });
 
+    // An expired offer keeps the name of what it offered; the skill is back
+    // in the pool, so a later ticket may promise it again.
     const promised = sortedTickets(state)
-      .filter((ticket) => ticket.status !== "merged")
+      .filter((ticket) => ticket.status === "backlog" || ticket.status === "open")
       .map((ticket) => ticket.skillId)
       .filter((id) => id !== undefined);
     expect(new Set(promised).size).toBe(promised.length);

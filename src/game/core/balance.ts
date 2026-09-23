@@ -402,6 +402,28 @@ export const BALANCE = {
   },
 
   /**
+   * The market. The run's power is its revenue plus its users; its share is
+   * that against every competitor alive, and the share sets a multiplier on
+   * the revenue: a corner of the market pays sixty percent, all of it a
+   * hundred and forty. Competitors enter at their tier, grow by their own
+   * aggression plus a jitter, and merge when one of them dominates.
+   */
+  market: {
+    /** Users per unit of power: ten users weigh as much as one euro of revenue. */
+    usersPerPower: 10,
+    /** Revenue multiplier at no share, and at all of it. */
+    multiplier: { min: 0.6, max: 1.4 },
+    priceWar: { penalty: 0.15, months: 3 },
+    /** Half-width of the monthly jitter on a competitor's growth, in percent. */
+    jitterPct: 3,
+    /** A merger is rolled each month once one competitor holds this much of them. */
+    merge: { dominancePct: 70, chancePct: 20 },
+    /** Share points a customer's bug fixed, and a VIP on time, earn; a VIP late loses. */
+    clientBugShare: 1,
+    vipShare: 2,
+  },
+
+  /**
    * Hacking the outside world: a coin flip, offered once a sprint and only
    * in a very tight spot — production's patience nearly gone, no energy
    * under a pile of tickets, or servers saturated with no rung affordable.

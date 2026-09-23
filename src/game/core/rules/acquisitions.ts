@@ -5,6 +5,7 @@ import { headOf } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
 import { recordIncident } from "@/game/core/rules/events";
+import { buyStrongestCompetitor } from "@/game/core/rules/market";
 import { changeMoney } from "@/game/core/rules/money";
 import { addDev } from "@/game/core/rules/team";
 import { tierScale } from "@/game/core/rules/tier";
@@ -74,6 +75,8 @@ export function acquire(context: RuleContext, id: AcquisitionId): void {
   }
 
   emit(context, { type: "acquired", id, devIds, ticketIds });
+  // The two big ones are rivals off the market: the strongest one standing.
+  if (def.incident) buyStrongestCompetitor(context);
 
   addDebt(context, def.debt);
   // The incident lands on the head of `dev`: what was bought is in

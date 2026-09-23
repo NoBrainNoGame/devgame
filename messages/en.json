@@ -365,7 +365,20 @@
       "migration": "every commit costs debt; landed, it buys a level of servers"
     },
     "deadline": "due by the end of sprint {sprint}",
-    "late": "late"
+    "late": "late",
+    "market": "Market",
+    "marketShare": "Market share",
+    "marketMultiplier": "revenue at {pct}%",
+    "marketHint": "Your weight is your revenue and your users against the competitors'. The share sets what features really earn, from 60 to 140 percent. A customer's bug fixed in time raises it; a VIP kept waiting lowers it.",
+    "priceWar": "Price war: revenue down fifteen points for {count, plural, one {# more month} other {# more months}}.",
+    "competitorStatus": {
+      "waiting": "coming",
+      "alive": "active",
+      "merged": "absorbed",
+      "bought": "bought"
+    },
+    "mergedInto": "absorbed by {company}",
+    "shareShort": "{pct}% of the market"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1120,7 +1133,13 @@
         "cancelled": "customer bug untouched: the customer left, production remembers",
         "late": "customer bug late: production will not say thanks",
         "vip": "VIP request late: the contract is worth half"
-      }
+      },
+      "competitor_entered": "{company} enters the market",
+      "competitor_merged": "{company} absorbed by {into}",
+      "competitor_bought": "{company} bought: one competitor fewer",
+      "price_war": "price war: revenue down fifteen points for three months",
+      "share_up": "customers remember: +{points} market share ({pct}%)",
+      "share_down": "customers remember: −{points} market share ({pct}%)"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",

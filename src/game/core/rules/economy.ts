@@ -1,6 +1,7 @@
 import { DEV_RANK, type Effects, TICKET_KIND, UPGRADE_IDS, UPGRADES } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { driftMarket, revenueMultiplier, shareOf } from "@/game/core/rules/market";
 import { changeMoney } from "@/game/core/rules/money";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { payTeam } from "@/game/core/rules/team";
@@ -36,7 +37,11 @@ export interface MonthlyReport {
   capacity: number;
   /** How far over capacity, in percent of it; zero when served. */
   overPct: number;
+  /** The run's share of the market, 0 to 1, and what it does to the revenue. */
+  share: number;
+  multiplier: number;
   revenue: number;
+  /** Revenue the saturated servers did not earn. */
   lost: number;
   upkeep: number;
   salaries: number;
@@ -96,8 +101,11 @@ export function monthlyReport(state: RunState, effects: Effects): MonthlyReport 
   const mrr = mrrOf(state, effects);
   const load = loadOf(state);
   const capacity = capacityOf(effects);
-  const revenue = load <= capacity ? mrr : Math.floor((mrr * capacity) / load);
+  const served = load <= capacity ? mrr : Math.floor((mrr * capacity) / load);
   const overPct = load <= capacity ? 0 : Math.ceil(((load - capacity) * 100) / capacity);
+  const share = shareOf(state, mrr, load);
+  const multiplier = revenueMultiplier(state, share);
+  const revenue = Math.floor(served * multiplier);
   const upkeep = upkeepOf(state);
   const salaries = salariesOf(state);
 
@@ -106,8 +114,10 @@ export function monthlyReport(state: RunState, effects: Effects): MonthlyReport 
     load,
     capacity,
     overPct,
+    share,
+    multiplier,
     revenue,
-    lost: mrr - revenue,
+    lost: mrr - served,
     upkeep,
     salaries,
     net: revenue - upkeep - salaries,
@@ -133,6 +143,9 @@ export function closeMonth(context: RuleContext): void {
 
   state.months += 1;
   state.sprintMonths += 1;
+  if (state.market.priceWarUntilMonth !== null && state.months >= state.market.priceWarUntilMonth) {
+    state.market.priceWarUntilMonth = null;
+  }
 
   changeMoney(context, report.revenue, "revenue");
   state.stats.moneyLost += report.lost;
@@ -159,6 +172,9 @@ export function closeMonth(context: RuleContext): void {
   // Salaries are the team's rule, and a departure is too; the bill is
   // reported here so the log line has the whole month on it.
   const paid = payTeam(context);
+  // The market moves after the money: this month was paid at this month's
+  // share, and next month's is what the drift decides.
+  driftMarket(context);
 
   emit(context, {
     type: "month_closed",

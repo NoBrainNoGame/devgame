@@ -269,6 +269,47 @@ export function toLogLine(
         text: text(`log.hack.${event.kind}.${event.success ? "won" : "lost"}`),
       };
 
+    case "competitor_entered":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.competitor_entered", { company: ref(`competitors.${event.id}.name`) }),
+      };
+
+    case "competitor_merged":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.competitor_merged", {
+          company: ref(`competitors.${event.id}.name`),
+          into: ref(`competitors.${event.into}.name`),
+        }),
+      };
+
+    case "competitor_bought":
+      return {
+        seq,
+        turn,
+        kind: "merge",
+        text: text("log.competitor_bought", { company: ref(`competitors.${event.id}.name`) }),
+      };
+
+    case "price_war":
+      return { seq, turn, kind: "revert", text: text("log.price_war") };
+
+    case "share_changed":
+      return {
+        seq,
+        turn,
+        kind: event.delta > 0 ? "feat" : "revert",
+        text: text(event.delta > 0 ? "log.share_up" : "log.share_down", {
+          points: Math.abs(event.delta),
+          pct: Math.round(event.share * 100),
+        }),
+      };
+
     case "deadline_missed":
       return {
         seq,

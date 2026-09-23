@@ -136,6 +136,9 @@ export function ResourceBar({
                   {t("tierBadge", { tier: economy.tier })}
                 </span>
               ) : null}
+              <span className="text-muted-foreground text-xs tabular-nums">
+                {t("shareShort", { pct: Math.round(economy.share * 100) })}
+              </span>
               {saturated ? (
                 <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs">
                   {t("saturatedShort")}

@@ -168,6 +168,17 @@ own, like the debt ticket's), a size in `drawTicket`, its reward in
 fingerprint. The first ticket of a sprint stays a feature: the landing
 demo and `tests/tickets.test.ts` count on it.
 
+### A competitor
+
+Competitors live in `COMPETITORS` in `src/game/content/competitors.ts`:
+`baseStrength` (scaled by the tier it enters at), `aggression` (percent
+growth a month), `entersAtTier`. Adding one means a `game.competitors.<id>`
+name and bio in the voice of `docs/lore.md`, and a repinned fingerprint. The
+market's rules are `rules/market.ts`; the monthly drift draws once for
+**every** competitor and once for the merger, whoever is standing, so the
+count of draws never depends on the board — `tests/market.test.ts` replays
+a run to check.
+
 ### The pull request review
 
 There are no acceptance criteria: a ticket with its points full is submitted,

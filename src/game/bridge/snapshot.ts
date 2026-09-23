@@ -1,5 +1,6 @@
 import type {
   AcquisitionId,
+  CompetitorId,
   DevRank,
   ProfileId,
   RelicId,
@@ -7,13 +8,14 @@ import type {
   TreeNodeId,
   UpgradeId,
 } from "@/game/content";
-import { DEV_RANK, DEV_RANKS } from "@/game/content";
+import { COMPETITOR_IDS, DEV_RANK, DEV_RANKS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { type CapacityAdvice, capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
 import { monthlyReport, paydayIn, projectedLoadOf } from "@/game/core/rules/economy";
 import { hackOffer } from "@/game/core/rules/hack";
+import { competitorsAlive, powerOf, priceWarMonthsLeft } from "@/game/core/rules/market";
 import {
   type DebtView,
   debtView,
@@ -39,6 +41,7 @@ import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
   CapacityLevel,
+  CompetitorStatus,
   DevId,
   FinanceMonth,
   HackKind,
@@ -132,6 +135,16 @@ export interface DevView {
   salary: number;
 }
 
+/** A competitor as the market tab shows it. */
+export interface CompetitorView {
+  id: CompetitorId;
+  status: CompetitorStatus;
+  strength: number;
+  /** Its share of the whole market, 0 to 1; zero unless alive. */
+  share: number;
+  mergedInto?: CompetitorId;
+}
+
 /** The finances, as the company screen and the resource bar show them. */
 export interface EconomyView {
   /** The order of magnitude reached: what the unit of account and the shop follow. */
@@ -164,6 +177,11 @@ export interface EconomyView {
   acquisitions: AcquisitionId[];
   /** The last paydays, oldest first: what the chart draws. */
   history: FinanceMonth[];
+  /** The run's share of the market, 0 to 1, and what it does to the revenue. */
+  share: number;
+  marketMultiplier: number;
+  /** Months of price war left, zero when none. */
+  priceWarMonths: number;
   /** Developers on the roster, and the seats there are for them. */
   seats: { used: number; max: number };
   /** What each rank costs to hire today, discounts included. */
@@ -214,6 +232,8 @@ export interface RunSnapshot {
   hack: HackKind | null;
   /** The look the run has reached: tier plus a log fraction, never going back. */
   austerity: number;
+  /** The other companies, in the order they were written. */
+  competitors: CompetitorView[];
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -369,6 +389,9 @@ export function toSnapshot(state: RunState): RunSnapshot {
           : (capacityAdvice(state, effects, projected - report.capacity) ?? null),
       acquisitions: [...state.acquisitions],
       history: state.finance.map((month) => ({ ...month })),
+      share: report.share,
+      marketMultiplier: report.multiplier,
+      priceWarMonths: priceWarMonthsLeft(state),
       hireCosts: Object.fromEntries(
         DEV_RANKS.map((rank) => [rank, hireCostFor(effects, rank)]),
       ) as Record<DevRank, number>,
@@ -378,6 +401,27 @@ export function toSnapshot(state: RunState): RunSnapshot {
     idleSpeedTier: effects.idleSpeedTier,
     hack: hackOffer(state, effects),
     austerity: austerityOf(state.moneyEarned),
+    competitors: COMPETITOR_IDS.map((id) => ({
+      id,
+      status: state.market.competitors[id].status,
+      strength: state.market.competitors[id].strength,
+      // Its own share of the whole market, the run included: what a card shows.
+      share:
+        state.market.competitors[id].status === "alive"
+          ? state.market.competitors[id].strength /
+            Math.max(
+              1,
+              powerOf(report.mrr, report.load) +
+                competitorsAlive(state).reduce(
+                  (sum, other) => sum + state.market.competitors[other].strength,
+                  0,
+                ),
+            )
+          : 0,
+      ...(state.market.competitors[id].mergedInto === undefined
+        ? {}
+        : { mergedInto: state.market.competitors[id].mergedInto }),
+    })),
 
     nodes,
     tickets,

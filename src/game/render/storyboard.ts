@@ -277,6 +277,11 @@ export function planBatch(
       case "ticket_assigned":
       case "acquired":
       case "capacity_warning":
+      case "competitor_entered":
+      case "competitor_merged":
+      case "competitor_bought":
+      case "price_war":
+      case "share_changed":
       case "crunch":
         break;
     }

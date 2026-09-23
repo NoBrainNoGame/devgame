@@ -87,6 +87,8 @@ interface Outcome {
   alerts: number;
   hacks: number;
   hacksWon: number;
+  /** The run's share of the market at the end, in percent. */
+  share: number;
   /** The tier the run had reached when sprint 10 ended, or its last one. */
   tierAt10: number;
   moneyPeak: number;
@@ -556,6 +558,7 @@ function summarise(
     | "tier"
     | "cause"
     | "acquisitions"
+    | "share"
   >,
 ): Outcome {
   return {
@@ -571,6 +574,7 @@ function summarise(
     mrr: mrrOf(state, gatherEffects(state)),
     tier: state.tier,
     acquisitions: state.acquisitions.length,
+    share: Math.round(monthlyReport(state, gatherEffects(state)).share * 100),
     cause: state.phase.kind === "game_over" ? (state.phase.cause ?? "-") : "-",
     ...extra,
   };
@@ -649,7 +653,10 @@ function report(policy: string, outcomes: Outcome[]): void {
       .join(" ")}`,
   );
   console.log(
-    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}  hacks avg ${mean(outcomes.map((o) => o.hacks)).toFixed(2)} won ${mean(outcomes.map((o) => o.hacksWon)).toFixed(2)}`,
+    `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}  hacks avg ${mean(outcomes.map((o) => o.hacks)).toFixed(2)} won ${mean(outcomes.map((o) => o.hacksWon)).toFixed(2)}  share final med ${quantile(
+      outcomes.map((o) => o.share),
+      0.5,
+    )}%`,
   );
   console.log(
     `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,

@@ -1,6 +1,7 @@
 import type {
   AcquisitionId,
   AmbientEventId,
+  CompetitorId,
   DevRank,
   EventId,
   FailureEventId,
@@ -186,6 +187,26 @@ export type GameOverReason = "burnout" | "fired" | "caught";
 /** What a hack of the outside world would buy, when it is offered at all. */
 export type HackKind = "patience" | "energy" | "capacity";
 
+/** A competitor as the market tracks it. */
+export type CompetitorStatus = "waiting" | "alive" | "merged" | "bought";
+
+export interface CompetitorState {
+  /** Market power, in the run's own units: revenue plus users. */
+  strength: number;
+  status: CompetitorStatus;
+  /** Who absorbed it, when merged into another competitor. */
+  mergedInto?: CompetitorId;
+}
+
+/** The market: the run's share of it, and who else is on it. */
+export interface MarketState {
+  /** Percentage points added to the share by what customers remember. */
+  shareBonus: number;
+  /** The month a price war ends, null when there is none. */
+  priceWarUntilMonth: number | null;
+  competitors: Record<CompetitorId, CompetitorState>;
+}
+
 /** One payday, as the finance chart draws it. */
 export interface FinanceMonth {
   month: number;
@@ -333,6 +354,7 @@ export interface RunState {
   finance: FinanceMonth[];
   /** The sprint of the last hack attempt: one a sprint, whatever it bought. */
   hackSprint: number | null;
+  market: MarketState;
   /** Months closed this sprint, so the sprint's end can close the rest. */
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
@@ -491,6 +513,13 @@ export type GameEvent =
   | { type: "hack"; kind: HackKind; chancePct: number; success: boolean }
   /** A dated ticket did not land in time: cancelled if untouched, worth less otherwise. */
   | { type: "deadline_missed"; ticketId: TicketId; kind: TicketKind; cancelled: boolean }
+  | { type: "competitor_entered"; id: CompetitorId }
+  | { type: "competitor_merged"; id: CompetitorId; into: CompetitorId }
+  /** The strongest competitor left, bought with a company. */
+  | { type: "competitor_bought"; id: CompetitorId }
+  | { type: "price_war"; untilMonth: number }
+  /** Customers remembered something: the share moved by these points. */
+  | { type: "share_changed"; delta: number; share: number }
   /** Production is about to saturate, or has. Emitted once per rise of level. */
   | {
       type: "capacity_warning";

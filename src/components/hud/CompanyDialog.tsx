@@ -84,6 +84,12 @@ export function CompanyDialog({
           <TabsList variant="line">
             <TabsTrigger value="finances">{t("finances")}</TabsTrigger>
             <TabsTrigger value="shop">{t("shop")}</TabsTrigger>
+            <TabsTrigger value="market">
+              {t("market")}
+              <span className="ml-1 tabular-nums text-muted-foreground">
+                {Math.round(economy.share * 100)}%
+              </span>
+            </TabsTrigger>
             <TabsTrigger value="team">
               {t("team")}
               {snapshot.devs.length > 0 ? (
@@ -96,6 +102,9 @@ export function CompanyDialog({
 
           <TabsContent value="finances" className="pt-3">
             <Finances snapshot={snapshot} busy={busy} onAct={onAct} />
+          </TabsContent>
+          <TabsContent value="market" className="pt-3">
+            <Market snapshot={snapshot} />
           </TabsContent>
           <TabsContent value="shop" className="pt-3">
             <Shop snapshot={snapshot} busy={busy} onAct={onAct} />
@@ -231,6 +240,74 @@ function Finances({
           />
         )}
       </section>
+    </div>
+  );
+}
+
+/**
+ * The market: the run's share, what it does to the revenue, and a card per
+ * competitor — its bio, its weight, what became of it. The share is the
+ * one number here the player can act on, through what customers remember.
+ */
+function Market({ snapshot }: { snapshot: RunSnapshot }) {
+  const t = useTranslations("hud");
+  const game = useTranslations("game");
+  const { economy, competitors } = snapshot;
+  const pct = Math.round(economy.share * 100);
+  const multiplier = Math.round(economy.marketMultiplier * 100);
+
+  return (
+    <div className="space-y-4">
+      <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
+        <div className="flex items-baseline justify-between">
+          <span>{t("marketShare")}</span>
+          <span className="tabular-nums">
+            {pct}% · {t("marketMultiplier", { pct: multiplier })}
+          </span>
+        </div>
+        <Progress value={pct} className="[&>*]:bg-branch-feature" />
+        <p className="text-muted-foreground text-xs">{t("marketHint")}</p>
+        {economy.priceWarMonths > 0 ? (
+          <p className="rounded-md border border-branch-hotfix/40 bg-branch-hotfix/10 p-2 text-branch-hotfix text-xs">
+            {t("priceWar", { count: economy.priceWarMonths })}
+          </p>
+        ) : null}
+      </section>
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {competitors
+          .filter((competitor) => competitor.status !== "waiting")
+          .map((competitor) => (
+            <article
+              key={competitor.id}
+              className={cn(
+                "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
+                competitor.status !== "alive" && "opacity-60",
+              )}
+            >
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate font-medium">
+                  {game(`competitors.${competitor.id}.name` as never)}
+                </span>
+                <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
+                  {competitor.status === "alive"
+                    ? `${Math.round(competitor.share * 100)}%`
+                    : t(`competitorStatus.${competitor.status}`)}
+                </span>
+              </div>
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {game(`competitors.${competitor.id}.bio` as never)}
+              </p>
+              {competitor.mergedInto === undefined ? null : (
+                <p className="text-muted-foreground text-xs">
+                  {t("mergedInto", {
+                    company: game(`competitors.${competitor.mergedInto}.name` as never),
+                  })}
+                </p>
+              )}
+            </article>
+          ))}
+      </div>
     </div>
   );
 }
