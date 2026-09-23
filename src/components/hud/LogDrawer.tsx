@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { CommitLog } from "@/components/hud/CommitLog";
+import { stackLog } from "@/components/hud/logStacks";
 import { useGameText } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import type { LogLine } from "@/game";
@@ -22,7 +23,8 @@ export function LogDrawer({ log }: { log: LogLine[] }) {
   const t = useTranslations("hud");
   const gameText = useGameText();
   const [open, setOpen] = useState(false);
-  const last = log[log.length - 1];
+  const entries = stackLog(log);
+  const last = entries[entries.length - 1];
 
   useEffect(() => {
     if (!open) return;
@@ -52,7 +54,11 @@ export function LogDrawer({ log }: { log: LogLine[] }) {
             {t("logTitle")}
           </span>
           {open || last === undefined ? null : (
-            <span className="truncate text-muted-foreground">{gameText(last.text)}</span>
+            <span className="truncate text-muted-foreground">
+              {last.kind === "stack"
+                ? t("logCommitStack", { count: last.count })
+                : gameText(last.line.text)}
+            </span>
           )}
         </button>
         {open ? (

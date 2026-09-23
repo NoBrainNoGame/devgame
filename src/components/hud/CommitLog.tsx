@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
+import { stackLog } from "@/components/hud/logStacks";
 import { useGameText } from "@/components/hud/useGameText";
 import type { LogLine } from "@/game";
 import { cn } from "@/lib/utils";
@@ -59,13 +60,30 @@ export function CommitLog({ log, compact = false }: { log: LogLine[]; compact?: 
         }}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 text-xs leading-relaxed"
       >
-        {log.map((line) => (
-          <p key={line.seq} className="whitespace-pre-wrap">
-            <span className="select-none text-muted-foreground/50 tabular-nums">t{line.turn} </span>
-            <span className={cn("select-none", PREFIX_COLOUR[line.kind])}>{line.kind}: </span>
-            <span className="text-muted-foreground">{gameText(line.text)}</span>
-          </p>
-        ))}
+        {stackLog(log).map((entry) =>
+          entry.kind === "stack" ? (
+            <p key={entry.seq} className="whitespace-pre-wrap">
+              <span className="select-none text-muted-foreground/50 tabular-nums">
+                t{entry.turnFrom}
+                {entry.turnTo === entry.turnFrom ? "" : `–${entry.turnTo}`}{" "}
+              </span>
+              <span className={cn("select-none", PREFIX_COLOUR.feat)}>feat: </span>
+              <span className="text-muted-foreground">
+                {heading("logCommitStack", { count: entry.count })}
+              </span>
+            </p>
+          ) : (
+            <p key={entry.line.seq} className="whitespace-pre-wrap">
+              <span className="select-none text-muted-foreground/50 tabular-nums">
+                t{entry.line.turn}{" "}
+              </span>
+              <span className={cn("select-none", PREFIX_COLOUR[entry.line.kind])}>
+                {entry.line.kind}:{" "}
+              </span>
+              <span className="text-muted-foreground">{gameText(entry.line.text)}</span>
+            </p>
+          ),
+        )}
         {log.length === 0 ? <p className="text-muted-foreground">{heading("logEmpty")}</p> : null}
       </div>
     </section>
