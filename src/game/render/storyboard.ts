@@ -1,3 +1,4 @@
+import { type SfxId, sfxFor } from "@/game/audio/sfx";
 import type { RevealSnapshot } from "@/game/bridge/reveal";
 import type { I18nText } from "@/game/core/i18n";
 import { headOf } from "@/game/core/map/graph";
@@ -30,7 +31,9 @@ export type Step =
   | { kind: "look"; y: number | null; hold: number }
   | { kind: "pop"; anchor: NodeId; at: Point; caption: string; colour: number; hold: number }
   | { kind: "flash"; anchor: NodeId; at: Point; colour: number; hold: number }
-  | { kind: "beat"; hold: number };
+  | { kind: "beat"; hold: number }
+  /** A sound, placed after the effect of the event that makes it. */
+  | { kind: "sfx"; id: SfxId };
 
 /** Durations in milliseconds. Rendering, not rules, so not in `balance.ts`. */
 export const STORY = {
@@ -291,6 +294,10 @@ export function planBatch(
       case "crunch":
         break;
     }
+
+    // After the effect, never before: a commit is heard once it is seen.
+    const sound = sfxFor(event);
+    if (sound !== null) steps.push({ kind: "sfx", id: sound });
   }
 
   flush();

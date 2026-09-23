@@ -1,5 +1,6 @@
 import type { Application, Container } from "pixi.js";
 
+import type { AudioService } from "@/game/audio/AudioService";
 import type { RevealSet } from "@/game/bridge/reveal";
 import type { GameSession } from "@/game/bridge/session";
 import type { Camera } from "@/game/chips/Camera";
@@ -41,6 +42,8 @@ export interface SceneContext {
   controls: SceneControls;
   /** A look forced by the page for QA, whatever the run has earned. */
   austerityOverride?: number | null;
+  /** Where the sounds go. The landing page passes none and gets the silent one. */
+  audio: AudioService;
 }
 
 export function sceneContext(context: Readonly<Record<string, unknown>>): SceneContext {

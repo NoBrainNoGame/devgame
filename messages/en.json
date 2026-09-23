@@ -442,7 +442,9 @@
         "company": "Instance {seed}",
         "actionsTitle": "Cycle"
       }
-    }
+    },
+    "soundOn": "Sound on (mute)",
+    "soundOff": "Sound off (unmute)"
   },
   "leaderboard": {
     "title": "Leaderboard",

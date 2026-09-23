@@ -442,7 +442,9 @@
         "company": "Instance {seed}",
         "actionsTitle": "Cycle"
       }
-    }
+    },
+    "soundOn": "Son activé (couper)",
+    "soundOff": "Son coupé (rétablir)"
   },
   "leaderboard": {
     "title": "Classement",

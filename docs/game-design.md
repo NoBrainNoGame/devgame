@@ -630,6 +630,24 @@ Chaque bouton garde sa fonction. Au palier 4 apparaît un interrupteur
 passée en optionnelle, il se grise et le dit. Rien n'avoue ; tout le laisse
 lire.
 
+### Le son, en squelette
+
+Le jeu ne joue encore aucun son, mais tout est câblé pour qu'il le puisse
+sans qu'une règle change (`src/game/audio/`). `sfxFor(event)` classe chaque
+événement du moteur — un commit à la main, un commit IA, un jet raté, une
+review, un merge, une release, une relique, une paie, un incident, un
+conflit, une explosion de dette, une embauche, un départ, une panne,
+l'ouverture et la réponse d'un événement, un objectif, un palier, une
+date manquée, le crunch, la fin — ou le laisse au silence ; le switch est
+exhaustif, un nouvel événement ne compile pas tant qu'il n'est pas classé.
+Le storyboard pose un pas `sfx` après l'effet de chaque événement, jamais
+avant la révélation de son nœud, et un lot sauté ne joue rien. L'ambiance
+est une boucle calme, une boucle de plus par ticket tenu en parallèle, et
+une couche inquiétante fondue par la tension : six dixièmes le palier,
+quatre dixièmes la patience de la prod. Le bouton muet du canvas est lié au
+réglage `sound` de la progression. Le `manifest.ts` ne contient que des
+`null` : y mettre un fichier est tout ce qu'il reste à faire.
+
 ## Écarts avec le document initial
 
 Le document de conception d'origine laissait des trous et deux contradictions.

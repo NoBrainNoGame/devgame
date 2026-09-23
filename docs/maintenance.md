@@ -155,6 +155,16 @@ What a developer does each turn — pick up, write, land — is `workTeam` in
 no debt, no energy. Changing that is a rule change, and `tests/team.test.ts`
 is where the promises are written down.
 
+### A sound
+
+`sfxFor` in `src/game/audio/sfx.ts` is an exhaustive switch over every event
+type: adding an event means choosing its sound or `null` there, or nothing
+compiles. A new sound is an id in `SFX_IDS`, a `null` in `SFX_FILES`
+(`manifest.ts`) until there is a file, and a case in `sfxFor`. The
+storyboard places the `sfx` step after the event's effect by itself;
+`tests/audio.test.ts` checks one step per mapped event and none before its
+own node's reveal. The engine never imports anything under `audio/`.
+
 ### A word that changes with the tier
 
 A HUD label the tier rewrites is a key under `hud.tiered.t<n>` with the same

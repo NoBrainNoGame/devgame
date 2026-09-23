@@ -2,6 +2,7 @@
 
 import { Application } from "pixi.js";
 
+import { type AudioService, NullAudioService } from "@/game/audio/AudioService";
 import { RevealSet } from "@/game/bridge/reveal";
 import { GameSession, type SessionOptions } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
@@ -37,6 +38,8 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   claimsGlobal?: boolean;
   /** A look forced for QA (`?austerity=3.7`), never read by the engine. */
   austerityOverride?: number;
+  /** The sound engine. Absent, the run is silent. */
+  audio?: AudioService;
 }
 
 export interface GameHandle {
@@ -131,6 +134,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       interactive: options.interactive ?? true,
       controls,
       austerityOverride: options.austerityOverride ?? null,
+      audio: options.audio ?? new NullAudioService(),
     },
     minFps: 10,
   });

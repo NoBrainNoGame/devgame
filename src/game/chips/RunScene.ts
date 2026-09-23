@@ -1,5 +1,6 @@
 import { Container } from "pixi.js";
 
+import { Ambient } from "@/game/chips/Ambient";
 import { Austerity } from "@/game/chips/Austerity";
 import { BranchRefs } from "@/game/chips/BranchRefs";
 import * as booyah from "@/game/chips/booyah";
@@ -46,6 +47,7 @@ export class RunScene extends ContainerChip {
           refs,
           marker,
           new Austerity(graph, refs, marker),
+          new Ambient(),
           fx,
           new InputController(graph, fx),
         ],

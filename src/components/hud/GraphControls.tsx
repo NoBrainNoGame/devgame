@@ -1,12 +1,15 @@
 "use client";
 
-import { Crosshair, Maximize2, Minus, Plus } from "lucide-react";
+import { Crosshair, Maximize2, Minus, Plus, Volume2, VolumeX } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { GameHandle } from "@/game";
 import { useGameStore } from "@/game";
+import { audioService } from "@/game/audio/AudioService";
+import { useMetaStore } from "@/lib/storage/useMetaStore";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,6 +21,14 @@ import { cn } from "@/lib/utils";
  */
 export function GraphControls({ handle }: { handle: GameHandle | null }): React.JSX.Element {
   const t = useTranslations("hud");
+  const meta = useMetaStore((state) => state.meta);
+  const setMeta = useMetaStore((state) => state.setMeta);
+  const sound = meta.settings.sound;
+  // The one place the setting reaches the sound engine: a change here is a
+  // change there, and a remount reads it again.
+  useEffect(() => {
+    audioService().setMuted(!sound);
+  }, [sound]);
   const zoom = useGameStore((state) => state.zoom);
   const following = useGameStore((state) => state.cameraFollowing);
 
@@ -42,6 +53,13 @@ export function GraphControls({ handle }: { handle: GameHandle | null }): React.
         highlighted={!following}
       >
         <Crosshair className="size-4" />
+      </Control>
+      <Control
+        label={sound ? t("soundOn") : t("soundOff")}
+        onClick={() => setMeta({ ...meta, settings: { ...meta.settings, sound: !sound } })}
+        highlighted={!sound}
+      >
+        {sound ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
       </Control>
     </div>
   );

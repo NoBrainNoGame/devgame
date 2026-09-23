@@ -6,6 +6,7 @@ import { Flash } from "@/game/chips/fx/Flash";
 import { Look } from "@/game/chips/fx/Look";
 import { Pop } from "@/game/chips/fx/Pop";
 import { Reveal } from "@/game/chips/fx/Reveal";
+import { Sfx } from "@/game/chips/fx/Sfx";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
 import { planBatch, type Step } from "@/game/render/storyboard";
 
@@ -98,6 +99,8 @@ export class FxQueue extends booyah.Queue {
         return new Flash(step.at, step.colour, step.hold, skip);
       case "beat":
         return new Beat(step.hold, skip);
+      case "sfx":
+        return new Sfx(step.id, skip);
     }
   }
 

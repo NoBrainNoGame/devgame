@@ -6,6 +6,7 @@ import { austerityOverride } from "@/components/hud/austerityOverride";
 import { useGameText } from "@/components/hud/useGameText";
 import type { GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
 import { mountGame } from "@/game";
+import { audioService } from "@/game/audio/AudioService";
 
 /**
  * The canvas, and nothing else.
@@ -61,6 +62,7 @@ export function GameCanvas({
       ...optionsRef.current,
       translate: (value) => translateRef.current(value),
       ...(override === null ? {} : { austerityOverride: override }),
+      audio: audioService(),
     }).then((created) => {
       if (cancelled) {
         created.dispose();
