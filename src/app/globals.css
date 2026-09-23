@@ -402,3 +402,47 @@
   }
 }
 
+
+/*
+  The idle switch. On, it breathes slowly in the energy yellow; on with
+  nothing to press — the game is waiting for the player — it flashes red,
+  fast. Reduced motion keeps the colour and drops the pulse.
+*/
+.idle-breathing {
+  animation: idle-breathe 1.5s ease-in-out infinite alternate;
+}
+.idle-waiting {
+  animation: idle-alert 0.5s ease-in-out infinite alternate;
+}
+@keyframes idle-breathe {
+  from {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: color-mix(in oklab, var(--color-energy) 15%, transparent);
+  }
+  to {
+    box-shadow: 0 0 10px 1px color-mix(in oklab, var(--color-energy) 55%, transparent);
+    background-color: color-mix(in oklab, var(--color-energy) 55%, transparent);
+  }
+}
+@keyframes idle-alert {
+  from {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: color-mix(in oklab, var(--color-branch-hotfix) 30%, transparent);
+  }
+  to {
+    box-shadow: 0 0 10px 2px color-mix(in oklab, var(--color-branch-hotfix) 70%, transparent);
+    background-color: color-mix(in oklab, var(--color-branch-hotfix) 85%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .idle-breathing,
+  .idle-waiting {
+    animation: none;
+  }
+  .idle-breathing {
+    background-color: color-mix(in oklab, var(--color-energy) 35%, transparent);
+  }
+  .idle-waiting {
+    background-color: color-mix(in oklab, var(--color-branch-hotfix) 55%, transparent);
+  }
+}

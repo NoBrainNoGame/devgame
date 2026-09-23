@@ -10,7 +10,8 @@ import { useIdleSettings } from "@/components/hud/useIdleSettings";
 import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { idleSpeedAllowed, useGameStore } from "@/game";
+import { idleSpeedAllowed, idleTarget, useGameStore } from "@/game";
+import { cn } from "@/lib/utils";
 
 /**
  * The idle clock's switch and speeds. Shown in every phase, since the clock
@@ -25,6 +26,13 @@ export function IdleControls(): React.JSX.Element {
   const tiered = useTiered(snapshot === null ? 0 : displayTier(snapshot));
   const hydrated = useIdleStore((state) => state.hydrated);
   const effective = idleSpeedAllowed(tier, idle.speed) ? idle.speed : 1;
+  // On, the switch breathes; on with nothing to press — the move is yours —
+  // it flashes, because the run is stopped and waiting for you.
+  const waiting =
+    idle.enabled &&
+    snapshot !== null &&
+    snapshot.phase.kind !== "game_over" &&
+    idleTarget(snapshot) === undefined;
 
   return (
     <div className="flex items-center gap-1">
@@ -35,6 +43,7 @@ export function IdleControls(): React.JSX.Element {
             variant={idle.enabled ? "secondary" : "outline"}
             aria-pressed={idle.enabled}
             disabled={!hydrated}
+            className={cn(idle.enabled && (waiting ? "idle-waiting" : "idle-breathing"))}
             onClick={() => setIdle({ enabled: !idle.enabled })}
           >
             {idle.enabled ? <Pause /> : <Play />}
@@ -42,7 +51,11 @@ export function IdleControls(): React.JSX.Element {
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-64">
-          {idle.enabled ? t("idleOnHint", { seconds: IDLE_SECONDS / effective }) : t("idleOffHint")}
+          {waiting
+            ? t("idleWaitingHint")
+            : idle.enabled
+              ? t("idleOnHint", { seconds: IDLE_SECONDS / effective })
+              : t("idleOffHint")}
         </TooltipContent>
       </Tooltip>
       <fieldset className="ml-auto flex gap-0.5 border-0 p-0" aria-label={t("idleSpeed")}>

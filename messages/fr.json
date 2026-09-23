@@ -448,7 +448,8 @@
     "relicBoost": "Instantané",
     "relicKeep": "Permanent",
     "shopDiscount": "−{pct} % sur le prochain achat",
-    "freeHire": "Prochaine embauche offerte"
+    "freeHire": "Prochaine embauche offerte",
+    "idleWaitingHint": "L'horloge est en marche mais n'a rien à presser : le prochain coup est à vous."
   },
   "leaderboard": {
     "title": "Classement",
