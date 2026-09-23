@@ -450,7 +450,8 @@
     "shopDiscount": "{pct}% off the next purchase",
     "freeHire": "Next hire is free",
     "idleWaitingHint": "The clock is on but has nothing to press: the next move is yours.",
-    "logCommitStack": "{count, plural, one {# commit added} other {# commits added}}"
+    "logCommitStack": "{count, plural, one {# commit added} other {# commits added}}",
+    "logTicketStack": "{count, plural, one {# ticket added} other {# tickets added}}"
   },
   "leaderboard": {
     "title": "Leaderboard",

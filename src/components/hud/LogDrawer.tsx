@@ -56,7 +56,9 @@ export function LogDrawer({ log }: { log: LogLine[] }) {
           {open || last === undefined ? null : (
             <span className="truncate text-muted-foreground">
               {last.kind === "stack"
-                ? t("logCommitStack", { count: last.count })
+                ? t(last.group === "commits" ? "logCommitStack" : "logTicketStack", {
+                    count: last.count,
+                  })
                 : gameText(last.line.text)}
             </span>
           )}

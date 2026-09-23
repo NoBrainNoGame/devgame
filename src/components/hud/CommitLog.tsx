@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 
-import { stackLog } from "@/components/hud/logStacks";
+import { stackKind, stackLog } from "@/components/hud/logStacks";
 import { useGameText } from "@/components/hud/useGameText";
 import type { LogLine } from "@/game";
 import { cn } from "@/lib/utils";
@@ -67,9 +67,13 @@ export function CommitLog({ log, compact = false }: { log: LogLine[]; compact?: 
                 t{entry.turnFrom}
                 {entry.turnTo === entry.turnFrom ? "" : `–${entry.turnTo}`}{" "}
               </span>
-              <span className={cn("select-none", PREFIX_COLOUR.feat)}>feat: </span>
+              <span className={cn("select-none", PREFIX_COLOUR[stackKind(entry.group)])}>
+                {stackKind(entry.group)}:{" "}
+              </span>
               <span className="text-muted-foreground">
-                {heading("logCommitStack", { count: entry.count })}
+                {heading(entry.group === "commits" ? "logCommitStack" : "logTicketStack", {
+                  count: entry.count,
+                })}
               </span>
             </p>
           ) : (

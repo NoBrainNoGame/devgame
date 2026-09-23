@@ -450,7 +450,8 @@
     "shopDiscount": "−{pct} % sur le prochain achat",
     "freeHire": "Prochaine embauche offerte",
     "idleWaitingHint": "L'horloge est en marche mais n'a rien à presser : le prochain coup est à vous.",
-    "logCommitStack": "{count, plural, one {# commit ajouté} other {# commits ajoutés}}"
+    "logCommitStack": "{count, plural, one {# commit ajouté} other {# commits ajoutés}}",
+    "logTicketStack": "{count, plural, one {# ticket ajouté} other {# tickets ajoutés}}"
   },
   "leaderboard": {
     "title": "Classement",

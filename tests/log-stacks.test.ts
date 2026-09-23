@@ -21,6 +21,10 @@ describe("the log's commit stacks", () => {
       line(6, "log.reviewed", "note"),
       line(7, "log.node_done.craft"),
       line(8, "log.node_done.craft"),
+      line(9, "log.ticket_arrived", "note"),
+      line(10, "log.ticket_arrived", "note"),
+      line(11, "log.ticket_arrived", "note"),
+      line(12, "log.node_done.craft"),
     ];
     const entries = stackLog(log);
     expect(entries.map((e) => (e.kind === "stack" ? `stack${e.count}` : e.line.text.key))).toEqual([
@@ -29,6 +33,17 @@ describe("the log's commit stacks", () => {
       "log.node_done.craft",
       "log.reviewed",
       "stack2",
+      "stack3",
+      "log.node_done.craft",
+    ]);
+    expect(entries.map((e) => (e.kind === "stack" ? e.group : "-"))).toEqual([
+      "commits",
+      "-",
+      "-",
+      "-",
+      "commits",
+      "tickets",
+      "-",
     ]);
     const first = entries[0];
     if (first?.kind === "stack") {
