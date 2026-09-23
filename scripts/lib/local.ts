@@ -48,8 +48,9 @@ export async function waitForPostgres(): Promise<void> {
 
 /** Whether Docker answers at all; the error says what to do when it does not. */
 export async function requireDocker(): Promise<void> {
-  const probe = await run(["docker", "info"], { allowFailure: true });
-  if (probe !== 0) {
+  // Quiet: `docker info` prints a page of plugins before it says the daemon is down.
+  const probe = Bun.spawn(["docker", "info"], { stdout: "ignore", stderr: "ignore" });
+  if ((await probe.exited) !== 0) {
     throw new Error(
       "Docker is not running. Start Docker Desktop (or the daemon), then run the command again.",
     );

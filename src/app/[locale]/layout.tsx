@@ -107,10 +107,11 @@ export default async function LocaleLayout({
               <Header />
               <main className="flex min-h-0 flex-1 flex-col">{children}</main>
             </div>
+            {/* Inside the intl provider: it reads the locale and the pathname. */}
+            {env.ONLINE ? <VisitBeacon /> : null}
           </TooltipProvider>
         </NextIntlClientProvider>
         <Toaster position="bottom-right" />
-        {env.ONLINE ? <VisitBeacon /> : null}
       </body>
     </html>
   );
