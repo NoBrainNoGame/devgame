@@ -1,0 +1,10 @@
+/**
+ * Where the project lives outside the site: the repository, the page that
+ * takes donations, and the address that answers. One place, so a change of
+ * host or address is one edit.
+ */
+export const LINKS = {
+  repository: "https://github.com/NoBrainNoGame/devgame",
+  support: "https://ghom.coffee",
+  contact: "mailto:camille.abella@hotmail.fr",
+} as const;

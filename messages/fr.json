@@ -1854,5 +1854,11 @@
       "acknowledged": "pris en compte",
       "closed": "clos"
     }
+  },
+  "footer": {
+    "aria": "Le projet ailleurs",
+    "source": "Code source",
+    "support": "Soutenir",
+    "contact": "Écrire"
   }
 }

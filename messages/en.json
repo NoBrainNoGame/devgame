@@ -1854,5 +1854,11 @@
       "acknowledged": "acknowledged",
       "closed": "closed"
     }
+  },
+  "footer": {
+    "aria": "The project elsewhere",
+    "source": "Source code",
+    "support": "Support",
+    "contact": "Write"
   }
 }

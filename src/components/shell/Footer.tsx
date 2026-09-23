@@ -1,6 +1,8 @@
+import { Coffee, GitBranch, Mail } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
+import { LINKS } from "@/lib/links";
 
 /** The routes keep their French paths in both locales — see the legal layout. */
 const LEGAL_PAGES = [
@@ -9,12 +11,23 @@ const LEGAL_PAGES = [
   { href: "/legal/conditions", key: "terms" },
 ] as const;
 
-/** One line. The concept, a way back to it, and the pages the law wants. */
+/** The places the project lives outside the site, each with its icon. */
+const OUTSIDE = [
+  { href: LINKS.repository, key: "source", Icon: GitBranch },
+  { href: LINKS.support, key: "support", Icon: Coffee },
+  { href: LINKS.contact, key: "contact", Icon: Mail },
+] as const;
+
+/**
+ * One line, or two. The concept and a way back to it; the code, the tip
+ * jar and the address; and the pages the law wants.
+ */
 export async function Footer(): Promise<React.JSX.Element> {
-  const [common, landing, nav] = await Promise.all([
+  const [common, landing, nav, outside] = await Promise.all([
     getTranslations("common"),
     getTranslations("landing"),
     getTranslations("legal.nav"),
+    getTranslations("footer"),
   ]);
 
   return (
@@ -30,7 +43,22 @@ export async function Footer(): Promise<React.JSX.Element> {
           {landing("tagline")}
         </p>
 
-        <nav aria-label={nav("aria")} className="flex flex-wrap gap-x-4 gap-y-1 sm:ml-auto">
+        <nav aria-label={outside("aria")} className="flex flex-wrap gap-x-4 gap-y-1 sm:ml-auto">
+          {OUTSIDE.map((item) => (
+            <a
+              key={item.key}
+              href={item.href}
+              // The address opens the mail client; the two others leave the site.
+              {...(item.href.startsWith("mailto:") ? {} : { target: "_blank", rel: "noopener" })}
+              className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+            >
+              <item.Icon aria-hidden="true" className="size-3.5" />
+              {outside(item.key)}
+            </a>
+          ))}
+        </nav>
+
+        <nav aria-label={nav("aria")} className="flex flex-wrap gap-x-4 gap-y-1">
           {LEGAL_PAGES.map((page) => (
             <Link
               key={page.href}
