@@ -1,0 +1,57 @@
+# What a release has to pass. Runs on every pull request into `main` and on
+# every push to it — a merge of `dev` included — and on pushes to `dev`, so
+# the branch that becomes a release is already green when it gets there.
+#
+# The same checks as `bun run check`, then the production build with the
+# placeholder environment the Docker image builds with: `env.ts` validates
+# at import, so a build with no values at all is the offline game, not the
+# one that ships.
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  check:
+    name: Typecheck, lint, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun x prisma generate
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The image's placeholders: enough for `env.ts`, never used at build time.
+      DATABASE_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
+      BETTER_AUTH_SECRET: build-time-placeholder-not-a-real-secret
+      CRON_SECRET: build-time-placeholder-not-a-real-secret
+      DAILY_SEED_SECRET: build-time-placeholder-not-a-real-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bun x prisma generate
+      - run: bun run build
