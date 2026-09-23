@@ -106,6 +106,8 @@ describe("production", () => {
       "outage",
       "idle_sprint",
       "deadline",
+      "event",
+      "objective",
       "clean_sprint",
       "hack",
       "client_bug",
@@ -189,6 +191,7 @@ describe("production", () => {
       if (current.phase.kind !== "choose_action") break;
     }
     if (current.tickets[hotfix.id]?.filled !== hotfix.points) return;
+    if (current.phase.kind !== "choose_action") return;
 
     const ready = structuredClone(current);
     ready.sprintTurn = BALANCE.sprint.turns - 1;

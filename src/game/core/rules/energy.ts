@@ -39,6 +39,7 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
 /** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
 /** A turn spent not coding. */
 export function performRest(context: RuleContext): void {
+  context.state.sprintCounters.rests += 1;
   const regen = restRegen(context.state);
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });

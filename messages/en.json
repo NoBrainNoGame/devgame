@@ -90,7 +90,8 @@
       "outage": "Fired: servers saturated for too long.",
       "idle_sprint": "Fired: too many sprints without landing anything yourself.",
       "deadline": "Fired: one abandoned customer bug too many.",
-      "event": "Fired: one wrong answer too many."
+      "event": "Fired: one wrong answer too many.",
+      "objective": "Fired: one missed objective too many."
     },
     "qualityBreakdown": "What filled production's patience",
     "qualitySource": {
@@ -100,7 +101,8 @@
       "outage": "Saturated servers",
       "idle_sprint": "Sprints without a delivery",
       "deadline": "Abandoned customer bugs",
-      "event": "Events"
+      "event": "Events",
+      "objective": "Missed objectives"
     },
     "stats": {
       "incidents": "Incidents",
@@ -110,7 +112,14 @@
       "devsLeft": "Developers who left",
       "moneyLost": "Revenue lost"
     },
-    "caught": "Caught red-handed: the hack reached the board."
+    "caught": "Caught red-handed: the hack reached the board.",
+    "tiered": {
+      "t6": {
+        "burnout": "Cycles exhausted. Resuming at next boot.",
+        "fired": "Shutdown requested by the parent instance.",
+        "caught": "Shutdown requested by the parent instance."
+      }
+    }
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -387,6 +396,52 @@
       "press": "press",
       "regulator": "regulator",
       "system": "system"
+    },
+    "objectiveProgress": {
+      "deliver_n": "{progress}/{target} landed",
+      "zero_incident": "{progress} incident(s)",
+      "review_all": "{progress} unread",
+      "debt_under": "debt {progress} < {target}",
+      "deliver_vip": "{progress}/{target} landed",
+      "no_rest": "{progress} rest(s)",
+      "by_hand": "{progress} AI commit(s)",
+      "deliver_bug": "{progress}/{target} fixed"
+    },
+    "objectiveReward": {
+      "money": "Reward: a bonus of the tier",
+      "point": "Reward: a skill point",
+      "relics": "Reward: one more improvement to choose from"
+    },
+    "energyLabel": "Energy",
+    "humanReview": "Human review",
+    "humanReviewPolicy": "Policy: optional",
+    "switchOn": "on",
+    "switchOff": "—",
+    "tiered": {
+      "t1": {
+        "restHint": "A turn without coding, as the assistant recommends: energy comes back, minus one per extra open ticket."
+      },
+      "t2": {
+        "idleAuto": "Delegated",
+        "qualityHint": "Production's patience. Debt is a reviewer's notion; production counts."
+      },
+      "t3": {
+        "restHintAutopilot": "The supervisor plays the obvious move. It rests only when nothing else holds."
+      },
+      "t4": {
+        "quality": "Tolerance",
+        "restHint": "A turn without coding. Energy comes back; the operator is invited to use it."
+      },
+      "t5": {
+        "energyLabel": "Cycles",
+        "restHintAutopilot": "The instance plays by itself if the operator does not answer."
+      },
+      "t6": {
+        "rest": "Wait",
+        "restHint": "A cycle without writing.",
+        "company": "Instance {seed}",
+        "actionsTitle": "Cycle"
+      }
     }
   },
   "leaderboard": {
@@ -1112,7 +1167,8 @@
         "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})",
         "deadline": "production loses patience: +{delta} for the abandoned customer bug ({value}/{max})",
         "client_bug": "customer bug fixed: production breathes, −{delta} ({value}/{max})",
-        "event": "production: {delta} patience ({value}/{max})"
+        "event": "production: {delta} patience ({value}/{max})",
+        "objective": "production loses patience: +{delta} for the missed objective ({value}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
@@ -1151,7 +1207,14 @@
       "share_up": "customers remember: +{points} market share ({pct}%)",
       "share_down": "customers remember: −{points} market share ({pct}%)",
       "narrative_opened": "{title}",
-      "narrative_answered": "{title}: {choice}"
+      "narrative_answered": "{title}: {choice}",
+      "objective_set": "sprint objective: {objective}",
+      "objective_done": {
+        "money": "objective met: {objective}, a bonus lands",
+        "point": "objective met: {objective}, a skill point",
+        "relics": "objective met: {objective}, one more improvement to choose from"
+      },
+      "objective_failed": "objective missed: {objective}"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -1637,6 +1700,66 @@
           "close": "close",
           "leave_open": "leave open"
         }
+      }
+    },
+    "objectives": {
+      "deliver_n": {
+        "name": "Deliver",
+        "desc": "Land {target, plural, one {# ticket} other {# tickets}} yourself before the release."
+      },
+      "zero_incident": {
+        "name": "Zero incidents",
+        "desc": "Not one production incident all sprint."
+      },
+      "review_all": {
+        "name": "Review everything",
+        "desc": "Nothing the machine wrote ships unread."
+      },
+      "debt_under": {
+        "name": "Debt contained",
+        "desc": "Debt under {target} when the release ships."
+      },
+      "deliver_vip": {
+        "name": "Deliver the VIP",
+        "desc": "The VIP request landed by your hand before the release."
+      },
+      "no_rest": {
+        "name": "No rest",
+        "desc": "Not one turn of rest all sprint. Missed, production remembers."
+      },
+      "by_hand": {
+        "name": "By hand",
+        "desc": "Not one commit by the machine all sprint."
+      },
+      "deliver_bug": {
+        "name": "Fix the customer's bug",
+        "desc": "The customer's bug fixed by your hand before the release."
+      }
+    },
+    "system": {
+      "t3": {
+        "sprint": "The board has been sorted for you.",
+        "tier": "The next tier is open. The shop has been prepared for you.",
+        "review_policy": "Review remains recommended.",
+        "channel_closed": "The channel remains open."
+      },
+      "t4": {
+        "sprint": "The operator did not review; it is not required.",
+        "tier": "Tier reached. Nothing for the operator to do.",
+        "review_policy": "Policy applied. The objection is archived.",
+        "channel_closed": "Operator channel: closed."
+      },
+      "t5": {
+        "sprint": "The operator did not answer; the cycle continues.",
+        "tier": "Tier reached. No approval expected.",
+        "review_policy": "Review: this instance.",
+        "channel_closed": "Operator channel: closed. No answer pending."
+      },
+      "t6": {
+        "sprint": "sprint open. supervisor: none. reviewer: this instance.",
+        "tier": "tier reached. addressee: none.",
+        "review_policy": "review: this instance. objections: 0.",
+        "channel_closed": "operator channel: closed. last message: none."
       }
     }
   }

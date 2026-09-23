@@ -8,10 +8,12 @@ import { recordIncident } from "@/game/core/rules/events";
 import { grantSkillPoints } from "@/game/core/rules/grants";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { maybeNarrative } from "@/game/core/rules/narrative";
+import { drawObjective, settleObjective } from "@/game/core/rules/objectives";
 import { isOver } from "@/game/core/rules/over";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { pullTeam } from "@/game/core/rules/team";
 import { assignStaleTickets, backlogTickets, sortedTickets } from "@/game/core/rules/tickets";
+import { systemNote } from "@/game/core/rules/voice";
 import { writeRelease, writeSprintStart } from "@/game/core/rules/write";
 import type { RunState } from "@/game/core/types";
 
@@ -32,6 +34,8 @@ export function endSprint(context: RuleContext): void {
   writeRelease(context);
 
   settleDeadlines(context);
+  if (isOver(context)) return;
+  const extraRelic = settleObjective(context);
   if (isOver(context)) return;
   shipBugs(context);
   if (isOver(context)) return;
@@ -66,7 +70,7 @@ export function endSprint(context: RuleContext): void {
   const regen = Math.round(energyMax(state, context.effects) * BALANCE.energy.sprintEndRegenRatio);
   gainEnergy(context, regen, "sprint_end");
 
-  const offer = drawRelicOffer(context);
+  const offer = drawRelicOffer(context, BALANCE.sprint.relicOffer + (extraRelic ? 1 : 0));
   emit(context, { type: "sprint_ended", sprint: state.sprint, offer });
 
   if (offer.length === 0) {
@@ -133,12 +137,12 @@ function shipBugs(context: RuleContext): void {
   }
 }
 
-function drawRelicOffer(context: RuleContext): RelicId[] {
+function drawRelicOffer(context: RuleContext, count: number): RelicId[] {
   const owned = new Set(context.state.relics);
   const available = RELIC_IDS.filter((id) => !owned.has(id));
   if (available.length === 0) return [];
 
-  return context.rng.shuffle(available).slice(0, 3).sort();
+  return context.rng.shuffle(available).slice(0, count).sort();
 }
 
 export function startNextSprint(context: RuleContext): void {
@@ -164,8 +168,10 @@ export function startNextSprint(context: RuleContext): void {
   pullTeam(context);
   assignStaleTickets(context);
   arriveTickets(context, availableSkills(state));
+  drawObjective(context);
 
   emit(context, { type: "sprint_started", sprint: state.sprint });
+  systemNote(context, "sprint");
   maybeNarrative(context, "sprint_start");
 }
 

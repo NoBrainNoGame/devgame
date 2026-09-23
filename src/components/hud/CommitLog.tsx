@@ -14,6 +14,7 @@ const PREFIX_COLOUR: Record<LogLine["kind"], string> = {
   merge: "text-branch-feature",
   revert: "text-debt",
   note: "text-muted-foreground",
+  system: "text-branch-feature",
 };
 
 /** How close to the bottom still counts as "reading the latest". */

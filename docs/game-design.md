@@ -396,6 +396,19 @@ pleine, le barreau conseillé offert. Perdu, c'est un incident en prod, ou,
 quand c'était la patience, la fin de la run : pris la main dans le sac. Le
 superviseur ne le tente jamais.
 
+## L'objectif du sprint
+
+Chaque sprint demande une chose de plus que sa boîte de tours
+(`src/game/content/objectives.ts`) : livrer la moitié des arrivées de sa
+main, zéro incident, tout relire, la dette sous 30, livrer le VIP, ne pas
+souffler, à la main seulement, corriger le bug client. Un tirage pondéré à
+chaque ouverture de sprint, toujours effectué ; un objectif qui réclame un
+ticket que le tableau n'a pas retombe sur le plus simple. La release le
+règle avant que les bugs ne partent : tenu, il paie une prime du palier, un
+point de compétence, ou une amélioration de plus au choix ; manqué, seul
+« sans souffler » coûte, dix points de patience. La puce sous l'horloge du
+sprint dit où il en est.
+
 ## Ce qui arrive à l'entreprise
 
 Onze **événements narratifs** (`src/game/content/narrative.ts`, textes dans
@@ -596,6 +609,26 @@ rampe d'au moins un palier de large. **Jamais d'un coup, presque toujours
 entre deux** : c'est la règle, et `tests/theme.test.ts` la tient. Sous
 `prefers-reduced-motion`, le fondu de couleur reste, le tremblement s'arrête.
 Pour vérifier un regard sans gagner une fortune : `/play?austerity=3.7`.
+
+### La voix du système, et les mots qui glissent
+
+À partir du palier 3, le jeu commente : une ligne `system` dans le journal à
+l'ouverture du sprint, au palier atteint, et quand une réponse au système a
+laissé un drapeau (`rules/voice.ts`, textes sous `game.system.t3..t6`). Le
+destinataire glisse comme `docs/lore.md` le prévoit : « vous » au palier 3,
+« l'opérateur » aux paliers 4 et 5, personne au palier 6.
+
+Les mots du HUD glissent aussi (`useTiered`, clés `hud.tiered.t<n>`) : un
+libellé remplacé à partir d'un palier reste remplacé jusqu'à ce qu'un palier
+plus haut le remplace encore. « Auto » devient « Délégué » au palier 2, la
+prod devient « Tolérance » au palier 4, l'énergie devient « Cycles » au
+palier 5 ; au palier 6, « Souffler » devient « Attente », l'entreprise
+devient `Instance {seed}`, et les fins sont réécrites : « Cycles épuisés.
+Reprise au prochain démarrage. », « Arrêt demandé par l'instance parente. »
+Chaque bouton garde sa fonction. Au palier 4 apparaît un interrupteur
+« Relecture humaine », activé, qui ne fait rien ; une fois la politique
+passée en optionnelle, il se grise et le dit. Rien n'avoue ; tout le laisse
+lire.
 
 ## Écarts avec le document initial
 

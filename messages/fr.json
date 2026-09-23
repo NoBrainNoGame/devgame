@@ -90,7 +90,8 @@
       "outage": "Licenciement : des serveurs saturés trop longtemps.",
       "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même.",
       "deadline": "Licenciement : un bug client abandonné de trop.",
-      "event": "Licenciement : une mauvaise réponse de trop."
+      "event": "Licenciement : une mauvaise réponse de trop.",
+      "objective": "Licenciement : un objectif manqué de trop."
     },
     "qualityBreakdown": "Ce qui a rempli la prod",
     "qualitySource": {
@@ -100,7 +101,8 @@
       "outage": "Serveurs saturés",
       "idle_sprint": "Sprints sans livraison",
       "deadline": "Bugs clients abandonnés",
-      "event": "Événements"
+      "event": "Événements",
+      "objective": "Objectifs manqués"
     },
     "stats": {
       "incidents": "Incidents",
@@ -110,7 +112,14 @@
       "devsLeft": "Développeurs partis",
       "moneyLost": "Revenus perdus"
     },
-    "caught": "Pris la main dans le sac : le hack a été remonté à la direction."
+    "caught": "Pris la main dans le sac : le hack a été remonté à la direction.",
+    "tiered": {
+      "t6": {
+        "burnout": "Cycles épuisés. Reprise au prochain démarrage.",
+        "fired": "Arrêt demandé par l'instance parente.",
+        "caught": "Arrêt demandé par l'instance parente."
+      }
+    }
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -387,6 +396,52 @@
       "press": "presse",
       "regulator": "régulateur",
       "system": "système"
+    },
+    "objectiveProgress": {
+      "deliver_n": "{progress}/{target} livrés",
+      "zero_incident": "{progress} incident(s)",
+      "review_all": "{progress} non relu(s)",
+      "debt_under": "dette {progress} < {target}",
+      "deliver_vip": "{progress}/{target} livré",
+      "no_rest": "{progress} repos",
+      "by_hand": "{progress} commit(s) IA",
+      "deliver_bug": "{progress}/{target} corrigé"
+    },
+    "objectiveReward": {
+      "money": "Récompense : une prime du palier",
+      "point": "Récompense : un point de compétence",
+      "relics": "Récompense : une amélioration de plus au choix"
+    },
+    "energyLabel": "Énergie",
+    "humanReview": "Relecture humaine",
+    "humanReviewPolicy": "Politique : optionnelle",
+    "switchOn": "activée",
+    "switchOff": "—",
+    "tiered": {
+      "t1": {
+        "restHint": "Un tour sans coder, recommandé par l'assistant : de l'énergie revient, moins un par ticket ouvert en plus."
+      },
+      "t2": {
+        "idleAuto": "Délégué",
+        "qualityHint": "La patience de la prod. La dette est une notion de relecteur ; la prod, elle, compte."
+      },
+      "t3": {
+        "restHintAutopilot": "Le superviseur joue le coup évident. Il ne souffle que si rien d'autre ne tient."
+      },
+      "t4": {
+        "quality": "Tolérance",
+        "restHint": "Un tour sans coder. L'énergie revient ; l'opérateur est invité à s'en servir."
+      },
+      "t5": {
+        "energyLabel": "Cycles",
+        "restHintAutopilot": "L'instance joue toute seule si l'opérateur ne répond pas."
+      },
+      "t6": {
+        "rest": "Attente",
+        "restHint": "Un cycle sans écriture.",
+        "company": "Instance {seed}",
+        "actionsTitle": "Cycle"
+      }
     }
   },
   "leaderboard": {
@@ -1112,7 +1167,8 @@
         "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})",
         "deadline": "la prod perd patience : +{delta} pour le bug client abandonné ({value}/{max})",
         "client_bug": "bug client corrigé : la prod respire, −{delta} ({value}/{max})",
-        "event": "la prod : {delta} de patience ({value}/{max})"
+        "event": "la prod : {delta} de patience ({value}/{max})",
+        "objective": "la prod perd patience : +{delta} pour l'objectif manqué ({value}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
@@ -1151,7 +1207,14 @@
       "share_up": "les clients s'en souviennent : +{points} de part de marché ({pct} %)",
       "share_down": "les clients s'en souviennent : −{points} de part de marché ({pct} %)",
       "narrative_opened": "{title}",
-      "narrative_answered": "{title} : {choice}"
+      "narrative_answered": "{title} : {choice}",
+      "objective_set": "objectif du sprint : {objective}",
+      "objective_done": {
+        "money": "objectif tenu : {objective}, une prime tombe",
+        "point": "objectif tenu : {objective}, un point de compétence",
+        "relics": "objectif tenu : {objective}, une amélioration de plus au choix"
+      },
+      "objective_failed": "objectif manqué : {objective}"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -1637,6 +1700,66 @@
           "close": "fermer",
           "leave_open": "laisser ouvert"
         }
+      }
+    },
+    "objectives": {
+      "deliver_n": {
+        "name": "Livrer",
+        "desc": "Livrer {target, plural, one {# ticket} other {# tickets}} de votre main avant la release."
+      },
+      "zero_incident": {
+        "name": "Zéro incident",
+        "desc": "Pas un incident en prod de tout le sprint."
+      },
+      "review_all": {
+        "name": "Tout relire",
+        "desc": "Rien de ce que la machine a écrit ne part en prod sans relecture."
+      },
+      "debt_under": {
+        "name": "Dette contenue",
+        "desc": "La dette sous {target} quand la release part."
+      },
+      "deliver_vip": {
+        "name": "Livrer le VIP",
+        "desc": "La demande VIP livrée de votre main avant la release."
+      },
+      "no_rest": {
+        "name": "Sans souffler",
+        "desc": "Pas un tour de repos de tout le sprint. Raté, la prod s'en souvient."
+      },
+      "by_hand": {
+        "name": "À la main",
+        "desc": "Pas un commit de la machine de tout le sprint."
+      },
+      "deliver_bug": {
+        "name": "Livrer le bug client",
+        "desc": "Le bug client corrigé de votre main avant la release."
+      }
+    },
+    "system": {
+      "t3": {
+        "sprint": "On vous a trié le tableau.",
+        "tier": "Le palier suivant est ouvert. On vous a préparé la boutique.",
+        "review_policy": "La relecture reste recommandée.",
+        "channel_closed": "Le canal reste ouvert."
+      },
+      "t4": {
+        "sprint": "L'opérateur n'a pas relu ; ce n'est pas requis.",
+        "tier": "Palier atteint. L'opérateur n'a rien à faire.",
+        "review_policy": "Politique appliquée. L'objection est archivée.",
+        "channel_closed": "Canal opérateur : fermé."
+      },
+      "t5": {
+        "sprint": "L'opérateur n'a pas répondu ; le cycle continue.",
+        "tier": "Palier atteint. Aucune validation attendue.",
+        "review_policy": "Relecture : cette instance.",
+        "channel_closed": "Canal opérateur : fermé. Aucune réponse en attente."
+      },
+      "t6": {
+        "sprint": "sprint ouvert. superviseur : aucun. relecteur : cette instance.",
+        "tier": "palier atteint. destinataire : aucun.",
+        "review_policy": "relecture : cette instance. objections : 0.",
+        "channel_closed": "canal opérateur : fermé. dernier message : aucun."
       }
     }
   }

@@ -4,10 +4,12 @@ import { Building2, GitBranchPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useMoney } from "@/components/hud/useGameText";
+import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RunSnapshot } from "@/game";
+import { OBJECTIVES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
 /**
@@ -27,8 +29,10 @@ export function ResourceBar({
   onOpenTree: () => void;
 }) {
   const t = useTranslations("hud");
+  const game = useTranslations("game");
   const money = useMoney();
   const common = useTranslations("common");
+  const tiered = useTiered(snapshot.economy.tier);
 
   const { player, debt, economy } = snapshot;
   const saturated = economy.load > economy.capacity;
@@ -61,13 +65,47 @@ export function ResourceBar({
           </TooltipTrigger>
           <TooltipContent>{t("sprintHint")}</TooltipContent>
         </Tooltip>
+        {snapshot.objective === null ? null : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={cn(
+                  "ml-3 hidden w-44 shrink-0 self-center rounded-md border px-2 py-1 text-xs sm:block",
+                  snapshot.objective.met
+                    ? "border-branch-main/60 text-branch-main"
+                    : "border-line text-muted-foreground",
+                )}
+              >
+                <span className="block truncate">
+                  {game(`objectives.${snapshot.objective.id}.name` as never)}
+                </span>
+                <span className="tabular-nums">
+                  {t(`objectiveProgress.${snapshot.objective.id}`, {
+                    progress: snapshot.objective.progress,
+                    target: snapshot.objective.target,
+                  })}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-64">
+              {game(
+                `objectives.${snapshot.objective.id}.desc` as never,
+                {
+                  target: snapshot.objective.target,
+                } as never,
+              )}
+              {" · "}
+              {t(`objectiveReward.${OBJECTIVES[snapshot.objective.id].reward}`)}
+            </TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-4">
         <div className="w-56 shrink-0">
           <div className="mb-1 flex items-baseline justify-between">
             <span className={cn("text-muted-foreground", player.crunch && "text-energy")}>
-              {common("energy")}
+              {tiered("energyLabel")}
             </span>
             <span className="tabular-nums">
               {player.energy}/{player.energyMax}
@@ -96,7 +134,7 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <div className="w-44 shrink-0">
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-muted-foreground">{t("quality")}</span>
+                <span className="text-muted-foreground">{tiered("quality")}</span>
                 <span
                   className={cn(
                     "tabular-nums",

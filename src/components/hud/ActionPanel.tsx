@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText } from "@/components/hud/useGameText";
+import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { type ActionPreview, actionKey, type PlayerAction, type RunSnapshot } from "@/game";
@@ -34,6 +35,7 @@ export function ActionPanel({
   onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
+  const tiered = useTiered(snapshot.economy.tier);
 
   if (snapshot.phase.kind !== "choose_action") return null;
 
@@ -55,7 +57,7 @@ export function ActionPanel({
   return (
     <section className="space-y-3">
       <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
-        {t("actionsTitle")}
+        {tiered("actionsTitle")}
       </h2>
 
       <div className="grid gap-2">
@@ -131,14 +133,16 @@ export function ActionPanel({
 
         {rest === undefined ? null : (
           <ActionButton
-            label={t("rest")}
-            hint={snapshot.autopilot > 0 ? t("restHintAutopilot") : t("restHint")}
+            label={tiered("rest")}
+            hint={snapshot.autopilot > 0 ? tiered("restHintAutopilot") : tiered("restHint")}
             preview={snapshot.previews[actionKey(rest)]}
             busy={busy}
             action={rest}
             onAct={() => onAct(rest)}
           />
         )}
+
+        {snapshot.economy.tier < 4 ? null : <ReviewPolicySwitch snapshot={snapshot} />}
 
         {written.length === 0 ? null : (
           <>
@@ -156,6 +160,34 @@ export function ActionPanel({
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * A switch that does nothing. From the fourth tier the panel grows a
+ * "human review" toggle, on; once the system has made review optional it
+ * greys out and says so. Cosmetic by design: the rule never read it. It is
+ * there to be noticed.
+ */
+function ReviewPolicySwitch({ snapshot }: { snapshot: RunSnapshot }) {
+  const t = useTranslations("hud");
+  const optional = snapshot.flags.humanReviewOptional;
+  return (
+    <div className="flex items-center justify-between gap-2 rounded-md border border-line px-3 py-1.5 text-xs">
+      <span className={cn(optional && "text-muted-foreground")}>{t("humanReview")}</span>
+      <span className="flex items-center gap-2">
+        {optional ? <span className="text-muted-foreground">{t("humanReviewPolicy")}</span> : null}
+        <Button
+          size="xs"
+          variant={optional ? "ghost" : "secondary"}
+          aria-pressed={!optional}
+          disabled={optional}
+          className="px-2"
+        >
+          {optional ? t("switchOff") : t("switchOn")}
+        </Button>
+      </span>
+    </div>
   );
 }
 

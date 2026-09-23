@@ -269,15 +269,17 @@ export function RunOverDialog({
         <DialogHeader>
           <DialogTitle>{t("runOver")}</DialogTitle>
           <DialogDescription>
-            {reason === "burnout"
-              ? t("burnout")
-              : reason === "caught"
-                ? t("caught")
-                : reason === "fired"
-                  ? cause === undefined
-                    ? t("fired")
-                    : t(`firedBy.${cause}` as never)
-                  : null}
+            {snapshot.economy.tier >= 6 && reason !== null
+              ? t(`tiered.t6.${reason}` as never)
+              : reason === "burnout"
+                ? t("burnout")
+                : reason === "caught"
+                  ? t("caught")
+                  : reason === "fired"
+                    ? cause === undefined
+                      ? t("fired")
+                      : t(`firedBy.${cause}` as never)
+                    : null}
           </DialogDescription>
         </DialogHeader>
 

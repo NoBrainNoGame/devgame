@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { ticketName } from "@/components/hud/ticketName";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
+import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,13 +62,14 @@ export function CompanyDialog({
 }) {
   const t = useTranslations("hud");
   const money = useMoney();
+  const tiered = useTiered(snapshot.economy.tier);
   const { economy } = snapshot;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>{t("company")}</DialogTitle>
+          <DialogTitle>{tiered("company", { seed: snapshot.seed })}</DialogTitle>
           <DialogDescription>
             <span className="text-foreground tabular-nums">
               {t("money", { money: money(economy.money) })}

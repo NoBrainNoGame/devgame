@@ -223,6 +223,20 @@ export const BALANCE = {
   sprint: {
     /** Turns in the box. The release ships when they run out. */
     turns: 12,
+    /** Relics on offer when a sprint closes, and one more for an objective met. */
+    relicOffer: 3,
+  },
+
+  /** The tier from which the system speaks in the log, and the interface changes its words. */
+  voice: { firstTier: 3 },
+
+  /** What a sprint asks. Money in tier-0 euros, scaled by the tier. */
+  objectives: {
+    moneyReward: 60,
+    /** The debt a sprint must close under, for that objective. */
+    debtUnder: 30,
+    /** Share of the sprint's arrivals to land yourself, for that objective. */
+    deliverSharePct: 50,
   },
 
   tickets: {

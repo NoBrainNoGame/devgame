@@ -8,6 +8,8 @@ import type {
   MergeEventId,
   NarrativeEventId,
   NarrativeFlag,
+  ObjectiveId,
+  ObjectiveReward,
   ProfileId,
   RelicId,
   SkillId,
@@ -209,6 +211,24 @@ export interface MarketState {
   competitors: Record<CompetitorId, CompetitorState>;
 }
 
+export interface ObjectiveState {
+  id: ObjectiveId;
+  /** What "done" means, for the ones that count. */
+  target: number;
+  /** Set when the sprint settled it. */
+  outcome?: "done" | "failed";
+}
+
+export interface SprintCounters {
+  rests: number;
+  aiCommits: number;
+  vipDelivered: number;
+  bugsDelivered: number;
+}
+
+/** What the system comments on, once it starts commenting. */
+export type SystemNote = "sprint" | "tier" | "review_policy" | "channel_closed";
+
 /** One payday, as the finance chart draws it. */
 export interface FinanceMonth {
   month: number;
@@ -233,7 +253,8 @@ export type QualitySource =
   | "outage"
   | "idle_sprint"
   | "deadline"
-  | "event";
+  | "event"
+  | "objective";
 /** Every way the gauge moves, the ways down included. */
 export type QualityChange = QualitySource | "clean_sprint" | "hack" | "client_bug";
 
@@ -293,8 +314,8 @@ export interface LogLine {
   /** Monotonic within a run. Append-only, so it is a stable React key. */
   seq: number;
   turn: number;
-  /** Rendered as a commit subject: `feat:`, `fix:`, `chore:`… */
-  kind: "feat" | "fix" | "chore" | "merge" | "revert" | "note";
+  /** Rendered as a commit subject: `feat:`, `fix:`, `chore:`… `system` is the run's own voice. */
+  kind: "feat" | "fix" | "chore" | "merge" | "revert" | "note" | "system";
   text: I18nText;
 }
 
@@ -368,6 +389,10 @@ export interface RunState {
   sprintMonths: number;
   /** Tickets you landed yourself this sprint. None is a sprint production notices. */
   sprintPlayerDelivered: number;
+  /** What this sprint asks, how far along, and how it ended. */
+  objective: ObjectiveState | null;
+  /** Counters the objectives read, reset every sprint. */
+  sprintCounters: SprintCounters;
 
   /** 0 to 100. Only shown exactly when something reveals it. */
   debt: number;
@@ -538,6 +563,11 @@ export type GameEvent =
       devId?: DevId;
     }
   | { type: "narrative_answered"; eventId: NarrativeEventId; choice: string }
+  | { type: "objective_set"; id: ObjectiveId; target: number }
+  | { type: "objective_done"; id: ObjectiveId; reward: ObjectiveReward }
+  | { type: "objective_failed"; id: ObjectiveId }
+  /** A line from the system, at the tiers where it has a voice: `system.t<tier>.<note>`. */
+  | { type: "system_note"; tier: number; note: SystemNote }
   /** Production is about to saturate, or has. Emitted once per rise of level. */
   | {
       type: "capacity_warning";

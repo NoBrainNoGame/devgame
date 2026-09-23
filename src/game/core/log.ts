@@ -269,6 +269,43 @@ export function toLogLine(
         text: text(`log.hack.${event.kind}.${event.success ? "won" : "lost"}`),
       };
 
+    case "system_note":
+      return {
+        seq,
+        turn,
+        kind: "system",
+        text: text(`system.t${Math.min(6, Math.max(3, event.tier))}.${event.note}`),
+      };
+
+    case "objective_set":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text("log.objective_set", {
+          objective: ref(`objectives.${event.id}.name`),
+          target: event.target,
+        }),
+      };
+
+    case "objective_done":
+      return {
+        seq,
+        turn,
+        kind: "feat",
+        text: text(`log.objective_done.${event.reward}`, {
+          objective: ref(`objectives.${event.id}.name`),
+        }),
+      };
+
+    case "objective_failed":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text("log.objective_failed", { objective: ref(`objectives.${event.id}.name`) }),
+      };
+
     case "narrative_opened":
       return {
         seq,

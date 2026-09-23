@@ -90,6 +90,8 @@ interface Outcome {
   /** The run's share of the market at the end, in percent. */
   share: number;
   events: number;
+  objectivesDone: number;
+  objectivesFailed: number;
   /** The tier the run had reached when sprint 10 ended, or its last one. */
   tierAt10: number;
   moneyPeak: number;
@@ -411,6 +413,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
   let hacks = 0;
   let hacksWon = 0;
   let narrative = 0;
+  let objectivesDone = 0;
+  let objectivesFailed = 0;
 
   while (state.phase.kind !== "game_over" && turns < maxTurns) {
     const actions = getAvailableActions(state);
@@ -435,6 +439,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         hacks,
         hacksWon,
         events: narrative,
+        objectivesDone,
+        objectivesFailed,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -468,6 +474,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
         hacks,
         hacksWon,
         events: narrative,
+        objectivesDone,
+        objectivesFailed,
         tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
       });
     }
@@ -499,6 +507,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
       if (event.type === "skill_point_bought") pointsBought += 1;
       if (event.type === "capacity_warning") alerts += 1;
       if (event.type === "narrative_opened") narrative += 1;
+      if (event.type === "objective_done") objectivesDone += 1;
+      if (event.type === "objective_failed") objectivesFailed += 1;
       if (event.type === "hack") {
         hacks += 1;
         if (event.success) hacksWon += 1;
@@ -546,6 +556,8 @@ function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: bo
     hacks,
     hacksWon,
     events: narrative,
+    objectivesDone,
+    objectivesFailed,
     tierAt10: tierAt10 === -1 ? state.tier : tierAt10,
   });
 }
@@ -666,7 +678,13 @@ function report(policy: string, outcomes: Outcome[]): void {
     `  money     earned avg ${mean(outcomes.map((o) => o.moneyEarned)).toFixed(0)}  mrr final avg ${mean(outcomes.map((o) => o.mrr)).toFixed(0)}  upgrades avg ${mean(outcomes.map((o) => o.upgrades)).toFixed(1)}  points bought avg ${mean(outcomes.map((o) => o.pointsBought)).toFixed(1)}  outages avg ${mean(outcomes.map((o) => o.outages)).toFixed(1)}  alerts avg ${mean(outcomes.map((o) => o.alerts)).toFixed(1)}  acquisitions avg ${mean(outcomes.map((o) => o.acquisitions)).toFixed(2)}  hacks avg ${mean(outcomes.map((o) => o.hacks)).toFixed(2)} won ${mean(outcomes.map((o) => o.hacksWon)).toFixed(2)}  share final med ${quantile(
       outcomes.map((o) => o.share),
       0.5,
-    )}%  events avg ${mean(outcomes.map((o) => o.events)).toFixed(1)}`,
+    )}%  events avg ${mean(outcomes.map((o) => o.events)).toFixed(1)}  objectives met ${Math.round(
+      (100 * outcomes.reduce((s, o) => s + o.objectivesDone, 0)) /
+        Math.max(
+          1,
+          outcomes.reduce((s, o) => s + o.objectivesDone + o.objectivesFailed, 0),
+        ),
+    )}%`,
   );
   console.log(
     `  team      hires avg ${mean(outcomes.map((o) => o.hires)).toFixed(2)}  left avg ${mean(outcomes.map((o) => o.devsLeft)).toFixed(2)}  delivered by team avg ${mean(outcomes.map((o) => o.teamDelivered)).toFixed(1)}  by player avg ${mean(outcomes.map((o) => o.ticketsDelivered - o.teamDelivered)).toFixed(1)}`,

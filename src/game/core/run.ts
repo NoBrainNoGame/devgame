@@ -14,6 +14,7 @@ import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
 import { initialMarket } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
+import { drawObjective } from "@/game/core/rules/objectives";
 import { availableSkills } from "@/game/core/rules/sprint";
 import { writeSprintStart } from "@/game/core/rules/write";
 import type { RunMode, RunState } from "@/game/core/types";
@@ -115,6 +116,8 @@ export function createRun(options: CreateRunOptions): RunState {
     flags: { humanReviewOptional: false, operatorChannelClosed: false, vipForTeam: false },
     sprintMonths: 0,
     sprintPlayerDelivered: 0,
+    objective: null,
+    sprintCounters: { rests: 0, aiCommits: 0, vipDelivered: 0, bugsDelivered: 0 },
 
     debt: 0,
     debtNoise: 0,
@@ -139,6 +142,7 @@ export function createRun(options: CreateRunOptions): RunState {
         idle_sprint: 0,
         deadline: 0,
         event: 0,
+        objective: 0,
       },
       lastQualitySource: null,
     },
@@ -159,6 +163,7 @@ export function createRun(options: CreateRunOptions): RunState {
 
   writeSprintStart(context);
   arriveTickets(context, availableSkills(state));
+  drawObjective(context);
 
   // The setup events describe a board nobody has seen yet, so they are dropped
   // rather than logged: the log starts when the player does.

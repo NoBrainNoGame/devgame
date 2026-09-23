@@ -284,6 +284,10 @@ export function planBatch(
       case "price_war":
       case "share_changed":
       case "narrative_answered":
+      case "objective_set":
+      case "objective_done":
+      case "objective_failed":
+      case "system_note":
       case "crunch":
         break;
     }

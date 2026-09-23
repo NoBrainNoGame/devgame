@@ -11,6 +11,7 @@ import {
   MERGE_EVENT_IDS,
   NARRATIVE_EVENT_IDS,
   NARRATIVE_EVENTS,
+  OBJECTIVE_IDS,
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
@@ -104,6 +105,7 @@ describe("game content is fully named", () => {
     ["tree", TREE_IDS, "name", "desc"],
     ["upgrades", UPGRADE_IDS, "name", "desc"],
     ["acquisitions", ACQUISITION_IDS, "name", "desc"],
+    ["objectives", OBJECTIVE_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
     ["events", FAILURE_EVENT_IDS, "title", "log"],
     ["events", MERGE_EVENT_IDS, "title", "log"],
@@ -135,6 +137,24 @@ describe("game content is fully named", () => {
       `game.narrative.${id}.text`,
       ...NARRATIVE_EVENTS[id].choices.map((c) => `game.narrative.${id}.choices.${c.id}`),
     ]);
+    expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
+    expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
+  });
+
+  test("every tiered label shadows a base label, and the system has every line at every tier", () => {
+    for (const catalogue of [frFlat, enFlat]) {
+      for (const key of catalogue.keys()) {
+        const match = key.match(/^(hud|play)\.tiered\.t(\d)\.(.+)$/);
+        if (match === null) continue;
+        expect(Number(match[2])).toBeGreaterThanOrEqual(1);
+        expect(Number(match[2])).toBeLessThanOrEqual(6);
+        expect(catalogue.has(`${match[1]}.${match[3]}`)).toBe(true);
+      }
+    }
+    const notes = ["sprint", "tier", "review_policy", "channel_closed"];
+    const expected = [3, 4, 5, 6].flatMap((tier) =>
+      notes.map((note) => `game.system.t${tier}.${note}`),
+    );
     expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
     expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
   });

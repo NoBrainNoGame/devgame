@@ -155,6 +155,26 @@ What a developer does each turn — pick up, write, land — is `workTeam` in
 no debt, no energy. Changing that is a rule change, and `tests/team.test.ts`
 is where the promises are written down.
 
+### A word that changes with the tier
+
+A HUD label the tier rewrites is a key under `hud.tiered.t<n>` with the same
+name as the base key; `useTiered(tier)` reads the highest tier at or below
+the run's that defines it, and the base key otherwise.
+`tests/messages.test.ts` refuses a tiered key without a base. A new line of
+the system's is a `SystemNote` in `types.ts`, four strings under
+`game.system.t3..t6.<note>` in both catalogues, and a `systemNote(context,
+note)` call from the rule that knows — it emits nothing below the third tier.
+
+### A sprint objective
+
+Objectives live in `OBJECTIVES` in `src/game/content/objectives.ts`: weight,
+tier, what it requires on the board, its reward, and what missing it costs.
+Adding one means a target in `targetOf`, a progress and a criterion in
+`objectiveProgress`/`objectiveMet` (`rules/objectives.ts`), a
+`game.objectives.<id>.{name,desc}`, a `hud.objectiveProgress.<id>` line, and
+a repinned fingerprint. A new counter belongs in `SprintCounters`, reset in
+`drawObjective`, incremented in the rule that knows — never in the HUD.
+
 ### A narrative event
 
 Events live in `NARRATIVE_EVENTS` in `src/game/content/narrative.ts`:

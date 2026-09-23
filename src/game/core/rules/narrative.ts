@@ -23,6 +23,7 @@ import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { releaseDev } from "@/game/core/rules/team";
 import { tierScale } from "@/game/core/rules/tier";
+import { systemNote } from "@/game/core/rules/voice";
 import type { RunState } from "@/game/core/types";
 
 /**
@@ -150,6 +151,10 @@ export function answerEvent(context: RuleContext, eventId: NarrativeEventId, cho
     if (dev !== undefined) releaseDev(context, dev);
   }
   if (effect.skillPoints !== undefined) grantSkillPoints(context, effect.skillPoints);
-  if (effect.flag !== undefined) state.flags[effect.flag] = true;
+  if (effect.flag !== undefined) {
+    state.flags[effect.flag] = true;
+    if (effect.flag === "humanReviewOptional") systemNote(context, "review_policy");
+    if (effect.flag === "operatorChannelClosed") systemNote(context, "channel_closed");
+  }
   if (effect.priceWar === true) startPriceWar(context);
 }

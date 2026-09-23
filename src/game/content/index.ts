@@ -45,6 +45,14 @@ export {
   type NarrativeSource,
   type NarrativeTrigger,
 } from "@/game/content/narrative";
+export {
+  isObjectiveId,
+  OBJECTIVE_IDS,
+  OBJECTIVES,
+  type ObjectiveDef,
+  type ObjectiveId,
+  type ObjectiveReward,
+} from "@/game/content/objectives";
 export type { ProfileDef, ProfileId } from "@/game/content/profiles";
 export { isProfileId, PROFILE_IDS, PROFILES } from "@/game/content/profiles";
 export type { RelicDef, RelicId } from "@/game/content/relics";

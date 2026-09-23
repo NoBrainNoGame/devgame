@@ -402,6 +402,8 @@ export function completeMerge(
     state.player.totalCommits += 1;
     state.devMerges += 1;
     state.sprintPlayerDelivered += 1;
+    if (ticket.kind === "vip") state.sprintCounters.vipDelivered += 1;
+    if (ticket.kind === "client_bug") state.sprintCounters.bugsDelivered += 1;
   }
   state.shipped.push(...ticket.nodeIds, node.id);
   state.pointsDelivered += ticket.points;

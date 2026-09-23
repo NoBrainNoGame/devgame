@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { IDLE_SECONDS } from "@/components/hud/IdleDriver";
 import { IDLE_SPEEDS, useIdleStore } from "@/components/hud/idleStore";
 import { useIdleSettings } from "@/components/hud/useIdleSettings";
+import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { idleSpeedAllowed, useGameStore } from "@/game";
@@ -19,6 +20,7 @@ export function IdleControls(): React.JSX.Element {
   const t = useTranslations("hud");
   const [idle, setIdle] = useIdleSettings();
   const tier = useGameStore((state) => state.snapshot?.idleSpeedTier ?? 0);
+  const tiered = useTiered(useGameStore((state) => state.snapshot?.economy.tier ?? 0));
   const hydrated = useIdleStore((state) => state.hydrated);
   const effective = idleSpeedAllowed(tier, idle.speed) ? idle.speed : 1;
 
@@ -34,7 +36,7 @@ export function IdleControls(): React.JSX.Element {
             onClick={() => setIdle({ enabled: !idle.enabled })}
           >
             {idle.enabled ? <Pause /> : <Play />}
-            {t("idleAuto")}
+            {tiered("idleAuto")}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="left" className="max-w-64">

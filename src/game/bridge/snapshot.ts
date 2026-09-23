@@ -2,6 +2,7 @@ import type {
   AcquisitionId,
   CompetitorId,
   DevRank,
+  ObjectiveId,
   ProfileId,
   RelicId,
   SkillId,
@@ -25,6 +26,7 @@ import {
   reviewedRatio,
   wipExtra,
 } from "@/game/core/rules/modifiers";
+import { objectiveMet, objectiveProgress } from "@/game/core/rules/objectives";
 import { previewAll } from "@/game/core/rules/preview";
 import { skillPointPrice } from "@/game/core/rules/shop";
 import { devCapacity, hireCostFor, maxSeats, ticketsOf } from "@/game/core/rules/team";
@@ -234,6 +236,16 @@ export interface RunSnapshot {
   austerity: number;
   /** The other companies, in the order they were written. */
   competitors: CompetitorView[];
+  /** What the answers to the system's questions left behind. */
+  flags: RunState["flags"];
+  /** What this sprint asks, and how far along it is. */
+  objective: {
+    id: ObjectiveId;
+    target: number;
+    progress: number;
+    met: boolean;
+    outcome?: "done" | "failed";
+  } | null;
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -401,6 +413,17 @@ export function toSnapshot(state: RunState): RunSnapshot {
     idleSpeedTier: effects.idleSpeedTier,
     hack: hackOffer(state, effects),
     austerity: austerityOf(state.moneyEarned),
+    flags: { ...state.flags },
+    objective:
+      state.objective === null
+        ? null
+        : {
+            id: state.objective.id,
+            target: state.objective.target,
+            progress: objectiveProgress(state),
+            met: objectiveMet(state),
+            ...(state.objective.outcome === undefined ? {} : { outcome: state.objective.outcome }),
+          },
     competitors: COMPETITOR_IDS.map((id) => ({
       id,
       status: state.market.competitors[id].status,
