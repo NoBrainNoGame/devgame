@@ -251,11 +251,11 @@
 
 /*
  * The landing headline's question mark. It sits *on* the period — the
- * period is its dot — takes no room, and appears when the period is hovered
- * as a hard cathode-ray glitch of its own: it jumps in steps, tears in
- * horizontal slices, bleeds red and cyan, flickers. Only the mark moves,
- * only while the period is hovered; the sentence stays put. Reduced motion
- * keeps a plain fade.
+ * period is its dot — and appears only while the period is hovered. The
+ * glyph itself never moves, so its dot stays on the period; what glitches
+ * is two copies of it, red and cyan, torn into slices and thrown sideways,
+ * while the glyph flickers and leans from its base. No box, no outline,
+ * nothing else on the page moves. Reduced motion keeps a plain fade.
  */
 .glitch-host {
   position: relative;
@@ -264,81 +264,138 @@
 .glitch-dot {
   position: relative;
   display: inline-block;
-  cursor: help;
 }
 .glitch-mark {
   position: absolute;
   left: 50%;
   top: 0;
-  translate: -50% 0;
+  /* JetBrains Mono draws the question mark's dot a twentieth of an em left
+     of the cell's centre, where the period sits; the shift puts one on the other. */
+  translate: calc(-50% + 0.05em) 0;
   opacity: 0;
   color: var(--color-branch-hotfix);
   transition: opacity 120ms steps(2);
   pointer-events: none;
-  will-change: transform, clip-path;
+  transform-origin: 50% 100%;
+}
+.glitch-mark::before,
+.glitch-mark::after {
+  content: "?";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.glitch-mark::before {
+  color: rgb(255 60 60);
+}
+.glitch-mark::after {
+  color: rgb(60 220 255);
 }
 .glitch-host:has(.glitch-dot:hover) .glitch-mark {
   opacity: 1;
-  animation: glitch-jitter 360ms steps(1) infinite;
+  animation: glitch-flicker 360ms steps(1) infinite;
 }
-@keyframes glitch-jitter {
+.glitch-host:has(.glitch-dot:hover) .glitch-mark::before {
+  opacity: 0.9;
+  animation: glitch-tear-red 300ms steps(1) infinite;
+}
+.glitch-host:has(.glitch-dot:hover) .glitch-mark::after {
+  opacity: 0.9;
+  animation: glitch-tear-cyan 420ms steps(1) infinite;
+}
+/* The glyph: colour and flicker, a lean from the base that keeps the dot put. */
+@keyframes glitch-flicker {
   0% {
-    transform: translate(0, 0) scale(1);
     color: var(--color-branch-hotfix);
-    text-shadow: 4px 0 rgb(60 220 255 / 0.9), -4px 0 rgb(255 60 60 / 0.9);
-    clip-path: none;
+    transform: skewX(0);
     opacity: 1;
   }
-  15% {
-    transform: translate(6px, -4px) skewX(12deg);
+  20% {
     color: var(--color-foreground);
-    text-shadow: -6px 0 rgb(255 60 60 / 0.9), 6px 0 rgb(60 220 255 / 0.9);
-    clip-path: inset(0 0 45% 0);
+    transform: skewX(14deg);
   }
-  30% {
-    transform: translate(-5px, 3px) scale(1.08);
-    color: rgb(60 220 255);
-    text-shadow: 5px 0 rgb(255 60 60 / 0.9);
-    clip-path: inset(50% 0 0 0);
+  35% {
+    color: var(--color-branch-hotfix);
+    transform: skewX(0);
+    opacity: 0.2;
   }
   45% {
-    transform: translate(2px, 0) scale(0.96);
-    color: var(--color-branch-hotfix);
-    text-shadow: none;
-    opacity: 0.25;
-    clip-path: none;
-  }
-  55% {
-    transform: translate(-7px, -2px) skewX(-15deg);
-    color: var(--color-foreground);
-    text-shadow: 7px 0 rgb(60 220 255 / 0.9), -7px 0 rgb(255 60 60 / 0.9);
     opacity: 1;
-    clip-path: inset(30% 0 20% 0);
   }
-  70% {
-    transform: translate(0, 0) scale(1.15);
-    color: rgb(255 60 60);
-    text-shadow: -3px 0 rgb(60 220 255 / 0.9);
-    clip-path: inset(0 0 0 0);
+  60% {
+    color: var(--color-foreground);
+    transform: skewX(-16deg) scaleY(1.08);
   }
-  85% {
-    transform: translate(3px, 4px);
+  75% {
     color: var(--color-branch-hotfix);
-    text-shadow: -3px 0 rgb(60 220 255 / 0.9), 3px 0 rgb(255 60 60 / 0.9);
-    opacity: 0.6;
-    clip-path: inset(60% 0 0 0);
+    transform: skewX(0) scaleY(1);
+    opacity: 0.5;
+  }
+  90% {
+    opacity: 1;
+    transform: skewX(6deg);
   }
   100% {
-    transform: translate(0, 0) scale(1);
     color: var(--color-branch-hotfix);
-    text-shadow: 4px 0 rgb(60 220 255 / 0.9), -4px 0 rgb(255 60 60 / 0.9);
+    transform: skewX(0);
     opacity: 1;
-    clip-path: none;
+  }
+}
+/* The copies: slices of the glyph thrown sideways, never the glyph itself. */
+@keyframes glitch-tear-red {
+  0% {
+    transform: translate(-6px, 0);
+    clip-path: inset(0 0 60% 0);
+  }
+  25% {
+    transform: translate(8px, -2px);
+    clip-path: inset(35% 0 30% 0);
+  }
+  50% {
+    transform: translate(-9px, 1px);
+    clip-path: inset(70% 0 0 0);
+  }
+  75% {
+    transform: translate(5px, 0);
+    clip-path: inset(10% 0 55% 0);
+  }
+  100% {
+    transform: translate(-6px, 0);
+    clip-path: inset(0 0 60% 0);
+  }
+}
+@keyframes glitch-tear-cyan {
+  0% {
+    transform: translate(7px, 0);
+    clip-path: inset(50% 0 0 0);
+  }
+  30% {
+    transform: translate(-8px, 2px);
+    clip-path: inset(0 0 70% 0);
+  }
+  55% {
+    transform: translate(10px, -1px);
+    clip-path: inset(25% 0 40% 0);
+  }
+  80% {
+    transform: translate(-4px, 0);
+    clip-path: inset(60% 0 5% 0);
+  }
+  100% {
+    transform: translate(7px, 0);
+    clip-path: inset(50% 0 0 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .glitch-host:has(.glitch-dot:hover) .glitch-mark {
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark,
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark::before,
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark::after {
     animation: none;
+  }
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark::before,
+  .glitch-host:has(.glitch-dot:hover) .glitch-mark::after {
+    opacity: 0;
   }
   .glitch-mark {
     transition: opacity 260ms ease-out;
