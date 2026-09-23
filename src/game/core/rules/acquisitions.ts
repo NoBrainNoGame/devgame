@@ -1,5 +1,6 @@
-import { ACQUISITIONS, type AcquisitionId } from "@/game/content";
+import { ACQUISITIONS, type AcquisitionId, featureNameKey } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { fnv1a } from "@/game/core/hash";
 import { headOf } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt } from "@/game/core/rules/debt";
@@ -66,6 +67,7 @@ export function acquire(context: RuleContext, id: AcquisitionId): void {
       sprintArrived: state.sprint,
       devMergesAtOpen: state.devMerges,
       nodeIds: [],
+      nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${ticketId}`)),
     };
     state.tickets[ticketId] = ticket;
     ticketIds.push(ticketId);

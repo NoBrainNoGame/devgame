@@ -5,6 +5,13 @@ export {
   type AcquisitionId,
   isAcquisitionId,
 } from "@/game/content/acquisitions";
+export {
+  COMPETITOR_IDS,
+  COMPETITORS,
+  type CompetitorDef,
+  type CompetitorId,
+  isCompetitorId,
+} from "@/game/content/competitors";
 export type { Effects, PartialEffects } from "@/game/content/effects";
 export { addEffects, EFFECT_KEYS, NO_EFFECTS } from "@/game/content/effects";
 export type {
@@ -30,6 +37,21 @@ export type { RelicDef, RelicId } from "@/game/content/relics";
 export { RELIC_IDS, RELICS } from "@/game/content/relics";
 export type { SkillDef, SkillId } from "@/game/content/skills";
 export { freeFeatureSkills, isSkillId, SKILL_IDS, SKILLS } from "@/game/content/skills";
+export {
+  allFeatureKeys,
+  allSubjectKeys,
+  BANDED_PREFIXES,
+  bandOf,
+  FEATURE_POOL_SIZE,
+  featureNameKey,
+  nodePrefix,
+  SUBJECT_BANDS,
+  SUBJECT_POOL_SIZE,
+  SUBJECT_PREFIXES,
+  type SubjectBand,
+  type SubjectPrefix,
+  subjectKey,
+} from "@/game/content/subjects";
 export type { DevRank, DevRankDef } from "@/game/content/team";
 export { DEV_RANK, DEV_RANKS, isDevRank, nextRank } from "@/game/content/team";
 export type {

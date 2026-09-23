@@ -100,6 +100,8 @@ export interface MapNode {
   /** Present on a merge: the skill the ticket it landed granted. */
   skillId?: SkillId;
   commit: NodeCommit;
+  /** The i18n key of its subject line, hashed from the seed: the graph's story. */
+  subjectKey: string;
 }
 
 export type TicketKind = "feature" | "hotfix" | "refactor";
@@ -149,6 +151,8 @@ export interface Ticket {
   mustWrite?: "hotfix" | "refactor";
   /** Came with a company bought: merged without a commit, earns, never scores. */
   origin?: "acquired";
+  /** The i18n key of a feature's name, hashed from the seed. Absent on a forced ticket. */
+  nameKey?: string;
 }
 
 export interface Player {

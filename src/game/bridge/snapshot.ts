@@ -111,6 +111,8 @@ export interface TicketView {
   debtAdded: number;
   mustWrite?: Ticket["mustWrite"];
   origin?: Ticket["origin"];
+  /** The feature's name, as an i18n key; absent on a forced ticket. */
+  nameKey?: string;
 }
 
 /** A hired developer as the roster shows them. */
@@ -210,7 +212,18 @@ export interface RunSnapshot {
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
     NodeId,
-    Pick<MapNode, "id" | "kind" | "lane" | "depth" | "parents" | "skillId" | "commit" | "ticketId">
+    Pick<
+      MapNode,
+      | "id"
+      | "kind"
+      | "lane"
+      | "depth"
+      | "parents"
+      | "skillId"
+      | "commit"
+      | "ticketId"
+      | "subjectKey"
+    >
   >;
 
   /** The board, oldest ticket first. */
@@ -235,6 +248,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
       ...(node.skillId === undefined ? {} : { skillId: node.skillId }),
       commit: { ...node.commit },
       ...(node.ticketId === undefined ? {} : { ticketId: node.ticketId }),
+      subjectKey: node.subjectKey,
     };
   }
 
@@ -260,6 +274,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     commits: ticket.nodeIds.length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
     ...(ticket.origin === undefined ? {} : { origin: ticket.origin }),
+    ...(ticket.nameKey === undefined ? {} : { nameKey: ticket.nameKey }),
   }));
 
   const report = monthlyReport(state, effects);

@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { ticketName } from "@/components/hud/ticketName";
 import { useMoney } from "@/components/hud/useGameText";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -121,7 +122,7 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
         <span className={cn("truncate", ticket.kind === "hotfix" && "text-branch-hotfix")}>
           #{ticket.id.slice(1)}{" "}
           {ticket.skillId === undefined
-            ? game(`tickets.${ticket.kind}.name` as never)
+            ? ticketName(game, ticket)
             : game(`skills.${ticket.skillId}.name` as never)}
         </span>
         <span className="shrink-0 text-xs tabular-nums">

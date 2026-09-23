@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { FinanceChart } from "@/components/hud/FinanceChart";
+import { ticketName } from "@/components/hud/ticketName";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
@@ -630,7 +631,7 @@ function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
             <span>
               #{ticket.id.slice(1)}{" "}
               {ticket.skillId === undefined
-                ? game(`tickets.${ticket.kind}.name` as never)
+                ? ticketName(game, ticket)
                 : game(`skills.${ticket.skillId}.name` as never)}
             </span>
             <span className="tabular-nums">

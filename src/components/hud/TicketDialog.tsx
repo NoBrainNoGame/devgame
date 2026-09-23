@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { ticketName } from "@/components/hud/ticketName";
 import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +47,7 @@ export function TicketDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className={cn(ticket.kind === "hotfix" && "text-branch-hotfix")}>
-            #{ticket.id.slice(1)} {game(`tickets.${ticket.kind}.name` as never)}
+            #{ticket.id.slice(1)} {ticketName(game, ticket)}
           </DialogTitle>
           <DialogDescription>
             {t(`ticketStatus.${ticket.status}`)} ·{" "}

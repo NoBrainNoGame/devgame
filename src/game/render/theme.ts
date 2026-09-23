@@ -1,6 +1,9 @@
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { NodeKind } from "@/game/core/types";
 
+/** The prefix lives with the subjects now; re-exported for the graph. */
+export { nodePrefix } from "@/game/content/subjects";
+
 /**
  * Colours and measurements for the git graph.
  *
@@ -88,37 +91,6 @@ export function laneColour(lane: number, kind: NodeKind): number {
 /** The kind a node is *called*. Today every kind is called what it is. */
 export function labelledKind(kind: NodeKind): NodeKind {
   return kind;
-}
-
-/**
- * The conventional-commit prefix a node would carry, so the graph reads like a
- * history rather than a diagram.
- */
-export function nodePrefix(kind: NodeKind, mode: "craft" | "ai" | undefined): string {
-  switch (kind) {
-    case "feature_merge":
-    case "sprint_merge":
-      return "merge";
-    case "hotfix":
-    case "fix":
-      return "fix";
-    case "refactor":
-      return "refactor";
-    case "release":
-      return "release";
-    case "squash":
-      return "squash";
-    case "docs":
-      return "docs";
-    case "rebase":
-      return "rebase";
-    case "risky":
-      return "perf";
-    case "sprint_start":
-      return "init";
-    case "commit":
-      return mode === "ai" ? "chore" : "feat";
-  }
 }
 
 /** The glyph drawn inside a node, so kinds read at a glance. */

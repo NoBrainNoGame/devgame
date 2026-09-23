@@ -1,5 +1,6 @@
-import type { SkillId } from "@/game/content";
+import { featureNameKey, type SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { fnv1a } from "@/game/core/hash";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { tierScale } from "@/game/core/rules/tier";
 import type { Ticket, TicketId } from "@/game/core/types";
@@ -98,5 +99,6 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     sprintArrived: state.sprint,
     devMergesAtOpen: 0,
     nodeIds: [],
+    nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${id}`)),
   };
 }

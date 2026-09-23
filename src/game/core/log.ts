@@ -1,5 +1,5 @@
 import { money, ref, text } from "@/game/core/i18n";
-import type { GameEvent, LogLine, RunState } from "@/game/core/types";
+import type { GameEvent, LogLine, MapNode, NodeId, RunState } from "@/game/core/types";
 
 /**
  * The run's history, written as commit subjects.
@@ -12,14 +12,22 @@ import type { GameEvent, LogLine, RunState } from "@/game/core/types";
 
 const LOG_CAP = 200;
 
-export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine | null {
+export function toLogLine(
+  event: GameEvent,
+  turn: number,
+  seq: number,
+  nodes: Readonly<Record<NodeId, MapNode>> = {},
+): LogLine | null {
   switch (event.type) {
     case "node_done":
       return {
         seq,
         turn,
         kind: event.mode === "ai" ? "chore" : "feat",
-        text: text(`log.node_done.${event.mode}`, { node: ref(`nodes.${event.kind}.name`) }),
+        text: text(`log.node_done.${event.mode}`, {
+          node: ref(`nodes.${event.kind}.name`),
+          subject: ref(nodes[event.nodeId]?.subjectKey ?? `nodes.${event.kind}.name`),
+        }),
       };
 
     case "ticket_arrived":
@@ -359,7 +367,7 @@ export function toLogLine(event: GameEvent, turn: number, seq: number): LogLine 
 
 export function appendLog(state: RunState, events: readonly GameEvent[]): void {
   for (const event of events) {
-    const line = toLogLine(event, state.turn, state.nextLogSeq);
+    const line = toLogLine(event, state.turn, state.nextLogSeq, state.nodes);
     if (line === null) continue;
     state.nextLogSeq += 1;
     state.log.push(line);

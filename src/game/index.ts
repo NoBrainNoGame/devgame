@@ -32,6 +32,7 @@ export {
   type SupervisorMove,
   type SupervisorReason,
 } from "@/game/bridge/supervisor";
+export { nodePrefix } from "@/game/content/subjects";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { money, ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";

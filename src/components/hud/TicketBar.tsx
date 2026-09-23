@@ -3,6 +3,7 @@
 import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { ticketName } from "@/components/hud/ticketName";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PlayerAction, RunSnapshot, TicketView } from "@/game";
@@ -110,7 +111,7 @@ function TicketTab({
   const game = useTranslations("game");
   const name =
     ticket.skillId === undefined
-      ? game(`tickets.${ticket.kind}.name` as never)
+      ? ticketName(game, ticket)
       : game(`skills.${ticket.skillId}.name` as never);
 
   return (

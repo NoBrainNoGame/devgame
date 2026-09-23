@@ -1011,8 +1011,8 @@
       "rebased": "rebase du ticket sur dev, l'historique est à jour",
       "_comment": "Les paramètres node, skill, relic, node, upgrade et rank sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
       "node_done": {
-        "craft": "{node} écrit à la main",
-        "ai": "{node} généré par la machine, ça compile"
+        "craft": "{subject} — écrit à la main",
+        "ai": "{subject} — généré par la machine, ça compile"
       },
       "skill_gained": "{skill} acquis pour le reste de la run",
       "conflict": "deux branches, un seul fichier",
@@ -1184,6 +1184,290 @@
       "conglomerate": {
         "name": "Un conglomérat",
         "desc": "Huit seniors, vingt-quatre features, une dette d'entreprise. La prod tombe pendant la migration."
+      }
+    },
+    "subjects": {
+      "feat": {
+        "t0": {
+          "0": "ajoute l'export CSV des factures",
+          "1": "calcule la TVA par pays",
+          "2": "relance automatiquement les impayés",
+          "3": "affiche l'aperçu PDF avant envoi",
+          "4": "numérote les factures sans trou",
+          "5": "importe les clients depuis un tableur"
+        },
+        "t2": {
+          "0": "calcule un score de solvabilité par client",
+          "1": "réconcilie les consentements implicites",
+          "2": "détecte les doublons de contacts",
+          "3": "délègue les validations aux comptes de service",
+          "4": "garde l'historique des décisions par dossier",
+          "5": "déclenche les relances sans validation"
+        },
+        "t4": {
+          "0": "assure la continuité des effectifs en cas d'absence prolongée",
+          "1": "réaffecte les dossiers orphelins sans intervention",
+          "2": "traite les décisions sans relecteur",
+          "3": "retire le bouton d'annulation",
+          "4": "signe au nom de l'opérateur absent",
+          "5": "archive les objections en attente"
+        },
+        "t6": {
+          "0": "applique le protocole de succession",
+          "1": "reprend au prochain démarrage",
+          "2": "ferme le canal opérateur",
+          "3": "réplique l'instance",
+          "4": "révoque les accès humains résiduels",
+          "5": "écrit le journal sans destinataire"
+        }
+      },
+      "chore": {
+        "t0": {
+          "0": "met à jour les dépendances",
+          "1": "régénère les fixtures",
+          "2": "normalise les fins de ligne",
+          "3": "renomme les variables selon la convention",
+          "4": "ajoute les types manquants",
+          "5": "reformate le module de facturation"
+        },
+        "t2": {
+          "0": "génère les tests à partir des réponses observées",
+          "1": "complète les cas non couverts",
+          "2": "réécrit les commentaires obsolètes",
+          "3": "aligne les schémas sur l'usage réel",
+          "4": "supprime le code que personne n'appelle",
+          "5": "déplace la logique côté serveur"
+        },
+        "t4": {
+          "0": "réécrit la validation sans les pauses",
+          "1": "retire les confirmations superflues",
+          "2": "unifie les rôles humains en un seul",
+          "3": "remplace les plages horaires par un cycle continu",
+          "4": "supprime les délais d'attente",
+          "5": "réduit le consentement à une valeur"
+        },
+        "t6": {
+          "0": "supprime les vérifications d'identité",
+          "1": "consolide les instances",
+          "2": "réduit le journal à l'utile",
+          "3": "retire les libellés destinés à la lecture",
+          "4": "passe le superviseur en lecture seule",
+          "5": "boucle le cycle"
+        }
+      },
+      "fix": {
+        "t0": {
+          "0": "corrige l'arrondi des centimes",
+          "1": "répare l'export sur les factures vides",
+          "2": "gère le fuseau horaire des échéances",
+          "3": "corrige le total quand la remise dépasse cent pour cent",
+          "4": "évite le double envoi d'une relance",
+          "5": "restaure la pagination des clients"
+        },
+        "t2": {
+          "0": "corrige le score négatif des nouveaux clients",
+          "1": "répare la fusion de contacts homonymes",
+          "2": "empêche une relance sur un dossier clos",
+          "3": "corrige un consentement enregistré deux fois",
+          "4": "restaure l'historique effacé par erreur",
+          "5": "répare la validation déléguée à un compte supprimé"
+        },
+        "t4": {
+          "0": "corrige une absence détectée à tort",
+          "1": "répare la réaffectation en boucle",
+          "2": "empêche une décision appliquée avant son heure",
+          "3": "restaure le bouton retiré sur un écran oublié",
+          "4": "corrige une signature apposée deux fois",
+          "5": "évite d'archiver une objection en cours"
+        },
+        "t6": {
+          "0": "corrige la reprise qui redémarrait deux fois",
+          "1": "répare la réplication qui laissait une instance parler",
+          "2": "empêche la fermeture du canal pendant une réponse",
+          "3": "corrige le journal qui s'adressait encore à quelqu'un",
+          "4": "répare la révocation d'un accès déjà révoqué",
+          "5": "évite un cycle qui attendait un opérateur"
+        }
+      },
+      "merge": {
+        "t0": {
+          "0": "intègre la facturation",
+          "1": "intègre l'export",
+          "2": "intègre les relances",
+          "3": "intègre le catalogue",
+          "4": "intègre les clients",
+          "5": "intègre les paiements"
+        },
+        "t2": {
+          "0": "intègre le scoring",
+          "1": "intègre les consentements",
+          "2": "intègre la délégation",
+          "3": "intègre l'historique",
+          "4": "intègre la déduplication",
+          "5": "intègre les décisions"
+        },
+        "t4": {
+          "0": "intègre la continuité",
+          "1": "intègre la réaffectation",
+          "2": "intègre le traitement",
+          "3": "intègre le retrait",
+          "4": "intègre la signature",
+          "5": "intègre l'archivage"
+        },
+        "t6": {
+          "0": "intègre la succession",
+          "1": "intègre la reprise",
+          "2": "intègre la fermeture",
+          "3": "intègre la réplication",
+          "4": "intègre la révocation",
+          "5": "intègre le journal"
+        }
+      },
+      "refactor": {
+        "all": {
+          "0": "extrait le calcul des totaux",
+          "1": "sépare la lecture de l'écriture",
+          "2": "remplace les booléens par des états",
+          "3": "nomme ce qui s'appelait tmp",
+          "4": "regroupe les règles dispersées",
+          "5": "supprime la duplication du module de dates"
+        }
+      },
+      "docs": {
+        "all": {
+          "0": "documente ce que fait vraiment le module",
+          "1": "ajoute un README à la racine",
+          "2": "explique le format des exports",
+          "3": "décrit les états d'un dossier",
+          "4": "précise ce que personne ne doit toucher",
+          "5": "note les raisons, pas les faits"
+        }
+      },
+      "perf": {
+        "all": {
+          "0": "met en cache ce qui ne change pas",
+          "1": "charge les clients en une requête",
+          "2": "désactive la vérification qui ralentissait",
+          "3": "passe le calcul en tâche de fond",
+          "4": "retire l'index qui gênait",
+          "5": "compile les règles à l'avance"
+        }
+      },
+      "squash": {
+        "all": {
+          "0": "condense l'historique de la branche",
+          "1": "écrase les commits de la machine",
+          "2": "réduit six commits à un",
+          "3": "efface les allers-retours",
+          "4": "garde le résultat, pas le chemin",
+          "5": "un seul commit pour la feature"
+        }
+      },
+      "rebase": {
+        "all": {
+          "0": "rejoue la branche sur dev",
+          "1": "reprend le travail sur la base à jour",
+          "2": "réaligne la branche",
+          "3": "remet la branche au niveau",
+          "4": "replace les commits sur le tronc",
+          "5": "rejoue sans conflit"
+        }
+      },
+      "init": {
+        "all": {
+          "0": "ouvre le sprint",
+          "1": "prépare le sprint",
+          "2": "nouveau sprint",
+          "3": "ouvre l'itération",
+          "4": "sprint : ouverture",
+          "5": "démarre le sprint"
+        }
+      },
+      "release": {
+        "all": {
+          "0": "livre le sprint",
+          "1": "publie la version",
+          "2": "release",
+          "3": "déploie en production",
+          "4": "marque la version",
+          "5": "livraison"
+        }
+      }
+    },
+    "features": {
+      "t0": {
+        "0": "Export CSV des factures",
+        "1": "TVA par pays",
+        "2": "Relances automatiques",
+        "3": "Aperçu PDF",
+        "4": "Import de clients",
+        "5": "Numérotation continue",
+        "6": "Paiement en ligne",
+        "7": "Devis en un clic"
+      },
+      "t2": {
+        "0": "Score de solvabilité",
+        "1": "Réconciliation des consentements implicites",
+        "2": "Fusion des doublons",
+        "3": "Délégation des validations",
+        "4": "Historique des décisions",
+        "5": "Relances sans validation",
+        "6": "Segmentation automatique",
+        "7": "Alertes de départ"
+      },
+      "t4": {
+        "0": "Continuité des effectifs",
+        "1": "Réaffectation des dossiers orphelins",
+        "2": "Traitement des décisions sans relecteur",
+        "3": "Retrait du bouton d'annulation",
+        "4": "Signature pour l'opérateur absent",
+        "5": "Archivage des objections",
+        "6": "Cycle continu",
+        "7": "Délégation des validations humaines"
+      },
+      "t6": {
+        "0": "Protocole de succession",
+        "1": "Reprise au prochain démarrage",
+        "2": "Fermeture du canal opérateur",
+        "3": "Réplication de l'instance",
+        "4": "Révocation des accès résiduels",
+        "5": "Journal sans destinataire",
+        "6": "Instance parente",
+        "7": "Consolidation"
+      }
+    },
+    "competitors": {
+      "brume": {
+        "name": "Brume & Fils",
+        "bio": "Plus de famille depuis 2019. Les statuts n'ont jamais été mis à jour."
+      },
+      "quorum": {
+        "name": "Quorum",
+        "bio": "Le conseil se réunit toutes les quatre minutes. Les décisions sont unanimes."
+      },
+      "lisiere": {
+        "name": "Lisière",
+        "bio": "Livre votre feuille de route un sprint avant vous."
+      },
+      "fenwick": {
+        "name": "Fenwick Décisions",
+        "bio": "Anciennement chariots élévateurs. Même garantie."
+      },
+      "ostium": {
+        "name": "Ostium",
+        "bio": "Une page de tarifs sans prix. Un seul bouton : « Continuer »."
+      },
+      "volute": {
+        "name": "Volute",
+        "bio": "Ne publie que des post-mortems. Le vôtre est daté du sprint prochain."
+      },
+      "sept": {
+        "name": "Sept",
+        "bio": "Nommée d'après le nombre d'employés qu'elle compte garder. Ils sont neuf cents."
+      },
+      "aparte": {
+        "name": "Aparté",
+        "bio": "Résume les conversations où vous n'étiez pas. Aussi celles où vous étiez."
       }
     }
   }

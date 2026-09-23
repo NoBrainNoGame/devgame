@@ -3,6 +3,9 @@ import { describe, expect, test } from "bun:test";
 import {
   ACQUISITION_IDS,
   AMBIENT_EVENT_IDS,
+  allFeatureKeys,
+  allSubjectKeys,
+  COMPETITOR_IDS,
   DEV_RANKS,
   FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
@@ -115,6 +118,22 @@ describe("game content is fully named", () => {
       expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
     });
   }
+
+  test("every commit subject and feature name the hashes can reach is written", () => {
+    const expected = [...allSubjectKeys(), ...allFeatureKeys()].map((key) => `game.${key}`);
+    expect(expected.length).toBeGreaterThan(100);
+    expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
+    expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
+  });
+
+  test("every competitor has a name and a bio", () => {
+    const expected = COMPETITOR_IDS.flatMap((id) => [
+      `game.competitors.${id}.name`,
+      `game.competitors.${id}.bio`,
+    ]);
+    expect(expected.filter((key) => !frFlat.has(key))).toEqual([]);
+    expect(expected.filter((key) => !enFlat.has(key))).toEqual([]);
+  });
 
   // Branches and ranks are labels, not things with a description.
   const named: ReadonlyArray<[string, readonly string[]]> = [

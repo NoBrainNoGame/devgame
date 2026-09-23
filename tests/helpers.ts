@@ -87,6 +87,7 @@ export function plantCommit(state: RunState, mode: CommitMode): string {
     parents: [parent],
     ticketId: ticket.id,
     commit: { mode, reviewed: mode === "craft" },
+    subjectKey: "subjects.feat.t0.0",
   };
   state.nextDepth += 1;
   ticket.nodeIds.push(id);

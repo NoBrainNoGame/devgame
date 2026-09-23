@@ -1,4 +1,6 @@
+import { nodePrefix, subjectKey } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { fnv1a } from "@/game/core/hash";
 import { tipOfLane, tipOfTicket } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
@@ -51,6 +53,12 @@ function writeNode(context: RuleContext, spec: NodeSpec): MapNode {
     ...(spec.ticketId === undefined ? {} : { ticketId: spec.ticketId }),
     ...(spec.skillId === undefined ? {} : { skillId: spec.skillId }),
     commit: spec.commit,
+    // Flavour, not a draw: the seed and the id decide which line this is.
+    subjectKey: subjectKey(
+      nodePrefix(spec.kind, spec.commit.mode),
+      state.tier,
+      fnv1a(`${state.seed}:${id}`),
+    ),
   };
   state.nextDepth += 1;
   state.nodes[id] = node;

@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { IdleBar } from "@/components/hud/IdleBar";
 import { TicketDialog } from "@/components/hud/TicketDialog";
+import { ticketName } from "@/components/hud/ticketName";
 import { useMoney } from "@/components/hud/useGameText";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,7 +151,7 @@ function TicketCard({
       >
         <div className="flex items-baseline justify-between gap-2">
           <span className={cn("font-medium", ticket.kind === "hotfix" && "text-branch-hotfix")}>
-            #{ticket.id.slice(1)} {game(`tickets.${ticket.kind}.name` as never)}
+            #{ticket.id.slice(1)} {ticketName(game, ticket)}
           </span>
           <span className="text-muted-foreground text-xs tabular-nums">
             {t("storyPointsShort", { count: ticket.points })}

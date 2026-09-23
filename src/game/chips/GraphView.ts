@@ -216,9 +216,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       this.sprites.set(node.id, sprite);
 
       const label = new Text({
-        text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({
-          key: `nodes.${node.kind}.name`,
-        })}`,
+        text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`,
         style: labelStyle,
       });
       label.anchor.set(0, 0.5);
