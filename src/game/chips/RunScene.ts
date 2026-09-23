@@ -1,5 +1,6 @@
 import { Container } from "pixi.js";
 
+import { Austerity } from "@/game/chips/Austerity";
 import { BranchRefs } from "@/game/chips/BranchRefs";
 import * as booyah from "@/game/chips/booyah";
 import { Camera } from "@/game/chips/Camera";
@@ -29,6 +30,8 @@ export class RunScene extends ContainerChip {
     this._container.addChild(this.world);
 
     const graph = new GraphView();
+    const refs = new BranchRefs(graph);
+    const marker = new PlayerMarker();
     const fx = new FxQueue();
     const camera = new Camera(graph);
     const { controls } = sceneContext(this.chipContext);
@@ -40,8 +43,9 @@ export class RunScene extends ContainerChip {
         [
           camera,
           graph,
-          new BranchRefs(graph),
-          new PlayerMarker(),
+          refs,
+          marker,
+          new Austerity(graph, refs, marker),
           fx,
           new InputController(graph, fx),
         ],

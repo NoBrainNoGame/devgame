@@ -29,7 +29,7 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
   return (
     <div className="space-y-5 text-sm">
       <section className="space-y-2">
-        <h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("currentTicket")}
         </h2>
         {current === undefined ? (
@@ -40,7 +40,7 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("runStats")}
         </h2>
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -59,7 +59,7 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("skillsEarned")}
         </h2>
         {snapshot.skills.length === 0 && snapshot.relics.length === 0 ? (
@@ -86,7 +86,7 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
 
       {snapshot.devs.length === 0 ? null : (
         <section className="space-y-2">
-          <h2 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
             {t("team")}
           </h2>
           <ul className="space-y-1 text-xs">

@@ -3,7 +3,8 @@ import { Container, Graphics } from "pixi.js";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { NODE_RADIUS, THEME } from "@/game/render/theme";
+import { palette } from "@/game/render/palette";
+import { NODE_RADIUS } from "@/game/render/theme";
 
 /**
  * The ring around `HEAD`. The label itself is a ref pill in the gutter, with
@@ -28,10 +29,17 @@ export class PlayerMarker extends booyah.ChipBase {
 
     this.root = new Container();
     this.ring = new Graphics();
-    this.ring.circle(0, 0, NODE_RADIUS + 4).stroke({ width: 2, color: THEME.player });
+    this.restyle();
 
     this.root.addChild(this.ring);
     world.addChild(this.root);
+  }
+
+  restyle(): void {
+    this.ring
+      .clear()
+      .circle(0, 0, NODE_RADIUS + 4)
+      .stroke({ width: 2, color: palette.player });
   }
 
   protected _onTick(): void {

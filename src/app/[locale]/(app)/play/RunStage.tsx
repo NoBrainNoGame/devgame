@@ -20,6 +20,7 @@ import { ReviewDialog } from "@/components/hud/ReviewDialog";
 import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
 import { SupervisorLine } from "@/components/hud/SupervisorLine";
 import { TicketBar } from "@/components/hud/TicketBar";
+import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
@@ -89,6 +90,7 @@ export function RunStage({
   const target = snapshot === null ? undefined : idleTarget(snapshot);
   const openShop = useCallback(() => setCompanyOpen(true), []);
   useGameAlerts(openShop);
+  useAusterity();
   const dialogOpen =
     companyOpen || treeOpen || readingReview || (boardOpen && target?.type !== "start");
 
@@ -117,6 +119,8 @@ export function RunStage({
 
         <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">
           <GameCanvas key={runKey} options={options} onReady={onReady} />
+          {/* The grid and the scanlines the higher tiers bring, fading in by the variables the look writes. */}
+          <div aria-hidden className="austerity-layer" />
 
           {snapshot === null ? (
             <p className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">

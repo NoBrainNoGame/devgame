@@ -6,8 +6,8 @@ import type { GraphView } from "@/game/chips/GraphView";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { NodeId } from "@/game/core/types";
 import { nodeY } from "@/game/render/coords";
+import { palette } from "@/game/render/palette";
 import { cursorStyle } from "@/game/render/textStyles";
-import { THEME } from "@/game/render/theme";
 
 /**
  * The refs, drawn as pills in the gutter between the graph and the subjects,
@@ -50,16 +50,16 @@ export class BranchRefs extends booyah.ChipBase {
     const refs: { key: string; label: string; colour: number; nodeId: NodeId }[] = [];
     const main = tipOfLane.get(MAIN_LANE);
     if (main !== undefined)
-      refs.push({ key: "main", label: "main", colour: THEME.lane.trunk, nodeId: main });
+      refs.push({ key: "main", label: "main", colour: palette.lane.trunk, nodeId: main });
     const dev = tipOfLane.get(DEV_LANE);
     if (dev !== undefined)
-      refs.push({ key: "dev", label: "dev", colour: THEME.lane.dev, nodeId: dev });
+      refs.push({ key: "dev", label: "dev", colour: palette.lane.dev, nodeId: dev });
 
     for (const ticket of Object.values(state.tickets)) {
       if (ticket.status !== "open" || ticket.lane === undefined) continue;
       const tip = tipOfLane.get(ticket.lane);
       if (tip === undefined) continue;
-      const colour = ticket.kind === "hotfix" ? THEME.lane.hotfix : THEME.lane.feature;
+      const colour = ticket.kind === "hotfix" ? palette.lane.hotfix : palette.lane.feature;
       // Short branch names, the way a team abbreviates them: `feat/t3`.
       const prefix =
         ticket.kind === "feature" ? "feat" : ticket.kind === "hotfix" ? "fix" : "refacto";
@@ -67,7 +67,7 @@ export class BranchRefs extends booyah.ChipBase {
     }
 
     if (reveal.headId !== null && depthOf.has(reveal.headId)) {
-      refs.push({ key: "HEAD", label: "HEAD", colour: THEME.player, nodeId: reveal.headId });
+      refs.push({ key: "HEAD", label: "HEAD", colour: palette.player, nodeId: reveal.headId });
     }
 
     // Lay the pills out per row, left to right, in the gutter.
@@ -96,6 +96,12 @@ export class BranchRefs extends booyah.ChipBase {
     }
   }
 
+  /** Throws the pills away; the next tick makes them again in today's colours. */
+  restyle(): void {
+    for (const pill of this.pills.values()) pill.root.destroy({ children: true });
+    this.pills.clear();
+  }
+
   protected _onTerminate(): void {
     this.layer.destroy({ children: true });
     this.pills.clear();
@@ -115,7 +121,7 @@ function makePill(name: string, colour: number): { root: Container; width: numbe
   const chip = new Graphics();
   chip
     .roundRect(0, -8, width, 16, 4)
-    .fill({ color: THEME.background, alpha: 0.95 })
+    .fill({ color: palette.background, alpha: 0.95 })
     .stroke({ width: 1, color: colour, alpha: 0.8 });
 
   root.addChild(chip, label);

@@ -4,7 +4,7 @@ import { headOf } from "@/game/core/map/graph";
 import { MAIN_LANE } from "@/game/core/map/layout";
 import type { GameEvent, NodeId, RunState } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { THEME } from "@/game/render/theme";
+import { palette } from "@/game/render/palette";
 
 /**
  * A turn's events, arranged into what the canvas plays.
@@ -111,17 +111,21 @@ export function planBatch(
       }
 
       case "energy":
-        held.push({ caption: `${signed(event.delta)}⚡`, colour: THEME.energy, hold: STORY.pop });
+        held.push({ caption: `${signed(event.delta)}⚡`, colour: palette.energy, hold: STORY.pop });
         break;
 
       case "debt":
-        held.push({ caption: `${signed(event.delta)} dette`, colour: THEME.debt, hold: STORY.pop });
+        held.push({
+          caption: `${signed(event.delta)} dette`,
+          colour: palette.debt,
+          hold: STORY.pop,
+        });
         break;
 
       case "points":
         held.push({
           caption: `${signed(event.delta)} pts`,
-          colour: THEME.lane.feature,
+          colour: palette.lane.feature,
           hold: STORY.pop,
         });
         break;
@@ -129,7 +133,7 @@ export function planBatch(
       case "quality":
         held.push({
           caption: `${signed(event.delta)} prod`,
-          colour: event.delta < 0 ? THEME.lane.trunk : THEME.lane.hotfix,
+          colour: event.delta < 0 ? palette.lane.trunk : palette.lane.hotfix,
           hold: STORY.pop,
         });
         break;
@@ -137,7 +141,7 @@ export function planBatch(
       case "skill_gained":
         held.push({
           caption: translate({ key: `skills.${event.skillId}.name` }),
-          colour: THEME.lane.feature,
+          colour: palette.lane.feature,
           hold: STORY.popLong,
         });
         break;
@@ -146,7 +150,7 @@ export function planBatch(
         if (event.nodeIds.length > 0) {
           held.push({
             caption: `✓ ${event.nodeIds.length}`,
-            colour: THEME.node.craft,
+            colour: palette.node.craft,
             hold: STORY.pop,
           });
         }
@@ -155,13 +159,13 @@ export function planBatch(
       case "squashed":
         held.push({
           caption: `⊟ ${event.nodeIds.length}`,
-          colour: THEME.lane.refactor,
+          colour: palette.lane.refactor,
           hold: STORY.pop,
         });
         break;
 
       case "docs_used":
-        held.push({ caption: "¶", colour: THEME.lane.refactor, hold: STORY.pop });
+        held.push({ caption: "¶", colour: palette.lane.refactor, hold: STORY.pop });
         break;
 
       case "checkout": {
@@ -177,15 +181,15 @@ export function planBatch(
 
       case "conflict":
       case "incident":
-        flashAt(THEME.lane.hotfix);
+        flashAt(palette.lane.hotfix);
         break;
 
       case "hack":
-        flashAt(event.success ? THEME.lane.feature : THEME.lane.hotfix);
+        flashAt(event.success ? palette.lane.feature : palette.lane.hotfix);
         break;
 
       case "pr_rejected":
-        if (!event.countered) flashAt(THEME.lane.hotfix);
+        if (!event.countered) flashAt(palette.lane.hotfix);
         break;
 
       case "roll":
@@ -205,7 +209,7 @@ export function planBatch(
       case "ambient_event":
         held.push({
           caption: translate({ key: `events.${event.eventId}.title` }),
-          colour: THEME.text,
+          colour: palette.text,
           hold: STORY.popLong,
         });
         break;
@@ -214,7 +218,7 @@ export function planBatch(
         if (event.eventId !== "merge_conflict") {
           held.push({
             caption: translate({ key: `events.${event.eventId}.title` }),
-            colour: THEME.lane.hotfix,
+            colour: palette.lane.hotfix,
             hold: STORY.popLong,
           });
         }
@@ -224,15 +228,15 @@ export function planBatch(
         if (event.eventId !== "merge_conflict") {
           held.push({
             caption: translate({ key: `events.${event.eventId}.title` }),
-            colour: THEME.lane.refactor,
+            colour: palette.lane.refactor,
             hold: STORY.popLong,
           });
-          flashAt(THEME.lane.refactor);
+          flashAt(palette.lane.refactor);
         }
         break;
 
       case "bug_fixed":
-        held.push({ caption: "✓ bug", colour: THEME.node.craft, hold: STORY.pop });
+        held.push({ caption: "✓ bug", colour: palette.node.craft, hold: STORY.pop });
         break;
 
       case "sprint_ended":

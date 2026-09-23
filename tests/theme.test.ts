@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 
+import { BALANCE } from "@/game/core/balance";
+import { austerityOf } from "@/game/core/rules/tier";
+import {
+  decorationsAt,
+  KEY_PALETTES,
+  lerpColour,
+  lerpPalette,
+  paletteAt,
+} from "@/game/render/palette";
 import { THEME } from "@/game/render/theme";
 
 /**
@@ -20,6 +29,60 @@ function cssColour(name: string): string {
 function hex(value: number): string {
   return `#${value.toString(16).padStart(6, "0")}`;
 }
+
+describe("austerity", () => {
+  test("the first key palette is the theme, and the interpolation has its identities", () => {
+    expect(KEY_PALETTES[0]).toEqual(structuredClone(THEME));
+    const a = KEY_PALETTES[0];
+    const b = KEY_PALETTES[6];
+    expect(lerpPalette(a, a, 0.5)).toEqual(a);
+    expect(lerpPalette(a, b, 0)).toEqual(a);
+    expect(lerpPalette(a, b, 1)).toEqual(b);
+    expect(paletteAt(0)).toEqual(a);
+    expect(paletteAt(6)).toEqual(b);
+    expect(paletteAt(9)).toEqual(b);
+    // Halfway is neither end: the ambience is between two looks.
+    const mid = paletteAt(1);
+    expect(mid.background).not.toBe(a.background);
+    expect(mid.background).not.toBe(KEY_PALETTES[2].background);
+  });
+
+  test("a colour part-way between two stays a colour", () => {
+    expect(lerpColour(0x000000, 0xffffff, 0.5)).toBeGreaterThan(0x400000);
+    expect(lerpColour(0x000000, 0xffffff, 0.5)).toBeLessThan(0xc0c0c0);
+    expect(lerpColour(0x62c073, 0x35d64f, 0)).toBe(0x62c073);
+    expect(lerpColour(0x62c073, 0x35d64f, 1)).toBe(0x35d64f);
+  });
+
+  test("the austerity climbs with the earnings, a tier at each threshold, and never past the last", () => {
+    const { first, growth, last } = BALANCE.economy.tier;
+    expect(austerityOf(0)).toBe(0);
+    expect(austerityOf(first)).toBe(1);
+    expect(austerityOf(first * growth)).toBe(2);
+    expect(austerityOf(first * growth ** 40)).toBe(last);
+    let previous = 0;
+    for (let earned = 0; earned < first * growth ** 3; earned += 137) {
+      const value = austerityOf(earned);
+      expect(value).toBeGreaterThanOrEqual(previous);
+      previous = value;
+    }
+    // Between two thresholds the value is between two tiers.
+    const between = austerityOf(Math.round(Math.sqrt(first * (first * growth))));
+    expect(between).toBeGreaterThan(1.4);
+    expect(between).toBeLessThan(1.6);
+  });
+
+  test("every decoration fades in over at least a tier, and none is on at the start", () => {
+    expect(decorationsAt(0)).toEqual({ grid: 0, scanlines: 0, jitter: 0 });
+    expect(decorationsAt(3.5).grid).toBe(0);
+    expect(decorationsAt(4).grid).toBeGreaterThan(0);
+    expect(decorationsAt(4).grid).toBeLessThan(decorationsAt(4.5).grid);
+    expect(decorationsAt(5.5).scanlines).toBe(0);
+    expect(decorationsAt(6).scanlines).toBeGreaterThan(0);
+    expect(decorationsAt(5.5).jitter).toBeGreaterThan(0);
+    expect(decorationsAt(5.5).jitter).toBeLessThan(1);
+  });
+});
 
 describe("theme", () => {
   test.each([

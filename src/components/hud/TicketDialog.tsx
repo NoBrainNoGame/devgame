@@ -128,7 +128,7 @@ export function TicketDialog({
 
         {ticket.status === "backlog" ? null : (
           <section className="space-y-1">
-            <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
               {t("ticketCommits", { count: ticket.nodeIds.length })}
             </h3>
             {ticket.nodeIds.length === 0 ? (

@@ -1,7 +1,8 @@
 import type { Graphics } from "pixi.js";
 
 import type { MapNode } from "@/game/core/types";
-import { NODE_RADIUS, THEME } from "@/game/render/theme";
+import { palette } from "@/game/render/palette";
+import { NODE_RADIUS } from "@/game/render/theme";
 
 /**
  * One commit: a small disc on its lane, the way a git client draws them. The
@@ -19,29 +20,31 @@ export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean):
   graphics.clear();
 
   const work = node.lane >= 2;
-  const fill = node.commit.mode === "ai" ? THEME.node.ai : THEME.node.craft;
+  const fill = node.commit.mode === "ai" ? palette.node.ai : palette.node.craft;
 
   if (node.commit.bugged === true) {
-    graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 2, color: THEME.lane.hotfix });
+    graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 2, color: palette.lane.hotfix });
   } else if (node.commit.mode === "ai" && node.commit.reviewed === false) {
-    graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: THEME.node.unreviewed });
+    graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: palette.node.unreviewed });
   }
 
   if (work && node.commit.author !== undefined) {
     graphics
       .circle(0, 0, NODE_RADIUS - 1)
-      .fill(THEME.background)
-      .stroke({ width: 2, color: THEME.node.craft });
+      .fill(palette.background)
+      .stroke({ width: 2, color: palette.node.craft });
   } else if (work) {
-    graphics.circle(0, 0, NODE_RADIUS).fill(fill).stroke({ width: 2, color: THEME.background });
+    graphics.circle(0, 0, NODE_RADIUS).fill(fill).stroke({ width: 2, color: palette.background });
   } else {
     graphics
       .circle(0, 0, NODE_RADIUS - 1)
-      .fill(THEME.background)
-      .stroke({ width: 2, color: node.lane === 0 ? THEME.lane.trunk : THEME.lane.dev });
+      .fill(palette.background)
+      .stroke({ width: 2, color: node.lane === 0 ? palette.lane.trunk : palette.lane.dev });
   }
 
   if (hovered) {
-    graphics.circle(0, 0, NODE_RADIUS + 5).stroke({ width: 1.5, color: THEME.player, alpha: 0.7 });
+    graphics
+      .circle(0, 0, NODE_RADIUS + 5)
+      .stroke({ width: 1.5, color: palette.player, alpha: 0.7 });
   }
 }

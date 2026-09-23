@@ -35,6 +35,8 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
    * nothing else does.
    */
   claimsGlobal?: boolean;
+  /** A look forced for QA (`?austerity=3.7`), never read by the engine. */
+  austerityOverride?: number;
 }
 
 export interface GameHandle {
@@ -128,6 +130,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       reducedMotion: options.reducedMotion ?? false,
       interactive: options.interactive ?? true,
       controls,
+      austerityOverride: options.austerityOverride ?? null,
     },
     minFps: 10,
   });

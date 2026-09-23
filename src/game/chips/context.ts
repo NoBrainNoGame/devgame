@@ -39,6 +39,8 @@ export interface SceneContext {
    */
   interactive: boolean;
   controls: SceneControls;
+  /** A look forced by the page for QA, whatever the run has earned. */
+  austerityOverride?: number | null;
 }
 
 export function sceneContext(context: Readonly<Record<string, unknown>>): SceneContext {

@@ -520,6 +520,21 @@ remis à zéro, y compris par le bouton de recentrage. Verticalement, la caméra
 glisse vers ce qui apparaît. Faire glisser le graphe la libère le temps de lire
 son historique ; la prochaine action la reprend.
 
+### L'austérité : le regard qui change avec les paliers
+
+Le jeu a quatre **palettes clés** — couleur au départ, terne à l'austérité 2,
+monochrome à 4, matricielle à 6 — et n'en affiche presque jamais une. Une
+valeur continue, l'**austérité** (`austerityOf` dans `rules/tier.ts`), vaut le
+palier plus la position logarithmique des gains cumulés entre deux seuils ;
+elle ne recule jamais, comme le palier. Le canvas et la page interpolent la
+palette entre les deux clés voisines (en OKLab, `render/palette.ts`), et
+glissent vers la nouvelle valeur en six cents millisecondes plutôt que de la
+poser. Les décors — grille, scanlines, tremblement des titres — ont chacun une
+rampe d'au moins un palier de large. **Jamais d'un coup, presque toujours
+entre deux** : c'est la règle, et `tests/theme.test.ts` la tient. Sous
+`prefers-reduced-motion`, le fondu de couleur reste, le tremblement s'arrête.
+Pour vérifier un regard sans gagner une fortune : `/play?austerity=3.7`.
+
 ## Écarts avec le document initial
 
 Le document de conception d'origine laissait des trous et deux contradictions.

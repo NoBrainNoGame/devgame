@@ -199,6 +199,57 @@
 }
 
 /*
+ * The look of a run, past the palette. The play page writes `--austerity-*`
+ * on the root as the run climbs; each decoration has its own ramp, at least
+ * a tier wide, so nothing here ever switches on — it fades in over sprints.
+ */
+:root {
+  --austerity: 0;
+  --austerity-grid: 0;
+  --austerity-scan: 0;
+  --austerity-jitter: 0;
+}
+.austerity-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgb(0 0 0 / calc(var(--austerity-scan) * 0.6)) 0 1px,
+      transparent 1px 3px
+    ),
+    linear-gradient(to right, rgb(255 255 255 / var(--austerity-grid)) 0 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / var(--austerity-grid)) 0 1px, transparent 1px);
+  background-size:
+    100% 3px,
+    26px 26px,
+    26px 26px;
+  mix-blend-mode: soft-light;
+}
+.hud-title {
+  animation: austerity-jitter 900ms steps(2) infinite;
+}
+@keyframes austerity-jitter {
+  0%,
+  70% {
+    transform: translate(0, 0);
+  }
+  85% {
+    transform: translate(calc(var(--austerity-jitter) * 1px), calc(var(--austerity-jitter) * -1px));
+  }
+  100% {
+    transform: translate(calc(var(--austerity-jitter) * -1px), 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hud-title {
+    animation: none;
+  }
+}
+
+/*
  * The landing headline's question mark. It sits after the period, takes no
  * room until the period is hovered, then fades in slightly out of place and
  * out of colour — a glitch, not a flourish. Reduced motion keeps the fade

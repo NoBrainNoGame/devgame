@@ -165,14 +165,14 @@ function Finances({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm sm:col-span-2">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("financeChart")}
         </h3>
         <FinanceChart history={economy.history} />
       </section>
 
       <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("nextPayday")}
         </h3>
         <dl className="space-y-1">
@@ -204,7 +204,7 @@ function Finances({
       </section>
 
       <section className="space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("infra")}
         </h3>
         <div className="flex items-baseline justify-between">
@@ -279,7 +279,7 @@ function Shop({
       <div className="grid gap-4 sm:grid-cols-3">
         {UPGRADE_CATEGORIES.filter((category) => category !== "org").map((category) => (
           <section key={category} className="min-w-0 space-y-2">
-            <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
               {t(`category.${category}`)}
             </h3>
             <div className="space-y-2">
@@ -424,7 +424,7 @@ function Team({
     <div className="space-y-4">
       <section className="space-y-2">
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
             {t("hire")}
           </h3>
           <span
@@ -495,7 +495,7 @@ function Team({
       </section>
 
       <section className="space-y-2">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("sites")}
         </h3>
         <p className="text-muted-foreground text-xs">{t("sitesHint")}</p>
@@ -506,7 +506,7 @@ function Team({
 
       {ACQUISITION_IDS.some((id) => ACQUISITIONS[id].tier <= tier + 1) ? (
         <section className="space-y-2">
-          <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
             {t("acquisitions")}
           </h3>
           <p className="text-muted-foreground text-xs">{t("acquisitionsHint")}</p>
@@ -519,7 +519,7 @@ function Team({
       ) : null}
 
       <section className="space-y-2">
-        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("roster")}
         </h3>
         {snapshot.devs.length === 0 ? (

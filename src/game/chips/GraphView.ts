@@ -8,15 +8,9 @@ import type { MapNode, NodeId, RunState } from "@/game/core/types";
 import { labelX, nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
 import { drawDottedLane, drawEdge, drawLane, laneSegments } from "@/game/render/lanes";
+import { palette } from "@/game/render/palette";
 import { labelStyle } from "@/game/render/textStyles";
-import {
-  LANE_ALPHA,
-  laneColour,
-  NODE_RADIUS,
-  nodePrefix,
-  REF_GUTTER,
-  THEME,
-} from "@/game/render/theme";
+import { LANE_ALPHA, laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER } from "@/game/render/theme";
 
 /**
  * The history, drawn the way a git client draws it.
@@ -108,6 +102,11 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     }
   }
 
+  /** Redraws everything with the palette as it is now: the ambience moved. */
+  restyle(): void {
+    this.rebuild();
+  }
+
   // --- what is visible ------------------------------------------------------
 
   /** The commits the effect queue has shown so far. */
@@ -157,7 +156,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     const segments = laneSegments(nodes, (id) => state.tickets[id]?.kind, this.topDepth);
     for (const segment of segments) {
-      const colour = THEME.lane[segment.colour];
+      const colour = palette.lane[segment.colour];
       if (segment.style === "dotted") {
         const alpha = LANE_ALPHA.continuation;
         drawDottedLane(this.lanes, segment.lane, segment.from, segment.to, colour, alpha);

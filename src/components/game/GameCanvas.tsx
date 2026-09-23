@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { austerityOverride } from "@/components/hud/austerityOverride";
 import { useGameText } from "@/components/hud/useGameText";
 import type { GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
 import { mountGame } from "@/game";
@@ -55,9 +56,11 @@ export function GameCanvas({
     let cancelled = false;
     let handle: GameHandle | undefined;
 
+    const override = austerityOverride();
     void mountGame(host, {
       ...optionsRef.current,
       translate: (value) => translateRef.current(value),
+      ...(override === null ? {} : { austerityOverride: override }),
     }).then((created) => {
       if (cancelled) {
         created.dispose();

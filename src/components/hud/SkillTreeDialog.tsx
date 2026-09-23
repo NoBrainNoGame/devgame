@@ -56,7 +56,7 @@ export function SkillTreeDialog({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {TREE_BRANCHES.map((branch) => (
             <section key={branch} className="min-w-0 space-y-2">
-              <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
                 {game(`branches.${branch}.name` as never)}
               </h3>
               <div className="space-y-2">

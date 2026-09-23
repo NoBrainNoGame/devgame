@@ -34,6 +34,7 @@ import {
   sortedTickets,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
+import { austerityOf } from "@/game/core/rules/tier";
 import { computeScore } from "@/game/core/score";
 import type {
   ActionPreview,
@@ -208,6 +209,8 @@ export interface RunSnapshot {
   idleSpeedTier: number;
   /** The hack on offer, when the run is in a tight enough spot; null otherwise. */
   hack: HackKind | null;
+  /** The look the run has reached: tier plus a log fraction, never going back. */
+  austerity: number;
 
   /** Enough of each node for the graph and a tooltip. */
   nodes: Record<
@@ -369,6 +372,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     autopilot: effects.autopilot,
     idleSpeedTier: effects.idleSpeedTier,
     hack: hackOffer(state, effects),
+    austerity: austerityOf(state.moneyEarned),
 
     nodes,
     tickets,

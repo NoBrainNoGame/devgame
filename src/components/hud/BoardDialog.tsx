@@ -76,7 +76,7 @@ export function BoardDialog({
         <div className="grid gap-3 sm:grid-cols-3">
           {columns.map((column) => (
             <section key={column.key} className="min-w-0 space-y-2">
-              <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+              <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
                 {t(`column.${column.key}`)}
                 {" "}
                 <span className="tabular-nums">({column.tickets.length})</span>
