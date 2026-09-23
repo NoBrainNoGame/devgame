@@ -40,7 +40,7 @@ export function raiseQuality(context: RuleContext, amount: number, source: Quali
 export function lowerQuality(
   context: RuleContext,
   amount: number,
-  source: "clean_sprint" | "hack" = "clean_sprint",
+  source: "clean_sprint" | "hack" | "client_bug" = "clean_sprint",
 ): void {
   const { state } = context;
   const before = state.quality;

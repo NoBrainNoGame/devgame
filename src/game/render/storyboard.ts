@@ -188,6 +188,10 @@ export function planBatch(
         flashAt(event.success ? palette.lane.feature : palette.lane.hotfix);
         break;
 
+      case "deadline_missed":
+        flashAt(palette.lane.hotfix);
+        break;
+
       case "pr_rejected":
         if (!event.countered) flashAt(palette.lane.hotfix);
         break;

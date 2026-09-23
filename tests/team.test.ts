@@ -117,6 +117,9 @@ describe("the team's turn", () => {
   test("a team commit fills points without touching your chain, your debt or your count", () => {
     const state = withJunior("commit");
     state.player.aiChain = 3;
+    // A ticket big enough not to land within the two turns measured: a
+    // customer's bug of two points would, and its merge is a commit too.
+    for (const ticket of backlogTickets(state)) ticket.points = Math.max(ticket.points, 5);
     const first = applyAction(state, { type: "rest" }).state;
     const { state: after, events } = applyAction(first, { type: "rest" });
 

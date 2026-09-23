@@ -269,6 +269,16 @@ export function toLogLine(
         text: text(`log.hack.${event.kind}.${event.success ? "won" : "lost"}`),
       };
 
+    case "deadline_missed":
+      return {
+        seq,
+        turn,
+        kind: "revert",
+        text: text(
+          `log.deadline_missed.${event.kind === "vip" ? "vip" : event.cancelled ? "cancelled" : "late"}`,
+        ),
+      };
+
     case "acquired":
       return {
         seq,

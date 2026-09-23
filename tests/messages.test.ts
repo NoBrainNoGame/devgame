@@ -12,6 +12,7 @@ import {
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
+  TICKET_KINDS,
   TREE_BRANCHES,
   TREE_IDS,
   UPGRADE_IDS,
@@ -139,6 +140,7 @@ describe("game content is fully named", () => {
   const named: ReadonlyArray<[string, readonly string[]]> = [
     ["branches", TREE_BRANCHES],
     ["ranks", DEV_RANKS],
+    ["tickets", TICKET_KINDS],
   ];
 
   for (const [namespace, ids] of named) {

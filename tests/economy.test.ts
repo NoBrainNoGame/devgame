@@ -81,8 +81,9 @@ describe("the month", () => {
 
   test("every shipped feature pays its revenue, and a forced ticket pays nothing", () => {
     const state = newRun("mrr");
-    for (const ticket of sortedTickets(state)) {
-      expect(ticket.kind).toBe("feature");
+    const features = sortedTickets(state).filter((ticket) => ticket.kind === "feature");
+    expect(features.length).toBeGreaterThan(0);
+    for (const ticket of features) {
       expect(ticket.mrr).toBeGreaterThanOrEqual(
         ticket.points * BALANCE.economy.mrrPerPoint + BALANCE.economy.mrrJitter.min,
       );

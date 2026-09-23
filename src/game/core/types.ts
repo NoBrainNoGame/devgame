@@ -8,6 +8,7 @@ import type {
   ProfileId,
   RelicId,
   SkillId,
+  TicketKind,
   TreeNodeId,
   UpgradeId,
 } from "@/game/content";
@@ -104,7 +105,7 @@ export interface MapNode {
   subjectKey: string;
 }
 
-export type TicketKind = "feature" | "hotfix" | "refactor";
+export type { TicketKind } from "@/game/content/tickets";
 /** `cancelled`: a skill ticket nobody started before its sprint ended. */
 export type TicketStatus = "backlog" | "open" | "merged" | "cancelled";
 
@@ -153,6 +154,10 @@ export interface Ticket {
   origin?: "acquired";
   /** The i18n key of a feature's name, hashed from the seed. Absent on a forced ticket. */
   nameKey?: string;
+  /** The sprint by whose end it must have landed, when its kind has one. */
+  deadlineSprint?: number;
+  /** Its deadline passed: the reward is gone, or halved. */
+  late?: true;
 }
 
 export interface Player {
@@ -198,9 +203,15 @@ export interface FinanceMonth {
 }
 
 /** What can spend production's patience. The run-over screen names the last one. */
-export type QualitySource = "incident" | "rejection" | "stale" | "outage" | "idle_sprint";
-/** Every way the gauge moves, the two ways down included. */
-export type QualityChange = QualitySource | "clean_sprint" | "hack";
+export type QualitySource =
+  | "incident"
+  | "rejection"
+  | "stale"
+  | "outage"
+  | "idle_sprint"
+  | "deadline";
+/** Every way the gauge moves, the ways down included. */
+export type QualityChange = QualitySource | "clean_sprint" | "hack" | "client_bug";
 
 /**
  * What happened over the whole run, counted in the rules as it happens and
@@ -478,6 +489,8 @@ export type GameEvent =
   | { type: "hired"; devId: DevId; rank: DevRank; source?: DevSource }
   | { type: "acquired"; id: AcquisitionId; devIds: DevId[]; ticketIds: TicketId[] }
   | { type: "hack"; kind: HackKind; chancePct: number; success: boolean }
+  /** A dated ticket did not land in time: cancelled if untouched, worth less otherwise. */
+  | { type: "deadline_missed"; ticketId: TicketId; kind: TicketKind; cancelled: boolean }
   /** Production is about to saturate, or has. Emitted once per rise of level. */
   | {
       type: "capacity_warning";

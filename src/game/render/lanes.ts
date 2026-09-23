@@ -1,5 +1,6 @@
 import type { Graphics } from "pixi.js";
 
+import { TICKET_KIND } from "@/game/content";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { MapNode, Ticket, TicketId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
@@ -142,9 +143,7 @@ export interface LaneSegment {
 
 /** What a ticket's column is drawn in: an emergency reads as one wherever it sits. */
 export function ticketColour(kind: Ticket["kind"] | undefined): LaneColour {
-  if (kind === "hotfix") return "hotfix";
-  if (kind === "refactor") return "refactor";
-  return "feature";
+  return kind === undefined ? "feature" : TICKET_KIND[kind].colour;
 }
 
 /**

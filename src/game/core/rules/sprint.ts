@@ -30,6 +30,8 @@ export function endSprint(context: RuleContext): void {
 
   writeRelease(context);
 
+  settleDeadlines(context);
+  if (isOver(context)) return;
   shipBugs(context);
   if (isOver(context)) return;
 
@@ -80,6 +82,32 @@ export function endSprint(context: RuleContext): void {
  * for an incident. Hotfixes are exempt: a fix that breeds its own fix is a
  * spiral, not a tension.
  */
+/**
+ * The dated tickets that did not land this sprint. A customer's bug left in
+ * the backlog is gone, and production remembers; one already in hand stays,
+ * but the gratitude is gone. A VIP's feature keeps its place at half the
+ * revenue, and without its bonus.
+ */
+function settleDeadlines(context: RuleContext): void {
+  const { state } = context;
+  for (const ticket of sortedTickets(state)) {
+    if (ticket.deadlineSprint === undefined || ticket.deadlineSprint > state.sprint) continue;
+    if (ticket.status !== "backlog" && ticket.status !== "open") continue;
+    delete ticket.deadlineSprint;
+    ticket.late = true;
+
+    const cancelled = ticket.kind === "client_bug" && ticket.status === "backlog";
+    if (cancelled) ticket.status = "cancelled";
+    if (ticket.kind === "vip") ticket.mrr = Math.floor(ticket.mrr / 2);
+    emit(context, { type: "deadline_missed", ticketId: ticket.id, kind: ticket.kind, cancelled });
+
+    if (ticket.kind === "client_bug") {
+      raiseQuality(context, BALANCE.tickets.kinds.clientBug.patienceOnMiss, "deadline");
+      if (isOver(context)) return;
+    }
+  }
+}
+
 function shipBugs(context: RuleContext): void {
   const { state } = context;
   const shipped = [...state.shipped];

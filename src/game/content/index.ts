@@ -54,6 +54,14 @@ export {
 } from "@/game/content/subjects";
 export type { DevRank, DevRankDef } from "@/game/content/team";
 export { DEV_RANK, DEV_RANKS, isDevRank, nextRank } from "@/game/content/team";
+export {
+  isTicketKind,
+  TICKET_KIND,
+  TICKET_KINDS,
+  type TicketColour,
+  type TicketKind,
+  type TicketKindDef,
+} from "@/game/content/tickets";
 export type {
   TreeBranch,
   TreeNodeDef,

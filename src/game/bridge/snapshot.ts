@@ -114,6 +114,9 @@ export interface TicketView {
   origin?: Ticket["origin"];
   /** The feature's name, as an i18n key; absent on a forced ticket. */
   nameKey?: string;
+  /** The sprint by whose end it must land; absent when it has no deadline, or missed it. */
+  deadlineSprint?: number;
+  late?: true;
 }
 
 /** A hired developer as the roster shows them. */
@@ -278,6 +281,8 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
     ...(ticket.origin === undefined ? {} : { origin: ticket.origin }),
     ...(ticket.nameKey === undefined ? {} : { nameKey: ticket.nameKey }),
+    ...(ticket.deadlineSprint === undefined ? {} : { deadlineSprint: ticket.deadlineSprint }),
+    ...(ticket.late === undefined ? {} : { late: ticket.late }),
   }));
 
   const report = monthlyReport(state, effects);

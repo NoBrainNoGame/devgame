@@ -1,4 +1,4 @@
-import { DEV_RANK, type DevRank, type Effects, nextRank } from "@/game/content";
+import { DEV_RANK, type DevRank, type Effects, nextRank, TICKET_KIND } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
@@ -109,10 +109,10 @@ export function assignTicket(context: RuleContext, ticket: Ticket, dev: Dev): vo
   emit(context, { type: "ticket_assigned", ticketId: ticket.id, devId: dev.id });
 }
 
-/** The oldest feature waiting: a developer never takes a hotfix or a forced refactor. */
+/** The oldest ticket waiting that a developer takes: never a hotfix, a refactor, or a VIP's. */
 function nextForTeam(state: RunState): Ticket | undefined {
   return backlogTickets(state).find(
-    (ticket) => ticket.kind === "feature" && ticket.mustWrite === undefined,
+    (ticket) => TICKET_KIND[ticket.kind].teamTakes && ticket.mustWrite === undefined,
   );
 }
 

@@ -8,7 +8,7 @@ import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction } from "@/game/core/types";
 
-import { findSeed, inHand, isType, makeReady, newRun, play, policy } from "./helpers";
+import { findSeed, inHand, isType, makeReady, newRun, play, policy, settle } from "./helpers";
 
 /**
  * The idle clock's move is a legal move in every phase, so a run left alone
@@ -79,8 +79,8 @@ describe("the idle clock's target", () => {
   test("the supervisor's first level is the autopilot, and every level plays a legal move", () => {
     for (let level = 1; level <= 3; level += 1) {
       const run = play(inHand(`supervisor-${level}`), { pick: policy("craft"), limit: 30 });
-      const state = run.state;
-      if (state.phase.kind === "game_over") continue;
+      const state = settle(run.state);
+      if (state.phase.kind !== "choose_action") continue;
       state.upgrades.ai_supervisor = level;
       state.money = 5_000;
       const snapshot = toSnapshot(state);

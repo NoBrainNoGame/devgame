@@ -7,6 +7,7 @@ import {
   PROFILE_IDS,
   RELIC_IDS,
   SKILL_IDS,
+  TICKET_KINDS,
   TREE_IDS,
   UPGRADE_IDS,
 } from "@/game/content";
@@ -73,6 +74,7 @@ export function fingerprintFor(epoch: number): string {
       upgrades: UPGRADE_IDS,
       ranks: DEV_RANKS,
       acquisitions: ACQUISITION_IDS,
+      ticketKinds: TICKET_KINDS,
       profiles: PROFILE_IDS,
       failures: FAILURE_EVENT_IDS,
       merges: MERGE_EVENT_IDS,

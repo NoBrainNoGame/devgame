@@ -47,6 +47,8 @@ describe("the backlog", () => {
 
       const { points, skillExtraPoints } = BALANCE.tickets;
       for (const ticket of tickets) {
+        // The other kinds size themselves; see `tests/kinds.test.ts`.
+        if (ticket.kind !== "feature") continue;
         if (ticket.skillId === undefined) {
           expect(ticket.points).toBeGreaterThanOrEqual(points.min);
           expect(ticket.points).toBeLessThanOrEqual(points.max);
@@ -129,8 +131,12 @@ describe("the backlog", () => {
     expect(closed.log.some((line) => line.text.key === "log.ticket_cancelled")).toBe(true);
     // Never forced on you, never taken by the team.
     expect(openTickets(closed).some((ticket) => ticket.id === waiting.id)).toBe(false);
-    // Back in the pool for this sprint's arrivals or the next.
-    expect(availableSkills(closed)).toContain("coffee");
+    // Back in the pool for this sprint's arrivals or the next — or already
+    // promised again by one of them.
+    const promisedAgain = sortedTickets(closed).some(
+      (ticket) => ticket.id !== waiting.id && ticket.skillId === "coffee",
+    );
+    expect(availableSkills(closed).includes("coffee") || promisedAgain).toBe(true);
     expect(checkInvariants(closed)).toEqual([]);
   });
 
@@ -165,6 +171,15 @@ describe("the backlog", () => {
     deep.tree.stamina = 100;
     deep.player.energyMax = energyMax(deep);
     deep.player.energy = deep.player.energyMax;
+    // Only a feature can wait past the grace: a customer's bug is gone with
+    // its sprint, and the codebase's own request is never forced. Everything
+    // waiting at the start is made a feature so the board has one to force.
+    for (const ticket of sortedTickets(deep)) {
+      if (ticket.status === "backlog" && ticket.kind !== "feature") {
+        ticket.kind = "feature";
+        delete ticket.deadlineSprint;
+      }
+    }
     let started = false;
     const idle = play(deep, {
       pick: (state, actions) => {
@@ -172,12 +187,16 @@ describe("the backlog", () => {
           started = true;
           return actions.find((a) => a.type === "start");
         }
+        // Deliver what is full, so production has no idle sprint to resent
+        // before the board gets round to forcing a ticket.
         return (
+          actions.find((a) => a.type === "submit") ??
+          actions.find((a) => a.type === "merge") ??
           actions.find((a) => a.type === "commit" && a.mode === "craft" && a.kind === undefined) ??
           actions.find((a) => a.type !== "start")
         );
       },
-      limit: 80,
+      limit: 120,
       stop: (_, events) =>
         events.some((e) => e.type === "ticket_started" && e.forced && e.kind === "feature"),
     });

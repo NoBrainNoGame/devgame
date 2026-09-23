@@ -88,7 +88,8 @@
       "rejection": "Fired: one refused pull request too many.",
       "stale": "Fired: too many tickets left in the backlog.",
       "outage": "Fired: servers saturated for too long.",
-      "idle_sprint": "Fired: too many sprints without landing anything yourself."
+      "idle_sprint": "Fired: too many sprints without landing anything yourself.",
+      "deadline": "Fired: one abandoned customer bug too many."
     },
     "qualityBreakdown": "What filled production's patience",
     "qualitySource": {
@@ -96,7 +97,8 @@
       "rejection": "Refused pull requests",
       "stale": "Forced tickets",
       "outage": "Saturated servers",
-      "idle_sprint": "Sprints without a delivery"
+      "idle_sprint": "Sprints without a delivery",
+      "deadline": "Abandoned customer bugs"
     },
     "stats": {
       "incidents": "Incidents",
@@ -355,7 +357,15 @@
     "chartMoney": "cash",
     "chartMrr": "monthly revenue",
     "chartOutage": "outage",
-    "chartTier": "tier"
+    "chartTier": "tier",
+    "kindHint": {
+      "client_bug": "due this sprint, production breathes when it goes",
+      "vip": "double revenue, a bonus if on time, the team will not take it",
+      "debt": "a refactor the code asks for, never forced, repays 20 debt",
+      "migration": "every commit costs debt; landed, it buys a level of servers"
+    },
+    "deadline": "due by the end of sprint {sprint}",
+    "late": "late"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1049,7 +1059,11 @@
       "ticket_assigned": {
         "feature": "ticket left in the backlog: it is yours now",
         "hotfix": "hotfix open, production is waiting",
-        "refactor": "forced refactor, the debt exploded"
+        "refactor": "forced refactor, the debt exploded",
+        "client_bug": "customer bug left in the backlog: assigned to you",
+        "vip": "VIP request left in the backlog: assigned to you",
+        "migration": "migration left in the backlog: assigned to you",
+        "debt": "debt to repay: assigned to you"
       },
       "ticket_merged": "ticket merged into dev",
       "ticket_merged_skill": "{skill} merged into dev",
@@ -1073,7 +1087,9 @@
         "outage": "production loses patience: +{delta} for the saturated servers ({value}/{max})",
         "idle_sprint": "production loses patience: +{delta}, nothing landed by your hand this sprint ({value}/{max})",
         "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})",
-        "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})"
+        "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})",
+        "deadline": "production loses patience: +{delta} for the abandoned customer bug ({value}/{max})",
+        "client_bug": "customer bug fixed: production breathes, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
@@ -1099,6 +1115,11 @@
           "won": "a cloud account a former client forgot serves the excess load",
           "lost": "the borrowed cloud account was closed in the middle of the day"
         }
+      },
+      "deadline_missed": {
+        "cancelled": "customer bug untouched: the customer left, production remembers",
+        "late": "customer bug late: production will not say thanks",
+        "vip": "VIP request late: the contract is worth half"
       }
     },
     "notes": {
@@ -1166,6 +1187,18 @@
       },
       "refactor": {
         "name": "Forced refactor"
+      },
+      "client_bug": {
+        "name": "Customer bug"
+      },
+      "vip": {
+        "name": "VIP request"
+      },
+      "debt": {
+        "name": "Debt to repay"
+      },
+      "migration": {
+        "name": "Migration"
       }
     },
     "acquisitions": {

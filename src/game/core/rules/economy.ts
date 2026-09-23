@@ -1,4 +1,4 @@
-import { DEV_RANK, type Effects, UPGRADE_IDS, UPGRADES } from "@/game/content";
+import { DEV_RANK, type Effects, TICKET_KIND, UPGRADE_IDS, UPGRADES } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
@@ -47,7 +47,7 @@ export interface MonthlyReport {
 export function mrrOf(state: RunState, effects: Effects): number {
   let base = 0;
   for (const ticket of sortedTickets(state)) {
-    if (ticket.status === "merged" && ticket.kind === "feature") base += ticket.mrr;
+    if (ticket.status === "merged" && TICKET_KIND[ticket.kind].earnsMrr) base += ticket.mrr;
   }
   return Math.floor((base * (100 + effects.mrrBonusPct)) / 100);
 }
@@ -55,7 +55,7 @@ export function mrrOf(state: RunState, effects: Effects): number {
 export function loadOf(state: RunState): number {
   let load = 0;
   for (const ticket of sortedTickets(state)) {
-    if (ticket.status === "merged" && ticket.kind === "feature") load += ticket.load;
+    if (ticket.status === "merged" && TICKET_KIND[ticket.kind].earnsMrr) load += ticket.load;
   }
   return load;
 }
@@ -68,7 +68,7 @@ export function loadOf(state: RunState): number {
 export function projectedLoadOf(state: RunState): number {
   let load = loadOf(state);
   for (const ticket of sortedTickets(state)) {
-    if (ticket.status !== "open" || ticket.kind !== "feature") continue;
+    if (ticket.status !== "open" || !TICKET_KIND[ticket.kind].earnsMrr) continue;
     if (ticket.filled * 100 >= ticket.points * BALANCE.economy.infra.predictFillPct) {
       load += ticket.load;
     }

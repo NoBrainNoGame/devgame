@@ -5,6 +5,7 @@ import {
   PROFILES,
   RELICS,
   SKILLS,
+  TICKET_KIND,
   TREE,
   TREE_IDS,
   UPGRADE_IDS,
@@ -69,8 +70,8 @@ export function isCrunch(state: RunState): boolean {
  * holds is not in your head.
  */
 export function wipExtra(state: RunState): number {
-  const features = playerTickets(state).filter((ticket) => ticket.kind !== "hotfix").length;
-  return Math.max(0, features - 1);
+  const counted = playerTickets(state).filter((ticket) => TICKET_KIND[ticket.kind].countsWip);
+  return Math.max(0, counted.length - 1);
 }
 
 /** What a turn of rest gives back. A crowded board is one you cannot rest on. */

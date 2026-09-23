@@ -251,6 +251,29 @@ La tension de design est là : l'arbre est puissant, mais il se construit
 pendant que le backlog grossit. Investir tôt vous ralentit ; investir tard
 laisse la dette exploser.
 
+### Les sortes de tickets
+
+Le tableau n'apporte pas que des features. Le premier ticket d'un sprint en
+est toujours une ; les suivants sont tirés selon les poids du palier
+(`tickets.kinds.weights`), un tirage par ticket, toujours effectué :
+
+- **Bug client** : deux ou trois points, ni revenu ni utilisateurs, à
+  livrer avant la fin du sprint. Livré, la prod respire (−10 de patience).
+  Laissé au backlog à la fin du sprint, il est annulé et la prod s'en
+  souvient (+10) ; déjà en main, il reste, sans gratitude.
+- **Demande VIP** : une feature de deux points de plus, au double du
+  revenu, à livrer avant la fin du sprint : une prime du palier si elle
+  l'est, la moitié du revenu sinon. L'équipe ne la prend jamais.
+- **Dette à rembourser** : le code réclame un refacto de deux points dès
+  que la dette atteint 40, un seul à la fois, sans tirage. Jamais imposé,
+  jamais pris par l'équipe ; livré, il rembourse 20 de dette.
+- **Migration** : quatre à six points, chaque commit coûte trois de dette
+  (sauf avec Dependabot) ; livrée, elle offre un niveau de serveurs.
+
+Un ticket sans revenu ne pèse rien sur les serveurs. Les couleurs suivent la
+famille : le bug dans celle du hotfix, la migration et la dette dans celle
+du refacto, le VIP dans celle des features.
+
 ## L'entreprise
 
 Le dépôt est à vous, et le produit aussi. Chaque **feature livrée rapporte un

@@ -8,7 +8,10 @@ import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { grantSkill } from "@/game/core/rules/grants";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
+import { changeMoney } from "@/game/core/rules/money";
+import { lowerQuality } from "@/game/core/rules/quality";
 import { ensureLane, mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
+import { tierScale } from "@/game/core/rules/tier";
 import type {
   CommitMode,
   DevId,
@@ -63,6 +66,45 @@ function writeNode(context: RuleContext, spec: NodeSpec): MapNode {
   state.nextDepth += 1;
   state.nodes[id] = node;
   return node;
+}
+
+/**
+ * What landing a ticket of a kind does beyond the revenue: a customer's bug
+ * gone earns production's patience back, a VIP's feature on time pays a
+ * bonus of the tier, the codebase's own refactor repays its debt, and a
+ * migration landed buys a level of servers. A late one earns nothing extra.
+ */
+function rewardKind(context: RuleContext, ticket: Ticket): void {
+  const { state } = context;
+  const { kinds } = BALANCE.tickets;
+  switch (ticket.kind) {
+    case "client_bug":
+      if (ticket.late !== true) lowerQuality(context, kinds.clientBug.patienceOnFix, "client_bug");
+      return;
+    case "vip":
+      if (ticket.late !== true) {
+        changeMoney(
+          context,
+          kinds.vip.bonus * tierScale(ticket.tier, BALANCE.economy.tier.mrrGrowth),
+          "vip",
+        );
+      }
+      return;
+    case "debt":
+      repayDebt(context, kinds.debt.repay);
+      return;
+    case "migration": {
+      const level = (state.upgrades.servers ?? 0) + kinds.migration.serverLevels;
+      state.upgrades.servers = level;
+      context.refresh();
+      emit(context, { type: "upgrade_bought", id: "servers", level });
+      return;
+    }
+    case "feature":
+    case "hotfix":
+    case "refactor":
+      return;
+  }
 }
 
 /** Story points a commit of this kind fills, by the hand that wrote it. */
@@ -128,6 +170,10 @@ export function writeCommit(
   }
 
   if (kind === "risky") addDebt(context, debt.perRiskyNode);
+  // A migration is debt with every step, unless Dependabot walks it for you.
+  if (ticket.kind === "migration" && !context.effects.cancelObsoleteLib) {
+    addDebt(context, BALANCE.tickets.kinds.migration.debtPerCommit);
+  }
 
   // What this one cost, remembered on the commit: a refactor later takes back
   // exactly that. Measured before anything this commit repays.
@@ -347,6 +393,7 @@ export function completeMerge(
   state.xpEarned += BALANCE.xp.perPoint * ticket.points * state.sprint;
 
   if (ticket.kind === "refactor") repayDebt(context, BALANCE.debt.explosionRepay);
+  rewardKind(context, ticket);
 
   if (options.noRegen !== true && byTeam === undefined) {
     gainEnergy(

@@ -127,7 +127,14 @@ export function createRun(options: CreateRunOptions): RunState {
       idleSprints: 0,
       devsLeft: 0,
       moneyLost: 0,
-      qualityBySource: { incident: 0, rejection: 0, stale: 0, outage: 0, idle_sprint: 0 },
+      qualityBySource: {
+        incident: 0,
+        rejection: 0,
+        stale: 0,
+        outage: 0,
+        idle_sprint: 0,
+        deadline: 0,
+      },
       lastQualitySource: null,
     },
 

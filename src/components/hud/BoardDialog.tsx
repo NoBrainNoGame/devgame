@@ -113,6 +113,14 @@ export function BoardDialog({
   );
 }
 
+/** The colour a kind's line on the card takes: the same family as its column. */
+const KIND_TONE: Record<string, string> = {
+  client_bug: "text-branch-hotfix",
+  vip: "text-energy",
+  debt: "text-debt",
+  migration: "text-debt",
+};
+
 function TicketCard({
   ticket,
   current,
@@ -158,6 +166,19 @@ function TicketCard({
           </span>
         </div>
 
+        {ticket.kind === "feature" ||
+        ticket.kind === "hotfix" ||
+        ticket.kind === "refactor" ? null : (
+          <p className={cn("text-xs", KIND_TONE[ticket.kind])}>
+            {game(`tickets.${ticket.kind}.name` as never)} · {t(`kindHint.${ticket.kind}`)}
+          </p>
+        )}
+        {ticket.deadlineSprint === undefined ? null : (
+          <p className="text-energy text-xs">{t("deadline", { sprint: ticket.deadlineSprint })}</p>
+        )}
+        {ticket.late === undefined ? null : (
+          <p className="text-branch-hotfix text-xs">{t("late")}</p>
+        )}
         {ticket.skillId === undefined ? null : (
           <p className="text-branch-feature text-xs">
             {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}

@@ -229,9 +229,10 @@ describe("the pull request review", () => {
   });
 
   test("a machine-written commit remembers what it cost", () => {
-    const state = inHand("pr-cost-memo");
-    state.player.docsCharges = 0;
     for (let i = 0; i < 30; i += 1) {
+      // A fresh seed each try: the same state rolls the same dice.
+      const state = inHand(`pr-cost-memo-${i}`);
+      state.player.docsCharges = 0;
       const result = applyAction(state, { type: "commit", mode: "ai" });
       const done = eventsOfType(result.events, "node_done")[0];
       if (done === undefined || result.state.phase.kind !== "choose_action") continue;

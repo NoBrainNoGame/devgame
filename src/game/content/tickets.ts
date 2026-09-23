@@ -1,0 +1,128 @@
+/**
+ * The kinds of work the board brings. A feature is the ordinary one; the
+ * rest each bend one rule — a deadline, a hand the team will not take, a
+ * reward that is not revenue — so that two sprints never read the same.
+ * Which arrive, and how often, is `BALANCE.tickets.kinds`.
+ */
+
+export const TICKET_KINDS = [
+  "feature",
+  "hotfix",
+  "refactor",
+  "client_bug",
+  "vip",
+  "debt",
+  "migration",
+] as const;
+
+export type TicketKind = (typeof TICKET_KINDS)[number];
+
+export type TicketColour = "feature" | "hotfix" | "refactor";
+
+export interface TicketKindDef {
+  id: TicketKind;
+  /** The colour of its column and its card. */
+  colour: TicketColour;
+  /** The branch name's prefix in the gutter: `feat/t3`. */
+  refPrefix: string;
+  /** Whether a developer picks it up from the backlog. */
+  teamTakes: boolean;
+  /** Whether holding it beside another counts as work in progress. */
+  countsWip: boolean;
+  /** Whether it earns a revenue and brings users once shipped. */
+  earnsMrr: boolean;
+  /** Whether it may carry a skill. */
+  grantsSkill: boolean;
+  /** Only this kind of commit fills it. */
+  mustWrite?: "hotfix" | "refactor";
+  /** Sprints it must land in, counting the one it arrives in. */
+  deadlineSprints?: number;
+  /** Whether the board may force it open once it has waited too long. */
+  forcedWhenStale: boolean;
+}
+
+export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
+  feature: {
+    id: "feature",
+    colour: "feature",
+    refPrefix: "feat",
+    teamTakes: true,
+    countsWip: true,
+    earnsMrr: true,
+    grantsSkill: true,
+    forcedWhenStale: true,
+  },
+  hotfix: {
+    id: "hotfix",
+    colour: "hotfix",
+    refPrefix: "fix",
+    teamTakes: false,
+    countsWip: false,
+    earnsMrr: false,
+    grantsSkill: false,
+    mustWrite: "hotfix",
+    forcedWhenStale: true,
+  },
+  refactor: {
+    id: "refactor",
+    colour: "refactor",
+    refPrefix: "refacto",
+    teamTakes: false,
+    countsWip: true,
+    earnsMrr: false,
+    grantsSkill: false,
+    mustWrite: "refactor",
+    forcedWhenStale: true,
+  },
+  /** A customer found it. Small, urgent, and production is grateful when it goes. */
+  client_bug: {
+    id: "client_bug",
+    colour: "hotfix",
+    refPrefix: "bug",
+    teamTakes: true,
+    countsWip: true,
+    earnsMrr: false,
+    grantsSkill: false,
+    deadlineSprints: 1,
+    forcedWhenStale: true,
+  },
+  /** A big customer wants it, twice the revenue, and wants it now. */
+  vip: {
+    id: "vip",
+    colour: "feature",
+    refPrefix: "vip",
+    teamTakes: false,
+    countsWip: true,
+    earnsMrr: true,
+    grantsSkill: true,
+    deadlineSprints: 1,
+    forcedWhenStale: true,
+  },
+  /** The codebase asking for a refactor of its own accord. Never forced. */
+  debt: {
+    id: "debt",
+    colour: "refactor",
+    refPrefix: "debt",
+    teamTakes: false,
+    countsWip: true,
+    earnsMrr: false,
+    grantsSkill: false,
+    mustWrite: "refactor",
+    forcedWhenStale: false,
+  },
+  /** A library to move off. Every commit costs debt; landing it buys servers. */
+  migration: {
+    id: "migration",
+    colour: "refactor",
+    refPrefix: "migr",
+    teamTakes: true,
+    countsWip: true,
+    earnsMrr: false,
+    grantsSkill: false,
+    forcedWhenStale: true,
+  },
+};
+
+export function isTicketKind(value: string): value is TicketKind {
+  return Object.hasOwn(TICKET_KIND, value);
+}

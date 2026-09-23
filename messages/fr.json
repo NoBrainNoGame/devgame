@@ -88,7 +88,8 @@
       "rejection": "Licenciement : une PR refusée de trop.",
       "stale": "Licenciement : trop de tickets laissés au backlog.",
       "outage": "Licenciement : des serveurs saturés trop longtemps.",
-      "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même."
+      "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même.",
+      "deadline": "Licenciement : un bug client abandonné de trop."
     },
     "qualityBreakdown": "Ce qui a rempli la prod",
     "qualitySource": {
@@ -96,7 +97,8 @@
       "rejection": "PR refusées",
       "stale": "Tickets imposés",
       "outage": "Serveurs saturés",
-      "idle_sprint": "Sprints sans livraison"
+      "idle_sprint": "Sprints sans livraison",
+      "deadline": "Bugs clients abandonnés"
     },
     "stats": {
       "incidents": "Incidents",
@@ -355,7 +357,15 @@
     "chartMoney": "trésorerie",
     "chartMrr": "revenus mensuels",
     "chartOutage": "panne",
-    "chartTier": "palier"
+    "chartTier": "palier",
+    "kindHint": {
+      "client_bug": "à livrer dans le sprint, la prod respire quand il part",
+      "vip": "double revenu, prime si livré à temps, l'équipe ne le prend pas",
+      "debt": "un refacto que le code réclame, jamais imposé, rembourse 20 de dette",
+      "migration": "chaque commit coûte de la dette, livré il offre un niveau de serveurs"
+    },
+    "deadline": "à livrer avant la fin du sprint {sprint}",
+    "late": "en retard"
   },
   "leaderboard": {
     "title": "Classement",
@@ -1049,7 +1059,11 @@
       "ticket_assigned": {
         "feature": "ticket resté au backlog : on vous l'assigne",
         "hotfix": "hotfix ouvert, la prod attend",
-        "refactor": "refacto imposée, la dette a explosé"
+        "refactor": "refacto imposée, la dette a explosé",
+        "client_bug": "bug client resté au backlog : on vous l'assigne",
+        "vip": "demande VIP restée au backlog : on vous l'assigne",
+        "migration": "migration restée au backlog : on vous l'assigne",
+        "debt": "dette à rembourser : on vous l'assigne"
       },
       "ticket_merged": "ticket mergé sur dev",
       "ticket_merged_skill": "{skill} mergé sur dev",
@@ -1073,7 +1087,9 @@
         "outage": "la prod perd patience : +{delta} pour les serveurs saturés ({value}/{max})",
         "idle_sprint": "la prod perd patience : +{delta}, rien livré de votre main ce sprint ({value}/{max})",
         "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})",
-        "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})"
+        "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})",
+        "deadline": "la prod perd patience : +{delta} pour le bug client abandonné ({value}/{max})",
+        "client_bug": "bug client corrigé : la prod respire, −{delta} ({value}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
@@ -1099,6 +1115,11 @@
           "won": "un compte cloud oublié par un ancien client sert la charge en trop",
           "lost": "le compte cloud emprunté a été fermé en pleine journée"
         }
+      },
+      "deadline_missed": {
+        "cancelled": "bug client non traité : le client est parti, la prod s'en souvient",
+        "late": "bug client en retard : la prod ne dira pas merci",
+        "vip": "demande VIP en retard : le contrat vaut moitié moins"
       }
     },
     "notes": {
@@ -1166,6 +1187,18 @@
       },
       "refactor": {
         "name": "Refacto imposée"
+      },
+      "client_bug": {
+        "name": "Bug client"
+      },
+      "vip": {
+        "name": "Demande VIP"
+      },
+      "debt": {
+        "name": "Dette à rembourser"
+      },
+      "migration": {
+        "name": "Migration"
       }
     },
     "acquisitions": {

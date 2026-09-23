@@ -243,6 +243,27 @@ export const BALANCE = {
     /** Story points of a ticket that grants nothing. */
     points: { min: 5, max: 7 },
     /**
+     * The kinds of work, past the first ticket of a sprint, which is always
+     * a feature. One weighted draw per ticket, by tier band; the debt ticket
+     * is not drawn but arrives on its own when the debt says so.
+     */
+    kinds: {
+      weights: [
+        { feature: 80, client_bug: 10, vip: 4, migration: 6 },
+        { feature: 70, client_bug: 15, vip: 7, migration: 8 },
+        { feature: 60, client_bug: 18, vip: 10, migration: 12 },
+        { feature: 50, client_bug: 20, vip: 15, migration: 15 },
+      ],
+      /** A customer's bug: small, dated, and production breathes when it goes. */
+      clientBug: { points: { min: 2, max: 3 }, patienceOnFix: 10, patienceOnMiss: 10 },
+      /** A big customer's feature: bigger, twice the revenue, a bonus if on time. */
+      vip: { extraPoints: 2, mrrFactor: 2, bonus: 50 },
+      /** The codebase asking for a refactor: arrives at this debt, repays this. */
+      debt: { points: 2, threshold: 40, repay: 20 },
+      /** A library to leave: every commit costs debt; landing it buys a level of servers. */
+      migration: { points: { min: 4, max: 6 }, debtPerCommit: 3, serverLevels: 1 },
+    },
+    /**
      * Extra points a ticket carries when it also grants a skill.
      *
      * The whole trade. A skill has to cost turns, or the ticket that grants

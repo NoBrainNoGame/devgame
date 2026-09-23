@@ -73,9 +73,11 @@ describe("sprint boundary", () => {
     expect(after.sprintTurn).toBe(0);
     expect(after.relics).toContain(relicId);
     expect(after.player.rerollUsed).toBe(false);
-    expect(eventsOfType(result.events, "ticket_arrived").length).toBe(
-      ticketsFor(after.sprint, after.tier),
+    // The board's count, plus the codebase's own request when the debt earned one.
+    const arrived = eventsOfType(result.events, "ticket_arrived").filter(
+      (e) => after.tickets[e.ticketId]?.kind !== "debt",
     );
+    expect(arrived.length).toBe(ticketsFor(after.sprint, after.tier));
 
     // The new sprint opens on `dev`, below everything already written.
     const anchor = eventsOfType(result.events, "node_done").find((e) => e.kind === "sprint_start");

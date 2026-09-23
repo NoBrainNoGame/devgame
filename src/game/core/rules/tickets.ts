@@ -1,3 +1,4 @@
+import { TICKET_KIND } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
@@ -172,6 +173,8 @@ export function assignStaleTickets(context: RuleContext): void {
   // the order it happened: the complaint, then the assignment.
   for (const ticket of backlogTickets(state)) {
     if (ticket.sprintArrived >= cutoff) continue;
+    // The codebase's own request is never forced on you: it waits.
+    if (!TICKET_KIND[ticket.kind].forcedWhenStale) continue;
     state.sprintForced = true;
     state.stats.staleForced += 1;
     raiseQuality(context, BALANCE.quality.perStaleTicket, "stale");

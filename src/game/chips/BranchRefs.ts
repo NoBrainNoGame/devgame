@@ -3,6 +3,7 @@ import { Container, Graphics, Text } from "pixi.js";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import type { GraphView } from "@/game/chips/GraphView";
+import { TICKET_KIND } from "@/game/content";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { NodeId } from "@/game/core/types";
 import { nodeY } from "@/game/render/coords";
@@ -59,10 +60,10 @@ export class BranchRefs extends booyah.ChipBase {
       if (ticket.status !== "open" || ticket.lane === undefined) continue;
       const tip = tipOfLane.get(ticket.lane);
       if (tip === undefined) continue;
-      const colour = ticket.kind === "hotfix" ? palette.lane.hotfix : palette.lane.feature;
+      const def = TICKET_KIND[ticket.kind];
+      const colour = palette.lane[def.colour];
       // Short branch names, the way a team abbreviates them: `feat/t3`.
-      const prefix =
-        ticket.kind === "feature" ? "feat" : ticket.kind === "hotfix" ? "fix" : "refacto";
+      const prefix = def.refPrefix;
       refs.push({ key: ticket.id, label: `${prefix}/${ticket.id}`, colour, nodeId: tip });
     }
 

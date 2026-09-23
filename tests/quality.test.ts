@@ -105,7 +105,10 @@ describe("production", () => {
       "stale",
       "outage",
       "idle_sprint",
+      "deadline",
       "clean_sprint",
+      "hack",
+      "client_bug",
     ];
     for (const source of changes) {
       const line = toLogLine(

@@ -155,6 +155,19 @@ What a developer does each turn — pick up, write, land — is `workTeam` in
 no debt, no energy. Changing that is a rule change, and `tests/team.test.ts`
 is where the promises are written down.
 
+### A ticket kind
+
+Kinds live in `TICKET_KIND` in `src/game/content/tickets.ts`: colour, ref
+prefix, whether the team takes it, whether it counts as work in progress,
+whether it earns and weighs, whether it may carry a skill, a `mustWrite`, a
+deadline in sprints, and whether the board may force it when stale. Adding
+one means a weight in `BALANCE.tickets.kinds.weights` (or an arrival of its
+own, like the debt ticket's), a size in `drawTicket`, its reward in
+`rewardKind` (`rules/write.ts`), a `game.tickets.<id>.name`, a
+`hud.kindHint.<id>`, a `log.ticket_assigned.<id>`, and a repinned
+fingerprint. The first ticket of a sprint stays a feature: the landing
+demo and `tests/tickets.test.ts` count on it.
+
 ### The pull request review
 
 There are no acceptance criteria: a ticket with its points full is submitted,
