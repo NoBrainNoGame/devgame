@@ -38,6 +38,7 @@ export { money, ref, renderText, text } from "@/game/core/i18n";
 export { actionKey } from "@/game/core/rules/preview";
 export { tierOf } from "@/game/core/rules/tier";
 export { accountSkillPoints, levelForXp, xpForLevel } from "@/game/core/score";
+export { type RunSummary, SUMMARY_TICKET_KINDS, summariseRun } from "@/game/core/summary";
 export type {
   ActionPreview,
   CommitMode,

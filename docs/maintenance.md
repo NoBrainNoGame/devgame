@@ -501,6 +501,36 @@ forty actions each and checks the graph they wrote, then reports each policy.
 Run the **same seed and run count** before and after a change, and quote both.
 A different `--seed` is a different sample.
 
+### Reading real runs before touching a number
+
+The simulator plays four policies nobody plays. Once the site is online,
+the game sends every run home — at its end, every ten sprints, and when
+it is abandoned — and the server replays each one and keeps a
+`RunSummary` (`src/game/core/summary.ts`) in `RunSample`. The admin
+panel's **Balance** page aggregates them by rules fingerprint: where runs
+end and why, how far the abandoned ones got, which upgrades and tree
+nodes get bought, which answer each event gets, the objectives' success
+rate, how many tickets of each kind the player delivers against how many
+arrive, the idle clock's usage.
+
+The same page offers the digest as Markdown, in a textarea to copy and
+as a download, with `BALANCE` quoted whole at the end. That document is
+built to be handed to a model: paste it, ask which constant to move and
+in which direction, then confirm the change with the simulator on the
+same seed before and after.
+
+Three things to know when reading it:
+
+- A run counts once, at its last known sample; a checkpoint of a run that
+  later ends is superseded by the final.
+- Only runs played against the **current** fingerprint say anything about
+  the current rules. The filter defaults to it; "all fingerprints" is for
+  comparing before and after.
+- A new counter belongs in `RunStats` (`src/game/core/types.ts`),
+  incremented **in the rule** that does the thing, and read into
+  `summariseRun`. The digest and its tests (`tests/telemetry.test.ts`)
+  pick it up from there.
+
 ### The `RULES_EPOCH` decision
 
 `RULES_FINGERPRINT` in `src/game/dto/version.ts` hashes the balance table, the

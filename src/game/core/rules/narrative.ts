@@ -122,6 +122,8 @@ export function answerEvent(context: RuleContext, eventId: NarrativeEventId, cho
   const { competitorId, devId } = state.phase;
   state.phase = { kind: "choose_action" };
   emit(context, { type: "narrative_answered", eventId, choice });
+  const key = `${eventId}:${choice}`;
+  state.stats.answers[key] = (state.stats.answers[key] ?? 0) + 1;
 
   const scale = tierScale(state.tier, BALANCE.economy.tier.mrrGrowth);
   const { effect } = picked;

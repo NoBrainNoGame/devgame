@@ -68,6 +68,7 @@ export function addDev(context: RuleContext, rank: DevRank, source?: DevSource):
   };
   state.nextDevSerial += 1;
   state.devs.push(dev);
+  state.stats.hires += 1;
 
   emit(context, {
     type: "hired",

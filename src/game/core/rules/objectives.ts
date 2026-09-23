@@ -49,6 +49,16 @@ function targetOf(state: RunState, id: ObjectiveId): number {
   }
 }
 
+function noteObjective(
+  table: Record<string, { done: number; failed: number }>,
+  id: ObjectiveId,
+  outcome: "done" | "failed",
+): void {
+  const entry = table[id] ?? { done: 0, failed: 0 };
+  entry[outcome] += 1;
+  table[id] = entry;
+}
+
 export function drawObjective(context: RuleContext): void {
   const { state, rng } = context;
   // One draw, always; the fallback keeps the stream where it was.
@@ -118,12 +128,14 @@ export function settleObjective(context: RuleContext): boolean {
 
   if (!objectiveMet(state)) {
     objective.outcome = "failed";
+    noteObjective(state.stats.objectives, objective.id, "failed");
     emit(context, { type: "objective_failed", id: objective.id });
     if (def.failPatience !== undefined) raiseQuality(context, def.failPatience, "objective");
     return false;
   }
 
   objective.outcome = "done";
+  noteObjective(state.stats.objectives, objective.id, "done");
   emit(context, { type: "objective_done", id: objective.id, reward: def.reward });
   switch (def.reward) {
     case "money":

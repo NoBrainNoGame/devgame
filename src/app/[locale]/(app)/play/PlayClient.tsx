@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -22,6 +22,8 @@ import {
   writePendingSubmit,
 } from "@/lib/storage/sync";
 import { useMetaStore } from "@/lib/storage/useMetaStore";
+import { CHECKPOINT_EVERY_SPRINTS } from "@/lib/telemetry/schema";
+import { sendRunSample } from "@/lib/telemetry/send";
 
 import { RunSetup } from "./RunSetup";
 import { RunStage } from "./RunStage";
@@ -78,6 +80,10 @@ export function PlayClient(props: PlayClientProps) {
   const [submitted, setSubmitted] = useState(false);
 
   const handleRef = useRef<GameHandle | null>(null);
+  /** When this tab started on the current run, for the sample's session time. */
+  const startedAtRef = useRef(Date.now());
+  const checkpointRef = useRef<string | null>(null);
+  const locale = useLocale();
   // Mirrored into state as well as a ref: the camera controls are a component
   // and need a render when the handle arrives.
   const [handle, setHandle] = useState<GameHandle | null>(null);
@@ -121,9 +127,15 @@ export function PlayClient(props: PlayClientProps) {
           ? props.dailySeed
           : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
 
+      // A run left behind is worth knowing about: where players stop.
+      const left = readLocalRun();
+      if (props.online && left !== null && left.actions.length > 0) {
+        sendRunSample(left, "abandoned", locale, Date.now() - startedAtRef.current);
+      }
       clearLocalRun();
       setSubmitted(false);
       awardedRef.current = null;
+      startedAtRef.current = Date.now();
 
       setStage({
         kind: "running",
@@ -135,7 +147,7 @@ export function PlayClient(props: PlayClientProps) {
         createdAt: new Date().toISOString(),
       });
     },
-    [props.dailySeed],
+    [props.dailySeed, props.online, locale],
   );
 
   const resume = useCallback(() => {
@@ -143,6 +155,7 @@ export function PlayClient(props: PlayClientProps) {
 
     setSubmitted(false);
     awardedRef.current = null;
+    startedAtRef.current = Date.now();
 
     setStage({
       kind: "running",
@@ -182,6 +195,20 @@ export function PlayClient(props: PlayClientProps) {
 
         writeLocalRun(save);
 
+        // Every few sprints, a checkpoint for the balancing table: where a
+        // run that never ends has got to.
+        const sprint = state.snapshot?.sprint ?? 0;
+        if (
+          props.online &&
+          sprint > 0 &&
+          sprint % CHECKPOINT_EVERY_SPRINTS === 0 &&
+          checkpointRef.current !== `${save.clientRunId}:${sprint}` &&
+          state.status !== "game_over"
+        ) {
+          checkpointRef.current = `${save.clientRunId}:${sprint}`;
+          sendRunSample(save, "checkpoint", locale, Date.now() - startedAtRef.current);
+        }
+
         // The cloud copy is a convenience, not the record: throttled hard, and
         // silent when it fails.
         const now = Date.now();
@@ -196,7 +223,7 @@ export function PlayClient(props: PlayClientProps) {
       clearTimeout(localTimer);
       unsubscribe();
     };
-  }, [stage.kind, props.signedIn]);
+  }, [stage.kind, props.signedIn, props.online, locale]);
 
   // --- the end of a run --------------------------------------------------
   const status = useGameStore((state) => state.status);
@@ -223,6 +250,7 @@ export function PlayClient(props: PlayClientProps) {
 
       setMeta(reward.meta);
       clearLocalRun();
+      if (props.online) sendRunSample(save, "final", locale, Date.now() - startedAtRef.current);
 
       if (reward.levelsGained > 0) toast.success(t("levelUp", { level: reward.meta.level }));
       for (const id of reward.unlocked) toast.success(t("unlocked", { name: id }));
@@ -232,7 +260,7 @@ export function PlayClient(props: PlayClientProps) {
     });
 
     return unsubscribe;
-  }, [props.signedIn, setMeta, t]);
+  }, [props.signedIn, props.online, setMeta, t, locale]);
 
   const submit = useCallback(async () => {
     const save = handleRef.current?.save() ?? readPendingSubmit();

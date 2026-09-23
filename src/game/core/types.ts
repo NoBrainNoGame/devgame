@@ -275,6 +275,24 @@ export interface RunStats {
   moneyLost: number;
   qualityBySource: Record<QualitySource, number>;
   lastQualitySource: QualitySource | null;
+  /** Commits attempted and landed, by the hand that wrote them. */
+  commitsTried: Record<CommitMode, number>;
+  commitsLanded: Record<CommitMode, number>;
+  reviews: number;
+  rests: number;
+  hacks: { tried: number; won: number };
+  /** Answers given, keyed `eventId:choice`. */
+  answers: Record<string, number>;
+  /** Objectives settled, keyed by id. */
+  objectives: Record<string, { done: number; failed: number }>;
+  arrivedByKind: Record<TicketKind, number>;
+  deliveredByPlayer: Record<TicketKind, number>;
+  deliveredByTeam: number;
+  deadlinesMissed: number;
+  moneyPeak: number;
+  /** The sprint each tier was reached in, keyed by tier. */
+  tierSprint: Record<string, number>;
+  hires: number;
 }
 
 /** A hired developer. Their tickets are found by `Ticket.assignee`. */

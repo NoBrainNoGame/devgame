@@ -40,6 +40,7 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
 /** A turn spent not coding. */
 export function performRest(context: RuleContext): void {
   context.state.sprintCounters.rests += 1;
+  context.state.stats.rests += 1;
   const regen = restRegen(context.state);
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });

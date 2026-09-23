@@ -1,16 +1,20 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
+import { BALANCE } from "@/game/core/balance";
+import { RULES_FINGERPRINT } from "@/game/dto/version";
 import type { ReportStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { hit, LIMITS, rateKey } from "@/lib/rate-limit";
+import { digestSamples, renderDigestMarkdown, type SampleRow } from "@/lib/telemetry/digest";
 
 /**
  * The administration panel: a small server of its own, on this machine,
  * behind the password in `.env`. It reads the same database the site does
  * — local, or the production one when `DATABASE_URL` points there — and
  * offers what the site never should: the visit counts, every account with
- * a ban and a delete, every bug report with a status and a note.
+ * a ban and a delete, every bug report with a status and a note, and the
+ * balancing digest of every run the game sent home.
  *
  *   bun run admin            foreground, http://127.0.0.1:3100
  *   bun run db:up            also starts it in the background
@@ -120,7 +124,7 @@ function page(
 function nav(current: string, csrf: string): string {
   const link = (href: string, label: string): string =>
     `<a href="${href}" class="${current === href ? "on" : ""}">${label}</a>`;
-  return `<nav>${link("/", "Stats")}${link("/accounts", "Accounts")}${link("/reports", "Reports")}<form method="post" action="/logout" class="inline" style="margin-left:auto"><input type="hidden" name="csrf" value="${csrf}"><button>Log out</button></form></nav>`;
+  return `<nav>${link("/", "Stats")}${link("/accounts", "Accounts")}${link("/reports", "Reports")}${link("/balance", "Balance")}<form method="post" action="/logout" class="inline" style="margin-left:auto"><input type="hidden" name="csrf" value="${csrf}"><button>Log out</button></form></nav>`;
 }
 
 function redirect(to: string, headers: Record<string, string> = {}): Response {
@@ -132,6 +136,152 @@ function date(value: Date | null | undefined): string {
 }
 
 // --- pages -------------------------------------------------------------------
+
+/**
+ * The balancing page: what real runs did, aggregated by the pure digest in
+ * `src/lib/telemetry/digest.ts`, and the same digest as Markdown — in a
+ * textarea to copy from, and as a file to download — with the current
+ * balance constants appended, so a model can be handed the whole picture.
+ */
+async function balanceRows(rules: string): Promise<SampleRow[]> {
+  const rows = await prisma.runSample.findMany({
+    where: rules === "all" ? {} : { rules },
+    orderBy: { createdAt: "desc" },
+    take: 20_000,
+    select: {
+      clientRunId: true,
+      kind: true,
+      sprint: true,
+      locale: true,
+      sessionMs: true,
+      idle: true,
+      summary: true,
+      createdAt: true,
+    },
+  });
+  return rows.map((row) => ({
+    ...row,
+    idle: (row.idle ?? null) as SampleRow["idle"],
+    summary: row.summary as unknown as SampleRow["summary"],
+  }));
+}
+
+async function balanceMarkdown(rules: string): Promise<string> {
+  const digest = digestSamples(await balanceRows(rules));
+  return renderDigestMarkdown(digest, { rules, generatedAt: new Date(), balance: BALANCE });
+}
+
+async function balancePage(csrf: string, rules: string): Promise<Response> {
+  const [rows, fingerprints] = await Promise.all([
+    balanceRows(rules),
+    prisma.runSample.groupBy({ by: ["rules"], _count: { _all: true }, orderBy: { rules: "asc" } }),
+  ]);
+  const d = digestSamples(rows);
+  const markdown = renderDigestMarkdown(d, { rules, generatedAt: new Date(), balance: BALANCE });
+  const q = (v: number): string => (Number.isInteger(v) ? String(v) : v.toFixed(1));
+  const card = (label: string, value: string): string =>
+    `<div class="card"><span class="muted">${label}</span><b>${value}</b></div>`;
+  const spreadRows = (
+    table: Record<string, { n: number; p10: number; p50: number; p90: number; max: number }>,
+  ): string =>
+    Object.entries(table)
+      .filter(([, e]) => e.n > 0)
+      .map(
+        ([k, e]) =>
+          `<tr><td>${esc(k)}</td><td class="num">${e.n}</td><td class="num">${q(e.p10)}</td><td class="num">${q(e.p50)}</td><td class="num">${q(e.p90)}</td><td class="num">${q(e.max)}</td></tr>`,
+      )
+      .join("");
+  const spreadTable = (title: string, table: Parameters<typeof spreadRows>[0]): string =>
+    `<h2>${title}</h2><table><tr><th>Measure</th><th class="num">n</th><th class="num">p10</th><th class="num">p50</th><th class="num">p90</th><th class="num">max</th></tr>${spreadRows(table) || '<tr><td colspan="6" class="muted">Nothing yet.</td></tr>'}</table>`;
+  const countRows = (table: Record<string, number>, total: number): string =>
+    Object.entries(table)
+      .map(
+        ([k, n]) =>
+          `<tr><td>${esc(k)}</td><td class="num">${n}</td><td class="num muted">${total > 0 ? `${Math.round((n / total) * 100)}%` : ""}</td></tr>`,
+      )
+      .join("");
+  const ended = Object.values(d.outcomes).reduce((a, b) => a + b, 0);
+  const options = [
+    `<option value="${esc(RULES_FINGERPRINT)}" ${rules === RULES_FINGERPRINT ? "selected" : ""}>current (${esc(RULES_FINGERPRINT)})</option>`,
+    `<option value="all" ${rules === "all" ? "selected" : ""}>all fingerprints</option>`,
+    ...fingerprints
+      .filter((f) => f.rules !== RULES_FINGERPRINT)
+      .map(
+        (f) =>
+          `<option value="${esc(f.rules)}" ${rules === f.rules ? "selected" : ""}>${esc(f.rules)} (${f._count._all})</option>`,
+      ),
+  ].join("");
+  const body = `<h1>Balance</h1>
+<form method="get" action="/balance" class="inline"><label>Rules <select name="rules">${options}</select></label><button>Show</button></form>
+<a href="/balance.md?rules=${encodeURIComponent(rules)}" download="devgame-balance-${esc(rules)}.md" style="margin-left:1rem">Download the digest (.md)</a>
+<div class="cards" style="margin-top:1rem">${card("Samples", String(d.samples))}${card("Runs", String(d.runs))}${card("Finished", String(ended))}${card("Abandoned", String(d.byKind.abandoned ?? 0))}${card("Median sprints", q(d.spread.sprints?.p50 ?? 0))}${card("Median tier", q(d.spread.tier?.p50 ?? 0))}${card("Idle on", d.idle.runs === 0 ? "—" : `${Math.round((d.idle.enabled / d.idle.runs) * 100)}%`)}</div>
+<h2>For a model</h2><p class="muted">Select all, copy, paste. The same text as the download, balance constants included.</p><textarea readonly rows="14" style="width:100%;box-sizing:border-box;font-size:12px">${esc(markdown)}</textarea>
+<h2>Outcomes</h2><table><tr><th>Outcome</th><th class="num">Runs</th><th class="num">Share</th></tr>${countRows(d.outcomes, ended) || '<tr><td colspan="3" class="muted">No finished run yet.</td></tr>'}</table>
+<h2>What fills the gauge</h2><table><tr><th>Source</th><th class="num">Points</th><th></th></tr>${countRows(d.qualityBySource, 0)}</table>
+${spreadTable("All runs, last known state", d.spread)}
+${spreadTable("Finished runs", d.finals)}
+${spreadTable("Abandoned runs, where they were left", d.abandoned)}
+<h2>Tiers</h2><table><tr><th>Tier</th><th class="num">Runs reaching it</th><th class="num">Sprint p10</th><th class="num">p50</th><th class="num">p90</th></tr>${Object.entries(
+    d.tiers,
+  )
+    .map(
+      ([t, e]) =>
+        `<tr><td>${esc(t)}</td><td class="num">${e.reached}</td><td class="num">${e.sprint.p10}</td><td class="num">${e.sprint.p50}</td><td class="num">${e.sprint.p90}</td></tr>`,
+    )
+    .join("")}</table>
+<h2>Upgrades</h2><table><tr><th>Upgrade</th><th class="num">Runs buying</th><th class="num">p50 level</th><th class="num">max</th></tr>${Object.entries(
+    d.upgrades,
+  )
+    .map(
+      ([id, e]) =>
+        `<tr><td>${esc(id)}</td><td class="num">${Math.round(e.rate * 100)}%</td><td class="num">${e.level.p50}</td><td class="num">${e.level.max}</td></tr>`,
+    )
+    .join("")}</table>
+<h2>Skill tree</h2><table><tr><th>Node</th><th class="num">Runs buying</th><th class="num">p50 level</th><th class="num">max</th></tr>${Object.entries(
+    d.tree,
+  )
+    .map(
+      ([id, e]) =>
+        `<tr><td>${esc(id)}</td><td class="num">${Math.round(e.rate * 100)}%</td><td class="num">${e.level.p50}</td><td class="num">${e.level.max}</td></tr>`,
+    )
+    .join("")}</table>
+<h2>Narrative answers</h2><table><tr><th>Event</th><th>Choice</th><th class="num">Picked</th></tr>${Object.entries(
+    d.answers,
+  )
+    .flatMap(([ev, choices]) =>
+      Object.entries(choices).map(
+        ([c, n]) => `<tr><td>${esc(ev)}</td><td>${esc(c)}</td><td class="num">${n}</td></tr>`,
+      ),
+    )
+    .join("")}</table>
+<h2>Objectives</h2><table><tr><th>Objective</th><th class="num">Done</th><th class="num">Failed</th></tr>${Object.entries(
+    d.objectives,
+  )
+    .map(
+      ([id, e]) =>
+        `<tr><td>${esc(id)}</td><td class="num">${e.done}</td><td class="num">${e.failed}</td></tr>`,
+    )
+    .join("")}</table>
+<h2>Tickets</h2><table><tr><th>Kind</th><th class="num">Arrived</th><th class="num">Delivered by the player</th></tr>${Object.entries(
+    d.tickets,
+  )
+    .map(
+      ([k, e]) =>
+        `<tr><td>${esc(k)}</td><td class="num">${e.arrived}</td><td class="num">${e.byPlayer}</td></tr>`,
+    )
+    .join("")}</table>
+<h2>Hands and hacks</h2><table><tr><th>Hand</th><th class="num">Tried</th><th class="num">Landed</th></tr>${Object.entries(
+    d.commits,
+  )
+    .map(
+      ([m, e]) =>
+        `<tr><td>${esc(m)}</td><td class="num">${e.tried}</td><td class="num">${e.landed}</td></tr>`,
+    )
+    .join(
+      "",
+    )}<tr><td>hack</td><td class="num">${d.hacks.tried}</td><td class="num">${d.hacks.won}</td></tr></table>`;
+  return page("Balance", body, { nav: nav("/balance", csrf) });
+}
 
 function loginPage(error?: string): Response {
   return page(
@@ -349,6 +499,15 @@ async function handle(request: Request): Promise<Response> {
       return accountsPage(csrf, url.searchParams.get("q") ?? "", flash);
     case "/reports":
       return reportsPage(csrf, url.searchParams.get("status") ?? "open", flash);
+    case "/balance":
+      return balancePage(csrf, url.searchParams.get("rules") ?? RULES_FINGERPRINT);
+    case "/balance.md":
+      return new Response(
+        await balanceMarkdown(url.searchParams.get("rules") ?? RULES_FINGERPRINT),
+        {
+          headers: { "content-type": "text/markdown; charset=utf-8", "cache-control": "no-store" },
+        },
+      );
     default:
       return new Response("Not found", { status: 404 });
   }

@@ -86,7 +86,10 @@ No cookie, no address, no click. A signed-in player can report a bug from
 the account menu — bounded fields, a honeypot, a human pace, a few an hour
 — and the report is read in the local admin panel, never on the site.
 
-**Measured, not guessed.** `bun run sim` plays hundreds of headless runs per
+**Measured, not guessed.** Online, every run is sent home without its
+player — a seed and a list of decisions — replayed on the server, and
+aggregated on the admin panel's Balance page, which also hands the whole
+digest over as Markdown for a model to read. `bun run sim` plays hundreds of headless runs per
 policy. The current numbers give every way of playing both endings: the
 machine played with reviews delivers the most and gets fired for it, the
 crafting hand splits evenly between the two, and the machine played blind dies

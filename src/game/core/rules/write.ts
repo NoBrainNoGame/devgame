@@ -167,6 +167,7 @@ export function writeCommit(
   });
   ticket.nodeIds.push(node.id);
   state.player.totalCommits += 1;
+  state.stats.commitsLanded[mode] += 1;
   const debtBefore = state.debt;
 
   fillPoints(context, ticket, pointsFor(ticket, mode, kind));
@@ -404,6 +405,9 @@ export function completeMerge(
     state.sprintPlayerDelivered += 1;
     if (ticket.kind === "vip") state.sprintCounters.vipDelivered += 1;
     if (ticket.kind === "client_bug") state.sprintCounters.bugsDelivered += 1;
+    state.stats.deliveredByPlayer[ticket.kind] += 1;
+  } else {
+    state.stats.deliveredByTeam += 1;
   }
   state.shipped.push(...ticket.nodeIds, node.id);
   state.pointsDelivered += ticket.points;

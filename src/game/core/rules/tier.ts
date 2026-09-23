@@ -25,6 +25,7 @@ export function raiseTier(context: RuleContext, candidate: number): void {
   const { state } = context;
   if (candidate <= state.tier) return;
   state.tier = candidate;
+  state.stats.tierSprint[String(candidate)] = state.sprint;
   emit(context, { type: "tier_reached", tier: candidate });
   systemNote(context, "tier");
   maybeNarrative(context, "tier_up");

@@ -17,6 +17,7 @@ export function changeMoney(context: RuleContext, delta: number, reason: string)
   const applied = state.money - before;
   if (applied === 0) return;
   emit(context, { type: "money", delta: applied, value: state.money, reason });
+  if (state.money > state.stats.moneyPeak) state.stats.moneyPeak = state.money;
   if (applied > 0) {
     state.moneyEarned += applied;
     raiseTier(context, tierOf(state.moneyEarned));

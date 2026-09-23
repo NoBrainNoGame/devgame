@@ -62,6 +62,7 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
 
   // A review breaks the streak whether or not it found anything to read.
   state.player.aiChain = 0;
+  state.stats.reviews += 1;
 
   emit(context, {
     type: "reviewed",

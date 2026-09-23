@@ -152,6 +152,38 @@ model BugReport {
   @@index([status, createdAt(sort: Desc)])
 }
 
+enum SampleKind {
+  final
+  checkpoint
+  abandoned
+}
+
+/// An anonymous run, kept for balancing: the seed and the decisions, and the
+/// summary the server computed by replaying them. Nothing in it is about a
+/// person. Runs still going send a checkpoint every few sprints; one left
+/// behind sends an `abandoned`; one that ended sends a `final`.
+model RunSample {
+  id          String     @id @default(cuid())
+  clientRunId String     @db.VarChar(36)
+  kind        SampleKind
+  /// The sprint the sample was taken at, so a checkpoint is one row per stage.
+  sprint      Int
+  rules       String     @db.VarChar(16)
+  locale      String     @db.VarChar(8)
+  /// The whole save, verbatim: what the summary was replayed from.
+  save        Json
+  /// `RunSummary`, computed server-side.
+  summary     Json
+  /// Milliseconds the tab spent on the run this session, as the client reports it.
+  sessionMs   Int        @default(0)
+  /// The idle clock's settings when the sample was taken: { enabled, speed }.
+  idle        Json       @default("{}")
+  createdAt   DateTime   @default(now())
+
+  @@unique([clientRunId, kind, sprint])
+  @@index([rules, kind, createdAt(sort: Desc)])
+}
+
 /// Memoised daily seeds. Deriving is a pure HMAC of the date, but storing the
 /// result keeps yesterday's boards stable if `DAILY_SEED_SECRET` ever rotates.
 model DailySeed {

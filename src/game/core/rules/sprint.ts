@@ -108,6 +108,7 @@ function settleDeadlines(context: RuleContext): void {
     if (cancelled) ticket.status = "cancelled";
     if (ticket.kind === "vip" && !cancelled) ticket.mrr = Math.floor(ticket.mrr / 2);
     emit(context, { type: "deadline_missed", ticketId: ticket.id, kind: ticket.kind, cancelled });
+    state.stats.deadlinesMissed += 1;
 
     if (ticket.kind === "client_bug") {
       raiseQuality(context, BALANCE.tickets.kinds.clientBug.patienceOnMiss, "deadline");

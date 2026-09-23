@@ -119,6 +119,18 @@ optional seed, a status and an administrator's note. Bounded on every
 column, validated in `src/lib/report/validate.ts` before Prisma sees it, and
 rendered as text everywhere. Deleted with the account.
 
+## `RunSample` is a run with nobody in it
+
+A save — seed, starter profile, action log — and the `RunSummary` the
+server computed by replaying it, one row per `(clientRunId, kind, sprint)`.
+`kind` is `final` (the run ended), `checkpoint` (every ten sprints while it
+goes on) or `abandoned` (the player started another run over it). No user
+id, no address: the row cannot be joined to a person, and that is the
+point. The beacon route (`/api/telemetry`) replays before it writes, so a
+forged log never reaches the table; the admin panel's Balance page
+aggregates the summaries with `src/lib/telemetry/digest.ts`. The index on
+`(rules, kind, createdAt)` is what that page filters by.
+
 ## `Profile.bannedAt` is the one moderation tool
 
 Set from the local admin panel. A banned profile keeps the account and the

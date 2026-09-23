@@ -85,6 +85,7 @@ export function arriveTicketOfKind(context: RuleContext, kind: TicketKind): Tick
       : { deadlineSprint: state.sprint + def.deadlineSprints - 1 }),
   };
   state.tickets[id] = ticket;
+  state.stats.arrivedByKind[kind] += 1;
   emit(context, { type: "ticket_arrived", ticketId: id });
   return ticket;
 }
@@ -123,6 +124,7 @@ function arriveDebtTicket(context: RuleContext): void {
     mustWrite: "refactor",
   };
   state.tickets[id] = ticket;
+  state.stats.arrivedByKind.debt += 1;
   emit(context, { type: "ticket_arrived", ticketId: id });
 }
 
@@ -130,6 +132,7 @@ function arriveDebtTicket(context: RuleContext): void {
 export function arriveTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean): Ticket {
   const ticket = drawTicket(context, pool, guaranteed);
   context.state.tickets[ticket.id] = ticket;
+  context.state.stats.arrivedByKind[ticket.kind] += 1;
   emit(context, { type: "ticket_arrived", ticketId: ticket.id });
   return ticket;
 }

@@ -612,7 +612,10 @@
       "audienceP1": "On every page opened, the browser sends the server three values: the page (from a closed list), the language, and whether it is this tab's first page. The server adds one to a daily counter. Nothing else is sent or kept: no IP address, no browser, no identifier, and no cookie is set.",
       "audienceP2": "To tell a visit from a page view, a flag is written to the tab's session storage under the key devgame:visited:v1; it goes with the tab. A browser sending the Global Privacy Control signal is not counted at all. Clicks are not measured.",
       "reportsTitle": "Bug reports",
-      "reportsP1": "A signed-in account may report a bug: a title, a description, the page and, if given, a run's seed, attached to the account. Reports are read by the publisher and never published; they are deleted with the account."
+      "reportsP1": "A signed-in account may report a bug: a title, a description, the page and, if given, a run's seed, attached to the account. Reports are read by the publisher and never published; they are deleted with the account.",
+      "telemetryTitle": "Gameplay telemetry",
+      "telemetryP1": "When the site is online, the game sends the server the run's save — its seed, its starter profile and the list of decisions taken — when the run ends, every ten sprints, and when a run is left behind to start another. Along with it go the language, the time the tab spent on the run and the idle clock's setting. No account, no identifier, no address: nothing ties a run to a person.",
+      "telemetryP2": "The server replays the save with the game's rules and derives aggregate numbers from it — run length, tiers reached, purchases, answers to events — used to balance the game. A browser sending the Global Privacy Control signal sends nothing."
     },
     "terms": {
       "title": "Terms of use",

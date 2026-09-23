@@ -46,6 +46,8 @@ export function performHack(context: RuleContext): void {
   const { chancePct, patienceRelief } = BALANCE.hack;
   const success = context.rng.chance(chancePct);
   emit(context, { type: "hack", kind, chancePct, success });
+  state.stats.hacks.tried += 1;
+  if (success) state.stats.hacks.won += 1;
 
   if (success) {
     switch (kind) {

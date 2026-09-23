@@ -99,6 +99,7 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
     case "commit":
       // The objective counts the hand you reached for, landed or not.
       if (action.mode === "ai") state.sprintCounters.aiCommits += 1;
+      state.stats.commitsTried[action.mode] += 1;
       performCommit(context, action.mode, action.kind);
       // A conflict pauses mid-turn; the turn ends when the player resolves it.
       return state.phase.kind !== "resolve_conflict";

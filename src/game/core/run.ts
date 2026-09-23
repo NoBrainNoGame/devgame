@@ -3,6 +3,8 @@ import {
   PROFILES,
   type ProfileId,
   type SkillId,
+  TICKET_KINDS,
+  type TicketKind,
   TREE_IDS,
   type TreeNodeId,
   UPGRADE_IDS,
@@ -145,6 +147,20 @@ export function createRun(options: CreateRunOptions): RunState {
         objective: 0,
       },
       lastQualitySource: null,
+      commitsTried: { craft: 0, ai: 0 },
+      commitsLanded: { craft: 0, ai: 0 },
+      reviews: 0,
+      rests: 0,
+      hacks: { tried: 0, won: 0 },
+      answers: {},
+      objectives: {},
+      arrivedByKind: emptyKinds(),
+      deliveredByPlayer: emptyKinds(),
+      deliveredByTeam: 0,
+      deadlinesMissed: 0,
+      moneyPeak: BALANCE.economy.startingMoney,
+      tierSprint: {},
+      hires: 0,
     },
 
     xpEarned: 0,
@@ -179,4 +195,9 @@ export function createRun(options: CreateRunOptions): RunState {
 export function hashState(state: RunState): string {
   const { log: _log, ...rest } = state;
   return fnv1a(canonicalJson(rest)).toString(16).padStart(8, "0");
+}
+
+/** One zero per kind of ticket, for the counters that break down by kind. */
+function emptyKinds(): Record<TicketKind, number> {
+  return Object.fromEntries(TICKET_KINDS.map((kind) => [kind, 0])) as Record<TicketKind, number>;
 }

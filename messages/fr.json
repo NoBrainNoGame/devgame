@@ -612,7 +612,10 @@
       "audienceP1": "À chaque page ouverte, le navigateur envoie au serveur trois valeurs : la page (parmi une liste fermée), la langue, et si c'est la première page de cet onglet. Le serveur ajoute un à un compteur du jour. Rien d'autre n'est envoyé ni conservé : ni adresse IP, ni navigateur, ni identifiant, et aucun cookie n'est posé.",
       "audienceP2": "Pour distinguer une visite d'une page vue, un drapeau est écrit dans le stockage de session de l'onglet, sous la clé devgame:visited:v1 ; il disparaît avec l'onglet. Un navigateur qui envoie le signal Global Privacy Control n'est pas compté du tout. Les clics ne sont pas mesurés.",
       "reportsTitle": "Signalements de bugs",
-      "reportsP1": "Un compte connecté peut signaler un bug : un titre, une description, la page et, s'il le donne, la graine d'une run, rattachés au compte. Le signalement est lu par l'éditeur et n'est jamais publié ; il est supprimé avec le compte."
+      "reportsP1": "Un compte connecté peut signaler un bug : un titre, une description, la page et, s'il le donne, la graine d'une run, rattachés au compte. Le signalement est lu par l'éditeur et n'est jamais publié ; il est supprimé avec le compte.",
+      "telemetryTitle": "Télémétrie de jeu",
+      "telemetryP1": "Quand le site est en ligne, la partie envoie au serveur, à sa fin, tous les dix sprints, et quand une run est abandonnée pour en commencer une autre, la sauvegarde de la run : la graine, le profil de départ et la liste des décisions prises. S'y ajoutent la langue, le temps passé sur la run dans l'onglet et le réglage de l'horloge d'inactivité. Aucun compte, aucun identifiant, aucune adresse : rien ne rattache une run à une personne.",
+      "telemetryP2": "Le serveur rejoue la sauvegarde avec les règles du jeu et en tire des chiffres agrégés — durée des runs, paliers atteints, achats, réponses aux événements — qui servent à équilibrer le jeu. Un navigateur qui envoie le signal Global Privacy Control n'envoie rien."
     },
     "terms": {
       "title": "Conditions d'utilisation",
