@@ -12,6 +12,12 @@ import type { PlayerAction } from "@/game/core/types";
  * holds, and rest when it does not. Nothing here touches the engine — it is a
  * player pressing buttons, and the action log records it like any other.
  */
+/**
+ * Energy kept above the crunch line when writing by hand. Below it, a rest
+ * is the move; above it, resting is a turn thrown away.
+ */
+export const ENERGY_MARGIN = 4;
+
 export function chooseAutopilot(snapshot: RunSnapshot): PlayerAction | undefined {
   const { actions, previews, player } = snapshot;
   const find = (predicate: (action: PlayerAction) => boolean): PlayerAction | undefined =>
@@ -48,7 +54,7 @@ export function chooseAutopilot(snapshot: RunSnapshot): PlayerAction | undefined
     const cost = previews[actionKey(craft)]?.energyCost ?? 0;
     // Keeps a margin above the crunch threshold: an autopilot that burns you
     // out is worse than one that rests.
-    if (player.energy - cost > 4) return craft;
+    if (player.energy - cost > ENERGY_MARGIN) return craft;
   }
 
   return legal(find((a) => a.type === "rest"));

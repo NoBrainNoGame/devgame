@@ -28,9 +28,17 @@ describe("the idle clock's target", () => {
     legal(state);
   });
 
-  test("a ticket in hand and no supervisor: it rests", () => {
+  test("a ticket in hand and no supervisor: it rests only when the energy is too low to write", () => {
     const state = inHand("idle-rest");
+    expect(idleTarget(toSnapshot(state))).toBeUndefined();
+    state.player.energy = 2;
     expect(idleTarget(toSnapshot(state))?.type).toBe("rest");
+    legal(state);
+  });
+
+  test("a full ticket and no supervisor: it opens the pull request", () => {
+    const state = makeReady(inHand("idle-submit"));
+    expect(idleTarget(toSnapshot(state))?.type).toBe("submit");
     legal(state);
   });
 

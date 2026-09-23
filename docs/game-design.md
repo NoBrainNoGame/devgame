@@ -361,8 +361,11 @@ des prix et une carte par concurrent.
 
 **Le jeu tourne sans vous.** Une horloge tourne sous **le coup prévu**, et sa
 barre le désigne : laissée seule une trentaine de secondes, elle le presse.
-Sans superviseur, le coup prévu est de démarrer le plus ancien ticket quand
-rien n'est en main, et de souffler sinon ; dans les autres phases, c'est la
+Sans superviseur, le coup prévu est celui qui n'a qu'une réponse : ouvrir la
+PR d'un ticket plein, démarrer le plus ancien ticket quand rien n'est en
+main, souffler quand l'énergie ne permet plus d'écrire. Avec de l'énergie et
+un ticket en main, elle ne presse rien : écrire est votre coup, et souffler là
+serait un tour jeté. Dans les autres phases, c'est la
 réponse évidente — merger ce qui est accepté, continuer après un refus,
 résoudre un conflit à la main, prendre le premier bonus — pour qu'une run
 laissée seule ne cale jamais sur une question. Avec le **superviseur IA**
