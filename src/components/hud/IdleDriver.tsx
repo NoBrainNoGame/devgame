@@ -6,7 +6,7 @@ import { hydrateIdleSettings, idleStore, useIdleStore } from "@/components/hud/i
 import { idleSpeedAllowed, idleTarget, type PlayerAction, useGameStore } from "@/game";
 
 /** Seconds the idle clock takes to press the planned move, at normal speed. Rendering, not rules. */
-export const IDLE_SECONDS = 30;
+export const IDLE_SECONDS = 10;
 const TICK_MS = 50;
 
 /**

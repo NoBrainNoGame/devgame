@@ -360,7 +360,7 @@ L'onglet Marché de l'entreprise montre la part, le multiplicateur, la guerre
 des prix et une carte par concurrent.
 
 **Le jeu tourne sans vous.** Une horloge tourne sous **le coup prévu**, et sa
-barre le désigne : laissée seule une trentaine de secondes, elle le presse.
+barre le désigne : laissée seule une dizaine de secondes, elle le presse.
 Sans superviseur, le coup prévu est celui qui n'a qu'une réponse : ouvrir la
 PR d'un ticket plein, démarrer le plus ancien ticket quand rien n'est en
 main, souffler quand l'énergie ne permet plus d'écrire. Avec de l'énergie et
