@@ -1970,12 +1970,10 @@
   },
   "report": {
     "title": "Signaler un bug",
-    "intro": "Décrivez ce qui s'est passé, sur quelle page, et si possible la graine de la run (elle est affichée au début d'une partie). Le rapport est lu par l'éditeur, jamais publié.",
+    "intro": "Décrivez ce qui s'est passé dans le jeu, et choisissez la partie où c'est arrivé : les dernières sont proposées, et n'importe quelle graine peut être saisie. Le rapport est lu par l'éditeur, jamais publié.",
     "fieldTitle": "En une ligne",
     "fieldBody": "Ce qui s'est passé, ce que vous attendiez",
-    "fieldPage": "Page",
-    "pageAny": "Peu importe",
-    "fieldSeed": "Graine de la run (facultatif)",
+    "fieldSeed": "Graine",
     "send": "Envoyer",
     "sent": "Merci, c'est noté.",
     "suspended": "Ce compte est suspendu : il ne peut plus envoyer de signalement.",
@@ -1985,7 +1983,11 @@
       "open": "ouvert",
       "acknowledged": "pris en compte",
       "closed": "clos"
-    }
+    },
+    "fieldRun": "Partie",
+    "runNone": "Aucune partie en particulier",
+    "runOther": "Une autre graine…",
+    "seedDaily": "graine du jour"
   },
   "footer": {
     "aria": "Le projet ailleurs",

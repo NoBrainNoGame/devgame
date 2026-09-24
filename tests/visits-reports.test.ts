@@ -41,7 +41,6 @@ describe("a bug report", () => {
   const good = {
     title: "The merge button does nothing",
     body: "After the review accepts the ticket, pressing Merge leaves the dialog open.",
-    page: "/play",
     seed: "abc-123",
     website: "",
     startedAt: 0,
@@ -54,13 +53,16 @@ describe("a bug report", () => {
     expect(cleanText("a\r\nb\u0007c")).toBe("a\nbc");
   });
 
-  test("refuses what is too short, too long, off the list, or from a bot", () => {
+  test("refuses what is too short, too long, or from a bot, and knows no page", () => {
     expect(ReportInputSchema.safeParse({ ...good, title: "hi" }).success).toBe(false);
     expect(
       ReportInputSchema.safeParse({ ...good, body: "x".repeat(REPORT_LIMITS.body.max + 1) })
         .success,
     ).toBe(false);
-    expect(ReportInputSchema.safeParse({ ...good, page: "/evil" }).success).toBe(false);
+    // A report is about the game: a page named by an old client is dropped, not stored.
+    const paged = ReportInputSchema.safeParse({ ...good, page: "/play" });
+    expect(paged.success).toBe(true);
+    if (paged.success) expect(paged.data).not.toHaveProperty("page");
     expect(ReportInputSchema.safeParse({ ...good, seed: "<script>" }).success).toBe(false);
     expect(ReportInputSchema.safeParse({ ...good, website: "http://spam" }).success).toBe(false);
     expect(ReportInputSchema.safeParse({ ...good, seed: "" }).success).toBe(true);

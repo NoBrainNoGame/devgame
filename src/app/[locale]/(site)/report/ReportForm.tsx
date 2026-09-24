@@ -10,14 +10,25 @@ import { Label } from "@/components/ui/label";
 import { useRouter } from "@/i18n/navigation";
 import { submitBugReport } from "@/lib/report/actions";
 import { REPORT_LIMITS } from "@/lib/report/validate";
-import { KNOWN_PATHS } from "@/lib/visits/paths";
+
+/** One of the player's recent runs, as the seed picker lists it. */
+export interface RecentRun {
+  seed: string;
+  /** The seed, the date, and "daily" when it was one: already in the page's language. */
+  label: string;
+}
+
+/** The picker's value for a seed typed by hand rather than picked. */
+const OTHER = "\u0000other";
 
 /**
  * The form. The limits here are a convenience; the action validates again.
- * Two fields a person never touches — a honeypot kept off screen, and the
- * time the form was opened — are what tells a bot from a player.
+ * The run is a pick among the player's last few, with a way to type another
+ * seed; a report is about the game, so there is no page to name. Two fields
+ * a person never touches — a honeypot kept off screen, and the time the
+ * form was opened — are what tells a bot from a player.
  */
-export function ReportForm(): React.JSX.Element {
+export function ReportForm({ recent }: { recent: RecentRun[] }): React.JSX.Element {
   const t = useTranslations("report");
   const errors = useTranslations("errors");
   const router = useRouter();
@@ -25,21 +36,15 @@ export function ReportForm(): React.JSX.Element {
   const [startedAt] = useState(() => Date.now());
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [page, setPage] = useState<string>("");
-  const [seed, setSeed] = useState("");
+  const [pick, setPick] = useState<string>(recent[0]?.seed ?? "");
+  const [typed, setTyped] = useState("");
   const [website, setWebsite] = useState("");
+  const seed = pick === OTHER ? typed : pick;
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     startTransition(async () => {
-      const result = await submitBugReport({
-        title,
-        body,
-        ...(page === "" ? {} : { page }),
-        seed,
-        website,
-        startedAt,
-      });
+      const result = await submitBugReport({ title, body, seed, website, startedAt });
       if (!result.ok) {
         toast.error(errors(result.error.code));
         return;
@@ -47,7 +52,7 @@ export function ReportForm(): React.JSX.Element {
       toast.success(t("sent"));
       setTitle("");
       setBody("");
-      setSeed("");
+      setTyped("");
       router.refresh();
     });
   }
@@ -82,7 +87,7 @@ export function ReportForm(): React.JSX.Element {
           rows={8}
           disabled={pending}
           onChange={(event) => setBody(event.target.value)}
-          className="w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="cyber-clip w-full border border-cyber/40 bg-panel/60 px-3 py-2 font-mono text-sm outline-none [--cyber-corner:8px] focus-visible:border-cyber focus-visible:bg-panel"
         />
         <p className="text-muted-foreground text-xs tabular-nums">
           {body.length}/{REPORT_LIMITS.body.max}
@@ -90,38 +95,41 @@ export function ReportForm(): React.JSX.Element {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="report-page" className="text-muted-foreground text-xs">
-            {t("fieldPage")}
+          <Label htmlFor="report-run" className="text-muted-foreground text-xs">
+            {t("fieldRun")}
           </Label>
           <select
-            id="report-page"
-            value={page}
+            id="report-run"
+            value={pick}
             disabled={pending}
-            onChange={(event) => setPage(event.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-transparent px-3 font-mono text-sm"
+            onChange={(event) => setPick(event.target.value)}
+            className="cyber-clip h-9 w-full border border-cyber/40 bg-panel/60 px-3 font-mono text-sm outline-none [--cyber-corner:8px] focus-visible:border-cyber"
           >
-            <option value="">{t("pageAny")}</option>
-            {KNOWN_PATHS.filter((path) => path !== "/other").map((path) => (
-              <option key={path} value={path}>
-                {path}
+            <option value="">{t("runNone")}</option>
+            {recent.map((run) => (
+              <option key={run.seed} value={run.seed}>
+                {run.label}
               </option>
             ))}
+            <option value={OTHER}>{t("runOther")}</option>
           </select>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="report-seed" className="text-muted-foreground text-xs">
-            {t("fieldSeed")}
-          </Label>
-          <Input
-            id="report-seed"
-            value={seed}
-            maxLength={REPORT_LIMITS.seed}
-            pattern="[0-9a-zA-Z_-]*"
-            disabled={pending}
-            onChange={(event) => setSeed(event.target.value)}
-            className="font-mono"
-          />
-        </div>
+        {pick === OTHER ? (
+          <div className="space-y-1.5">
+            <Label htmlFor="report-seed" className="text-muted-foreground text-xs">
+              {t("fieldSeed")}
+            </Label>
+            <Input
+              id="report-seed"
+              value={typed}
+              maxLength={REPORT_LIMITS.seed}
+              pattern="[0-9a-zA-Z_-]*"
+              disabled={pending}
+              onChange={(event) => setTyped(event.target.value)}
+              className="font-mono"
+            />
+          </div>
+        ) : null}
       </div>
       {/* Off screen, not hidden: a bot that reads styles still fills what it finds. */}
       <div aria-hidden="true" className="absolute -left-[9999px] top-0 h-px w-px overflow-hidden">

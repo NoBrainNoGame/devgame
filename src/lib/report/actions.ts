@@ -13,8 +13,9 @@ import { getCurrentUserId } from "@/lib/session";
 /**
  * Filing a bug report. Signed in, not suspended, at a human pace, a few an
  * hour and a handful a day; what passes is stored as it was typed, with the
- * page and the seed the player named. The administrator reads it in the
- * local panel, never on the site.
+ * seed of the run the player named. Reports are about the game, so there is
+ * no page to name. The administrator reads it in the local panel, never on
+ * the site.
  */
 export async function submitBugReport(input: unknown): Promise<ActionResult<{ id: string }>> {
   return guard(async () => {
@@ -37,15 +38,9 @@ export async function submitBugReport(input: unknown): Promise<ActionResult<{ id
     const today = await prisma.bugReport.count({ where: { userId, createdAt: { gte: since } } });
     if (today >= REPORT_LIMITS.perDay) return fail("rate-limited", "Enough for one day");
 
-    const { title, body, page, seed } = parsed.data;
+    const { title, body, seed } = parsed.data;
     const report = await prisma.bugReport.create({
-      data: {
-        userId,
-        title,
-        body,
-        ...(page === undefined ? {} : { page }),
-        ...(seed === undefined ? {} : { seed }),
-      },
+      data: { userId, title, body, ...(seed === undefined ? {} : { seed }) },
       select: { id: true },
     });
     revalidatePath("/[locale]/report", "page");

@@ -1970,12 +1970,10 @@
   },
   "report": {
     "title": "Report a bug",
-    "intro": "Say what happened, on which page, and if you can the run's seed (it is shown when a run starts). The publisher reads reports; none is published.",
+    "intro": "Say what happened in the game, and pick the run it happened in: the last ones are listed, and any seed can be typed. The publisher reads reports; none is published.",
     "fieldTitle": "In one line",
     "fieldBody": "What happened, what you expected",
-    "fieldPage": "Page",
-    "pageAny": "Any",
-    "fieldSeed": "Run seed (optional)",
+    "fieldSeed": "Seed",
     "send": "Send",
     "sent": "Thanks, noted.",
     "suspended": "This account is suspended: it can no longer send reports.",
@@ -1985,7 +1983,11 @@
       "open": "open",
       "acknowledged": "acknowledged",
       "closed": "closed"
-    }
+    },
+    "fieldRun": "Run",
+    "runNone": "No particular run",
+    "runOther": "Another seed…",
+    "seedDaily": "daily"
   },
   "footer": {
     "aria": "The project elsewhere",

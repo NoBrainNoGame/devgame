@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { KNOWN_PATHS } from "@/lib/visits/paths";
-
 /**
  * What a bug report may contain, decided before anything touches the
  * database. Every field is bounded; the text is kept as text and rendered
@@ -40,7 +38,6 @@ export const ReportInputSchema = z.object({
     .string()
     .transform(cleanText)
     .pipe(z.string().min(REPORT_LIMITS.body.min).max(REPORT_LIMITS.body.max)),
-  page: z.enum(KNOWN_PATHS).optional(),
   seed: z
     .string()
     .trim()

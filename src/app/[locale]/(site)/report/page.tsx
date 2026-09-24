@@ -22,10 +22,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+/** How many of the player's latest runs the form offers the seed of. */
+const RECENT_RUNS = 3;
+
 /**
  * Where a signed-in player says what broke. Offline there is nobody to tell;
- * signed out, the login page comes first. The player sees their own reports
- * and their status, nothing anyone else wrote.
+ * signed out, the login page comes first. The form offers the seeds of the
+ * player's last few runs, dated, so naming the run is a pick rather than a
+ * copy; the player sees their own reports and their status, nothing anyone
+ * else wrote.
  */
 export default async function ReportPage(): Promise<React.JSX.Element> {
   if (!env.ONLINE) notFound();
@@ -33,16 +38,27 @@ export default async function ReportPage(): Promise<React.JSX.Element> {
   const session = (await getSession()) ?? redirect({ href: "/login", locale });
   const t = await getTranslations("report");
 
-  const [profile, mine] = await Promise.all([
+  const [profile, mine, runs] = await Promise.all([
     prisma.profile.findUnique({ where: { userId: session.user.id }, select: { bannedAt: true } }),
     prisma.bugReport.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       take: 20,
-      select: { id: true, title: true, status: true, createdAt: true, page: true },
+      select: { id: true, title: true, status: true, createdAt: true },
+    }),
+    prisma.run.findMany({
+      where: { profile: { userId: session.user.id } },
+      orderBy: { updatedAt: "desc" },
+      take: RECENT_RUNS,
+      select: { seed: true, mode: true, updatedAt: true },
     }),
   ]);
   const suspended = profile?.bannedAt != null;
+  const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const recent = runs.map((run) => ({
+    seed: run.seed,
+    label: `${run.seed} · ${when.format(run.updatedAt)}${run.mode === "daily" ? ` · ${t("seedDaily")}` : ""}`,
+  }));
 
   return (
     <div className="mx-auto w-full max-w-2xl px-3 py-8 sm:px-4 sm:py-12">
@@ -55,7 +71,7 @@ export default async function ReportPage(): Promise<React.JSX.Element> {
         </p>
       ) : (
         <div className="mt-6">
-          <ReportForm />
+          <ReportForm recent={recent} />
         </div>
       )}
 
