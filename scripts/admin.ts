@@ -5,8 +5,9 @@ import { RULES_FINGERPRINT } from "@/game/dto/version";
 import type { ReportStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
-import { hit, LIMITS, rateKey } from "@/lib/rate-limit";
 import { digestSamples, renderDigestMarkdown, type SampleRow } from "@/lib/telemetry/digest";
+
+import { Cooldown, describeWait } from "./lib/cooldown";
 
 /**
  * The administration panel: a small server of its own, on this machine,
@@ -41,6 +42,8 @@ if (env.ADMIN_PASSWORD === undefined) {
   process.exit(1);
 }
 const password = env.ADMIN_PASSWORD;
+/** Closed for a minute after a wrong password, twice as long each time after. */
+const door = new Cooldown();
 const origin = `http://${HOST}:${env.ADMIN_PORT}`;
 
 // --- sessions ---------------------------------------------------------------
@@ -283,11 +286,18 @@ ${spreadTable("Abandoned runs, where they were left", d.abandoned)}
   return page("Balance", body, { nav: nav("/balance", csrf) });
 }
 
-function loginPage(error?: string): Response {
-  return page(
+function loginPage(
+  error?: string,
+  options: { status?: number; "retry-after"?: string } = {},
+): Response {
+  const response = page(
     "Log in",
     `<div class="login"><h1>Devgame admin</h1><form method="post" action="/login"><label>Password<input type="password" name="password" autocomplete="current-password" autofocus required></label>${error === undefined ? "" : `<p class="bad">${esc(error)}</p>`}<button>Enter</button></form><p class="muted">The password is ADMIN_PASSWORD in .env. This panel listens on ${esc(origin)} only.</p></div>`,
   );
+  if (options.status === undefined) return response;
+  const headers = new Headers(response.headers);
+  if (options["retry-after"] !== undefined) headers.set("retry-after", options["retry-after"]);
+  return new Response(response.body, { status: options.status, headers });
 }
 
 async function statsPage(csrf: string): Promise<Response> {
@@ -486,12 +496,24 @@ async function handle(request: Request): Promise<Response> {
 
   if (url.pathname === "/login") {
     if (request.method === "POST") {
-      if (!hit(rateKey("adminLogin", {}, request), LIMITS.adminLogin).allowed) {
-        return loginPage("Too many attempts. Come back in a quarter of an hour.");
+      const now = Date.now();
+      const wait = door.left(now);
+      if (wait > 0) {
+        return loginPage(`Wrong password earlier. Try again in ${describeWait(wait)}.`, {
+          status: 429,
+          "retry-after": String(Math.ceil(wait / 1000)),
+        });
       }
       const data = await form(request);
       const candidate = data.get("password") ?? "";
-      if (!passwordMatches(candidate)) return loginPage("Wrong password.");
+      if (!passwordMatches(candidate)) {
+        const closed = door.fail(now);
+        return loginPage(`Wrong password. Try again in ${describeWait(closed)}.`, {
+          status: 429,
+          "retry-after": String(Math.ceil(closed / 1000)),
+        });
+      }
+      door.succeed();
       const fresh = openSession();
       return redirect("/", {
         "set-cookie": `${COOKIE}=${fresh}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_HOURS * 3600}`,

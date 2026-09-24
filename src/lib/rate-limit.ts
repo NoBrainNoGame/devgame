@@ -118,8 +118,6 @@ export const LIMITS = {
   visit: { limit: 120, windowMs: 60_000 },
   /** A bug report is written by a person: a few an hour, not a stream. */
   report: { limit: 3, windowMs: 60 * 60_000 },
-  /** The local admin panel's password prompt. */
-  adminLogin: { limit: 5, windowMs: 15 * 60_000 },
   /** Each run sample is replayed server-side: a few an hour from one address. */
   telemetry: { limit: 30, windowMs: 60 * 60_000 },
 } as const satisfies Record<string, RateLimit>;
