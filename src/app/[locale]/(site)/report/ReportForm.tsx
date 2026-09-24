@@ -93,7 +93,7 @@ export function ReportForm({ recent }: { recent: RecentRun[] }): React.JSX.Eleme
           {body.length}/{REPORT_LIMITS.body.max}
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="report-run" className="text-muted-foreground text-xs">
             {t("fieldRun")}
@@ -115,7 +115,7 @@ export function ReportForm({ recent }: { recent: RecentRun[] }): React.JSX.Eleme
           </select>
         </div>
         {pick === OTHER ? (
-          <div className="space-y-1.5">
+          <div className="max-w-sm space-y-1.5">
             <Label htmlFor="report-seed" className="text-muted-foreground text-xs">
               {t("fieldSeed")}
             </Label>
