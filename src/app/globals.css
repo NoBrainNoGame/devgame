@@ -156,8 +156,11 @@
 /*
  * Devgame theme.
  *
- * The site is an IDE and the game is a git graph, so the whole thing is set in
- * one monospace face and coloured like `git log --graph`.
+ * Cyberpunk, after Jhey Tompkins' CyberPopover: a black screen with a faint
+ * grid, one mint accent against one hot red, a condensed uppercase display
+ * face for anything that is a control or a title, and corners cut rather
+ * than rounded. The game text — commits, tickets, the log — stays in the
+ * monospace face: the game is a git graph and its history reads like one.
  *
  * The hex values below are duplicated in `src/game/render/theme.ts`, because
  * Pixi cannot read CSS custom properties. `tests/theme.test.ts` compares the two
@@ -166,20 +169,24 @@
 @theme {
   --font-mono: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
   --font-sans: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
-  /* shadcn's card, dialog and sheet titles all carry `font-heading`. Without a
-     value here that class is not a utility at all and the titles silently lose
-     their weight — one face for everything, but it has to be declared. */
-  --font-heading: var(--font-devgame-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  /* Titles, buttons, badges and labels: the display face. shadcn's card and
+     dialog titles carry `font-heading`, so it has to be declared here. */
+  --font-display: var(--font-devgame-display), "Rajdhani", "Blender Pro", ui-sans-serif, sans-serif;
+  --font-heading: var(--font-devgame-display), "Rajdhani", "Blender Pro", ui-sans-serif, sans-serif;
 
-  --color-bg: #14161b;
-  --color-panel: #1b1e25;
-  --color-line: #2f343f;
+  --color-bg: #050607;
+  --color-panel: #0b0e10;
+  --color-line: #1c2a2a;
 
-  --color-branch-main: #62c073;
-  --color-branch-dev: #4fb3a8;
-  --color-branch-feature: #5aa9e6;
-  --color-branch-hotfix: #e2645a;
-  --color-branch-obstacle: #d98cc9;
+  /* The accent and its shadow, the two colours the chrome is made of. */
+  --color-cyber: #8afff5;
+  --color-cyber-hot: #ff5533;
+
+  --color-branch-main: #8afff5;
+  --color-branch-dev: #3fc9b8;
+  --color-branch-feature: #5ab8ff;
+  --color-branch-hotfix: #ff5533;
+  --color-branch-obstacle: #ff5ec4;
 
   /* The team's colours, the player's first: see DEV_COLOURS in render/theme.ts. */
   --color-dev-0: #38bdf8;
@@ -191,22 +198,423 @@
   --color-dev-6: #b57bee;
   --color-dev-7: #f472b6;
 
-  --color-debt: #e0a458;
-  --color-energy: #f5d76e;
-  --color-ai: #9b7fd4;
+  --color-debt: #ffb347;
+  --color-energy: #f5e663;
+  --color-ai: #b48cff;
 }
 
-/* Darker and cooler than shadcn's neutral, to match the canvas behind it. */
+/* shadcn's tokens, on the cyberpunk palette: black, mint, no radius. */
 .dark {
-  --background: #14161b;
-  --card: #1b1e25;
-  --popover: #1b1e25;
-  --border: #2f343f;
-  --input: #2f343f;
-  --muted: #21242c;
-  --secondary: #21242c;
-  --sidebar: #1b1e25;
-  --sidebar-border: #2f343f;
+  --background: #050607;
+  --foreground: #dffdf9;
+  --card: #0b0e10;
+  --card-foreground: #dffdf9;
+  --popover: #0b0e10;
+  --popover-foreground: #dffdf9;
+  --primary: #8afff5;
+  --primary-foreground: #050607;
+  --secondary: #0f1517;
+  --secondary-foreground: #dffdf9;
+  --muted: #0f1517;
+  --muted-foreground: #6b9e98;
+  --accent: #10201e;
+  --accent-foreground: #8afff5;
+  --destructive: #ff5533;
+  --border: #1c2a2a;
+  --input: #1c2a2a;
+  --ring: #8afff5;
+  --radius: 0px;
+  --sidebar: #0b0e10;
+  --sidebar-border: #1c2a2a;
+}
+
+/*
+ * Cyberpunk chrome.
+ *
+ * Everything in `@layer components`: a class here must lose to a utility on
+ * the same element (`absolute` on a button has to beat the frame's
+ * `position: relative`), and an unlayered rule would win instead.
+ */
+@layer components {
+/*
+ * Four pieces, composed by the components: `cyber-clip` cuts the bottom-right
+ * corner; `cyber-frame` paints, under the element, a translucent fill and a
+ * stroke that follows the cut (the stroke is a border-box mask, so it is one
+ * ring, not a box); `cyber-corner` is the slash that closes the ring across
+ * the cut; `cyber-glitch` is a copy of a control's content, hidden until the
+ * control is hovered, then torn into strips and shimmied for two seconds.
+ * The flicker easing is Jhey's, and drives every panel that comes in.
+ */
+:root {
+  --cyber-corner: 10px;
+  --cyber-border: 1px;
+  --cyber-clip: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--cyber-corner)),
+    calc(100% - var(--cyber-corner)) 100%,
+    0 100%
+  );
+  --cyber-flicker: linear(
+    0 0%,
+    0.1864 6.17%,
+    0.0001 14.41%,
+    0.5244 20.97%,
+    0.3927 37.91%,
+    0.8115 60.62%,
+    0.9416 61.92%,
+    0.9928 67.98%,
+    0.5032 70.42%,
+    0.9077 96.96%,
+    0.6736 98.74%,
+    1 100%
+  );
+  --cyber-stroke: var(--color-cyber);
+  --cyber-fill: color-mix(in oklab, var(--color-panel) 60%, transparent);
+}
+
+/* The grid behind everything, fading towards the top left. */
+body::before {
+  --size: 45px;
+  --line: color-mix(in oklab, var(--color-cyber) 9%, transparent);
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--line) 1px, transparent 1px var(--size)) calc(var(--size) * 0.36)
+      50% / var(--size) var(--size),
+    linear-gradient(var(--line) 1px, transparent 1px var(--size)) 0% calc(var(--size) * 0.32) /
+      var(--size) var(--size);
+  mask: linear-gradient(-20deg, transparent 40%, white);
+}
+
+.cyber-clip {
+  clip-path: var(--cyber-clip);
+}
+.cyber-frame {
+  position: relative;
+  isolation: isolate;
+  clip-path: var(--cyber-clip);
+}
+.cyber-frame::before,
+.cyber-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  clip-path: var(--cyber-clip);
+}
+.cyber-frame::before {
+  background: var(--cyber-fill);
+  backdrop-filter: saturate(160%) blur(6px);
+}
+.cyber-frame::after {
+  border: var(--cyber-border) solid #0000;
+  background: var(--cyber-stroke);
+  mask:
+    linear-gradient(#0000 0 100%),
+    linear-gradient(#fff 0 100%);
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+}
+.cyber-corner {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--cyber-corner);
+  height: var(--cyber-corner);
+  pointer-events: none;
+  overflow: hidden;
+}
+.cyber-corner::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: calc(var(--cyber-border) * 2);
+  translate: -50% -50%;
+  rotate: 135deg;
+  background: var(--cyber-stroke);
+}
+
+/* A control's second copy: hidden until hovered, then torn and shimmied. */
+.cyber-glitch {
+  --shimmy: 5;
+  --clip-one: polygon(0 2%, 100% 2%, 100% 95%, 95% 95%, 95% 90%, 85% 90%, 85% 95%, 8% 95%, 0 70%);
+  --clip-two: polygon(0 78%, 100% 78%, 100% 100%, 95% 100%, 95% 90%, 85% 90%, 85% 100%, 8% 100%, 0 78%);
+  --clip-three: polygon(0 44%, 100% 44%, 100% 54%, 95% 54%, 95% 54%, 85% 54%, 85% 54%, 8% 54%, 0 54%);
+  --clip-four: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+  --clip-five: polygon(0 0, 100% 0, 100% 0, 95% 0, 95% 0, 85% 0, 85% 0, 8% 0, 0 0);
+  --clip-six: polygon(0 40%, 100% 40%, 100% 85%, 95% 85%, 95% 85%, 85% 85%, 85% 85%, 8% 85%, 0 70%);
+  --clip-seven: polygon(0 63%, 100% 63%, 100% 80%, 95% 80%, 95% 80%, 85% 80%, 85% 80%, 8% 80%, 0 70%);
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: inherit;
+  padding: inherit;
+  pointer-events: none;
+  color: var(--color-cyber);
+  background: var(--color-bg);
+  text-shadow: 0 1px var(--color-cyber-hot);
+}
+.cyber-frame:is(:hover, :focus-visible) > .cyber-glitch {
+  display: inline-flex;
+  animation: cyber-glitch 2s infinite;
+}
+@keyframes cyber-glitch {
+  0% {
+    clip-path: var(--clip-one);
+  }
+  2%,
+  8% {
+    clip-path: var(--clip-two);
+    transform: translate(calc(var(--shimmy) * -1%), 0);
+  }
+  6% {
+    clip-path: var(--clip-two);
+    transform: translate(calc(var(--shimmy) * 1%), 0);
+  }
+  9% {
+    clip-path: var(--clip-two);
+    transform: translate(0, 0);
+  }
+  10% {
+    clip-path: var(--clip-three);
+    transform: translate(calc(var(--shimmy) * 1%), 0);
+  }
+  13% {
+    clip-path: var(--clip-three);
+    transform: translate(0, 0);
+  }
+  14%,
+  21% {
+    clip-path: var(--clip-four);
+    transform: translate(calc(var(--shimmy) * 1%), 0);
+  }
+  25% {
+    clip-path: var(--clip-five);
+    transform: translate(calc(var(--shimmy) * 1%), 0);
+  }
+  30% {
+    clip-path: var(--clip-five);
+    transform: translate(calc(var(--shimmy) * -1%), 0);
+  }
+  35%,
+  45% {
+    clip-path: var(--clip-six);
+    transform: translate(calc(var(--shimmy) * -1%));
+  }
+  40% {
+    clip-path: var(--clip-six);
+    transform: translate(calc(var(--shimmy) * 1%));
+  }
+  50% {
+    clip-path: var(--clip-six);
+    transform: translate(0, 0);
+  }
+  55% {
+    clip-path: var(--clip-seven);
+    transform: translate(calc(var(--shimmy) * 1%), 0);
+  }
+  60% {
+    clip-path: var(--clip-seven);
+    transform: translate(0, 0);
+  }
+  31%,
+  61%,
+  100% {
+    clip-path: var(--clip-four);
+  }
+}
+
+/* A title: the display face, uppercase, and an accent rule drawn in under it. */
+.cyber-title {
+  position: relative;
+  padding-bottom: 0.4rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cyber-title::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: var(--cyber-border);
+  background: var(--color-cyber);
+  transform-origin: 0 50%;
+  animation: cyber-rule 260ms ease-out both;
+}
+@keyframes cyber-rule {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}
+
+/* What comes in flickers on, the way a screen that just got power does. */
+.cyber-flicker-in {
+  animation: cyber-flicker 625ms var(--cyber-flicker) both;
+}
+@keyframes cyber-flicker {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A dialog's side bars, the two accent slabs that slide in on its left. */
+.cyber-sidebar {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  right: 100%;
+  width: 1rem;
+  translate: var(--cyber-border) 0;
+  border: var(--cyber-border) solid var(--color-cyber);
+  background: var(--color-cyber);
+  mask: linear-gradient(#fff, hsl(0 0% 100% / 0.6) 15% 95%, #fff);
+  pointer-events: none;
+  animation: cyber-slide-in 200ms ease-out both;
+}
+@keyframes cyber-slide-in {
+  from {
+    opacity: 0;
+    translate: -25% 0;
+  }
+  to {
+    opacity: 1;
+    translate: var(--cyber-border) 0;
+  }
+}
+
+/*
+ * Text that glitches on its own, now and then: two copies in the two
+ * colours, sliced and thrown sideways for a few frames of a long cycle,
+ * after Muffinman's image glitch — strips, a shift, a colour split — with
+ * the keyframes a tenth of a percent apart so the moves snap.
+ */
+.cyber-text {
+  position: relative;
+  display: inline-block;
+}
+.cyber-text::before,
+.cyber-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.cyber-text::before {
+  color: var(--color-cyber-hot);
+  animation: cyber-text-hot 7s steps(1) infinite;
+}
+.cyber-text::after {
+  color: var(--color-cyber);
+  animation: cyber-text-cold 7s steps(1) infinite;
+}
+@keyframes cyber-text-hot {
+  0%,
+  41.9%,
+  45.1%,
+  78.9%,
+  80.1%,
+  100% {
+    opacity: 0;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+  42% {
+    opacity: 0.9;
+    transform: translate(-4px, 0);
+    clip-path: inset(10% 0 55% 0);
+  }
+  43% {
+    transform: translate(6px, -1px);
+    clip-path: inset(50% 0 20% 0);
+  }
+  44% {
+    transform: translate(-3px, 1px);
+    clip-path: inset(0 0 75% 0);
+  }
+  79% {
+    opacity: 0.9;
+    transform: translate(5px, 0);
+    clip-path: inset(30% 0 40% 0);
+  }
+}
+@keyframes cyber-text-cold {
+  0%,
+  41.9%,
+  45.1%,
+  78.9%,
+  80.1%,
+  100% {
+    opacity: 0;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+  42% {
+    opacity: 0.9;
+    transform: translate(5px, 0);
+    clip-path: inset(60% 0 0 0);
+  }
+  43% {
+    transform: translate(-6px, 1px);
+    clip-path: inset(15% 0 60% 0);
+  }
+  44% {
+    transform: translate(4px, -1px);
+    clip-path: inset(40% 0 35% 0);
+  }
+  79% {
+    opacity: 0.9;
+    transform: translate(-5px, 0);
+    clip-path: inset(0 0 65% 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-frame:is(:hover, :focus-visible) > .cyber-glitch,
+  .cyber-text::before,
+  .cyber-text::after {
+    animation: none;
+  }
+  .cyber-text::before,
+  .cyber-text::after {
+    opacity: 0;
+  }
+  .cyber-flicker-in,
+  .cyber-sidebar,
+  .cyber-title::after {
+    animation-duration: 1ms;
+  }
+}
+
+/* Titles and labels in the display face, across the app. */
+h1,
+h2,
+h3,
+.hud-title,
+[data-slot="card-title"],
+[data-slot="dialog-title"] {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
 }
 
 /*

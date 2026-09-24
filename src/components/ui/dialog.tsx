@@ -31,7 +31,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-black/40 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className,
       )}
       {...props}
@@ -50,23 +50,29 @@ function DialogContent({
   return (
     <DialogPortal>
       <DialogOverlay />
+      {/* The frame is on an inner box: the side bars sit outside the cut,
+          and a clip on the positioned box would take them with it. */}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 overflow-hidden rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none *:min-w-0 sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-3rem)] -translate-x-1/2 -translate-y-1/2 text-sm text-popover-foreground outline-none sm:max-w-sm data-open:cyber-flicker-in data-closed:animate-out data-closed:fade-out-0",
           className,
         )}
         {...props}
       >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
-              <XIcon />
-              <span className="sr-only">Close</span>
-            </Button>
-          </DialogPrimitive.Close>
-        )}
+        <span aria-hidden="true" className="cyber-sidebar" />
+        <div className="cyber-frame grid gap-4 p-4 *:min-w-0 [--cyber-corner:14px] [--cyber-fill:color-mix(in_oklab,var(--color-popover)_88%,transparent)]">
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close data-slot="dialog-close" asChild>
+              <Button variant="ghost" className="absolute top-2 right-2" size="icon-sm">
+                <XIcon />
+                <span className="sr-only">Close</span>
+              </Button>
+            </DialogPrimitive.Close>
+          )}
+          <span aria-hidden="true" className="cyber-corner" />
+        </div>
       </DialogPrimitive.Content>
     </DialogPortal>
   );
@@ -90,7 +96,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex min-w-0 flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:flex-wrap sm:justify-end",
+        "-mx-4 -mb-4 flex min-w-0 flex-col-reverse gap-2 border-t bg-muted/50 p-4 sm:flex-row sm:flex-wrap sm:justify-end",
         className,
       )}
       {...props}
@@ -109,7 +115,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-heading text-base leading-none font-medium", className)}
+      className={cn("cyber-title font-heading text-base leading-none", className)}
       {...props}
     />
   );

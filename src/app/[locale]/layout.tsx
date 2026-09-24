@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Rajdhani } from "next/font/google";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -15,12 +15,19 @@ import { siteUrl } from "@/lib/seo";
 import "../globals.css";
 
 /**
- * The whole site is set in a monospace face: the game is a git graph and the
- * UI is an IDE, so the typography is part of the fiction rather than decoration.
+ * Two faces. The game is set in a monospace one: it is a git graph and its
+ * history reads like one. The chrome — titles, buttons, labels — is set in a
+ * condensed display face, uppercase, the way a cyberpunk interface is.
  */
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-devgame-mono",
+  display: "swap",
+});
+const display = Rajdhani({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-devgame-display",
   display: "swap",
 });
 
@@ -89,7 +96,7 @@ export default async function LocaleLayout({
     // the tree is invalid there — which silently drops the whole declaration.
     <html
       lang={locale}
-      className={`dark overflow-x-clip ${mono.variable}`}
+      className={`dark overflow-x-clip ${mono.variable} ${display.variable}`}
       suppressHydrationWarning
     >
       {/* Radix portals its overlays into <body>, and an overlay that sticks out

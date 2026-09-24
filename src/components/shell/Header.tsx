@@ -30,20 +30,23 @@ export async function Header(): Promise<React.JSX.Element> {
   ] as const;
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-line border-b bg-panel/40 px-3 sm:gap-5 sm:px-4">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-cyber/25 border-b bg-panel/60 px-3 backdrop-blur-sm sm:gap-6 sm:px-4">
+      {/* The wordmark glitches on its own, now and then: the one thing on the
+          page that is allowed to move without being asked. */}
       <Link
         href="/"
-        className="shrink-0 font-semibold text-sm transition-colors hover:text-branch-main"
+        className="cyber-text shrink-0 font-display font-bold text-base text-cyber uppercase tracking-[0.18em] transition-colors hover:text-foreground"
+        data-text={common("appName")}
       >
         {common("appName")}
       </Link>
 
-      <nav className="flex min-w-0 items-center gap-3 text-xs sm:gap-4 sm:text-sm">
+      <nav className="flex min-w-0 items-center gap-3 font-display font-semibold text-xs uppercase tracking-[0.12em] sm:gap-5 sm:text-sm">
         {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="whitespace-nowrap text-muted-foreground transition-colors hover:text-foreground"
+            className="whitespace-nowrap border-transparent border-b text-muted-foreground transition-colors hover:border-cyber hover:text-cyber"
           >
             {link.label}
           </Link>

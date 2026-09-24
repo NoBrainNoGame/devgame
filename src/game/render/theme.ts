@@ -13,38 +13,39 @@ export { nodePrefix } from "@/game/content/subjects";
  */
 
 export const THEME = {
-  background: 0x14161b,
-  panel: 0x1b1e25,
-  line: 0x2f343f,
-  text: 0xd7dae0,
-  textMuted: 0x8b909c,
+  background: 0x050607,
+  panel: 0x0b0e10,
+  line: 0x1c2a2a,
+  text: 0xdffdf9,
+  textMuted: 0x6b9e98,
 
   lane: {
-    /** `main`: nothing but sprint merges and releases. */
-    trunk: 0x62c073,
+    /** `main`: nothing but sprint merges and releases. The accent itself. */
+    trunk: 0x8afff5,
     /** `dev`: where every feature is integrated. */
-    dev: 0x4fb3a8,
-    feature: 0x5aa9e6,
-    hotfix: 0xe2645a,
-    refactor: 0xe0a458,
+    dev: 0x3fc9b8,
+    feature: 0x5ab8ff,
+    /** The hot colour: an emergency, the accent's shadow. */
+    hotfix: 0xff5533,
+    refactor: 0xffb347,
     /** An obstacle's column: what a feature turned up, forked off it. */
-    obstacle: 0xd98cc9,
+    obstacle: 0xff5ec4,
   },
 
   node: {
     /** Fill of a commit you wrote by hand. */
-    craft: 0x62c073,
+    craft: 0x8afff5,
     /** Fill of a commit the machine wrote. */
-    ai: 0x9b7fd4,
+    ai: 0xb48cff,
     /** Ring around an AI commit nobody has read yet. */
-    unreviewed: 0xe0a458,
+    unreviewed: 0xffb347,
     /** The uncommitted node you are standing on. */
-    pending: 0x3a4050,
+    pending: 0x1a2a2a,
   },
 
   player: 0xffffff,
-  debt: 0xe0a458,
-  energy: 0xf5d76e,
+  debt: 0xffb347,
+  energy: 0xf5e663,
 } as const;
 
 /**

@@ -1,36 +1,40 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "cn";
 import { Slot } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 
+/**
+ * A cyberpunk button: the display face in uppercase, a cut corner, a stroke
+ * that follows the cut, and — on hover — a second copy of its content torn
+ * into strips over the first. The fill and the stroke are the variant.
+ */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button cyber-frame inline-flex shrink-0 items-center justify-center border-0 font-display font-semibold text-sm uppercase tracking-[0.08em] whitespace-nowrap transition-colors outline-none select-none focus-visible:[--cyber-stroke:var(--color-foreground)] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:[--cyber-stroke:var(--color-destructive)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default:
+          "text-primary-foreground [--cyber-fill:var(--color-cyber)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_85%,white)]",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "text-cyber [--cyber-fill:color-mix(in_oklab,var(--color-panel)_55%,transparent)] hover:text-primary-foreground hover:[--cyber-fill:var(--color-cyber)] aria-expanded:text-primary-foreground aria-expanded:[--cyber-fill:var(--color-cyber)]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "text-foreground [--cyber-stroke:var(--color-line)] [--cyber-fill:var(--color-secondary)] hover:[--cyber-stroke:var(--color-cyber)] aria-expanded:[--cyber-stroke:var(--color-cyber)]",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-muted-foreground [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:text-cyber hover:[--cyber-fill:var(--color-accent)] aria-expanded:text-cyber aria-expanded:[--cyber-fill:var(--color-accent)]",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "text-cyber-hot [--cyber-stroke:var(--color-cyber-hot)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_12%,transparent)] hover:text-primary-foreground hover:[--cyber-fill:var(--color-cyber-hot)] focus-visible:[--cyber-stroke:var(--color-cyber-hot)]",
+        link: "text-cyber underline-offset-4 [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:underline",
       },
       size: {
         default:
-          "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        icon: "size-8",
-        "icon-xs":
-          "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-        "icon-sm":
-          "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-        "icon-lg": "size-9",
+          "h-8 gap-1.5 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        xs: "h-6 gap-1 px-2 text-xs [--cyber-corner:6px] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 gap-1 px-2.5 text-[0.8rem] [--cyber-corner:8px] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-10 gap-2 px-5 text-base [--cyber-corner:12px] has-data-[icon=inline-end]:pr-3 has-data-[icon=inline-start]:pl-3",
+        icon: "size-8 [--cyber-corner:8px]",
+        "icon-xs": "size-6 [--cyber-corner:6px] [&_svg:not([class*='size-'])]:size-3",
+        "icon-sm": "size-7 [--cyber-corner:7px]",
+        "icon-lg": "size-9 [--cyber-corner:9px]",
       },
     },
     defaultVariants: {
@@ -40,26 +44,64 @@ const buttonVariants = cva(
   },
 );
 
+/** The strip that closes the stroke across the cut corner, and the hover copy. */
+function Trim({ copy }: { copy: React.ReactNode }): React.JSX.Element {
+  return (
+    <>
+      <span aria-hidden="true" className="cyber-corner" />
+      {copy === null || copy === undefined ? null : (
+        <span aria-hidden="true" className="cyber-glitch">
+          {copy}
+        </span>
+      )}
+    </>
+  );
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
-  const Comp = asChild ? Slot.Root : "button";
+  const classes = cn(buttonVariants({ variant, size, className }));
+
+  // `asChild` renders the child (a link, usually) as the button. The trim
+  // goes inside it, and the hover copy is the child's own content.
+  if (asChild) {
+    const copy = React.isValidElement<{ children?: React.ReactNode }>(children)
+      ? children.props.children
+      : null;
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        className={classes}
+        {...props}
+      >
+        <Slot.Slottable>{children}</Slot.Slottable>
+        <Trim copy={copy} />
+      </Slot.Root>
+    );
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
       {...props}
-    />
+    >
+      {children}
+      <Trim copy={children} />
+    </button>
   );
 }
 
