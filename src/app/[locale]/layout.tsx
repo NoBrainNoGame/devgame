@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
+import { Footer } from "@/components/shell/Footer";
 import { Header } from "@/components/shell/Header";
 import { VisitBeacon } from "@/components/shell/VisitBeacon";
 import { Toaster } from "@/components/ui/sonner";
@@ -105,14 +106,17 @@ export default async function LocaleLayout({
       <body className="overflow-x-clip bg-background font-mono text-foreground antialiased">
         <NextIntlClientProvider>
           <TooltipProvider delayDuration={150}>
-            {/* Exactly the viewport and no more. Each route group decides what
-                to do with what the header leaves: the site group scrolls and
-                ends in a footer, the play group fills it and does not scroll.
-                `min-h-dvh` here instead would let a flex child size to its
-                content and push the page taller than the window. */}
+            {/* Exactly the viewport and no more: the header, the page, and the
+                footer pinned under it on every route — the tip jar and the
+                legal pages are not something to scroll for. Each route group
+                decides what to do with what is left: the site group scrolls,
+                the play group fills it and does not scroll. `min-h-dvh` here
+                instead would let a flex child size to its content and push
+                the page taller than the window. */}
             <div className="flex h-dvh flex-col">
               <Header />
               <main className="flex min-h-0 flex-1 flex-col">{children}</main>
+              <Footer />
             </div>
             {/* Inside the intl provider: it reads the locale and the pathname. */}
             {env.ONLINE ? <VisitBeacon /> : null}

@@ -58,7 +58,14 @@
     "graphLabel": "Today's seed, played by the game's own autopilot with two senior developers and no way to lose. Click to play it again.",
     "headline1": "The dungeon is a Git graph.",
     "headline2": "The backlog is the enemy",
-    "you": "You"
+    "you": "You",
+    "contributeTitle": "Contribute",
+    "contribute": "The code is public and the game is built in the open: a bug, an idea, a rule that feels wrong, a translation, a pull request — everything goes through the repository, and a message is welcome too.",
+    "contributeCta": "Source code",
+    "contributeContact": "Write",
+    "donateTitle": "Support the project",
+    "donate": "Free, no ads, no tracking, and it will stay that way. The server, the domain and the evenings are paid for by one person; a coffee helps, and it is the only thing ever asked.",
+    "donateCta": "Buy a coffee"
   },
   "play": {
     "title": "New run",

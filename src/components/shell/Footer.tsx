@@ -19,8 +19,9 @@ const OUTSIDE = [
 ] as const;
 
 /**
- * One line, or two. The concept and a way back to it; the code, the tip
- * jar and the address; and the pages the law wants.
+ * One line, or two, pinned to the bottom of the window on every page. The
+ * concept and a way back to it; the code, the tip jar and the address; and
+ * the pages the law wants.
  */
 export async function Footer(): Promise<React.JSX.Element> {
   const [common, landing, nav, outside] = await Promise.all([
@@ -31,7 +32,7 @@ export async function Footer(): Promise<React.JSX.Element> {
   ]);
 
   return (
-    <footer className="shrink-0 border-line border-t px-3 py-3 text-muted-foreground text-xs sm:px-4">
+    <footer className="shrink-0 border-cyber/25 border-t bg-panel/60 px-3 py-2 text-muted-foreground text-xs backdrop-blur-sm sm:px-4">
       {/* One row while it fits, two when it does not: the tagline and the legal
           links wrap as separate blocks rather than breaking mid-sentence. */}
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">

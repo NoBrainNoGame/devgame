@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { utcDate } from "@/lib/daily/seed";
 import { getDailySeed } from "@/lib/daily/store";
 import { env } from "@/lib/env";
+import { LINKS } from "@/lib/links";
 import { alternatesFor, siteUrl } from "@/lib/seo";
 
 /**
@@ -160,6 +161,38 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             {t("honest")}
           </p>
         </section>
+
+        {/* Contributing, and the tip jar ---------------------------------- */}
+        <div className="mt-16 grid gap-6 sm:grid-cols-2">
+          <section className="rounded-lg border border-line bg-panel/40 p-6 sm:p-8">
+            <h2 className="font-medium text-base">{t("contributeTitle")}</h2>
+            <p className="mt-2 max-w-prose text-muted-foreground text-sm leading-relaxed">
+              {t("contribute")}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button asChild variant="outline" size="sm">
+                <a href={LINKS.repository} target="_blank" rel="noopener">
+                  {t("contributeCta")}
+                </a>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <a href={LINKS.contact}>{t("contributeContact")}</a>
+              </Button>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-cyber/40 bg-panel/40 p-6 sm:p-8">
+            <h2 className="font-medium text-base">{t("donateTitle")}</h2>
+            <p className="mt-2 max-w-prose text-muted-foreground text-sm leading-relaxed">
+              {t("donate")}
+            </p>
+            <Button asChild size="sm" className="mt-5">
+              <a href={LINKS.support} target="_blank" rel="noopener">
+                {t("donateCta")}
+              </a>
+            </Button>
+          </section>
+        </div>
       </div>
     </>
   );
