@@ -23,12 +23,21 @@ import { planBatch, type Step } from "@/game/render/storyboard";
  * While the queue is draining, `pendingAnimation` is true, the session
  * refuses new actions and the dialogs stay shut. A click anywhere skips to
  * the end: everything is revealed at once and the UI unblocks.
+ *
+ * A watchdog on the wall clock backs that up: a batch that has not said
+ * "done" long after the longest story could have played — a ticker paused
+ * by a hidden tab, a chip that never terminated — is skipped on its own.
+ * A flag that stays up is a game where nothing can be bought or written,
+ * and that must never depend on the player guessing to click the canvas.
  */
 
 interface Batch {
   serial: number;
   skip: SkipFlag;
 }
+
+/** Longer than any storyboard, shorter than a player's patience. */
+const WATCHDOG_MS = 8_000;
 
 export class FxQueue extends booyah.Queue {
   private serial = 0;
@@ -64,6 +73,10 @@ export class FxQueue extends booyah.Queue {
     this.serial += 1;
     const batch: Batch = { serial: this.serial, skip: { value: false } };
     this.current = batch;
+    const watchdog = setTimeout(() => {
+      if (batch.serial !== this.serial || !gameStore.getState().pendingAnimation) return;
+      this.skip();
+    }, WATCHDOG_MS);
 
     if (reducedMotion) {
       reveal.showAll(payload.state);
@@ -83,6 +96,7 @@ export class FxQueue extends booyah.Queue {
       new booyah.Lambda(() => {
         // A batch that was skipped and then followed by another must not be
         // the one that says "done".
+        clearTimeout(watchdog);
         if (batch.serial !== this.serial) return;
         // Whatever the storyboard did not think to reveal, the end of the
         // batch does: the screen always ends a turn complete.
