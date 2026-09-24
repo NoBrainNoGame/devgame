@@ -412,14 +412,27 @@ async function form(request: Request): Promise<URLSearchParams> {
   return new URLSearchParams(text);
 }
 
+/**
+ * Whether the form was posted from one of the panel's own pages.
+ *
+ * `Sec-Fetch-Site` is the answer when the browser sends it: the panel's
+ * pages ask for `Referrer-Policy: no-referrer`, and a form posted under that
+ * policy carries `Origin: null` and no `Referer` at all — from a tab or
+ * from the site's frame alike — so the origin can only be the fallback.
+ */
 function sameOrigin(request: Request): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  if (site !== null) return site === "same-origin";
   const from = request.headers.get("origin") ?? request.headers.get("referer") ?? "";
   return from.startsWith(origin) || from.startsWith(`http://localhost:${env.ADMIN_PORT}`);
 }
 
 async function act(request: Request, path: string, token: string): Promise<Response> {
   const data = await form(request);
-  if (data.get("csrf") !== csrfOf(token) || !sameOrigin(request)) {
+  if (!sameOrigin(request)) {
+    return new Response("Refused: the form did not come from this panel.", { status: 403 });
+  }
+  if (data.get("csrf") !== csrfOf(token)) {
     return new Response("Refused: the form did not come from this session.", { status: 403 });
   }
   const id = (data.get("id") ?? "").slice(0, 64);
