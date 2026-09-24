@@ -669,12 +669,13 @@ h3,
 }
 
 /*
- * The landing page's graph. The canvas already paints the page's background;
- * the mask is what removes the rectangle: the picture fades out well before
- * its edges, so the tree floats in the hero instead of sitting in a frame.
+ * The landing page's graph. The canvas paints no background there — the
+ * page's grid shows through it — so the only edges to hide are where the
+ * history enters and leaves: the picture fades in at the top and out at the
+ * bottom, and the tree floats in the hero instead of sitting in a frame.
  */
 .landing-graph {
-  mask-image: radial-gradient(ellipse 92% 62% at 50% 50%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
 }
 
 /*

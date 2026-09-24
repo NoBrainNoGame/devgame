@@ -51,7 +51,9 @@ export class Austerity extends booyah.ChipBase {
   private apply(): void {
     const { app } = sceneContext(this.chipContext);
     setAusterity(this.current);
-    app.renderer.background.color = palette.background;
+    // A transparent canvas (the landing page's) paints no background at
+    // all: setting a colour would reset its alpha and tint the page.
+    if (app.renderer.background.alpha > 0) app.renderer.background.color = palette.background;
     this.graph.restyle();
     this.refs.restyle();
     this.marker.restyle();

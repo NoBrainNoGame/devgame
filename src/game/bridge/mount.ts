@@ -35,6 +35,8 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   showPops?: boolean;
   /** What the refs call you beside `HEAD`. Empty: `HEAD` alone. */
   playerName?: string;
+  /** True paints no background: the page shows through, and the canvas has no edges. */
+  transparent?: boolean;
   /**
    * Whether this mount is the page's game. The landing page mounts a run to
    * look at and must not take the play page's global handle; it still
@@ -99,7 +101,10 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   const app = new Application();
   await app.init({
     resizeTo: element,
-    background: THEME.background,
+    // A transparent canvas clears to premultiplied black: a colour with an
+    // alpha of zero would still be added to the page underneath.
+    background: options.transparent === true ? 0x000000 : THEME.background,
+    backgroundAlpha: options.transparent === true ? 0 : 1,
     antialias: true,
     resolution: typeof window === "undefined" ? 1 : window.devicePixelRatio,
     autoDensity: true,

@@ -54,6 +54,7 @@ export async function mountLanding(
       showSubjects: false,
       showPops: false,
       playerName: options.playerName,
+      transparent: true,
     });
     if (!current()) {
       mounted.dispose();
