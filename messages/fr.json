@@ -21,7 +21,8 @@
     "leaderboard": "Classement",
     "profile": "Profil",
     "home": "Accueil",
-    "report": "Signaler un bug"
+    "report": "Signaler un bug",
+    "admin": "Admin"
   },
   "landing": {
     "title": "Devgame",

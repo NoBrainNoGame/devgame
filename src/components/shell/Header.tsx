@@ -27,6 +27,9 @@ export async function Header(): Promise<React.JSX.Element> {
     { href: "/play", label: nav("play") },
     { href: "/leaderboard", label: nav("leaderboard") },
     ...(env.ONLINE ? [{ href: "/profile", label: nav("profile") }] : []),
+    // The local admin panel, framed: a development convenience, and the
+    // page behind it is a 404 anywhere else.
+    ...(env.NODE_ENV === "development" ? [{ href: "/admin", label: nav("admin") }] : []),
   ] as const;
 
   return (
