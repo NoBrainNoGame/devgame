@@ -14,23 +14,36 @@ import {
 /**
  * Sets a fresh machine up for the online version of the site.
  *
- *   bun run init                 write .env with dev values, start Postgres, migrate
- *   bun run init --offline       write .env for the offline game only, no Docker
- *   bun run init --no-docker     write .env, skip Docker and the migrations
+ *   bun run init                 copy .env.example to .env, start Postgres, migrate
+ *   bun run init --offline       copy .env.example without the database, no Docker
+ *   bun run init --no-docker     copy .env.example, skip Docker and the migrations
  *   bun run init --force         overwrite an existing .env
  *
  * With Docker, it ends by starting the local admin panel in the background
  * (`bun run admin:stop` ends it), on the port and behind the password the
  * `.env` carries.
  *
- * The values are for development on this machine and nothing else: a local
- * Postgres from `docker-compose.yml`, secrets drawn at random, no OAuth. The
- * variables mirror `src/lib/env.ts`, which is the one place that decides what
- * the app reads; `tests/init.test.ts` parses what this writes through it.
+ * `.env.example` is the configuration; this script only copies it and fills
+ * the secrets it leaves empty, so the two never disagree about what a
+ * variable means. The values are for development on this machine and nothing
+ * else: a local Postgres from `docker-compose.yml`, secrets drawn at random,
+ * no OAuth. The variables mirror `src/lib/env.ts`, which is the one place
+ * that decides what the app reads; `tests/init.test.ts` parses what this
+ * writes through it.
  */
 
 const ENV_PATH = resolve(process.cwd(), ".env");
+const EXAMPLE_PATH = resolve(process.cwd(), ".env.example");
+/** The port `.env.example` names; `POSTGRES_PORT` moves it, as it moves docker-compose.yml. */
 const DEFAULT_PORT = "5443";
+
+/** Left empty in `.env.example`, drawn at random per machine. Length: what env.ts accepts. */
+const SECRETS: Readonly<Record<string, number>> = {
+  BETTER_AUTH_SECRET: 32,
+  CRON_SECRET: 32,
+  DAILY_SEED_SECRET: 32,
+  ADMIN_PASSWORD: 12,
+};
 
 export interface InitOptions {
   offline: boolean;
@@ -38,6 +51,8 @@ export interface InitOptions {
   force: boolean;
   /** Where `.env` goes; the tests point it at a scratch file. */
   target: string;
+  /** The `.env.example` to copy; the tests point it at a fixture. */
+  example: string;
   postgresPort: string;
 }
 
@@ -50,55 +65,60 @@ export function parseInitArgs(
     docker: !argv.includes("--no-docker") && !argv.includes("--offline"),
     force: argv.includes("--force"),
     target: env.DEVGAME_INIT_TARGET ?? ENV_PATH,
+    example: env.DEVGAME_INIT_EXAMPLE ?? EXAMPLE_PATH,
     postgresPort: env.POSTGRES_PORT ?? DEFAULT_PORT,
   };
 }
 
-/** The `.env` a developer starts from. Random secrets, local database, no OAuth. */
-export function renderEnv(options: Pick<InitOptions, "offline" | "postgresPort">): string {
-  const secret = (): string => randomBytes(32).toString("hex");
-  const database = options.offline
-    ? "# DATABASE_URL is unset: the game runs offline, against localStorage.\n# DATABASE_URL="
-    : `DATABASE_URL="postgresql://devgame:devgame@localhost:${options.postgresPort}/devgame"`;
+/**
+ * The `.env` a developer starts from: `.env.example` line for line, except
+ * that an empty secret is filled at random, the Postgres port follows
+ * `POSTGRES_PORT`, and `--offline` comments the database out.
+ */
+export function renderEnv(
+  example: string,
+  options: Pick<InitOptions, "offline" | "postgresPort">,
+): string {
+  const lines = example.split("\n").map((line) => {
+    const assignment = /^([A-Z_]+)=(.*)$/.exec(line);
+    if (assignment === null) return line;
+    const [, key, value] = assignment;
+    if (key === undefined || value === undefined) return line;
+    const bytes = SECRETS[key];
+    if (bytes !== undefined && (value === "" || value === '""')) {
+      return `${key}="${randomBytes(bytes).toString("hex")}"`;
+    }
+    if (key === "DATABASE_URL") {
+      if (options.offline) return `# ${key}=${value}`;
+      return `${key}=${value.replace(`localhost:${DEFAULT_PORT}`, `localhost:${options.postgresPort}`)}`;
+    }
+    return line;
+  });
+  const stamp = `# Copied from .env.example by \`bun run init\` on ${new Date().toISOString().slice(0, 10)}.`;
+  return `${stamp}\n${lines.join("\n")}`;
+}
 
-  return `# Written by \`bun run init\` on ${new Date().toISOString().slice(0, 10)} for development on this machine.
-# Every variable the server reads is validated in src/lib/env.ts; that file is
-# the reference for what each one means.
-
-NODE_ENV=development
-
-# The database is the switch: set, the server side exists and needs its secrets;
-# unset, the app runs offline with a local save only.
-${database}
-
-APP_URL="http://localhost:3000"
-BETTER_AUTH_URL="http://localhost:3000"
-
-# Random per machine. Rotate BETTER_AUTH_SECRET and every session ends;
-# rotate DAILY_SEED_SECRET and every future daily changes (past ones are kept).
-BETTER_AUTH_SECRET="${secret()}"
-CRON_SECRET="${secret()}"
-DAILY_SEED_SECRET="${secret()}"
-
-# Google OAuth is optional. Empty, the magic link printed to the server log is
-# the only way to sign in.
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-
-# The local administration panel (\`bun run admin\`, started with the database):
-# its password, and the port it listens on, on this machine only.
-ADMIN_PASSWORD="${secret().slice(0, 24)}"
-ADMIN_PORT=3100
-`;
+/** A fresh clone has no node_modules; the Prisma CLI lives there. */
+async function requireDependencies(): Promise<void> {
+  if (existsSync(resolve(process.cwd(), "node_modules", "prisma"))) return;
+  await run(["bun", "install", "--frozen-lockfile"]);
 }
 
 export async function init(options: InitOptions): Promise<void> {
   if (existsSync(options.target) && !options.force) {
     console.log(`${options.target} exists; left as is (pass --force to overwrite).`);
   } else {
+    if (!existsSync(options.example)) {
+      throw new Error(
+        `${options.example} is missing; it is committed, so \`git checkout .env.example\` brings it back.`,
+      );
+    }
     await mkdir(dirname(options.target), { recursive: true });
-    await writeFile(options.target, renderEnv(options), { mode: 0o600 });
-    console.log(`Wrote ${options.target}${options.offline ? " (offline)" : ""}.`);
+    const rendered = renderEnv(await readFile(options.example, "utf8"), options);
+    await writeFile(options.target, rendered, { mode: 0o600 });
+    console.log(
+      `Copied ${options.example} to ${options.target}${options.offline ? " (offline)" : ""}.`,
+    );
   }
 
   if (!options.docker) {
@@ -114,11 +134,15 @@ export async function init(options: InitOptions): Promise<void> {
   await run(["docker", "compose", "up", "-d"]);
   console.log(`Waiting for ${CONTAINER} to be healthy…`);
   await waitForPostgres();
+  await requireDependencies();
   // `migrate deploy`, not `migrate dev`: it applies the migrations in the
   // repository as they are, hand-written partial index included, and asks
-  // nothing.
-  await run(["bun", "x", "prisma", "migrate", "deploy"]);
-  await run(["bun", "x", "prisma", "generate"]);
+  // nothing. Through `bun run`, not `bun x`: `bun x prisma` on a machine
+  // without node_modules fetches the newest Prisma from the registry, whose
+  // CLI no longer has a `migrate` command, while `bun run` uses the version
+  // the lockfile pins.
+  await run(["bun", "run", "db:deploy"]);
+  await run(["bun", "run", "db:generate"]);
   // The panel reads the .env just written; a freshly generated file has a
   // password in it, an older one may not.
   const written = await readFile(options.target, "utf8");
