@@ -30,7 +30,14 @@ export function ticketsFor(sprint: number, tier: number): number {
 /** Brings this sprint's tickets into the backlog. */
 export function arriveTickets(context: RuleContext, skillPool: readonly SkillId[]): void {
   const pool = [...skillPool];
-  const count = ticketsFor(context.state.sprint, context.state.tier);
+  const { state } = context;
+  // A showcase's board is topped up to a size rather than growing with the
+  // tier: its team never runs dry, and a run that never ends never piles up.
+  const waiting = Object.values(state.tickets).filter((t) => t.status === "backlog").length;
+  const count =
+    state.showcase === null
+      ? ticketsFor(state.sprint, state.tier)
+      : Math.max(0, state.showcase.backlog - waiting);
 
   for (let i = 0; i < count; i += 1) arriveTicket(context, pool, i === 0);
   arriveDebtTicket(context);

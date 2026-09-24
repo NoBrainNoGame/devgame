@@ -117,3 +117,34 @@ describe("lanes", () => {
     ]);
   });
 });
+
+describe("a feature held by an obstacle", () => {
+  test("goes on dotted to the top row while the obstacle is written beside it", () => {
+    const nodes = [
+      { lane: 1, depth: 0, ticketId: undefined },
+      { lane: 2, depth: 1, ticketId: "t1" },
+      { lane: 2, depth: 2, ticketId: "t1" },
+      { lane: 3, depth: 3, ticketId: "t2" },
+      { lane: 3, depth: 4, ticketId: "t2" },
+    ];
+    const kinds: Record<string, "feature" | "obstacle"> = { t1: "feature", t2: "obstacle" };
+    const plain = laneSegments(nodes, (id) => kinds[id], 4);
+    expect(plain.filter((s) => s.lane === 2)).toEqual([
+      { lane: 2, from: 1, to: 2, style: "solid", colour: "feature" },
+    ]);
+    const held = laneSegments(
+      nodes,
+      (id) => kinds[id],
+      4,
+      (id) => id === "t1",
+    );
+    expect(held.filter((s) => s.lane === 2)).toEqual([
+      { lane: 2, from: 1, to: 2, style: "solid", colour: "feature" },
+      { lane: 2, from: 2, to: 4, style: "dotted", colour: "feature" },
+    ]);
+    // The obstacle's own line stops at its tip, as any ticket's does.
+    expect(held.filter((s) => s.lane === 3)).toEqual([
+      { lane: 3, from: 3, to: 4, style: "solid", colour: "obstacle" },
+    ]);
+  });
+});

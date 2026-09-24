@@ -12,7 +12,15 @@ import { adjustShare } from "@/game/core/rules/market";
 import { nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality } from "@/game/core/rules/quality";
-import { ensureLane, mostIndebtedOn, settleCurrent } from "@/game/core/rules/tickets";
+import {
+  childrenOf,
+  ensureLane,
+  getTicket,
+  maybeSpawnObstacle,
+  mostIndebtedOn,
+  settleCurrent,
+  treeNodeIds,
+} from "@/game/core/rules/tickets";
 import { tierScale } from "@/game/core/rules/tier";
 import type {
   CommitMode,
@@ -119,8 +127,21 @@ function rewardKind(context: RuleContext, ticket: Ticket): void {
     case "feature":
     case "hotfix":
     case "refactor":
+    case "obstacle":
       return;
   }
+}
+
+/**
+ * What a ticket's next commit is built on: its own tip, or — before its
+ * first — what it forks from: the feature it stands in the way of for an
+ * obstacle, `dev` for anything else.
+ */
+function forkPointOf(state: RuleContext["state"], ticket: Ticket): MapNode | null {
+  const own = tipOfTicket(state, ticket);
+  if (own !== null) return own;
+  if (ticket.parentId !== undefined) return tipOfTicket(state, getTicket(state, ticket.parentId));
+  return tipOfLane(state, DEV_LANE);
 }
 
 /** Story points a commit of this kind fills, by the hand that wrote it. */
@@ -148,10 +169,8 @@ export function writeCommit(
   const { state } = context;
   const { debt } = BALANCE;
 
-  const previous = tipOfTicket(state, ticket) ?? tipOfLane(state, DEV_LANE);
-  if (previous === undefined || previous === null) {
-    throw new Error("writeCommit: nothing on dev to fork from");
-  }
+  const previous = forkPointOf(state, ticket);
+  if (previous === null) throw new Error(`writeCommit: nothing for ${ticket.id} to fork from`);
   const lane = ensureLane(state, ticket);
 
   const node = writeNode(context, {
@@ -214,8 +233,9 @@ export function writeCommit(
   }
 
   if (kind === "fix") {
-    // The oldest bug the review flagged is the one this fix redid.
-    const fixed = ticket.nodeIds.find((id) => state.nodes[id]?.commit.bugged === true);
+    // The oldest bug the review flagged is the one this fix redid — on the
+    // ticket or on an obstacle it turned up, whose bugs are its own.
+    const fixed = treeNodeIds(state, ticket).find((id) => state.nodes[id]?.commit.bugged === true);
     const target = fixed === undefined ? undefined : state.nodes[fixed];
     if (fixed !== undefined && target !== undefined) {
       delete target.commit.bugged;
@@ -238,6 +258,8 @@ export function writeCommit(
   ticket.debtAdded += Math.max(0, state.debt - debtBefore);
 
   emit(context, { type: "node_done", nodeId: node.id, mode, kind });
+  // Only the work itself can turn something up: a detour tidies, it does not dig.
+  if (kind === "commit" || kind === "risky") maybeSpawnObstacle(context, ticket, node.id);
   return node;
 }
 
@@ -248,10 +270,15 @@ export function writeCommit(
  */
 export function discardCommits(context: RuleContext, ticket: Ticket): NodeId[] {
   const { state } = context;
-  const dropped = [...ticket.nodeIds];
+  // The obstacles it turned up were built on it: they go with it.
+  const dropped = treeNodeIds(state, ticket);
   for (const id of dropped) delete state.nodes[id];
   state.player.totalCommits = Math.max(0, state.player.totalCommits - dropped.length);
   ticket.nodeIds = [];
+  for (const child of childrenOf(state, ticket)) {
+    child.nodeIds = [];
+    delete child.mergeNodeId;
+  }
   return dropped;
 }
 
@@ -330,10 +357,8 @@ export function writeTeamCommit(
   points: number,
 ): MapNode {
   const { state } = context;
-  const previous = tipOfTicket(state, ticket) ?? tipOfLane(state, DEV_LANE);
-  if (previous === undefined || previous === null) {
-    throw new Error("writeTeamCommit: nothing on dev to fork from");
-  }
+  const previous = forkPointOf(state, ticket);
+  if (previous === null) throw new Error(`writeTeamCommit: nothing for ${ticket.id} to fork from`);
   const lane = ensureLane(state, ticket);
 
   const node = writeNode(context, {
@@ -347,6 +372,61 @@ export function writeTeamCommit(
   fillPoints(context, ticket, points);
 
   emit(context, { type: "node_done", nodeId: node.id, mode: "craft", kind: "commit" });
+  maybeSpawnObstacle(context, ticket, node.id);
+  return node;
+}
+
+/**
+ * An obstacle lands back on the feature it stood in the way of: a merge in
+ * the feature's own column, its two parents the feature's tip and the
+ * obstacle's, the way git records it. It delivers nothing — no points, no
+ * revenue, no rest — and only unblocks: whoever was on the obstacle is back
+ * on the feature.
+ */
+export function completeObstacle(
+  context: RuleContext,
+  ticket: Ticket,
+  options: { byTeam?: DevId } = {},
+): MapNode {
+  const { state } = context;
+  const byTeam = options.byTeam;
+  if (ticket.parentId === undefined)
+    throw new Error(`completeObstacle: ${ticket.id} is no obstacle`);
+  const parent = getTicket(state, ticket.parentId);
+
+  const tip = tipOfTicket(state, ticket);
+  const onto = tipOfTicket(state, parent);
+  if (tip === null || onto === null || parent.lane === undefined) {
+    throw new Error(`completeObstacle: ${ticket.id} has nothing to land on`);
+  }
+  if (byTeam === undefined) {
+    spendEnergy(context, nodeEnergyCost(state, "obstacle_merge", undefined).value, "merge");
+  }
+
+  const node = writeNode(context, {
+    kind: "obstacle_merge",
+    lane: parent.lane,
+    parents: [onto.id, tip.id],
+    ticketId: parent.id,
+    commit: { mode: "craft", reviewed: true, ...(byTeam === undefined ? {} : { author: byTeam }) },
+  });
+  // The merge is the feature's next commit: its chain goes on through it.
+  parent.nodeIds.push(node.id);
+
+  ticket.status = "merged";
+  ticket.mergeNodeId = node.id;
+  ticket.lane = undefined;
+  delete ticket.assignee;
+  if (state.player.ticketId === ticket.id) state.player.ticketId = parent.id;
+
+  emit(context, {
+    type: "obstacle_cleared",
+    ticketId: ticket.id,
+    parentId: parent.id,
+    nodeId: node.id,
+    ...(byTeam === undefined ? {} : { devId: byTeam }),
+  });
+  emit(context, { type: "node_done", nodeId: node.id, mode: "craft", kind: "obstacle_merge" });
   return node;
 }
 
@@ -409,7 +489,8 @@ export function completeMerge(
   } else {
     state.stats.deliveredByTeam += 1;
   }
-  state.shipped.push(...ticket.nodeIds, node.id);
+  // What ships is the feature and everything it turned up on the way.
+  state.shipped.push(...treeNodeIds(state, ticket), node.id);
   state.pointsDelivered += ticket.points;
   state.ticketsDelivered += 1;
   state.xpEarned += BALANCE.xp.perPoint * ticket.points * state.sprint;
@@ -437,6 +518,18 @@ export function completeMerge(
   emit(context, { type: "node_done", nodeId: node.id, mode: "craft", kind: "feature_merge" });
 
   settleCurrent(context);
+  return node;
+}
+
+/** The repository's first commit, on `main`. Written once, when the run is created. */
+export function writeInit(context: RuleContext): MapNode {
+  const node = writeNode(context, {
+    kind: "init",
+    lane: MAIN_LANE,
+    parents: [],
+    commit: { mode: "craft", reviewed: true },
+  });
+  emit(context, { type: "node_done", nodeId: node.id, mode: "craft", kind: "init" });
   return node;
 }
 

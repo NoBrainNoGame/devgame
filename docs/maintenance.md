@@ -148,6 +148,18 @@ tests/actions.test.ts tests/rules.test.ts`.
 tests/economy.test.ts`, then `bun run sim --runs 200` and read the `money`
 line: `upgrades avg` says whether the manager ever buys it.
 
+### A developer's name and colour
+
+A hire's first name comes from `DEV_NAMES` (`src/game/content/team.ts`),
+hashed from the seed and the dev id in `nameFor` (`rules/team.ts`) — never
+drawn, so hiring still takes nothing from the PRNG, which `tests/team.test.ts`
+asserts. The colour is `devColourIndex(id)`: the serial modulo
+`DEV_COLOUR_COUNT`, the player being index 0. The eight colours live twice,
+in `DEV_COLOURS` (`render/theme.ts`) for the canvas and as `--color-dev-<n>`
+in `globals.css` for the HUD, and `tests/theme.test.ts` compares the two.
+Adding a name is appending to the array; changing the count means changing
+both lists and the constant together.
+
 ### A developer rank
 
 Ranks live in `DEV_RANK` in `src/game/content/team.ts`: `capacity`,
@@ -212,13 +224,28 @@ event stops replaying — `tests/narrative.test.ts` checks that too.
 Kinds live in `TICKET_KIND` in `src/game/content/tickets.ts`: colour, ref
 prefix, whether the team takes it, whether it counts as work in progress,
 whether it earns and weighs, whether it may carry a skill, a `mustWrite`, a
-deadline in sprints, and whether the board may force it when stale. Adding
+deadline in sprints, whether the board may force it when stale, and whether
+a commit on it may turn an obstacle up (`spawnsObstacles`). Adding
 one means a weight in `BALANCE.tickets.kinds.weights` (or an arrival of its
 own, like the debt ticket's), a size in `drawTicket`, its reward in
 `rewardKind` (`rules/write.ts`), a `game.tickets.<id>.name`, a
 `hud.kindHint.<id>`, a `log.ticket_assigned.<id>`, and a repinned
 fingerprint. The first ticket of a sprint stays a feature: the landing
 demo and `tests/tickets.test.ts` count on it.
+
+**The obstacle** is the one kind never drawn from the board. `maybeSpawnObstacle`
+(`rules/tickets.ts`) rolls it after a plain or risky commit, yours
+(`writeCommit`) or the team's (`writeTeamCommit`); `spawnObstacle` births it
+open, forked off its parent, with `parentId` set. Everything that reads a
+ticket's commits for a review — `unreadAiOn`, `buggedOn`, `mostIndebtedOn`,
+what ships — goes through `treeNodeIds`, the ticket and its obstacles
+together, so an obstacle's bugs are its feature's. `isReady` refuses a
+ticket with an open obstacle, `getAvailableActions` offers `merge` instead
+of `submit` on a ready obstacle, and `completeObstacle` (`rules/write.ts`)
+writes the `obstacle_merge` node in the *parent's* column and pushes it onto
+the parent's chain. `checkInvariants` knows all of this; `tests/obstacles.test.ts`
+plays it. A new place that reads a ticket's commits must ask itself whether
+it means the tree.
 
 ### A competitor
 
@@ -381,8 +408,25 @@ catalogues.
 **A supervisor level** is a branch in `chooseSupervisor`
 (`src/game/bridge/supervisor.ts`), a reason in `SUPERVISOR_REASONS` with its
 `hud.supervisorMove.<reason>` line, and a level in `UPGRADES.ai_supervisor`.
-Level 1 must stay `chooseAutopilot` exactly: the landing page's demo replays
-it, and `tests/autopilot.test.ts` checks the two agree.
+Level 1 must stay `chooseAutopilot` exactly: `tests/autopilot.test.ts`
+checks the two agree. The landing page's demo (`src/game/bridge/demo.ts`)
+plays the third level on today's seed, so a change to any level changes the
+homepage. It is a **showcase** run (`showcase` in `CreateRunOptions`): two
+juniors on the roster from turn 1 who are never promoted (`promote`), a
+board topped up to `backlog` waiting tickets at every sprint
+(`arriveTickets`) that never forces a stale one on you (`assignStaleTickets`), a team that spreads
+its speed a point per held ticket so its columns live side by side
+(`workTeam`), and a run that cannot be stopped — `gameOver` and
+`releaseDev` are no-ops, `performSubmit` accepts every pull request,
+`mergeEventChance` is zero, `performCommit` rolls at 100 and `isReady`
+ignores a flagged bug — and, since it never ends, it forgets: after every
+action `forgetOldHistory` (`rules/history.ts`) drops the commits more than
+`SHOWCASE_KEEP_ROWS` rows behind the head and the merged tickets they
+belonged to, keeping the trunks' tips, what the release has yet to judge
+and every open ticket's commits. Those twelve reads of `state.showcase` are
+the whole of it; a showcase is never saved, replayed or scored. `tests/demo.test.ts`
+plays it on thirty seeds and checks that it cannot end, keeps its team and
+keeps the team busy.
 
 **A hack kind** is a branch in `hackOffer` and `performHack`
 (`src/game/core/rules/hack.ts`), a `HackKind`, its `hud.hack.<kind>`,

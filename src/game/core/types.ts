@@ -40,6 +40,8 @@ export const DETOUR_KINDS = ["refactor", "fix", "risky", "squash", "docs", "reba
 export type DetourKind = (typeof DETOUR_KINDS)[number];
 
 export type NodeKind =
+  /** The repository's first commit, on `main`: what `dev` forks from. Written once. */
+  | "init"
   /** Opens a sprint on `dev`: `main` merged back in. Never played. */
   | "sprint_start"
   | "commit"
@@ -57,6 +59,8 @@ export type NodeKind =
   | "rebase"
   /** A ticket landing on `dev`. */
   | "feature_merge"
+  /** An obstacle landing back on the feature it blocked, in that feature's column. */
+  | "obstacle_merge"
   /** A `fix:` commit on a ticket production forced open. */
   | "hotfix"
   /** `dev` merged into `main`: the sprint is shipped. */
@@ -157,6 +161,12 @@ export interface Ticket {
   mustWrite?: "hotfix" | "refactor";
   /** Came with a company bought: merged without a commit, earns, never scores. */
   origin?: "acquired";
+  /**
+   * The feature this ticket stands in the way of. An obstacle forks from its
+   * parent's tip, lands back on it, and holds the parent's pull request until
+   * it has. Its points are its own; the bugs on it are the parent's.
+   */
+  parentId?: TicketId;
   /** The i18n key of a feature's name, hashed from the seed. Absent on a forced ticket. */
   nameKey?: string;
   /** The sprint by whose end it must have landed, when its kind has one. */
@@ -298,9 +308,17 @@ export interface RunStats {
   relicsChosen: Record<string, number>;
 }
 
+/** What a showcase run carries with it: see `ShowcaseOptions` in `run.ts`. */
+export interface ShowcaseState {
+  /** Tickets the board is topped up to at every sprint: enough for the team, never a pile. */
+  backlog: number;
+}
+
 /** A hired developer. Their tickets are found by `Ticket.assignee`. */
 export interface Dev {
   id: DevId;
+  /** A first name, drawn at hiring: what the roster, the log and the refs call them. */
+  name: string;
   rank: DevRank;
   /** The rank they were hired at, for the roster. */
   hiredRank: DevRank;
@@ -346,6 +364,13 @@ export interface RunState {
   seed: string;
   mode: RunMode;
   profileId: ProfileId;
+  /**
+   * A run played to be looked at, not scored: the landing page's. It cannot
+   * end, a developer the money does not pay stays, and the board is fed so
+   * the team is never idle. Set at creation and never saved: no log of it is
+   * ever replayed or submitted. Null for a run somebody plays.
+   */
+  showcase: ShowcaseState | null;
 
   rng: RngState;
   turn: number;
@@ -533,6 +558,23 @@ export type GameEvent =
       rework: number;
     }
   | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
+  /** A commit on a feature turned something up: a sub-ticket, open and in hand, forked off it. */
+  | {
+      type: "obstacle_spawned";
+      ticketId: TicketId;
+      parentId: TicketId;
+      nodeId: NodeId;
+      /** The obstacle's name key, so the log can say what turned up. */
+      nameKey: string;
+    }
+  /** The obstacle landed back on its feature. `devId` when a hired developer did. */
+  | {
+      type: "obstacle_cleared";
+      ticketId: TicketId;
+      parentId: TicketId;
+      nodeId: NodeId;
+      devId?: DevId;
+    }
   /** A skill ticket sat in the backlog through its sprint: gone, the skill back in the pool. */
   | { type: "ticket_cancelled"; ticketId: TicketId; skillId?: SkillId }
   /** A fix took the bug out of a commit the review had flagged. */
@@ -613,8 +655,8 @@ export type GameEvent =
       projected: number;
       advice?: { id: UpgradeId; cost: number };
     }
-  /** Unpaid. The tickets are yours now. */
-  | { type: "dev_left"; devId: DevId; ticketIds: TicketId[] }
+  /** Unpaid, or written out. The tickets are yours now. The name, because the roster has forgotten it. */
+  | { type: "dev_left"; devId: DevId; name: string; ticketIds: TicketId[] }
   | { type: "dev_promoted"; devId: DevId; rank: DevRank }
   /** A developer picked a ticket up from the backlog. */
   | { type: "ticket_assigned"; ticketId: TicketId; devId: DevId }

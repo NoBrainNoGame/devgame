@@ -9,7 +9,7 @@ import type {
   TreeNodeId,
   UpgradeId,
 } from "@/game/content";
-import { COMPETITOR_IDS, DEV_RANK, DEV_RANKS } from "@/game/content";
+import { COMPETITOR_IDS, DEV_RANK, DEV_RANKS, devColourIndex } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
@@ -37,6 +37,7 @@ import {
   buggedOn,
   currentTicket,
   isReady,
+  obstaclesOf,
   sortedTickets,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
@@ -109,6 +110,10 @@ export interface TicketView {
   mrr: number;
   /** The developer working it, when it is not you. */
   assignee?: DevId;
+  /** The feature this obstacle stands on. */
+  parentId?: TicketId;
+  /** The obstacles still standing on it: it cannot go to review while one is. */
+  blockedBy: TicketId[];
   lane?: number;
   /** Merges landed on `dev` since it was opened. Its merge pays for each. */
   behind: number;
@@ -130,6 +135,9 @@ export interface TicketView {
 /** A hired developer as the roster shows them. */
 export interface DevView {
   id: DevId;
+  name: string;
+  /** Which of the team's colours they wear: `--color-dev-<colour>`. */
+  colour: number;
   rank: DevRank;
   /** Tickets they can hold at once, bonuses included. */
   capacity: number;
@@ -311,6 +319,8 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
     mrr: ticket.mrr,
     ...(ticket.assignee === undefined ? {} : { assignee: ticket.assignee }),
+    ...(ticket.parentId === undefined ? {} : { parentId: ticket.parentId }),
+    blockedBy: obstaclesOf(state, ticket).map((obstacle) => obstacle.id),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     behind: behindOf(state, ticket),
     ready: ticket.status === "open" && isReady(state, ticket),
@@ -327,6 +337,8 @@ export function toSnapshot(state: RunState): RunSnapshot {
   const projected = projectedLoadOf(state);
   const devs: DevView[] = state.devs.map((dev) => ({
     id: dev.id,
+    name: dev.name,
+    colour: devColourIndex(dev.id),
     rank: dev.rank,
     capacity: devCapacity(dev, effects),
     ticketIds: ticketsOf(state, dev.id).map((ticket) => ticket.id),

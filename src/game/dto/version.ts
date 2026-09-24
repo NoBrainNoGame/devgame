@@ -59,8 +59,13 @@ export const SAVE_VERSION = 3;
  * team whose speed is its rank. And epoch 4: the sprint's relics replaced by
  * sprint bonuses — boosts spent on the spot, a few keeps — with an offer
  * drawn from what the run can use.
+ *
+ * 2. Obstacles: a commit on a feature may turn a sub-ticket up, drawn from
+ *    the PRNG, that forks off the feature and holds its review. The
+ *    repository starts with a commit on `main`, so every node id moved. A
+ *    hire draws a name.
  */
-export const RULES_EPOCH = 1;
+export const RULES_EPOCH = 2;
 
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and

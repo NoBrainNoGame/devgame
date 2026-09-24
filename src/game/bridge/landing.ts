@@ -7,8 +7,11 @@ import type { I18nText } from "@/game/core/i18n";
 
 /**
  * The landing page's canvas: the game's scene, mounted on the demo run, played
- * one action at a time at the pace of its own animations. When the sprint is
- * over it stays as it is; a replay starts the same run over from nothing.
+ * one action at a time at the pace of its own animations. When the demo is
+ * over it stays as it is; a replay plays the same run over from nothing. The
+ * scene draws the graph alone, without the column of commit subjects and
+ * without the numbers a turn pops off its commit: the tree is the picture,
+ * hovering a commit still says what it was, and the demo keeps its pace.
  */
 
 export interface LandingHandle {
@@ -21,7 +24,14 @@ const STEP_MS = 420;
 
 export async function mountLanding(
   element: HTMLElement,
-  options: { translate: (text: I18nText) => string; reducedMotion: boolean },
+  options: {
+    translate: (text: I18nText) => string;
+    reducedMotion: boolean;
+    /** Today's seed, from the server: the browser never derives it. */
+    seed: string;
+    /** What the `HEAD` badge calls the player: "You", in the page's language. */
+    playerName: string;
+  },
 ): Promise<LandingHandle> {
   let generation = 0;
   let handle: GameHandle | null = null;
@@ -36,10 +46,14 @@ export async function mountLanding(
     handle = null;
     const mounted = await mountGame(element, {
       ...DEMO_SESSION,
+      seed: options.seed,
       translate: options.translate,
       reducedMotion: options.reducedMotion,
       interactive: false,
       claimsGlobal: false,
+      showSubjects: false,
+      showPops: false,
+      playerName: options.playerName,
     });
     if (!current()) {
       mounted.dispose();
@@ -57,7 +71,7 @@ export async function mountLanding(
       if (!current()) return;
 
       const snapshot = gameStore.getState().snapshot;
-      if (snapshot === null || demoDone(snapshot, played)) return;
+      if (snapshot === null || demoDone(snapshot)) return;
       const action = chooseDemo(snapshot, played);
       if (action === undefined) return;
       if (!mounted.dispatch(action).ok) return;

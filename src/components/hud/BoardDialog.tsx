@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import type { PlayerAction, RunSnapshot, TicketView } from "@/game";
+import type { DevView, PlayerAction, RunSnapshot, TicketView } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -89,6 +89,7 @@ export function BoardDialog({
                     <TicketCard
                       key={ticket.id}
                       ticket={ticket}
+                      devs={snapshot.devs}
                       current={ticket.id === snapshot.player.ticketId}
                       busy={busy}
                       onOpen={() => setSelectedId(ticket.id)}
@@ -119,16 +120,19 @@ const KIND_TONE: Record<string, string> = {
   vip: "text-energy",
   debt: "text-debt",
   migration: "text-debt",
+  obstacle: "text-branch-obstacle",
 };
 
 function TicketCard({
   ticket,
+  devs,
   current,
   busy,
   onOpen,
   onAct,
 }: {
   ticket: TicketView;
+  devs: DevView[];
   current: boolean;
   busy: boolean;
   onOpen: () => void;
@@ -195,7 +199,9 @@ function TicketCard({
         ) : null}
         {ticket.assignee === undefined ? null : (
           <p className="text-muted-foreground text-xs">
-            {t("assignedTo", { dev: ticket.assignee })}
+            {t("assignedTo", {
+              dev: devs.find((d) => d.id === ticket.assignee)?.name ?? ticket.assignee,
+            })}
           </p>
         )}
 

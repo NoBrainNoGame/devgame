@@ -57,7 +57,7 @@ export class FxQueue extends booyah.Queue {
   }
 
   private enqueue(payload: AppliedPayload): void {
-    const { reveal, reducedMotion, translate } = sceneContext(this.chipContext);
+    const { reveal, reducedMotion, translate, pops, interactive } = sceneContext(this.chipContext);
 
     // One flag per batch. A skip on the previous batch must not cut this one
     // short, and this one's final step must not unblock a later one.
@@ -69,8 +69,14 @@ export class FxQueue extends booyah.Queue {
       reveal.showAll(payload.state);
       this.add(new Beat(1, batch.skip));
     } else {
-      const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate);
-      for (const step of steps) this.add(this.chipFor(step, batch.skip));
+      // A review's hold is for its dialog, which only a played run opens.
+      const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate, {
+        reviewHold: interactive,
+      });
+      for (const step of steps) {
+        if (step.kind === "pop" && !pops) continue;
+        this.add(this.chipFor(step, batch.skip));
+      }
     }
 
     this.add(

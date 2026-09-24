@@ -54,10 +54,10 @@
     "ogTitle": "Devgame",
     "ogSubtitle": "Un roguelike dont le donjon est un graphe Git",
     "keywords": "roguelike, jeu de navigateur, git, développeur, jeu de gestion, graine du jour, jeu gratuit, open source",
-    "graphLabel": "Un sprint du jeu, joué par son propre pilote automatique. Cliquer rejoue sa génération.",
-    "graphHint": "Un vrai sprint, joué par le jeu lui-même. Survolez un commit ; cliquez pour le rejouer.",
+    "graphLabel": "La graine du jour, jouée par le pilote automatique du jeu avec deux développeurs senior et sans pouvoir perdre. Cliquer la rejoue.",
     "headline1": "Le donjon est un graphe Git.",
-    "headline2": "Le backlog est l'ennemi"
+    "headline2": "Le backlog est l'ennemi",
+    "you": "Toi"
   },
   "play": {
     "title": "Nouvelle run",
@@ -120,7 +120,9 @@
         "fired": "Arrêt demandé par l'instance parente.",
         "caught": "Arrêt demandé par l'instance parente."
       }
-    }
+    },
+    "yourName": "Pseudo",
+    "yourNamePlaceholder": "John Doe"
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -373,7 +375,8 @@
       "client_bug": "à livrer dans le sprint, la prod respire quand il part",
       "vip": "double revenu, prime si livré à temps, l'équipe ne le prend pas",
       "debt": "un refacto que le code réclame, jamais imposé, rembourse 20 de dette",
-      "migration": "chaque commit coûte de la dette, livré il offre un niveau de serveurs"
+      "migration": "chaque commit coûte de la dette, livré il offre un niveau de serveurs",
+      "obstacle": "surgi d'un commit, bloque la feature tant qu'il n'y est pas revenu"
     },
     "deadline": "à livrer avant la fin du sprint {sprint}",
     "late": "en retard",
@@ -451,7 +454,13 @@
     "freeHire": "Prochaine embauche offerte",
     "idleWaitingHint": "L'horloge est en marche mais n'a rien à presser : le prochain coup est à vous.",
     "logCommitStack": "{count, plural, one {# commit ajouté} other {# commits ajoutés}}",
-    "logTicketStack": "{count, plural, one {# ticket ajouté} other {# tickets ajoutés}}"
+    "logTicketStack": "{count, plural, one {# ticket ajouté} other {# tickets ajoutés}}",
+    "blockedBy": "bloquée par {count, plural, one {# obstacle} other {# obstacles}}",
+    "obstacleOn": "sur #{id}",
+    "readyToLand": "Plein : le ramener sur sa feature.",
+    "you": "Vous",
+    "landObstacle": "Ramener sur la feature",
+    "landObstacleHint": "L'obstacle est réglé : le merger dans la feature et continuer."
   },
   "leaderboard": {
     "title": "Classement",
@@ -1106,6 +1115,14 @@
         "name": "Fix",
         "desc": "Reprendre le plus ancien commit que la review a marqué bugué : le bug s'en va.",
         "aiName": "Fix IA"
+      },
+      "init": {
+        "name": "Commit initial",
+        "desc": "Le premier commit du dépôt, sur main : ce dont dev part."
+      },
+      "obstacle_merge": {
+        "name": "Merge d'obstacle",
+        "desc": "L'obstacle revient sur la feature qu'il bloquait. La feature peut continuer."
       }
     },
     "events": {
@@ -1376,6 +1393,9 @@
       },
       "migration": {
         "name": "Migration"
+      },
+      "obstacle": {
+        "name": "Obstacle"
       }
     },
     "acquisitions": {
@@ -1917,6 +1937,32 @@
         "review_policy": "relecture : cette instance. objections : 0.",
         "channel_closed": "canal opérateur : fermé. dernier message : aucun."
       }
+    },
+    "obstacles": {
+      "0": {
+        "name": "Bug trouvé en chemin"
+      },
+      "1": {
+        "name": "Migration manquante"
+      },
+      "2": {
+        "name": "Test instable"
+      },
+      "3": {
+        "name": "Cas limite que personne n'a écrit"
+      },
+      "4": {
+        "name": "Design qui ne tient pas"
+      },
+      "5": {
+        "name": "Dépendance à monter d'abord"
+      },
+      "6": {
+        "name": "Contrôle de droits à ajouter"
+      },
+      "7": {
+        "name": "Données à rattraper"
+      }
     }
   },
   "report": {
@@ -1943,5 +1989,16 @@
     "source": "Code source",
     "support": "Soutenir",
     "contact": "Écrire"
+  },
+  "log": {
+    "obstacle_spawned": "obstacle en chemin : {name}",
+    "obstacle_cleared": "obstacle revenu sur la feature",
+    "obstacle_cleared_by": "{dev} a ramené un obstacle sur la feature",
+    "ticket_assigned": {
+      "obstacle": "un obstacle surgit : il est à vous"
+    }
+  },
+  "notes": {
+    "obstacle_merge": "Revient sur la feature : pas de points, rien en retour, la feature continue"
   }
 }

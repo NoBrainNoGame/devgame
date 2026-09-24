@@ -82,9 +82,21 @@ export function TicketDialog({
           ) : null}
           {ticket.assignee === undefined ? null : (
             <p className="text-muted-foreground text-xs">
-              {t("assignedTo", { dev: ticket.assignee })}
+              {t("assignedTo", {
+                dev: snapshot.devs.find((d) => d.id === ticket.assignee)?.name ?? ticket.assignee,
+              })}
             </p>
           )}
+          {ticket.parentId === undefined ? null : (
+            <p className="text-branch-obstacle text-xs">
+              {t("obstacleOn", { id: ticket.parentId.slice(1) })}
+            </p>
+          )}
+          {ticket.blockedBy.length > 0 ? (
+            <p className="text-branch-obstacle text-xs">
+              {t("blockedBy", { count: ticket.blockedBy.length })}
+            </p>
+          ) : null}
         </section>
 
         {ticket.skillId === undefined ? null : (

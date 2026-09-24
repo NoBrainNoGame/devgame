@@ -1,5 +1,5 @@
 import { money, ref, text } from "@/game/core/i18n";
-import type { GameEvent, LogLine, MapNode, NodeId, RunState } from "@/game/core/types";
+import type { DevId, GameEvent, LogLine, MapNode, NodeId, RunState } from "@/game/core/types";
 
 /**
  * The run's history, written as commit subjects.
@@ -17,6 +17,8 @@ export function toLogLine(
   turn: number,
   seq: number,
   nodes: Readonly<Record<NodeId, MapNode>> = {},
+  /** The roster's names: a line says "Nora", not "d3". */
+  nameOf: (id: DevId) => string = (id) => id,
 ): LogLine | null {
   switch (event.type) {
     case "node_done":
@@ -79,6 +81,25 @@ export function toLogLine(
           event.skillId === undefined
             ? text("log.ticket_dropped", { ticket: event.ticketId })
             : text("log.ticket_cancelled", { skill: ref(`skills.${event.skillId}.name`) }),
+      };
+
+    case "obstacle_spawned":
+      return {
+        seq,
+        turn,
+        kind: "fix",
+        text: text("log.obstacle_spawned", { name: ref(event.nameKey) }),
+      };
+
+    case "obstacle_cleared":
+      return {
+        seq,
+        turn,
+        kind: "merge",
+        text:
+          event.devId === undefined
+            ? text("log.obstacle_cleared")
+            : text("log.obstacle_cleared_by", { dev: nameOf(event.devId) }),
       };
 
     case "ticket_restarted":
@@ -252,15 +273,15 @@ export function toLogLine(
         kind: "feat",
         text:
           event.source === undefined || "relic" in event.source
-            ? text("log.hired", { dev: event.devId, rank: ref(`ranks.${event.rank}.name`) })
+            ? text("log.hired", { dev: nameOf(event.devId), rank: ref(`ranks.${event.rank}.name`) })
             : "site" in event.source
               ? text("log.hired_by_site", {
-                  dev: event.devId,
+                  dev: nameOf(event.devId),
                   rank: ref(`ranks.${event.rank}.name`),
                   site: ref(`upgrades.${event.source.site}.name`),
                 })
               : text("log.hired_by_acquisition", {
-                  dev: event.devId,
+                  dev: nameOf(event.devId),
                   rank: ref(`ranks.${event.rank}.name`),
                   company: ref(`acquisitions.${event.source.acquisition}.name`),
                 }),
@@ -417,7 +438,7 @@ export function toLogLine(
         seq,
         turn,
         kind: "revert",
-        text: text("log.dev_left", { dev: event.devId, count: event.ticketIds.length }),
+        text: text("log.dev_left", { dev: event.name, count: event.ticketIds.length }),
       };
 
     case "dev_promoted":
@@ -426,7 +447,7 @@ export function toLogLine(
         turn,
         kind: "feat",
         text: text("log.dev_promoted", {
-          dev: event.devId,
+          dev: nameOf(event.devId),
           rank: ref(`ranks.${event.rank}.name`),
         }),
       };
@@ -436,7 +457,7 @@ export function toLogLine(
         seq,
         turn,
         kind: "note",
-        text: text("log.ticket_assigned_dev", { dev: event.devId }),
+        text: text("log.ticket_assigned_dev", { dev: nameOf(event.devId) }),
       };
 
     case "game_over":
@@ -478,8 +499,9 @@ export function toLogLine(
 }
 
 export function appendLog(state: RunState, events: readonly GameEvent[]): void {
+  const nameOf = (id: DevId): string => state.devs.find((dev) => dev.id === id)?.name ?? id;
   for (const event of events) {
-    const line = toLogLine(event, state.turn, state.nextLogSeq, state.nodes);
+    const line = toLogLine(event, state.turn, state.nextLogSeq, state.nodes, nameOf);
     if (line === null) continue;
     state.nextLogSeq += 1;
     state.log.push(line);

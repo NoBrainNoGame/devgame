@@ -42,6 +42,7 @@ function open(
     if (NARRATIVE_EVENTS[wanted as (typeof NARRATIVE_EVENT_IDS)[number]].needsDev === true) {
       state.devs.push({
         id: "d1",
+        name: "Test",
         rank: "junior",
         hiredRank: "junior",
         delivered: 0,

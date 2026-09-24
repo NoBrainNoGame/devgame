@@ -49,6 +49,8 @@ export function ActionPanel({
   const review = snapshot.actions.find((action) => action.type === "review");
   const rest = snapshot.actions.find((action) => action.type === "rest");
   const submit = snapshot.actions.find((action) => action.type === "submit");
+  // A full obstacle lands back on its feature: no review in between.
+  const land = snapshot.actions.find((action) => action.type === "merge");
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
@@ -87,6 +89,18 @@ export function ActionPanel({
             emphasis
             action={submit}
             onAct={() => onAct(submit)}
+          />
+        )}
+
+        {land === undefined ? null : (
+          <ActionButton
+            label={t("landObstacle")}
+            hint={t("landObstacleHint")}
+            preview={snapshot.previews[actionKey(land)]}
+            busy={busy}
+            emphasis
+            action={land}
+            onAct={() => onAct(land)}
           />
         )}
 

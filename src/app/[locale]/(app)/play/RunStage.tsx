@@ -61,6 +61,8 @@ export interface RunStageProps {
     createdAt: string;
     resume?: RunSaveDto;
     reducedMotion?: boolean;
+    /** What the refs call you beside `HEAD`. */
+    playerName?: string;
   };
   /** The live handle, for the controls that drive the camera directly. */
   handle: GameHandle | null;

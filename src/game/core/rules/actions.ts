@@ -64,7 +64,11 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         }
 
         if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
-        if (isReady(state, ticket)) actions.push({ type: "submit" });
+        // Full and clean, a ticket goes to review; an obstacle lands back on
+        // its feature without one.
+        if (isReady(state, ticket)) {
+          actions.push(ticket.parentId === undefined ? { type: "submit" } : { type: "merge" });
+        }
       }
       actions.push({ type: "rest" });
 

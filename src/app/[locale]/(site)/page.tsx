@@ -4,6 +4,8 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LandingGraph } from "@/components/landing/LandingGraph";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
+import { utcDate } from "@/lib/daily/seed";
+import { getDailySeed } from "@/lib/daily/store";
 import { env } from "@/lib/env";
 import { alternatesFor, siteUrl } from "@/lib/seo";
 
@@ -15,11 +17,12 @@ import { alternatesFor, siteUrl } from "@/lib/seo";
  * company that grows, two ways to lose — and press play. Everything on the
  * page earns its place against that, which is why there is no feature grid
  * and no screenshot carousel; the graph beside the headline is the game's own
- * canvas, playing a real run.
+ * canvas, playing today's run.
  *
- * Static: nothing here reads the session or the database, so it can be cached
- * and served fast, which is also the single biggest thing search ranking cares
- * about that is within our control.
+ * Nothing here reads the session. The one read is today's seed, memoised in
+ * `DailySeed`, so the canvas plays the same map the daily board does: the
+ * browser never derives it (invariant 12). When the database is out the
+ * date stands in, and the page still renders.
  */
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -45,6 +48,8 @@ const PILLARS = ["pillarCraft", "pillarAi", "pillarReview", "pillarCompany"] as 
 export default async function HomePage(): Promise<React.JSX.Element> {
   const locale = await getLocale();
   const t = await getTranslations("landing");
+  const daily = await getDailySeed().catch(() => null);
+  const seed = daily?.seed ?? utcDate(new Date());
 
   return (
     <>
@@ -94,7 +99,7 @@ export default async function HomePage(): Promise<React.JSX.Element> {
             <p className="mt-4 text-muted-foreground text-xs">{t("ctaNote")}</p>
           </div>
 
-          <LandingGraph className="w-full" />
+          <LandingGraph seed={seed} className="w-full" />
         </section>
 
         {/* The three ideas the game rests on -------------------------------- */}

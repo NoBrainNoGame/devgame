@@ -98,6 +98,8 @@ export function sfxFor(event: GameEvent): SfxId | null {
     case "ticket_merged":
     case "skill_gained":
     case "conflict_resolved":
+    case "obstacle_spawned":
+    case "obstacle_cleared":
     case "pr_rejected":
     case "failure_event":
     case "merge_event":

@@ -18,6 +18,7 @@ export const BALANCE = {
     base: 22,
     /** Energy spent to write a commit, by kind. */
     cost: {
+      init: 0,
       sprint_start: 0,
       commit: 0,
       refactor: 2,
@@ -27,6 +28,8 @@ export const BALANCE = {
       docs: 2,
       rebase: 1,
       feature_merge: 2,
+      /** Landing an obstacle back on its feature: a merge like the other, at the same price. */
+      obstacle_merge: 2,
       hotfix: 0,
       sprint_merge: 2,
       release: 0,
@@ -286,6 +289,14 @@ export const BALANCE = {
       debt: { points: 2, threshold: 40, repay: 20 },
       /** A library to leave: every commit costs debt; landing it buys a level of servers. */
       migration: { points: { min: 4, max: 6 }, debtPerCommit: 3, serverLevels: 1 },
+      /**
+       * What a commit turns up on the way. Each plain or risky commit on a
+       * feature that can have one rolls this chance, while the feature has
+       * no obstacle open and has had fewer than the cap; the obstacle is
+       * this many points of its own, worth nothing, and holds the feature
+       * until it has landed back on it.
+       */
+      obstacle: { chancePct: 12, points: { min: 1, max: 3 }, maxPerTicket: 2 },
     },
     /**
      * Extra points a ticket carries when it also grants a skill.

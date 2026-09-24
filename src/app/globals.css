@@ -179,6 +179,17 @@
   --color-branch-dev: #4fb3a8;
   --color-branch-feature: #5aa9e6;
   --color-branch-hotfix: #e2645a;
+  --color-branch-obstacle: #d98cc9;
+
+  /* The team's colours, the player's first: see DEV_COLOURS in render/theme.ts. */
+  --color-dev-0: #38bdf8;
+  --color-dev-1: #f2705d;
+  --color-dev-2: #f0b429;
+  --color-dev-3: #b5d33d;
+  --color-dev-4: #3ecf8e;
+  --color-dev-5: #6c8cff;
+  --color-dev-6: #b57bee;
+  --color-dev-7: #f472b6;
 
   --color-debt: #e0a458;
   --color-energy: #f5d76e;
@@ -247,6 +258,15 @@
   .hud-title {
     animation: none;
   }
+}
+
+/*
+ * The landing page's graph. The canvas already paints the page's background;
+ * the mask is what removes the rectangle: the picture fades out well before
+ * its edges, so the tree floats in the hero instead of sitting in a frame.
+ */
+.landing-graph {
+  mask-image: radial-gradient(ellipse 92% 62% at 50% 50%, #000 45%, transparent 100%);
 }
 
 /*

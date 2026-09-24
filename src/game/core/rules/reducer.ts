@@ -15,6 +15,7 @@ import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
 import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { performHack } from "@/game/core/rules/hack";
+import { forgetOldHistory } from "@/game/core/rules/history";
 import { freeReviewCadence } from "@/game/core/rules/modifiers";
 import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { gameOver, isOver } from "@/game/core/rules/over";
@@ -75,6 +76,8 @@ export function applyAction(state: RunState, action: PlayerAction): ApplyResult 
 
   reportCrunch(context, wasCrunch);
   appendLog(draft, context.events);
+  // A run that never ends cannot keep everything it wrote.
+  if (draft.showcase !== null) forgetOldHistory(draft);
 
   return { state: draft, events: context.events };
 }

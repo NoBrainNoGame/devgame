@@ -67,7 +67,9 @@ describe("ticket kinds", () => {
       }
     }
     for (const kind of TICKET_KINDS) {
-      if (kind === "hotfix" || kind === "refactor" || kind === "debt") continue;
+      // Forced, asked for by the code, or turned up by a commit: never from the board.
+      if (kind === "hotfix" || kind === "refactor" || kind === "debt" || kind === "obstacle")
+        continue;
       expect(seen.has(kind)).toBe(true);
     }
   });

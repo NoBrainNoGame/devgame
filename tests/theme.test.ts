@@ -10,7 +10,7 @@ import {
   lerpPalette,
   paletteAt,
 } from "@/game/render/palette";
-import { THEME } from "@/game/render/theme";
+import { DEV_COLOURS, THEME } from "@/game/render/theme";
 
 /**
  * Pixi cannot read CSS custom properties, so the canvas keeps its own copy of
@@ -93,6 +93,8 @@ describe("theme", () => {
     ["branch-dev", THEME.lane.dev],
     ["branch-feature", THEME.lane.feature],
     ["branch-hotfix", THEME.lane.hotfix],
+    ["branch-obstacle", THEME.lane.obstacle],
+    ...DEV_COLOURS.map((value, index): [string, number] => [`dev-${index}`, value]),
     ["debt", THEME.debt],
     ["energy", THEME.energy],
     ["ai", THEME.node.ai],

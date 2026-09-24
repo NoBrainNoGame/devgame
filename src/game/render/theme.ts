@@ -27,6 +27,8 @@ export const THEME = {
     feature: 0x5aa9e6,
     hotfix: 0xe2645a,
     refactor: 0xe0a458,
+    /** An obstacle's column: what a feature turned up, forked off it. */
+    obstacle: 0xd98cc9,
   },
 
   node: {
@@ -76,6 +78,24 @@ export const ZOOM: { min: number; max: number; step: number; default: number } =
   default: 1.4,
 };
 
+/**
+ * The team's colours, the player's first, spread over the whole spectrum so
+ * that eight people on one graph are eight different hues. Not part of the
+ * palette the austerity fades: who wrote what has to stay readable at every
+ * tier. Kept in step with `--color-dev-<n>` in `globals.css` by the theme
+ * test, like the rest.
+ */
+export const DEV_COLOURS: readonly number[] = [
+  0x38bdf8, // sky — the player
+  0xf2705d, // coral
+  0xf0b429, // amber
+  0xb5d33d, // lime
+  0x3ecf8e, // mint
+  0x6c8cff, // periwinkle
+  0xb57bee, // violet
+  0xf472b6, // pink
+];
+
 export function laneColour(lane: number, kind: NodeKind): number {
   // A `fix:` commit keeps its own colour wherever it was written: an emergency
   // has to read as one even though it lives on the feature you had open.
@@ -96,9 +116,12 @@ export function labelledKind(kind: NodeKind): NodeKind {
 /** The glyph drawn inside a node, so kinds read at a glance. */
 export function nodeGlyph(kind: NodeKind): string {
   switch (kind) {
+    case "init":
+      return "○";
     case "sprint_start":
       return "◆";
     case "feature_merge":
+    case "obstacle_merge":
     case "sprint_merge":
       return "⑃";
     case "release":

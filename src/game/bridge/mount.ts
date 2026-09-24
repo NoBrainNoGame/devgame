@@ -29,6 +29,12 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   reducedMotion?: boolean;
   /** False for a canvas that is looked at, not played: no zoom, no drag, no skip. */
   interactive?: boolean;
+  /** False draws the graph without its column of commit subjects. */
+  showSubjects?: boolean;
+  /** False plays a turn without the numbers that rise off a commit: faster, and quieter. */
+  showPops?: boolean;
+  /** What the refs call you beside `HEAD`. Empty: `HEAD` alone. */
+  playerName?: string;
   /**
    * Whether this mount is the page's game. The landing page mounts a run to
    * look at and must not take the play page's global handle; it still
@@ -114,6 +120,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     clientRunId: options.clientRunId,
     createdAt: options.createdAt,
     ...(options.resume === undefined ? {} : { resumeActions: options.resume.actions }),
+    ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
   });
 
   const controls: SceneControls = { camera: null, skip: null };
@@ -132,6 +139,9 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       translate: options.translate,
       reducedMotion: options.reducedMotion ?? false,
       interactive: options.interactive ?? true,
+      subjects: options.showSubjects ?? true,
+      pops: options.showPops ?? true,
+      playerName: options.playerName ?? "",
       controls,
       austerityOverride: options.austerityOverride ?? null,
       audio: options.audio ?? new NullAudioService(),

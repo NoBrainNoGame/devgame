@@ -702,8 +702,14 @@ function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
   return (
     <article className="space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="font-medium">
-          {dev.id} · {game(`ranks.${dev.rank}.name` as never)}
+        <span className="flex items-center gap-2 font-medium">
+          <span
+            aria-hidden="true"
+            className="size-2.5 shrink-0 rounded-full"
+            style={{ background: `var(--color-dev-${dev.colour})` }}
+          />
+          <span style={{ color: `var(--color-dev-${dev.colour})` }}>{dev.name}</span>
+          <span className="text-muted-foreground">· {game(`ranks.${dev.rank}.name` as never)}</span>
         </span>
         <span className="text-muted-foreground text-xs tabular-nums">
           {t("rankSalary", { money: money(dev.salary) })}

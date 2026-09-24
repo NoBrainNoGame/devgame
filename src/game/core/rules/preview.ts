@@ -156,17 +156,25 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
     case "merge": {
       const ticket =
-        state.phase.kind === "pr_accepted" ? getTicket(state, state.phase.ticketId) : null;
-      const cost = nodeEnergyCost(state, "feature_merge", undefined);
+        state.phase.kind === "pr_accepted"
+          ? getTicket(state, state.phase.ticketId)
+          : currentTicket(state);
+      // An obstacle lands on its feature: no event on the way, nothing back.
+      const obstacle = ticket?.parentId !== undefined;
+      const cost = nodeEnergyCost(state, obstacle ? "obstacle_merge" : "feature_merge", undefined);
       const notes: I18nText[] = [...cost.notes];
-      if (ticket !== null) {
+      if (ticket !== null && !obstacle) {
         const risk = mergeEventChance(state, ticket);
         if (risk > 0) notes.push(text("notes.merge_risk", { percent: risk }));
         const behind = behindOf(state, ticket);
         if (behind > 0) notes.push(text("notes.behind_dev", { count: behind }));
       }
-      const regen = BALANCE.energy.featureMergeRegen + effects.mergeRegenBonus;
-      notes.push(text("notes.merge_regen", { energy: regen }));
+      if (obstacle) {
+        notes.push(text("notes.obstacle_merge"));
+      } else {
+        const regen = BALANCE.energy.featureMergeRegen + effects.mergeRegenBonus;
+        notes.push(text("notes.merge_regen", { energy: regen }));
+      }
 
       return { action, energyCost: cost.value, consumesTurn: true, notes };
     }
@@ -264,7 +272,14 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     case "hire": {
       const cost = hireCostFor(effects, action.rank);
       const capacity = devCapacity(
-        { id: "", rank: action.rank, hiredRank: action.rank, delivered: 0, hiredSprint: 0 },
+        {
+          id: "",
+          name: "",
+          rank: action.rank,
+          hiredRank: action.rank,
+          delivered: 0,
+          hiredSprint: 0,
+        },
         effects,
       );
       return {

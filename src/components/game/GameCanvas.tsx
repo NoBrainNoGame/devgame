@@ -29,6 +29,7 @@ export function GameCanvas({
     createdAt: string;
     resume?: RunSaveDto;
     reducedMotion?: boolean;
+    playerName?: string;
   };
   onReady: (handle: GameHandle | null) => void;
 }) {

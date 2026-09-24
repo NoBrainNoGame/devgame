@@ -5,7 +5,7 @@ import { getDailySeed } from "@/lib/daily/store";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getMyProfile } from "@/lib/profile/actions";
-import { getCurrentUserId } from "@/lib/session";
+import { getSession } from "@/lib/session";
 
 import { PlayClient } from "./PlayClient";
 
@@ -25,7 +25,8 @@ export async function generateMetadata() {
 }
 
 export default async function PlayPage() {
-  const userId = await getCurrentUserId();
+  const session = await getSession();
+  const userId = session?.user.id ?? null;
   const signedIn = userId !== null;
 
   const [profile, daily, serverRun] = await Promise.all([
@@ -40,6 +41,7 @@ export default async function PlayPage() {
     <PlayClient
       online={env.ONLINE}
       signedIn={signedIn}
+      userName={session?.user.name ?? null}
       serverMeta={profile?.ok === true && profile.data !== null ? profile.data.meta : null}
       dailySeed={daily?.seed ?? null}
       serverRun={serverRun}

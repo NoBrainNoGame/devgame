@@ -155,15 +155,21 @@ describe("boosts", () => {
   });
 
   test("overtime lengthens the sprint that starts, and only that one", () => {
-    const state = atOffer("boost-overtime");
-    const after = take(state, "overtime").state;
-    expect(sprintTurns(after)).toBe(BALANCE.sprint.turns + 4);
-    const next = play(after, {
-      pick: policy("craft"),
-      limit: 200,
-      stop: (s) => s.phase.kind === "choose_relic" || s.sprint > after.sprint,
-    });
-    expect(next.state.boosts.extraTurns).toBe(0);
+    // A run that lives to see the next sprint: the extra turns are spent by
+    // then, and a run that ends first has nothing to say about it.
+    for (let attempt = 0; ; attempt += 1) {
+      const state = atOffer(`boost-overtime-${attempt}`);
+      const after = take(state, "overtime").state;
+      expect(sprintTurns(after)).toBe(BALANCE.sprint.turns + 4);
+      const next = play(after, {
+        pick: policy("craft"),
+        limit: 200,
+        stop: (s) => s.phase.kind === "choose_relic" || s.sprint > after.sprint,
+      });
+      if (next.state.phase.kind === "game_over" && attempt < 10) continue;
+      expect(next.state.boosts.extraTurns).toBe(0);
+      break;
+    }
   });
 
   test("the review party reads every machine commit left unread", () => {

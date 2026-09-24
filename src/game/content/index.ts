@@ -81,9 +81,21 @@ export {
   subjectKey,
 } from "@/game/content/subjects";
 export type { DevRank, DevRankDef } from "@/game/content/team";
-export { DEV_RANK, DEV_RANKS, isDevRank, nextRank } from "@/game/content/team";
 export {
+  DEV_COLOUR_COUNT,
+  DEV_NAMES,
+  DEV_RANK,
+  DEV_RANKS,
+  devColourIndex,
+  isDevRank,
+  nextRank,
+  PLAYER_COLOUR,
+} from "@/game/content/team";
+export {
+  allObstacleKeys,
   isTicketKind,
+  OBSTACLE_POOL_SIZE,
+  obstacleNameKey,
   TICKET_KIND,
   TICKET_KINDS,
   type TicketColour,
