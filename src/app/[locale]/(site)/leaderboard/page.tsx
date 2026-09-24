@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RULES_EPOCH, RULES_EPOCHS, rulesEpochOf } from "@/game";
 import { Link } from "@/i18n/navigation";
 import { msUntilNextDaily } from "@/lib/daily/seed";
 import { prisma } from "@/lib/db";
@@ -52,6 +53,9 @@ export default async function LeaderboardPage({
   const params = await searchParams;
   const mode = parseMode(params.mode);
   const period = parsePeriod(params.period, mode);
+  const epoch = parseEpoch(params.epoch);
+  const query = (next: { mode?: LeaderboardMode; period?: LeaderboardPeriod; epoch?: number }) =>
+    boardQuery({ mode, period, epoch, ...next });
 
   const [t, userId] = await Promise.all([getTranslations("leaderboard"), getCurrentUserId()]);
 
@@ -60,7 +64,7 @@ export default async function LeaderboardPage({
   // the server log, where it names the cause; the page says only that the
   // board is unavailable.
   const { viewerProfile, board, unavailable } = env.ONLINE
-    ? await loadBoard(mode, period, userId)
+    ? await loadBoard(mode, period, epoch, userId)
     : { viewerProfile: null, board: { entries: [], me: null }, unavailable: "offline" as const };
 
   const me = board.me;
@@ -77,7 +81,7 @@ export default async function LeaderboardPage({
         {MODES.map((value) => (
           <Link
             key={value}
-            href={{ pathname: "/leaderboard", query: { mode: value } }}
+            href={{ pathname: "/leaderboard", query: query({ mode: value, period: undefined }) }}
             aria-current={value === mode ? "page" : undefined}
             className={cn(
               "-mb-px border-b-2 px-3 py-2 text-sm transition-colors",
@@ -91,6 +95,27 @@ export default async function LeaderboardPage({
         ))}
       </nav>
 
+      {/* One board per rules generation: a run from before a rules change is
+          a different game, so the old boards stay readable on their own. */}
+      <nav className="mt-3 flex flex-wrap items-center gap-1" aria-label={t("epochs")}>
+        <span className="px-1 text-muted-foreground text-xs">{t("epochs")}</span>
+        {RULES_EPOCHS.map((row) => (
+          <Link
+            key={row.epoch}
+            href={{ pathname: "/leaderboard", query: query({ epoch: row.epoch }) }}
+            aria-current={row.epoch === epoch ? "page" : undefined}
+            className={cn(
+              "rounded-md px-2 py-1 text-xs tabular-nums transition-colors",
+              row.epoch === epoch
+                ? "bg-panel text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t("epoch", { epoch: row.epoch, version: row.version, date: row.releasedAt })}
+          </Link>
+        ))}
+      </nav>
+
       {/* The daily is a different board every day, so it is the only mode where
           choosing a day means anything. */}
       {mode === "daily" ? (
@@ -99,7 +124,7 @@ export default async function LeaderboardPage({
             {PERIODS.map((value) => (
               <Link
                 key={value}
-                href={{ pathname: "/leaderboard", query: { mode, period: value } }}
+                href={{ pathname: "/leaderboard", query: query({ period: value }) }}
                 aria-current={value === period ? "page" : undefined}
                 className={cn(
                   "rounded-md px-2 py-1 text-xs transition-colors",
@@ -177,6 +202,7 @@ export default async function LeaderboardPage({
 async function loadBoard(
   mode: LeaderboardMode,
   period: LeaderboardPeriod,
+  epoch: number,
   userId: string | null,
 ): Promise<{
   viewerProfile: { id: string } | null;
@@ -191,6 +217,7 @@ async function loadBoard(
     const board = await getLeaderboard({
       mode,
       period,
+      epoch,
       viewerProfileId: viewerProfile?.id ?? null,
     });
     return { viewerProfile, board, unavailable: false as const };
@@ -257,4 +284,26 @@ function parsePeriod(raw: string | string[] | undefined, mode: LeaderboardMode):
   // Classic runs are compared across all time; a daily only means anything
   // within its own day, so the two boards default differently.
   return PERIODS.find((period) => period === value) ?? (mode === "daily" ? "today" : "all");
+}
+
+/** An epoch the boards know, or the one in force. */
+function parseEpoch(raw: string | string[] | undefined): number {
+  const value = Number(first(raw));
+  return rulesEpochOf(value)?.epoch ?? RULES_EPOCH;
+}
+
+/**
+ * The query string a board link carries. The defaults stay out of it — the
+ * current epoch, the mode's own default period — so a shared link reads as
+ * it always has.
+ */
+function boardQuery(state: {
+  mode: LeaderboardMode;
+  period: LeaderboardPeriod | undefined;
+  epoch: number;
+}): Record<string, string> {
+  const out: Record<string, string> = { mode: state.mode };
+  if (state.period !== undefined) out.period = state.period;
+  if (state.epoch !== RULES_EPOCH) out.epoch = String(state.epoch);
+  return out;
 }

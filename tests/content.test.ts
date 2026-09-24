@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   AMBIENT_EVENT_IDS,
@@ -26,7 +28,13 @@ import {
   upgradeCost,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { fingerprintFor, RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
+import {
+  fingerprintFor,
+  RULES_EPOCH,
+  RULES_EPOCHS,
+  RULES_FINGERPRINT,
+  SAVE_VERSION,
+} from "@/game/dto/version";
 
 /**
  * Content is data, and data drifts. These are the checks that catch a typo in
@@ -219,6 +227,22 @@ describe("rules fingerprint", () => {
     expect(SAVE_VERSION).toBeGreaterThan(0);
     expect(Number.isInteger(RULES_EPOCH)).toBe(true);
     expect(RULES_EPOCH).toBeGreaterThan(0);
+  });
+
+  test("the epochs table ends on the epoch in force, with the version that ships it", () => {
+    const last = RULES_EPOCHS[RULES_EPOCHS.length - 1];
+    expect(last?.epoch).toBe(RULES_EPOCH);
+    const packageJson = JSON.parse(
+      readFileSync(resolve(import.meta.dir, "..", "package.json"), "utf8"),
+    ) as {
+      version: string;
+    };
+    expect(last?.version).toBe(packageJson.version);
+    for (const [index, row] of RULES_EPOCHS.entries()) {
+      expect(row.releasedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      const previous = RULES_EPOCHS[index - 1];
+      if (previous !== undefined) expect(row.epoch).toBeGreaterThan(previous.epoch);
+    }
   });
 
   test("the epoch feeds the fingerprint, so bumping it is enough", () => {

@@ -190,7 +190,9 @@ resuming it would drop them into a run that never happened.
 ## Runs belong to a rules epoch
 
 `Run.rulesEpoch` records which version of the rules a submission was played
-under, and every leaderboard query filters on the current one.
+under, and every leaderboard query filters on one epoch: the current one by
+default, or an older one the board offers from `RULES_EPOCHS`, each labelled
+with the package version that shipped it and the day it reached `main`.
 
 Without it the board would rank a run from before a rules change against one
 from after, which is a comparison of two different games dressed up as a

@@ -65,6 +65,31 @@ export const SAVE_VERSION = 3;
  */
 export const RULES_EPOCH = 1;
 
+export interface RulesEpoch {
+  epoch: number;
+  /** `package.json`'s version when this epoch reached `main`. */
+  version: string;
+  /** The day it reached `main`, as `YYYY-MM-DD`. */
+  releasedAt: string;
+}
+
+/**
+ * Every epoch the boards can show, oldest first; the last row is the one in
+ * force. The board filters on one epoch at a time, the current one by
+ * default, and offers the others by this list, labelled with the version
+ * that shipped them. Bumping `RULES_EPOCH` means adding a row here: the
+ * epoch, the package version being released, and the day it lands on
+ * `main`. `tests/content.test.ts` checks the last row is `RULES_EPOCH` and
+ * that its version is `package.json`'s.
+ */
+export const RULES_EPOCHS: readonly RulesEpoch[] = [
+  { epoch: 1, version: "0.1.0", releasedAt: "2026-09-22" },
+];
+
+export function rulesEpochOf(epoch: number): RulesEpoch | undefined {
+  return RULES_EPOCHS.find((row) => row.epoch === epoch);
+}
+
 /**
  * Exported so a test can compute the fingerprint for a *different* epoch and
  * prove the epoch actually feeds it. Comparing the real hash against an

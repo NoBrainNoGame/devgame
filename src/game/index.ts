@@ -63,5 +63,12 @@ export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
 export { isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";
 export type { PlayerActionDto, RunSaveDto } from "@/game/dto/run";
 export { MAX_ACTIONS, PlayerActionSchema, RunSaveSchema } from "@/game/dto/run";
-export { RULES_EPOCH, RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
+export type { RulesEpoch } from "@/game/dto/version";
+export {
+  RULES_EPOCH,
+  RULES_EPOCHS,
+  RULES_FINGERPRINT,
+  rulesEpochOf,
+  SAVE_VERSION,
+} from "@/game/dto/version";
 export { labelledKind } from "@/game/render/theme";

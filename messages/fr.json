@@ -478,6 +478,8 @@
     "periodToday": "Aujourd'hui",
     "periodYesterday": "Hier",
     "periodAll": "Tout",
+    "epochs": "Règles",
+    "epoch": "version {epoch} · {version} · {date}",
     "unavailable": "Le classement est indisponible pour le moment. Le jeu, lui, fonctionne : vos runs sont sauvegardées dans ce navigateur et seront envoyées quand le serveur reviendra.",
     "offline": "Cette instance tourne sans serveur : pas de compte ni de classement. Vos runs sont sauvegardées dans ce navigateur."
   },

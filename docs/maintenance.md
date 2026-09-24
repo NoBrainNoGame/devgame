@@ -628,7 +628,10 @@ Bumping the epoch changes the fingerprint, so the pinned value in
 `tests/content.test.ts` (`expect(RULES_FINGERPRINT).toBe("…")`) has to
 be updated in the same commit. Add a numbered line to the `RULES_EPOCH` doc
 comment saying what changed — that list is the only record of why the boards
-were reset.
+were reset — and a row to `RULES_EPOCHS`: the epoch, the `package.json`
+version being released, and the day it lands on `main`. The board's picker
+lists the boards by that row, and the same test checks the last row is the
+epoch in force and carries the package's version.
 
 **What to verify.**
 
@@ -694,13 +697,15 @@ and their local score, it just does not go on a board.
 
 `Run.rulesEpoch` records the epoch a submission was played under, written from
 `RULES_EPOCH` at submit time. Every leaderboard query in
-`src/lib/leaderboard/queries.ts` filters `r."rulesEpoch" = ${RULES_EPOCH}`.
+`src/lib/leaderboard/queries.ts` filters on one epoch: the one in force by
+default, or the one the board's picker selects from `RULES_EPOCHS`.
 
 So when you bump the epoch:
 
-- Every finished row keeps its old value and **disappears from the boards**.
+- Every finished row keeps its old value and **leaves the default board**.
   Nothing is deleted; the rows are still there, still scored, still visible in
-  a player's own history.
+  a player's own history, and still ranked under their own epoch in the
+  picker.
 - Rows written before the column existed carry `0` and are already invisible.
   That is correct: nobody knows what rules they were played under.
 - Runs still `in_progress` are unaffected at rest, but the client's

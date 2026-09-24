@@ -12,9 +12,10 @@ import { prisma } from "@/lib/db";
  * get out of step. Three composite indexes make the three queries here cheap —
  * see `docs/database.md`.
  *
- * Every query filters on the current rules epoch. A run played before a rules
- * change describes a different game, and ranking the two against each other
- * would make the board a comparison of nothing in particular.
+ * Every query filters on one rules epoch, the current one unless the caller
+ * asks for another. A run played before a rules change describes a different
+ * game, and ranking the two against each other would make the board a
+ * comparison of nothing in particular; an old epoch is a board of its own.
  */
 
 export type LeaderboardMode = "classic" | "daily";
@@ -66,6 +67,7 @@ interface BestRow {
 async function bestPerPlayer(
   mode: LeaderboardMode,
   period: LeaderboardPeriod,
+  epoch: number,
   limit: number,
 ): Promise<BestRow[]> {
   const day = period === "all" ? null : dayFor(period);
@@ -79,7 +81,7 @@ async function bestPerPlayer(
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
         AND p."bannedAt" IS NULL
-        AND r."rulesEpoch" = ${RULES_EPOCH}
+        AND r."rulesEpoch" = ${epoch}
         AND r."mode" = ${mode}::"RunMode"
         AND (${day}::date IS NULL OR r."dailyDate" = ${day}::date)
       ORDER BY r."profileId", r."score" DESC, r."finishedAt" ASC
@@ -92,9 +94,12 @@ async function bestPerPlayer(
 export async function getLeaderboard(options: {
   mode: LeaderboardMode;
   period: LeaderboardPeriod;
+  /** The rules epoch to rank; the one in force by default. */
+  epoch?: number;
   viewerProfileId?: string | null;
 }): Promise<Leaderboard> {
-  const rows = await bestPerPlayer(options.mode, options.period, 500);
+  const epoch = options.epoch ?? RULES_EPOCH;
+  const rows = await bestPerPlayer(options.mode, options.period, epoch, 500);
 
   const ranked = rankEntries(
     rows.map((row) => ({
@@ -114,7 +119,7 @@ export async function getLeaderboard(options: {
     options.viewerProfileId == null
       ? null
       : (ranked.find((entry) => entry.profileId === options.viewerProfileId) ??
-        (await viewerBest(options.mode, options.period, options.viewerProfileId)) ??
+        (await viewerBest(options.mode, options.period, epoch, options.viewerProfileId)) ??
         null);
 
   return { entries: ranked.slice(0, PAGE_SIZE), me };
@@ -147,6 +152,7 @@ export function rankEntries(rows: readonly Omit<LeaderboardEntry, "rank">[]): Le
 async function viewerBest(
   mode: LeaderboardMode,
   period: LeaderboardPeriod,
+  epoch: number,
   profileId: string,
 ): Promise<LeaderboardEntry | null> {
   const day = period === "all" ? null : dayFor(period);
@@ -160,7 +166,7 @@ async function viewerBest(
       JOIN "Profile" p ON p."id" = r."profileId"
       WHERE r."status" = 'finished'
         AND p."bannedAt" IS NULL
-        AND r."rulesEpoch" = ${RULES_EPOCH}
+        AND r."rulesEpoch" = ${epoch}
         AND r."mode" = ${mode}::"RunMode"
         AND (${day}::date IS NULL OR r."dailyDate" = ${day}::date)
       ORDER BY r."profileId", r."score" DESC, r."finishedAt" ASC
