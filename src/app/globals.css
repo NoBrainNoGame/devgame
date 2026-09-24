@@ -363,7 +363,7 @@ body::before {
   background: var(--color-bg);
   text-shadow: 0 1px var(--color-cyber-hot);
 }
-.cyber-frame:is(:hover, :focus-visible) > .cyber-glitch {
+.cyber-frame:not(:disabled):is(:hover, :focus-visible) > .cyber-glitch {
   display: inline-flex;
   animation: cyber-glitch 2s infinite;
 }

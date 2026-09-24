@@ -9,20 +9,23 @@ import * as React from "react";
  * into strips over the first. The fill and the stroke are the variant.
  */
 const buttonVariants = cva(
-  "group/button cyber-frame inline-flex shrink-0 items-center justify-center border-0 font-display font-semibold text-sm uppercase tracking-[0.08em] whitespace-nowrap transition-colors outline-none select-none focus-visible:[--cyber-stroke:var(--color-foreground)] active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:[--cyber-stroke:var(--color-destructive)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button cyber-frame inline-flex shrink-0 items-center justify-center border-0 font-display font-semibold text-sm uppercase tracking-[0.08em] whitespace-nowrap transition-colors outline-none select-none focus-visible:[--cyber-stroke:var(--color-foreground)] active:not-aria-[haspopup]:translate-y-px disabled:cursor-not-allowed disabled:text-muted-foreground disabled:[--cyber-fill:var(--color-muted)] disabled:[--cyber-stroke:var(--color-line)] disabled:opacity-70 aria-invalid:[--cyber-stroke:var(--color-destructive)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
         default:
           "text-primary-foreground [--cyber-fill:var(--color-cyber)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_85%,white)]",
+        // A tint rather than a fill on hover: what a button holds may carry
+        // colours of its own — a revenue in green, a share in grey — and a
+        // solid accent behind them would swallow both.
         outline:
-          "text-cyber [--cyber-fill:color-mix(in_oklab,var(--color-panel)_55%,transparent)] hover:text-primary-foreground hover:[--cyber-fill:var(--color-cyber)] aria-expanded:text-primary-foreground aria-expanded:[--cyber-fill:var(--color-cyber)]",
+          "text-cyber [--cyber-fill:color-mix(in_oklab,var(--color-panel)_55%,transparent)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_16%,var(--color-panel))] hover:[--cyber-stroke:var(--color-foreground)] aria-expanded:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_16%,var(--color-panel))] aria-expanded:[--cyber-stroke:var(--color-foreground)]",
         secondary:
           "text-foreground [--cyber-stroke:var(--color-line)] [--cyber-fill:var(--color-secondary)] hover:[--cyber-stroke:var(--color-cyber)] aria-expanded:[--cyber-stroke:var(--color-cyber)]",
         ghost:
-          "text-muted-foreground [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:text-cyber hover:[--cyber-fill:var(--color-accent)] aria-expanded:text-cyber aria-expanded:[--cyber-fill:var(--color-accent)]",
+          "text-muted-foreground [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:text-foreground hover:[--cyber-fill:var(--color-accent)] aria-expanded:text-foreground aria-expanded:[--cyber-fill:var(--color-accent)]",
         destructive:
-          "text-cyber-hot [--cyber-stroke:var(--color-cyber-hot)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_12%,transparent)] hover:text-primary-foreground hover:[--cyber-fill:var(--color-cyber-hot)] focus-visible:[--cyber-stroke:var(--color-cyber-hot)]",
+          "text-cyber-hot [--cyber-stroke:var(--color-cyber-hot)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_12%,transparent)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_28%,var(--color-panel))] focus-visible:[--cyber-stroke:var(--color-cyber-hot)]",
         link: "text-cyber underline-offset-4 [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:underline",
       },
       size: {
@@ -71,11 +74,17 @@ function Button({
   }) {
   const classes = cn(buttonVariants({ variant, size, className }));
 
+  // The hover copy is for a button that is a word or two: torn strips of a
+  // label read as a glitch, torn strips of an icon and three coloured
+  // figures read as a mess. Anything else gets the tint alone.
+  const glitchable = (content: React.ReactNode): React.ReactNode =>
+    typeof content === "string" ? content : null;
+
   // `asChild` renders the child (a link, usually) as the button. The trim
   // goes inside it, and the hover copy is the child's own content.
   if (asChild) {
     const copy = React.isValidElement<{ children?: React.ReactNode }>(children)
-      ? children.props.children
+      ? glitchable(children.props.children)
       : null;
     return (
       <Slot.Root
@@ -100,7 +109,7 @@ function Button({
       {...props}
     >
       {children}
-      <Trim copy={children} />
+      <Trim copy={glitchable(children)} />
     </button>
   );
 }
