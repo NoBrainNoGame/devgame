@@ -13,10 +13,13 @@ needs nothing installed beyond a stock server.
 - Prisma CLI config: `prisma7.config.ts`
 - Runtime client: `src/lib/db.ts`
 
-There is no `prisma/seed.ts`. Add one when the schema has something worth
-seeding — content tables live in `src/game/content/`, not in Postgres — and
-register it under `"prisma": { "seed": "bun prisma/seed.ts" }` in
-`package.json`.
+There is no `prisma/seed.ts`: content tables live in `src/game/content/`,
+not in Postgres, so nothing the app *needs* is seeded. What `bun run
+fixtures` (`scripts/fixtures.ts`) loads is development data — accounts,
+runs, page views, run samples, bug reports — written through the same
+functions the app writes with (`replayRun`, `applyRunToMeta`,
+`ingestSample`), found again by address or id and replaced on the next
+load. It refuses any `DATABASE_URL` that is not on this machine.
 
 ## Why the datasource URL lives in `prisma7.config.ts`
 

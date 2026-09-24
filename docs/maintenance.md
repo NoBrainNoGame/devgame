@@ -478,6 +478,13 @@ bun run sim --seed 42 --verbose    # one run, printed turn by turn
 uses `mixed`. Without `--verbose` it first plays `min(500, runs * 2)` seeds for
 forty actions each and checks the graph they wrote, then reports each policy.
 
+The policies themselves live in `scripts/lib/policy.ts`, shared with
+`bun run fixtures`, which plays the runs the local database is seeded with.
+A change to a policy moves both: the sim's tables, and the scores on a
+freshly loaded local board. The fixtures also carry a fifth hand,
+`chooseQuit`, that ends a run in burnout on purpose — the patient policies
+never lose under the current numbers, and a board needs finished runs.
+
 **Reading the output honestly.**
 
 - `generation → invariant failures` must be `0`. Anything else is a broken

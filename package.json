@@ -15,6 +15,7 @@
     "check": "bun run typecheck && bun run lint && bun test",
     "sim": "bun scripts/sim.ts",
     "init": "bun scripts/init.ts",
+    "fixtures": "bun scripts/fixtures.ts",
     "db:up": "bun scripts/db-up.ts",
     "admin": "bun scripts/admin.ts",
     "admin:stop": "bun scripts/admin-stop.ts",

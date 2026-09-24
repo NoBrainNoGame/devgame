@@ -17,11 +17,13 @@ import {
  *   bun run init                 write .env with dev values, start Postgres, migrate
  *   bun run init --offline       write .env for the offline game only, no Docker
  *   bun run init --no-docker     write .env, skip Docker and the migrations
+ *   bun run init --no-fixtures   leave the database empty
  *   bun run init --force         overwrite an existing .env
  *
- * With Docker, it ends by starting the local admin panel in the background
- * (`bun run admin:stop` ends it), on the port and behind the password the
- * `.env` carries.
+ * With Docker, it ends by loading the development fixtures (`bun run
+ * fixtures`: accounts, runs on the boards, a month of stats) and starting the
+ * local admin panel in the background (`bun run admin:stop` ends it), on the
+ * port and behind the password the `.env` carries.
  *
  * The values are for development on this machine and nothing else: a local
  * Postgres from `docker-compose.yml`, secrets drawn at random, no OAuth. The
@@ -35,6 +37,8 @@ const DEFAULT_PORT = "5443";
 export interface InitOptions {
   offline: boolean;
   docker: boolean;
+  /** Load the development fixtures once the database is migrated. */
+  fixtures: boolean;
   force: boolean;
   /** Where `.env` goes; the tests point it at a scratch file. */
   target: string;
@@ -48,6 +52,7 @@ export function parseInitArgs(
   return {
     offline: argv.includes("--offline"),
     docker: !argv.includes("--no-docker") && !argv.includes("--offline"),
+    fixtures: !argv.includes("--no-fixtures"),
     force: argv.includes("--force"),
     target: env.DEVGAME_INIT_TARGET ?? ENV_PATH,
     postgresPort: env.POSTGRES_PORT ?? DEFAULT_PORT,
@@ -119,6 +124,8 @@ export async function init(options: InitOptions): Promise<void> {
   // nothing.
   await run(["bun", "x", "prisma", "migrate", "deploy"]);
   await run(["bun", "x", "prisma", "generate"]);
+  // After `generate`: the loader imports the client it produces.
+  if (options.fixtures) await run(["bun", "scripts/fixtures.ts"]);
   // The panel reads the .env just written; a freshly generated file has a
   // password in it, an older one may not.
   const written = await readFile(options.target, "utf8");

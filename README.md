@@ -16,7 +16,8 @@ There is no end. A run stops in **burnout** (you ran out of energy) or with
 It runs **offline** with nothing but `bun run dev` — the game against your
 browser's storage — and the whole **online** site (accounts, cloud saves,
 leaderboard, bug reports, admin panel) comes up on any machine with
-`bun run init`. See [Getting started](#getting-started).
+`bun run init`, with a database already full of players, scores and stats to
+look at. See [Getting started](#getting-started).
 
 ## The game in one page
 
@@ -128,8 +129,8 @@ The **online mode** is the whole site: accounts, cloud saves, the daily
 leaderboard, bug reports, and the admin panel. One command sets a machine
 up for it. It writes a `.env` with development values and random secrets,
 starts the Postgres container from `docker-compose.yml`, waits for it,
-applies the migrations, generates the client, and starts the admin panel
-beside the database.
+applies the migrations, generates the client, loads the development
+fixtures, and starts the admin panel beside the database.
 
 ```bash
 bun install
@@ -146,6 +147,7 @@ only thing to have installed first.
 | `bun run init` | online setup, as above |
 | `bun run init --offline` | writes a `.env` for the offline game only, no Docker |
 | `bun run init --no-docker` | writes the `.env` and stops there |
+| `bun run init --no-fixtures` | leaves the database empty |
 | `bun run init --force` | overwrites an existing `.env` |
 | `POSTGRES_PORT=5500 bun run init` | picks another port for Postgres |
 
@@ -158,6 +160,19 @@ delete), bug reports. It listens on the loopback address only and reads
 whatever `DATABASE_URL` points at — so a machine set up against the
 production database administers production. `bun run admin` runs it in
 the foreground.
+
+**The fixtures** (`bun run fixtures`, `scripts/fixtures.ts`) are what a
+site with players in it looks like: thirteen accounts at every level, their
+runs on the classic board and on today's and yesterday's daily, a run still
+going to resume, one abandoned, one the server refused, one suspended
+player the board must not show, a month of page views, run samples for the
+Balance page and bug reports in every status. Every run was *played* by the
+headless policies of `scripts/lib/policy.ts` and scored by `replayRun`, the
+way a submission is — a fixture score is one the engine produced. Sign in
+as any of them with `<name>@fixtures.devgame.local` (`ada`, `linus`,
+`grace`…) and the magic link from the terminal. Loading again replaces
+them; `bun run fixtures --clean` removes them. The loader refuses a
+database that is not on this machine.
 
 **Signing in**, in development: the magic link is printed to the server
 log — copy it from the terminal and paste it into the browser. No email
@@ -196,7 +211,8 @@ bun run check       # typecheck + lint + tests — run this before you are done
 bun run dev         # dev server
 bun run build       # production build
 bun run sim         # headless balance simulator (scripts/sim.ts)
-bun run init        # .env with dev values, Postgres container, migrations, admin panel (scripts/init.ts)
+bun run init        # .env with dev values, Postgres container, migrations, fixtures, admin panel (scripts/init.ts)
+bun run fixtures    # accounts, scores and stats for the local database (--clean removes them)
 bun run db:up       # Postgres container, then the admin panel in the background
 bun run admin       # the admin panel in the foreground, http://127.0.0.1:3100
 bun run admin:stop  # end the background admin panel
@@ -253,7 +269,7 @@ before you touch the engine:
 ```
 messages/        fr.json (source of truth) and en.json
 prisma/          schema and migrations
-scripts/         sim.ts — headless balance simulator
+scripts/         sim.ts — headless balance simulator; fixtures.ts — the local database's players
 src/
   app/[locale]/
     (site)/      landing, leaderboard, profile, login — scrolls, has a footer

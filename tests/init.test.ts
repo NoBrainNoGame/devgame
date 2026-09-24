@@ -57,16 +57,19 @@ describe("bun run init", () => {
     expect(options.docker).toBe(false);
     expect(options.force).toBe(true);
     expect(options.postgresPort).toBe("5500");
+    expect(options.fixtures).toBe(true);
     expect(parseInitArgs(["--offline"], {}).docker).toBe(false);
+    expect(parseInitArgs(["--no-fixtures"], {}).fixtures).toBe(false);
 
     const dir = mkdtempSync(join(tmpdir(), "devgame-init-"));
     const target = join(dir, "nested", ".env");
-    await init({ offline: true, docker: false, force: false, target, postgresPort: "5443" });
+    const base = { docker: false, fixtures: false, target, postgresPort: "5443" };
+    await init({ ...base, offline: true, force: false });
     expect(existsSync(target)).toBe(true);
     const first = readFileSync(target, "utf8");
-    await init({ offline: false, docker: false, force: false, target, postgresPort: "5443" });
+    await init({ ...base, offline: false, force: false });
     expect(readFileSync(target, "utf8")).toBe(first);
-    await init({ offline: false, docker: false, force: true, target, postgresPort: "5443" });
+    await init({ ...base, offline: false, force: true });
     expect(readFileSync(target, "utf8")).not.toBe(first);
     expect(readFileSync(target, "utf8")).toContain("DATABASE_URL=");
   });
