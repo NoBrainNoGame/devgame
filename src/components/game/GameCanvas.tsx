@@ -7,6 +7,7 @@ import { useGameText } from "@/components/hud/useGameText";
 import type { GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
 import { mountGame } from "@/game";
 import { audioService } from "@/game/audio/AudioService";
+import { readLocalRun } from "@/lib/storage/sync";
 
 /**
  * The canvas, and nothing else.
@@ -60,8 +61,20 @@ export function GameCanvas({
     let handle: GameHandle | undefined;
 
     const override = austerityOverride();
+    // The props' resume snapshot is what the run was when the player pressed
+    // "resume"; a canvas mounted again later — a hot reload, a remount —
+    // must pick the run up where the local save has it now, not back then.
+    const wanted = optionsRef.current;
+    const local = readLocalRun();
+    const resume =
+      local !== null &&
+      local.clientRunId === wanted.clientRunId &&
+      local.actions.length > (wanted.resume?.actions.length ?? 0)
+        ? local
+        : wanted.resume;
     void mountGame(host, {
-      ...optionsRef.current,
+      ...wanted,
+      ...(resume === undefined ? {} : { resume }),
       translate: (value) => translateRef.current(value),
       ...(override === null ? {} : { austerityOverride: override }),
       audio: audioService(),

@@ -63,7 +63,21 @@ export function readLocalRun(): RunSaveDto | null {
   return readJson(STORAGE_KEYS.run, RunSaveSchema);
 }
 
+/**
+ * Writes the run in progress — unless what is already there is the same run
+ * further along. A canvas rebuilt from a stale snapshot (a hot reload, a
+ * remount) replays fewer actions than the player took, and its first save
+ * would otherwise overwrite the real one with a shorter log.
+ */
 export function writeLocalRun(save: RunSaveDto): void {
+  const held = readLocalRun();
+  if (
+    held !== null &&
+    held.clientRunId === save.clientRunId &&
+    held.actions.length > save.actions.length
+  ) {
+    return;
+  }
   writeJson(STORAGE_KEYS.run, save);
 }
 

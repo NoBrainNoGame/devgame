@@ -117,14 +117,25 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   app.canvas.style.touchAction = "none";
   app.canvas.style.display = "block";
 
+  // A resumed run is rebuilt from what the save says the account was when
+  // it started — its unlocks and its skill points — never from the account
+  // as it is now. A level gained mid-run would otherwise change the map the
+  // log was written on, and the replay would stop at the first move that no
+  // longer fits, throwing the rest of the run away.
+  const resume = options.resume;
   const session = new GameSession({
     seed: options.seed,
     mode: options.mode,
     profileId: options.profileId,
-    meta: options.meta,
+    meta:
+      resume === undefined
+        ? options.meta
+        : { ...options.meta, unlockedSkills: resume.unlockedSkills },
     clientRunId: options.clientRunId,
     createdAt: options.createdAt,
-    ...(options.resume === undefined ? {} : { resumeActions: options.resume.actions }),
+    ...(resume === undefined
+      ? {}
+      : { resumeActions: resume.actions, startingSkillPoints: resume.startingSkillPoints }),
     ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
   });
 
