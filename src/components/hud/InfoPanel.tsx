@@ -95,7 +95,11 @@ export function InfoPanel({ snapshot }: { snapshot: RunSnapshot }) {
               return (
                 <li key={dev.id} className="flex items-baseline justify-between gap-2">
                   <span>
-                    {dev.id} · {game(`ranks.${dev.rank}.name` as never)}
+                    <span style={{ color: `var(--color-dev-${dev.colour})` }}>{dev.name}</span>
+                    <span className="text-muted-foreground">
+                      {" "}
+                      · {game(`ranks.${dev.rank}.name` as never)}
+                    </span>
                   </span>
                   <span className="text-muted-foreground tabular-nums">
                     {held.map((ticket) => `#${ticket.id.slice(1)}`).join(" ") || "—"}
