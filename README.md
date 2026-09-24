@@ -127,10 +127,11 @@ bun run dev                 # http://localhost:3000
 
 The **online mode** is the whole site: accounts, cloud saves, the daily
 leaderboard, bug reports, and the admin panel. One command sets a machine
-up for it. It writes a `.env` with development values and random secrets,
-starts the Postgres container from `docker-compose.yml`, waits for it,
-applies the migrations, generates the client, loads the development
-fixtures, and starts the admin panel beside the database.
+up for it. It copies `.env.example` to `.env` (when there is none), fills
+the secrets the example leaves empty with random values, starts the Postgres
+container from `docker-compose.yml`, waits for it, installs the dependencies
+if need be, applies the migrations, generates the client, loads the
+development fixtures, and starts the admin panel beside the database.
 
 ```bash
 bun install
@@ -145,8 +146,8 @@ only thing to have installed first.
 | Flag | What it does |
 | --- | --- |
 | `bun run init` | online setup, as above |
-| `bun run init --offline` | writes a `.env` for the offline game only, no Docker |
-| `bun run init --no-docker` | writes the `.env` and stops there |
+| `bun run init --offline` | copies `.env.example` with the database commented out, no Docker |
+| `bun run init --no-docker` | copies `.env.example` and stops there |
 | `bun run init --no-fixtures` | leaves the database empty |
 | `bun run init --force` | overwrites an existing `.env` |
 | `POSTGRES_PORT=5500 bun run init` | picks another port for Postgres |
@@ -211,7 +212,7 @@ bun run check       # typecheck + lint + tests — run this before you are done
 bun run dev         # dev server
 bun run build       # production build
 bun run sim         # headless balance simulator (scripts/sim.ts)
-bun run init        # .env with dev values, Postgres container, migrations, fixtures, admin panel (scripts/init.ts)
+bun run init        # .env from .env.example, Postgres container, migrations, fixtures, admin panel (scripts/init.ts)
 bun run fixtures    # accounts, scores and stats for the local database (--clean removes them)
 bun run db:up       # Postgres container, then the admin panel in the background
 bun run admin       # the admin panel in the foreground, http://127.0.0.1:3100

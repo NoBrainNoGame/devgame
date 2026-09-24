@@ -27,6 +27,69 @@ export const DEV_RANK: Record<DevRank, DevRankDef> = {
   senior: { id: "senior", capacity: 3, speed: 3, hireCost: 20_000, salary: 800, tier: 2 },
 };
 
+/**
+ * First names, drawn at hiring so the roster, the log and the graph can say
+ * who holds what. Short, from everywhere, none of them the game's own words.
+ */
+export const DEV_NAMES = [
+  "Nora",
+  "Idris",
+  "Maya",
+  "Théo",
+  "Léa",
+  "Sami",
+  "Inès",
+  "Kofi",
+  "Yuki",
+  "Aylin",
+  "Mateo",
+  "Zoé",
+  "Ravi",
+  "Lina",
+  "Omar",
+  "Elsa",
+  "Nils",
+  "Aria",
+  "Jules",
+  "Mila",
+  "Tariq",
+  "Hana",
+  "Enzo",
+  "Noor",
+  "Louis",
+  "Sana",
+  "Ayo",
+  "Livia",
+  "Kenji",
+  "Farah",
+  "Milo",
+  "Ada",
+  "Pavel",
+  "Suki",
+  "Amir",
+  "Léo",
+  "Wren",
+  "Diego",
+  "Imani",
+  "Bastien",
+] as const;
+
+/**
+ * How many colours the team is told apart with. Spread over the whole
+ * spectrum by `DEV_COLOURS` in the theme and `--color-dev-<n>` in the CSS;
+ * the player is the first, every hire takes the next.
+ */
+export const DEV_COLOUR_COUNT = 8;
+
+/** The player's colour index. */
+export const PLAYER_COLOUR = 0;
+
+/** Which of the colours a developer wears: their serial, wrapping past the player's. */
+export function devColourIndex(id: string): number {
+  const serial = Number(id.slice(1));
+  return Number.isInteger(serial) && serial > 0 ? serial % DEV_COLOUR_COUNT : PLAYER_COLOUR;
+}
+
 export function isDevRank(value: string): value is DevRank {
   return Object.hasOwn(DEV_RANK, value);
 }

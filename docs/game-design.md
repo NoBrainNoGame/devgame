@@ -46,14 +46,17 @@ vers ce sur quoi il a été construit. C'est un DAG lu par les parents, comme
 
 **Deux branches au long cours, et rien ne s'écrit sur l'une ni sur l'autre.**
 
-- **`dev`** est la branche d'intégration. Elle s'ouvre sur un back-merge de
-  `main` et reçoit ensuite **un merge par ticket livré**.
-- **`main`** ne reçoit que deux nœuds par sprint : le merge `dev → main` qui le
-  livre, et la **release** qui le tague. La colonne la plus à gauche raconte
-  donc l'histoire des sprints, pas celle des commits.
+- **`main`** porte le **commit initial** du dépôt — le seul nœud qui existe
+  avant le premier sprint — puis ne reçoit que deux nœuds par sprint : le
+  merge `dev → main` qui le livre, et la **release** qui le tague. La colonne
+  la plus à gauche raconte donc l'histoire des sprints, pas celle des commits.
+- **`dev`** est la branche d'intégration. Elle **fourche de `main`** sur un
+  back-merge — le premier sprint s'ouvre sur le commit initial, les suivants
+  sur la dernière release — et reçoit ensuite **un merge par ticket livré**.
 
 Tout le travail se fait dans la colonne d'un ticket, qui part de `dev` et y
-revient. Un ticket prend la colonne libre la plus à gauche **à son premier
+revient — sauf l'[obstacle](#lobstacle), qui part de la colonne d'un ticket
+et y revient. Un ticket prend la colonne libre la plus à gauche **à son premier
 commit** — un ticket ouvert mais pas encore écrit n'a pas de colonne, donc pas
 de trou dans le graphe — et la rend quand il merge ou quand on le recommence.
 **Un merge est la fin d'un ticket, jamais un commit de plus.**
@@ -106,6 +109,33 @@ compétence n'est jamais imposé : il a expiré avant.
 
 Les tickets en trop, c'est aussi ce qu'une **équipe** prend en charge — voir
 [L'entreprise](#lentreprise).
+
+### L'obstacle
+
+Un commit de travail — plein ou risqué — sur une feature, une demande VIP ou
+une migration peut **faire surgir un obstacle** : un bug trouvé en chemin, une
+migration manquante, un design qui ne tient pas. La chance est tirée à chaque
+commit qui peut en avoir un (`tickets.kinds.obstacle.chancePct`), qu'il soit
+écrit par le joueur ou par un développeur de l'équipe, tant que le ticket n'en
+a pas un ouvert et n'a pas atteint son plafond.
+
+L'obstacle est un ticket à part entière, **né ouvert et en main** : il fourche
+de la pointe de la feature, dans une colonne à lui, et il est démarré d'office
+pour celui qui écrivait la feature — le joueur bascule dessus, un développeur
+le prend avant le reste. Il n'a pas de review : ses points pleins, on le
+**ramène** sur la feature d'un merge dans la colonne de celle-ci, et on
+revient sur la feature. Un obstacle est un mur, pas une récompense :
+
+- la feature **ne peut pas ouvrir sa PR** tant qu'un obstacle est ouvert
+  dessus ; l'équipe, pareil, laisse sa feature pleine attendre ;
+- ses points sont les siens et **ne comptent pas** dans la feature, ni dans le
+  score ni dans l'XP ; il ne rapporte rien, ne pèse rien ;
+- ses **bugs sont ceux de la feature** : la review de la feature lit aussi
+  les commits IA non relus de l'obstacle, et un fix sur la feature reprend le
+  plus ancien commit bugué de l'arbre entier ;
+- il ne compte pas comme un ticket en trop pour l'énergie ; il ne peut pas
+  faire surgir un obstacle à son tour ; recommencer la feature le jette avec
+  elle.
 
 ### Le commit
 
@@ -270,9 +300,12 @@ est toujours une ; les suivants sont tirés selon les poids du palier
 - **Migration** : quatre à six points, chaque commit coûte trois de dette
   (sauf avec Dependabot) ; livrée, elle offre un niveau de serveurs.
 
+- **Obstacle** : jamais tiré du tableau, il surgit d'un commit — voir
+  [L'obstacle](#lobstacle).
+
 Un ticket sans revenu ne pèse rien sur les serveurs. Les couleurs suivent la
 famille : le bug dans celle du hotfix, la migration et la dette dans celle
-du refacto, le VIP dans celle des features.
+du refacto, le VIP dans celle des features, l'obstacle dans une couleur à lui.
 
 ## L'entreprise
 
@@ -603,8 +636,19 @@ que le moteur sait.
    deux — la forme qu'un client git dessine.
 
 Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
-nœud : ouvrir un ticket est « Démarrer », soumettre est « Ouvrir la PR », et
+nœud : ouvrir un ticket est « Démarrer », soumettre est « Ouvrir la PR », et
 écrire un commit en refacto est « Refacto · à la main ».
+
+**Chacun a un nom et une couleur.** Un développeur embauché reçoit un prénom
+— haché de la graine, jamais tiré — et une couleur, la suivante d'une palette
+de huit réparties sur tout le spectre, le joueur ayant la première. C'est ce
+qui dit à qui est quoi : le ref d'une branche tenue par l'équipe porte le
+prénom de celui qui la tient, dans sa couleur ; `HEAD` porte celui du joueur ;
+les commits d'un collègue sont des anneaux creux de sa couleur ; le roster, le
+journal et les cartes disent « Nora », pas « d3 ». Hors ligne, le nom du joueur
+est demandé au lancement de la partie et gardé dans ses réglages ; connecté,
+c'est le nom du compte. Ces couleurs ne suivent pas l'austérité : qui a écrit
+quoi doit rester lisible à tous les paliers.
 
 Le HUD a quatre places, une par rôle : la barre de ressources dit où on en est
 et combien de tours il reste au sprint ; la barre de tickets, au-dessus du

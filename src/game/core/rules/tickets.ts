@@ -1,5 +1,6 @@
-import { TICKET_KIND } from "@/game/content";
+import { obstacleNameKey, TICKET_KIND } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { fnv1a } from "@/game/core/hash";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { raiseQuality } from "@/game/core/rules/quality";
@@ -48,9 +49,28 @@ export function getTicket(state: RunState, id: TicketId): Ticket {
   return ticket;
 }
 
+/** The obstacles standing on a ticket right now: open, forked off it, not yet landed back. */
+export function obstaclesOf(state: RunState, ticket: Ticket): Ticket[] {
+  return openTickets(state).filter((other) => other.parentId === ticket.id);
+}
+
+/** Every obstacle a ticket ever turned up, whatever became of it, oldest first. */
+export function childrenOf(state: RunState, ticket: Ticket): Ticket[] {
+  return sortedTickets(state).filter((other) => other.parentId === ticket.id);
+}
+
+/**
+ * The ticket's commits and its obstacles', in ticket order. What a review
+ * reads, what a fix redoes and what ships with the feature: an obstacle's
+ * work is the feature's work, only its points are its own.
+ */
+export function treeNodeIds(state: RunState, ticket: Ticket): NodeId[] {
+  return [...ticket.nodeIds, ...childrenOf(state, ticket).flatMap((child) => child.nodeIds)];
+}
+
 /** Machine-written commits on the ticket nobody has read, oldest first. */
 export function unreadAiOn(state: RunState, ticket: Ticket): NodeId[] {
-  return ticket.nodeIds.filter((id) => {
+  return treeNodeIds(state, ticket).filter((id) => {
     const commit = state.nodes[id]?.commit;
     return commit !== undefined && commit.mode === "ai" && !commit.reviewed;
   });
@@ -58,14 +78,14 @@ export function unreadAiOn(state: RunState, ticket: Ticket): NodeId[] {
 
 /** Commits on the ticket the review flagged, oldest first. */
 export function buggedOn(state: RunState, ticket: Ticket): NodeId[] {
-  return ticket.nodeIds.filter((id) => state.nodes[id]?.commit.bugged === true);
+  return treeNodeIds(state, ticket).filter((id) => state.nodes[id]?.commit.bugged === true);
 }
 
 /** The commit on the ticket that cost the codebase the most, if any did. */
 export function mostIndebtedOn(state: RunState, ticket: Ticket): NodeId | null {
   let best: NodeId | null = null;
   let most = 0;
-  for (const id of ticket.nodeIds) {
+  for (const id of treeNodeIds(state, ticket)) {
     const cost = state.nodes[id]?.commit.debt ?? 0;
     if (cost > most) {
       best = id;
@@ -75,17 +95,26 @@ export function mostIndebtedOn(state: RunState, ticket: Ticket): NodeId | null {
   return best;
 }
 
-/** Points full and no bug left standing: the ticket may go to review. */
+/**
+ * Points full, no bug left standing, no obstacle in the way: the ticket may
+ * go to review — or, for an obstacle, land back on its feature. A showcase
+ * run is looked at, not played, and a flagged bug there holds nothing.
+ */
 export function isReady(state: RunState, ticket: Ticket): boolean {
-  return ticket.filled >= ticket.points && buggedOn(state, ticket).length === 0;
+  return (
+    ticket.filled >= ticket.points &&
+    (state.showcase !== null || buggedOn(state, ticket).length === 0) &&
+    obstaclesOf(state, ticket).length === 0
+  );
 }
 
 export function isOnHotfix(state: RunState): boolean {
   return currentTicket(state)?.mustWrite === "hotfix";
 }
 
-/** Merges landed on `dev` since this ticket was opened. */
+/** Merges landed on `dev` since this ticket was opened. An obstacle lands on its feature, not on `dev`: never behind. */
 export function behindOf(state: RunState, ticket: Ticket): number {
+  if (ticket.parentId !== undefined) return 0;
   return Math.max(0, state.devMerges - ticket.devMergesAtOpen);
 }
 
@@ -163,9 +192,75 @@ export function forceTicket(
   return ticket;
 }
 
+/**
+ * A commit on a feature turned something up: a bug on the way, a piece
+ * missing, a design that will not hold. The obstacle is born open and forked
+ * off the feature, in the hand of whoever was writing it — yours if the
+ * feature was, the developer's if it was theirs — and the feature cannot go
+ * to review until the obstacle has landed back on it. Its points are its own
+ * and worth nothing; the bugs on it are the feature's.
+ */
+export function spawnObstacle(context: RuleContext, parent: Ticket, nodeId: NodeId): Ticket {
+  const { state, rng } = context;
+  const { obstacle } = BALANCE.tickets.kinds;
+  const id: TicketId = `t${state.nextTicketSerial}`;
+  state.nextTicketSerial += 1;
+
+  const ticket: Ticket = {
+    id,
+    kind: "obstacle",
+    status: "open",
+    points: rng.int(obstacle.points.min, obstacle.points.max),
+    filled: 0,
+    rework: 0,
+    debtAdded: 0,
+    rejections: 0,
+    tier: state.tier,
+    load: 0,
+    mrr: 0,
+    sprintArrived: state.sprint,
+    devMergesAtOpen: state.devMerges,
+    nodeIds: [],
+    parentId: parent.id,
+    nameKey: obstacleNameKey(fnv1a(`${state.seed}:${id}`)),
+    ...(parent.assignee === undefined ? {} : { assignee: parent.assignee }),
+  };
+  state.tickets[id] = ticket;
+  state.stats.arrivedByKind.obstacle += 1;
+  // Started for whoever was writing: the feature's author is the obstacle's.
+  if (state.player.ticketId === parent.id) state.player.ticketId = id;
+
+  emit(context, {
+    type: "obstacle_spawned",
+    ticketId: id,
+    parentId: parent.id,
+    nodeId,
+    nameKey: ticket.nameKey ?? "",
+  });
+  return ticket;
+}
+
+/**
+ * Whether the commit just written turns an obstacle up. One at a time, a
+ * cap per feature, only on the kinds of work that can hide one — and the
+ * chance is rolled only then, so a feature that cannot have one draws
+ * nothing.
+ */
+export function maybeSpawnObstacle(context: RuleContext, parent: Ticket, nodeId: NodeId): void {
+  const { state, rng } = context;
+  const { obstacle } = BALANCE.tickets.kinds;
+  if (!TICKET_KIND[parent.kind].spawnsObstacles) return;
+  if (obstaclesOf(state, parent).length > 0) return;
+  if (childrenOf(state, parent).length >= obstacle.maxPerTicket) return;
+  if (!rng.chance(obstacle.chancePct)) return;
+  spawnObstacle(context, parent, nodeId);
+}
+
 /** Tickets left in the backlog past their grace are opened for you. */
 export function assignStaleTickets(context: RuleContext): void {
   const { state } = context;
+  // A showcase's board is fed for its team; what waits, waits for them.
+  if (state.showcase !== null) return;
   const cutoff = state.sprint - BALANCE.tickets.graceSprints;
 
   // Every ticket the sprint has to force on you is one production noticed

@@ -113,6 +113,8 @@ export function reviewedRatio(state: RunState): number {
  */
 export function mergeEventChance(state: RunState, ticket: Ticket): number {
   const { failure } = BALANCE;
+  // Nothing ever happens to a showcase's merge: no conflict to stop the picture.
+  if (state.showcase !== null) return 0;
 
   const value =
     failure.mergeEventBase +

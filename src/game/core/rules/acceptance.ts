@@ -7,10 +7,11 @@ import {
   backlogTickets,
   currentTicket,
   getTicket,
+  isReady,
   openTicket,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
-import { completeMerge, discardCommits } from "@/game/core/rules/write";
+import { completeMerge, completeObstacle, discardCommits } from "@/game/core/rules/write";
 import type { Ticket } from "@/game/core/types";
 
 /**
@@ -37,13 +38,16 @@ export function performSubmit(context: RuleContext): void {
 
   // Every unread machine-written commit is read now; the ones that turn out
   // to hide a bug are flagged, and stay flagged until a refactor redoes them.
+  // A showcase's reviewer reads nothing and refuses nothing: the run is a
+  // picture, and a refusal would stop it.
   const caught: string[] = [];
   for (const id of unread) {
+    if (state.showcase !== null) break;
     const hidden = state.nodes[id]?.commit.hiddenBug === true;
     if (hidden || context.rng.chance(acceptance.bugDetectPct)) caught.push(id);
   }
   const bugs = caught.length;
-  const overDebt = state.debt > acceptance.maxDebt;
+  const overDebt = state.showcase === null && state.debt > acceptance.maxDebt;
   const accepted = bugs === 0 && !overDebt;
   const rework = accepted ? 0 : bugs * acceptance.pointsPerBug;
 
@@ -97,8 +101,17 @@ export function performSubmit(context: RuleContext): void {
  */
 export function performMerge(context: RuleContext): void {
   const { state } = context;
-  if (state.phase.kind !== "pr_accepted") throw new Error("performMerge: nothing was accepted");
-  land(context, getTicket(state, state.phase.ticketId));
+  if (state.phase.kind === "pr_accepted") {
+    land(context, getTicket(state, state.phase.ticketId));
+    return;
+  }
+  // An obstacle needs no review: full, it lands back on its feature.
+  const ticket = currentTicket(state);
+  if (ticket !== null && ticket.parentId !== undefined && isReady(state, ticket)) {
+    completeObstacle(context, ticket);
+    return;
+  }
+  throw new Error("performMerge: nothing was accepted");
 }
 
 function land(context: RuleContext, ticket: Ticket): void {

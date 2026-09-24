@@ -173,24 +173,26 @@ export class Camera extends booyah.ChipBase {
     this.publish();
   }
 
-  /** Zooms out until the whole revealed history is on screen. */
   /**
-   * The zoom at which the whole picture fits, without letting go of the
-   * player: the scale glides there on the next ticks, x recentres itself, and
-   * y keeps following the head. For a canvas that watches a run rather than
-   * plays one. Never below the zoom where labels disappear — past that the
-   * camera follows instead of shrinking.
+   * The zoom at which the picture fits the canvas *sideways*, without letting
+   * go of the player: the scale glides there on the next ticks, x recentres
+   * itself, and y keeps following the head. For a canvas that watches a run
+   * rather than plays one. Only the width counts: the history is as tall as
+   * the run is long, and fitting it would shrink the graph to a thread — it
+   * scrolls off the bottom instead, as it does in a run. Never above the
+   * default zoom, and never below the zoom where labels disappear — unless
+   * the canvas draws no subjects, where a wide team is worth a small graph.
    */
   frame(): void {
-    const { app } = sceneContext(this.chipContext);
+    const { app, subjects } = sceneContext(this.chipContext);
     const bounds = this.graph?.bounds();
     if (bounds === null || bounds === undefined) return;
 
     const width = Math.max(1, bounds.maxX - bounds.minX) + FRAME_PADDING;
-    const height = Math.max(1, bounds.maxY - bounds.minY) + FRAME_PADDING;
-    const fitted = Math.min(app.screen.width / width, app.screen.height / height);
+    const fitted = app.screen.width / width;
+    const floor = subjects ? LABEL_ZOOM : ZOOM.min;
 
-    this.zoom = clampZoom(Math.max(LABEL_ZOOM, fitted));
+    this.zoom = clampZoom(Math.min(ZOOM.default, Math.max(floor, fitted)));
     this.following = true;
     this.publish();
   }

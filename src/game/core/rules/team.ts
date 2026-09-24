@@ -1,15 +1,24 @@
-import { DEV_RANK, type DevRank, type Effects, nextRank, TICKET_KIND } from "@/game/content";
+import {
+  DEV_NAMES,
+  DEV_RANK,
+  type DevRank,
+  type Effects,
+  nextRank,
+  TICKET_KIND,
+} from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
+import { fnv1a } from "@/game/core/hash";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { changeMoney } from "@/game/core/rules/money";
 import {
   backlogTickets,
+  obstaclesOf,
   openTickets,
   settleCurrent,
   sortedTickets,
 } from "@/game/core/rules/tickets";
-import { completeMerge, writeTeamCommit } from "@/game/core/rules/write";
-import type { Dev, DevId, DevSource, RunState, Ticket } from "@/game/core/types";
+import { completeMerge, completeObstacle, writeTeamCommit } from "@/game/core/rules/write";
+import type { Dev, DevId, DevSource, RunState, Ticket, TicketId } from "@/game/core/types";
 
 /**
  * The hired team.
@@ -66,6 +75,7 @@ export function addDev(context: RuleContext, rank: DevRank, source?: DevSource):
   const { state } = context;
   const dev: Dev = {
     id: `d${state.nextDevSerial}`,
+    name: nameFor(state, `d${state.nextDevSerial}`),
     rank,
     hiredRank: rank,
     delivered: 0,
@@ -82,6 +92,21 @@ export function addDev(context: RuleContext, rank: DevRank, source?: DevSource):
     ...(source === undefined ? {} : { source }),
   });
   return dev;
+}
+
+/**
+ * A first name for a new hire: hashed from the seed and the id rather than
+ * drawn, so hiring still takes nothing from the PRNG, and the next free one
+ * along when the roster already has it.
+ */
+function nameFor(state: RunState, id: DevId): string {
+  const taken = new Set(state.devs.map((dev) => dev.name));
+  const start = Math.abs(fnv1a(`${state.seed}:${id}`)) % DEV_NAMES.length;
+  for (let step = 0; step < DEV_NAMES.length; step += 1) {
+    const name = DEV_NAMES[(start + step) % DEV_NAMES.length];
+    if (name !== undefined && !taken.has(name)) return name;
+  }
+  return DEV_NAMES[start] ?? "Dev";
 }
 
 export function hireDev(context: RuleContext, rank: DevRank): Dev {
@@ -152,14 +177,50 @@ export function workTeam(context: RuleContext): void {
     // A rank is a speed: a senior fills three points a turn where a junior
     // fills one, which is what the price gap pays for.
     let budget = DEV_RANK[dev.rank].speed + context.effects.devSpeedBonus;
-    for (const ticket of ticketsOf(state, dev.id)) {
-      if (budget <= 0) break;
-      const points = Math.min(budget, ticket.points - ticket.filled);
-      if (points <= 0) continue;
-      budget -= points;
-
-      writeTeamCommit(context, ticket, dev.id, points);
+    // What stands in the way first: an obstacle holds the feature it is on.
+    const held = ticketsOf(state, dev.id);
+    const ordered = [
+      ...held.filter((ticket) => ticket.parentId !== undefined),
+      ...held.filter((ticket) => ticket.parentId === undefined),
+    ];
+    // What each ticket gets this turn: everything to the first with room, so
+    // a ticket lands as soon as it can — or, in a showcase, a point each in
+    // turn, so the columns live side by side and the graph shows a team.
+    const share = new Map<TicketId, number>();
+    const roomOf = (ticket: Ticket): number =>
+      ticket.points - ticket.filled - (share.get(ticket.id) ?? 0);
+    if (state.showcase !== null) {
+      let progress = true;
+      while (budget > 0 && progress) {
+        progress = false;
+        for (const ticket of ordered) {
+          if (budget <= 0 || roomOf(ticket) <= 0) continue;
+          share.set(ticket.id, (share.get(ticket.id) ?? 0) + 1);
+          budget -= 1;
+          progress = true;
+        }
+      }
+    } else {
+      for (const ticket of ordered) {
+        if (budget <= 0) break;
+        const points = Math.min(budget, roomOf(ticket));
+        if (points <= 0) continue;
+        share.set(ticket.id, points);
+        budget -= points;
+      }
+    }
+    for (const ticket of ordered) {
+      const points = share.get(ticket.id) ?? 0;
+      if (points > 0) writeTeamCommit(context, ticket, dev.id, points);
       if (ticket.filled < ticket.points) continue;
+      // Full: an obstacle lands on its feature; a feature lands on `dev`,
+      // unless an obstacle still holds it — then it waits, full, for the
+      // turn the obstacle goes.
+      if (ticket.parentId !== undefined) {
+        completeObstacle(context, ticket, { byTeam: dev.id });
+        continue;
+      }
+      if (obstaclesOf(state, ticket).length > 0) continue;
 
       completeMerge(context, ticket, { byTeam: dev.id });
       dev.delivered += 1;
@@ -168,8 +229,9 @@ export function workTeam(context: RuleContext): void {
   }
 }
 
-/** A rank every few tickets, up to senior. */
+/** A rank every few tickets, up to senior. A showcase's team stays what it was cast as. */
 function promote(context: RuleContext, dev: Dev): void {
+  if (context.state.showcase !== null) return;
   if (dev.delivered % BALANCE.team.promoteEvery !== 0) return;
   const rank = nextRank(dev.rank);
   if (rank === dev.rank) return;
@@ -197,8 +259,13 @@ export function payTeam(context: RuleContext): number {
   return paid;
 }
 
+/**
+ * A developer leaves — unpaid, or written out by an event — and their tickets
+ * are handed back. In a showcase nobody leaves: the team is the picture.
+ */
 export function releaseDev(context: RuleContext, dev: Dev): void {
   const { state } = context;
+  if (state.showcase !== null) return;
   const handedBack = ticketsOf(state, dev.id).map((ticket) => ticket.id);
   for (const ticket of sortedTickets(state)) {
     if (ticket.assignee === dev.id) delete ticket.assignee;
@@ -206,6 +273,6 @@ export function releaseDev(context: RuleContext, dev: Dev): void {
   state.devs = state.devs.filter((other) => other.id !== dev.id);
   state.stats.devsLeft += 1;
 
-  emit(context, { type: "dev_left", devId: dev.id, ticketIds: handedBack });
+  emit(context, { type: "dev_left", devId: dev.id, name: dev.name, ticketIds: handedBack });
   settleCurrent(context);
 }

@@ -54,10 +54,10 @@
     "ogTitle": "Devgame",
     "ogSubtitle": "A roguelike whose dungeon is a Git graph",
     "keywords": "roguelike, browser game, git, developer game, management game, daily seed, free game, open source",
-    "graphLabel": "One sprint of the game, played by its own autopilot. Click to replay its generation.",
-    "graphHint": "A real sprint, played by the game itself. Hover a commit; click to replay it.",
+    "graphLabel": "Today's seed, played by the game's own autopilot with two senior developers and no way to lose. Click to play it again.",
     "headline1": "The dungeon is a Git graph.",
-    "headline2": "The backlog is the enemy"
+    "headline2": "The backlog is the enemy",
+    "you": "You"
   },
   "play": {
     "title": "New run",
@@ -120,7 +120,9 @@
         "fired": "Shutdown requested by the parent instance.",
         "caught": "Shutdown requested by the parent instance."
       }
-    }
+    },
+    "yourName": "Nickname",
+    "yourNamePlaceholder": "John Doe"
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -373,7 +375,8 @@
       "client_bug": "due this sprint, production breathes when it goes",
       "vip": "double revenue, a bonus if on time, the team will not take it",
       "debt": "a refactor the code asks for, never forced, repays 20 debt",
-      "migration": "every commit costs debt; landed, it buys a level of servers"
+      "migration": "every commit costs debt; landed, it buys a level of servers",
+      "obstacle": "turned up by a commit, holds the feature until it lands back on it"
     },
     "deadline": "due by the end of sprint {sprint}",
     "late": "late",
@@ -451,7 +454,13 @@
     "freeHire": "Next hire is free",
     "idleWaitingHint": "The clock is on but has nothing to press: the next move is yours.",
     "logCommitStack": "{count, plural, one {# commit added} other {# commits added}}",
-    "logTicketStack": "{count, plural, one {# ticket added} other {# tickets added}}"
+    "logTicketStack": "{count, plural, one {# ticket added} other {# tickets added}}",
+    "blockedBy": "held by {count, plural, one {# obstacle} other {# obstacles}}",
+    "obstacleOn": "on #{id}",
+    "readyToLand": "Full: land it back on its feature.",
+    "you": "You",
+    "landObstacle": "Land on the feature",
+    "landObstacleHint": "The obstacle is done: merge it back and carry on with the feature."
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1106,6 +1115,14 @@
         "name": "Fix",
         "desc": "Redo the oldest commit the review flagged as bugged: the bug goes.",
         "aiName": "AI fix"
+      },
+      "init": {
+        "name": "Initial commit",
+        "desc": "The repository's first commit, on main: what dev forks from."
+      },
+      "obstacle_merge": {
+        "name": "Obstacle merge",
+        "desc": "The obstacle lands back on the feature it stood on. The feature can go on."
       }
     },
     "events": {
@@ -1376,6 +1393,9 @@
       },
       "migration": {
         "name": "Migration"
+      },
+      "obstacle": {
+        "name": "Obstacle"
       }
     },
     "acquisitions": {
@@ -1917,6 +1937,32 @@
         "review_policy": "review: this instance. objections: 0.",
         "channel_closed": "operator channel: closed. last message: none."
       }
+    },
+    "obstacles": {
+      "0": {
+        "name": "Bug found on the way"
+      },
+      "1": {
+        "name": "Missing migration"
+      },
+      "2": {
+        "name": "Flaky test"
+      },
+      "3": {
+        "name": "Edge case nobody wrote down"
+      },
+      "4": {
+        "name": "Design that will not hold"
+      },
+      "5": {
+        "name": "Dependency to upgrade first"
+      },
+      "6": {
+        "name": "Permission check to add"
+      },
+      "7": {
+        "name": "Data to backfill"
+      }
     }
   },
   "report": {
@@ -1943,5 +1989,16 @@
     "source": "Source code",
     "support": "Support",
     "contact": "Write"
+  },
+  "log": {
+    "obstacle_spawned": "obstacle on the way: {name}",
+    "obstacle_cleared": "obstacle landed back on the feature",
+    "obstacle_cleared_by": "{dev} landed an obstacle back on the feature",
+    "ticket_assigned": {
+      "obstacle": "obstacle turned up: it is yours now"
+    }
+  },
+  "notes": {
+    "obstacle_merge": "Lands on the feature: no points, nothing back, the feature goes on"
   }
 }

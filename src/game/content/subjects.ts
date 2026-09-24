@@ -58,6 +58,7 @@ export function bandOf(tier: number): SubjectBand {
 export function nodePrefix(kind: NodeKind, mode: CommitMode | undefined): SubjectPrefix {
   switch (kind) {
     case "feature_merge":
+    case "obstacle_merge":
     case "sprint_merge":
       return "merge";
     case "hotfix":
@@ -75,6 +76,7 @@ export function nodePrefix(kind: NodeKind, mode: CommitMode | undefined): Subjec
       return "rebase";
     case "risky":
       return "perf";
+    case "init":
     case "sprint_start":
       return "init";
     case "commit":

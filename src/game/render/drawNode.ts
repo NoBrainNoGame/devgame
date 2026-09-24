@@ -1,8 +1,9 @@
 import type { Graphics } from "pixi.js";
 
+import { devColourIndex } from "@/game/content";
 import type { MapNode } from "@/game/core/types";
 import { palette } from "@/game/render/palette";
-import { NODE_RADIUS } from "@/game/render/theme";
+import { DEV_COLOURS, NODE_RADIUS } from "@/game/render/theme";
 
 /**
  * One commit: a small disc on its lane, the way a git client draws them. The
@@ -13,8 +14,8 @@ import { NODE_RADIUS } from "@/game/render/theme";
  * asks for those to be visible on the graph, because it is the only way to see
  * what a review would clean up before spending a turn on it. Merges and trunk
  * commits are hollow, as `git log --graph` draws the ones that carry no work.
- * A colleague's commit is hollow too, in the craft colour: work on the graph
- * that is not yours to stand on.
+ * A colleague's commit is hollow too, in that colleague's own colour: work
+ * on the graph that is not yours to stand on, and whose it is at a glance.
  */
 export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean): void {
   graphics.clear();
@@ -32,7 +33,10 @@ export function drawCommit(graphics: Graphics, node: MapNode, hovered: boolean):
     graphics
       .circle(0, 0, NODE_RADIUS - 1)
       .fill(palette.background)
-      .stroke({ width: 2, color: palette.node.craft });
+      .stroke({
+        width: 2,
+        color: DEV_COLOURS[devColourIndex(node.commit.author)] ?? palette.node.craft,
+      });
   } else if (work) {
     graphics.circle(0, 0, NODE_RADIUS).fill(fill).stroke({ width: 2, color: palette.background });
   } else {

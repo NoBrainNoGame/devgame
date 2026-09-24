@@ -13,11 +13,25 @@ export const TICKET_KINDS = [
   "vip",
   "debt",
   "migration",
+  "obstacle",
 ] as const;
 
 export type TicketKind = (typeof TICKET_KINDS)[number];
 
-export type TicketColour = "feature" | "hotfix" | "refactor";
+export type TicketColour = "feature" | "hotfix" | "refactor" | "obstacle";
+
+/** How many names an obstacle can have: `game.obstacles.<index>.name`. */
+export const OBSTACLE_POOL_SIZE = 8;
+
+/** The i18n key of an obstacle's name: what the commit turned up. */
+export function obstacleNameKey(hash: number): string {
+  return `obstacles.${Math.abs(hash) % OBSTACLE_POOL_SIZE}.name`;
+}
+
+/** Every obstacle-name key the catalogues must carry. */
+export function allObstacleKeys(): string[] {
+  return Array.from({ length: OBSTACLE_POOL_SIZE }, (_, i) => `obstacles.${i}.name`);
+}
 
 export interface TicketKindDef {
   id: TicketKind;
@@ -39,6 +53,8 @@ export interface TicketKindDef {
   deadlineSprints?: number;
   /** Whether the board may force it open once it has waited too long. */
   forcedWhenStale: boolean;
+  /** Whether a commit on it may turn an obstacle up. */
+  spawnsObstacles: boolean;
 }
 
 export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
@@ -51,6 +67,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     earnsMrr: true,
     grantsSkill: true,
     forcedWhenStale: true,
+    spawnsObstacles: true,
   },
   hotfix: {
     id: "hotfix",
@@ -62,6 +79,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     mustWrite: "hotfix",
     forcedWhenStale: true,
+    spawnsObstacles: false,
   },
   refactor: {
     id: "refactor",
@@ -73,6 +91,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     mustWrite: "refactor",
     forcedWhenStale: true,
+    spawnsObstacles: false,
   },
   /** A customer found it. Small, urgent, and production is grateful when it goes. */
   client_bug: {
@@ -85,6 +104,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     deadlineSprints: 1,
     forcedWhenStale: true,
+    spawnsObstacles: false,
   },
   /** A big customer wants it, twice the revenue, and wants it now. */
   vip: {
@@ -98,6 +118,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     deadlineSprints: 1,
     // Gone with its deadline, so it is never around to be forced.
     forcedWhenStale: false,
+    spawnsObstacles: true,
   },
   /** The codebase asking for a refactor of its own accord. Never forced. */
   debt: {
@@ -110,6 +131,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     mustWrite: "refactor",
     forcedWhenStale: false,
+    spawnsObstacles: false,
   },
   /** A library to move off. Every commit costs debt; landing it buys servers. */
   migration: {
@@ -121,6 +143,25 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     earnsMrr: false,
     grantsSkill: false,
     forcedWhenStale: true,
+    spawnsObstacles: true,
+  },
+  /**
+   * What a commit turned up on the way: a bug found, a piece missing, a
+   * design that will not hold. Never drawn from the backlog — it is born
+   * open, in the hand of whoever was writing the feature, forked off it —
+   * and it holds the feature's pull request until it has landed back on
+   * it. It earns nothing, weighs nothing, and cannot spawn one of its own.
+   */
+  obstacle: {
+    id: "obstacle",
+    colour: "obstacle",
+    refPrefix: "sub",
+    teamTakes: false,
+    countsWip: false,
+    earnsMrr: false,
+    grantsSkill: false,
+    forcedWhenStale: false,
+    spawnsObstacles: false,
   },
 };
 

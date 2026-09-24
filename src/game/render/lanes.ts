@@ -131,7 +131,7 @@ export function drawDottedLane(
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "butt" });
 }
 
-export type LaneColour = "trunk" | "dev" | "feature" | "hotfix" | "refactor";
+export type LaneColour = "trunk" | "dev" | "feature" | "hotfix" | "refactor" | "obstacle";
 
 export interface LaneSegment {
   lane: number;
@@ -152,11 +152,14 @@ export function ticketColour(kind: Ticket["kind"] | undefined): LaneColour {
  * dotted all the way, so its column reads as reserved rather than as a gap).
  * Features: one solid segment per *ticket*, so a column two tickets used in
  * turn shows two lines with a gap between them, not one line through both.
+ * A feature an obstacle is holding is still there while the obstacle is
+ * written beside it: its line goes on dotted to the top row, like a trunk's.
  */
 export function laneSegments(
   nodes: readonly Pick<MapNode, "lane" | "depth" | "ticketId">[],
   kindOf: (ticketId: TicketId) => Ticket["kind"] | undefined,
   topDepth: number,
+  heldOpen: (ticketId: TicketId) => boolean = () => false,
 ): LaneSegment[] {
   const segments: LaneSegment[] = [];
 
@@ -185,8 +188,11 @@ export function laneSegments(
     }
   }
   for (const [ticketId, span] of byTicket) {
-    if (span.to === span.from) continue;
-    segments.push({ ...span, style: "solid", colour: ticketColour(kindOf(ticketId)) });
+    const colour = ticketColour(kindOf(ticketId));
+    if (span.to > span.from) segments.push({ ...span, style: "solid", colour });
+    if (heldOpen(ticketId) && topDepth > span.to) {
+      segments.push({ lane: span.lane, from: span.to, to: topDepth, style: "dotted", colour });
+    }
   }
 
   return segments;

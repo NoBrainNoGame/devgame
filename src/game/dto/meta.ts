@@ -11,6 +11,8 @@ import { freeFeatureSkills, PROFILE_IDS, SKILL_IDS } from "@/game/content";
 export const SettingsSchema = z.object({
   sound: z.boolean().default(true),
   reducedMotion: z.boolean().default(false),
+  /** What the run calls you, signed out. Signed in, the account's name wins. */
+  playerName: z.string().trim().max(24).default(""),
 });
 
 export const MetaProgressSchema = z.object({
@@ -47,7 +49,7 @@ export function emptyMeta(now: string): MetaProgressDto {
     ticketsDelivered: 0,
     unlockedProfiles: ["junior"],
     unlockedSkills: freeFeatureSkills(),
-    settings: { sound: true, reducedMotion: false },
+    settings: { sound: true, reducedMotion: false, playerName: "" },
     metaVersion: 0,
     updatedAt: now,
   };

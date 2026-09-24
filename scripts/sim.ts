@@ -31,6 +31,7 @@ const DEFAULT_MAX_TURNS = 1500;
 
 /** Free actions in a row before a run is declared looping. */
 const MAX_FREE_STREAK = 200;
+
 interface Outcome {
   reason: "burnout" | "fired" | "caught" | "stuck" | "capped";
   turns: number;

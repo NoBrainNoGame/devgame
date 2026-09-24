@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { accountSkillPoints, type MetaProgressDto, type RunMode } from "@/game";
 import { PROFILE_IDS, PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
@@ -20,14 +21,28 @@ export interface RunSetupProps {
   meta: MetaProgressDto;
   dailyAvailable: boolean;
   resumable: boolean;
+  /** Signed in, the account's name is the player's: nothing to ask. */
+  signedIn: boolean;
   onStart: (choice: {
     profileId: MetaProgressDto["unlockedProfiles"][number];
     mode: RunMode;
+    /** What the run calls you, signed out. Saved with the settings. */
+    playerName: string;
   }) => void;
   onResume: () => void;
 }
 
-export function RunSetup({ meta, dailyAvailable, resumable, onStart, onResume }: RunSetupProps) {
+/** The longest name the settings keep, as `SettingsSchema` bounds it. */
+const NAME_MAX = 24;
+
+export function RunSetup({
+  meta,
+  dailyAvailable,
+  resumable,
+  signedIn,
+  onStart,
+  onResume,
+}: RunSetupProps) {
   const t = useTranslations("play");
   const game = useTranslations("game");
   const common = useTranslations("common");
@@ -36,6 +51,9 @@ export function RunSetup({ meta, dailyAvailable, resumable, onStart, onResume }:
     meta.unlockedProfiles[0] ?? "junior",
   );
   const [mode, setMode] = useState<RunMode>("classic");
+  const [playerName, setPlayerName] = useState(meta.settings.playerName);
+  const start = (): void =>
+    onStart({ profileId, mode, playerName: playerName.trim().slice(0, NAME_MAX) });
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
@@ -117,7 +135,27 @@ export function RunSetup({ meta, dailyAvailable, resumable, onStart, onResume }:
         </div>
       </section>
 
-      <Button size="lg" onClick={() => onStart({ profileId, mode })}>
+      {signedIn ? null : (
+        <section className="mb-8">
+          <h2 className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            {t("yourName")}
+          </h2>
+          <Input
+            value={playerName}
+            maxLength={NAME_MAX}
+            placeholder={t("yourNamePlaceholder")}
+            autoComplete="nickname"
+            className="max-w-xs"
+            onChange={(event) => setPlayerName(event.target.value)}
+            // Typing a name and pressing Enter is the whole ceremony.
+            onKeyDown={(event) => {
+              if (event.key === "Enter") start();
+            }}
+          />
+        </section>
+      )}
+
+      <Button size="lg" onClick={start}>
         {t("start")}
       </Button>
     </div>

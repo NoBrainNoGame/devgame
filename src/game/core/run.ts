@@ -1,4 +1,5 @@
 import {
+  type DevRank,
   freeFeatureSkills,
   PROFILES,
   type ProfileId,
@@ -18,7 +19,8 @@ import { initialMarket } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { drawObjective } from "@/game/core/rules/objectives";
 import { availableSkills } from "@/game/core/rules/sprint";
-import { writeSprintStart } from "@/game/core/rules/write";
+import { addDev } from "@/game/core/rules/team";
+import { writeInit, writeSprintStart } from "@/game/core/rules/write";
 import type { RunMode, RunState } from "@/game/core/types";
 
 export interface RunMeta {
@@ -28,6 +30,19 @@ export interface RunMeta {
   startingSkillPoints?: number;
 }
 
+/**
+ * A run played to be looked at: the landing page's. It starts with a team
+ * already on the roster, it cannot end, and nobody leaves for want of pay.
+ * Deterministic like everything else — the same seed and options give the
+ * same run — but never saved and never scored.
+ */
+export interface ShowcaseOptions {
+  /** The developers on the roster at turn 1, in hiring order. */
+  team: readonly DevRank[];
+  /** What the board is topped up to at every sprint: enough waiting for the team, never a pile. */
+  backlog: number;
+}
+
 export interface CreateRunOptions {
   /** Any string. Hashed into the PRNG cursor, and shown to the player as-is. */
   seed: string;
@@ -35,6 +50,7 @@ export interface CreateRunOptions {
   profileId: ProfileId;
   meta?: RunMeta;
   version: number;
+  showcase?: ShowcaseOptions;
 }
 
 /** Skills available to an account that has unlocked nothing yet. */
@@ -66,6 +82,7 @@ export function createRun(options: CreateRunOptions): RunState {
     seed,
     mode,
     profileId,
+    showcase: options.showcase === undefined ? null : { backlog: options.showcase.backlog },
 
     rng: { s: fnv1a(seed) | 0 },
     turn: 1,
@@ -181,9 +198,15 @@ export function createRun(options: CreateRunOptions): RunState {
   state.player.energyMax = energyMax(state, context.effects);
   state.player.energy = state.player.energyMax;
 
+  // The repository's first commit, on `main`, so the first sprint's `dev` is
+  // seen forking off it rather than standing alone.
+  writeInit(context);
   writeSprintStart(context);
   arriveTickets(context, availableSkills(state));
   drawObjective(context);
+  // After the tickets: the team's first pick-up is the first turn's, not the
+  // setup's, so the showcase's opening frame is a board like any other.
+  for (const rank of options.showcase?.team ?? []) addDev(context, rank);
 
   // The setup events describe a board nobody has seen yet, so they are dropped
   // rather than logged: the log starts when the player does.

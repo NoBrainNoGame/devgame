@@ -38,7 +38,9 @@ export function performCommit(context: RuleContext, mode: CommitMode, kind?: Det
 
   spendEnergy(context, nodeEnergyCost(state, nodeKind, mode).value, "commit");
 
-  const chance = commitChance(state, mode, nodeKind, context.effects);
+  // A showcase's commits always land: the run is looked at, not played.
+  const measured = commitChance(state, mode, nodeKind, context.effects);
+  const chance = state.showcase !== null ? { ...measured, value: 100 } : measured;
   let outcome = context.rng.roll(chance.value);
   let rerolled = false;
 

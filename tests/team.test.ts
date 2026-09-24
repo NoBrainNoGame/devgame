@@ -48,6 +48,7 @@ describe("hiring", () => {
     for (let i = 0; i < BALANCE.team.baseSeats; i++) {
       full.devs.push({
         id: `d${i + 1}`,
+        name: "Test",
         rank: "junior",
         hiredRank: "junior",
         delivered: 0,
@@ -177,6 +178,8 @@ describe("the team's turn", () => {
     const target = backlogTickets(state)[0];
     if (target === undefined) throw new Error("expected a backlog ticket");
     target.points = 1;
+    // A kind no obstacle can turn up on: the ticket lands the turn it fills.
+    target.kind = "client_bug";
 
     const { state: after, events } = applyAction(state, { type: "rest" });
     expect(eventsOfType(events, "dev_promoted").length).toBe(1);
@@ -279,18 +282,21 @@ describe("a sprint you sat out", () => {
 });
 
 describe("the hired game is the same game", () => {
-  test("hiring draws nothing from the seed: the next rolls are unchanged", () => {
+  test("hiring draws nothing from the seed: the cursor and your next roll are unchanged", () => {
     const state = funded("pure-team");
     const started = applyAction(
       state,
       getAvailableActions(state).find(isType("start")) ?? { type: "rest" },
     ).state;
     const hired = applyAction(started, { type: "hire", rank: "junior" }).state;
+    expect(hired.rng).toEqual(started.rng);
 
-    const plain = play(started, { pick: policy("craft"), limit: 8 });
-    const teamed = play(hired, { pick: policy("craft"), limit: 8 });
+    // Your next commit rolls the same either way. Past it the team has
+    // worked, and a team's commit may turn an obstacle up: that is a draw.
+    const plain = play(started, { pick: policy("craft"), limit: 1 });
+    const teamed = play(hired, { pick: policy("craft"), limit: 1 });
     const rolls = (events: typeof plain.events) =>
       eventsOfType(events, "roll").map((e) => e.rolled);
-    expect(rolls(teamed.events)).toEqual(rolls(plain.events));
+    expect(rolls(teamed.events)[0]).toEqual(rolls(plain.events)[0]);
   });
 });

@@ -8,10 +8,19 @@ import type { I18nText, LandingHandle } from "@/game";
 import { mountLanding } from "@/game";
 
 /**
- * The game's scene on the demo run. A click plays the sprint again from
- * nothing; hovering a commit shows what it was, the way it does in a run.
+ * The game's scene on today's run. A click plays it again from nothing;
+ * hovering a commit shows what it was, the way it does in a run.
  */
-export function LandingCanvas({ label }: { label: string }): React.JSX.Element {
+export function LandingCanvas({
+  label,
+  seed,
+  playerName,
+}: {
+  label: string;
+  seed: string;
+  /** What the `HEAD` badge calls the player. */
+  playerName: string;
+}): React.JSX.Element {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<LandingHandle | null>(null);
   const gameText = useGameText();
@@ -31,6 +40,8 @@ export function LandingCanvas({ label }: { label: string }): React.JSX.Element {
     void mountLanding(host, {
       translate: (value) => translateRef.current(value),
       reducedMotion,
+      seed,
+      playerName,
     }).then((handle) => {
       if (cancelled) {
         handle.dispose();
@@ -44,15 +55,15 @@ export function LandingCanvas({ label }: { label: string }): React.JSX.Element {
       handleRef.current?.dispose();
       handleRef.current = null;
     };
-  }, []);
+  }, [seed, playerName]);
 
   return (
     <div className="relative size-full">
-      {/* The canvas is the button: the whole picture replays on a click. */}
+      {/* The canvas is the button: a click plays another run. */}
       <button
         type="button"
         aria-label={label}
-        className="block size-full cursor-pointer appearance-none border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="landing-graph block size-full cursor-pointer appearance-none border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onClick={() => handleRef.current?.replay()}
       >
         <div ref={hostRef} className="size-full" />

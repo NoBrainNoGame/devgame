@@ -245,8 +245,11 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (ranked[0] !== undefined) return ranked[0];
   }
 
-  // An acceptance has one answer; a question takes the first.
+  // An acceptance has one answer; a question takes the first. A full
+  // obstacle lands back on its feature the same way.
   if (state.phase.kind === "pr_accepted") return { type: "merge" };
+  const landObstacle = actions.find((a) => a.type === "merge");
+  if (landObstacle !== undefined) return landObstacle;
   if (state.phase.kind === "event") {
     const answer = actions.find((a) => a.type === "answer");
     if (answer !== undefined) return answer;

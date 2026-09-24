@@ -39,6 +39,19 @@ export interface SceneContext {
    * page draws a run nobody plays: it hovers, and nothing else.
    */
   interactive: boolean;
+  /**
+   * Whether the commit subjects are drawn beside the graph. The landing page
+   * shows the tree alone; a run reads its history.
+   */
+  subjects: boolean;
+  /**
+   * Whether a turn's costs and gains rise off the commit as floating
+   * numbers. A run reads them; the landing page has nobody to inform and
+   * every hold makes the demo longer.
+   */
+  pops: boolean;
+  /** The player's name, for the `HEAD` ref. Empty when nobody said. */
+  playerName: string;
   controls: SceneControls;
   /** A look forced by the page for QA, whatever the run has earned. */
   austerityOverride?: number | null;

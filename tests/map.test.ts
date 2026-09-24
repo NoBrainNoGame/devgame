@@ -58,15 +58,18 @@ describe("the written graph", () => {
     expect(teamCommits).toBeGreaterThan(300);
   });
 
-  test("a fresh run has exactly one commit: dev, opened from nothing", () => {
+  test("a fresh run has two commits: main's first, and dev forked off it", () => {
     for (let i = 0; i < 50; i++) {
       const state = newRun(`fresh-${i}`);
-      const nodes = Object.values(state.nodes);
-      expect(nodes.length).toBe(1);
-      expect(nodes[0]?.kind).toBe("sprint_start");
-      expect(nodes[0]?.lane).toBe(DEV_LANE);
+      const nodes = Object.values(state.nodes).sort((a, b) => a.depth - b.depth);
+      expect(nodes.length).toBe(2);
+      expect(nodes[0]?.kind).toBe("init");
+      expect(nodes[0]?.lane).toBe(MAIN_LANE);
       expect(nodes[0]?.parents).toEqual([]);
-      expect(headOf(state).id).toBe(nodes[0]?.id ?? "");
+      expect(nodes[1]?.kind).toBe("sprint_start");
+      expect(nodes[1]?.lane).toBe(DEV_LANE);
+      expect(nodes[1]?.parents).toEqual([nodes[0]?.id ?? ""]);
+      expect(headOf(state).id).toBe(nodes[1]?.id ?? "");
     }
   });
 
@@ -82,8 +85,9 @@ describe("the written graph", () => {
 
     const main = Object.values(state.nodes).filter((node) => node.lane === MAIN_LANE);
     const dev = Object.values(state.nodes).filter((node) => node.lane === DEV_LANE);
-    expect(main.length).toBe(2 * (state.sprint - 1));
-    for (const node of main) expect(["sprint_merge", "release"]).toContain(node.kind);
+    // The first commit, then a merge and a release per sprint shipped.
+    expect(main.length).toBe(1 + 2 * (state.sprint - 1));
+    for (const node of main) expect(["init", "sprint_merge", "release"]).toContain(node.kind);
     for (const node of dev) expect(["sprint_start", "feature_merge"]).toContain(node.kind);
 
     const work = Object.values(state.nodes).filter((node) => node.lane >= FIRST_FEATURE_LANE);
@@ -104,9 +108,10 @@ describe("the written graph", () => {
       .sort((a, b) => a.depth - b.depth);
     expect(merges.length).toBe(2);
 
-    // The first sprint merge has only `dev` behind it; the second also has the
-    // previous release, the way git records a merge on a branch with history.
-    expect(merges[0]?.parents.length).toBe(1);
+    // Every sprint merge has `main` behind it — the first commit, then the
+    // previous release — and `dev`, the way git records a merge on a branch
+    // with history.
+    expect(merges[0]?.parents.length).toBe(2);
     expect(merges[1]?.parents.length).toBe(2);
     for (const merge of merges) {
       const fromDev = merge.parents.some((id) => state.nodes[id]?.lane === DEV_LANE);
@@ -207,8 +212,12 @@ describe("the written graph", () => {
 
       const ticketId = state.player.ticketId;
       const ticket = ticketId === null ? undefined : state.tickets[ticketId];
+      const parent = ticket?.parentId === undefined ? undefined : state.tickets[ticket.parentId];
       if (ticket !== undefined && ticket.nodeIds.length > 0) {
         expect(head.id).toBe(ticket.nodeIds[ticket.nodeIds.length - 1] ?? "");
+      } else if (parent !== undefined && parent.nodeIds.length > 0) {
+        // An obstacle not yet written stands on the feature it forks from.
+        expect(head.id).toBe(parent.nodeIds[parent.nodeIds.length - 1] ?? "");
       } else {
         expect(head.lane).toBe(DEV_LANE);
       }

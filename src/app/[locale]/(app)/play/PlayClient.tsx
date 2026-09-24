@@ -44,6 +44,8 @@ export interface PlayClientProps {
   /** Whether this instance has a server side at all: offline, there is nothing to sign in to. */
   online: boolean;
   signedIn: boolean;
+  /** The account's name, when signed in: what the run calls you. */
+  userName: string | null;
   /** Progress already on the server, if any. Merged with the local copy. */
   serverMeta: MetaProgressDto | null;
   /** Today's shared seed. Absent when the database is unreachable. */
@@ -121,7 +123,20 @@ export function PlayClient(props: PlayClientProps) {
   }, [hydrated, props.serverRun]);
 
   const start = useCallback(
-    (choice: { profileId: MetaProgressDto["unlockedProfiles"][number]; mode: RunMode }) => {
+    (choice: {
+      profileId: MetaProgressDto["unlockedProfiles"][number];
+      mode: RunMode;
+      playerName: string;
+    }) => {
+      // The name is a setting: it survives the run and follows the account.
+      const current = useMetaStore.getState().meta;
+      if (choice.playerName !== current.settings.playerName) {
+        setMeta({
+          ...current,
+          settings: { ...current.settings, playerName: choice.playerName },
+          updatedAt: new Date().toISOString(),
+        });
+      }
       const seed =
         choice.mode === "daily" && props.dailySeed !== null
           ? props.dailySeed
@@ -147,7 +162,7 @@ export function PlayClient(props: PlayClientProps) {
         createdAt: new Date().toISOString(),
       });
     },
-    [props.dailySeed, props.online, locale],
+    [props.dailySeed, props.online, locale, setMeta],
   );
 
   const resume = useCallback(() => {
@@ -287,6 +302,7 @@ export function PlayClient(props: PlayClientProps) {
         meta={meta}
         dailyAvailable={props.dailySeed !== null}
         resumable={resumable !== null}
+        signedIn={props.signedIn}
         onStart={start}
         onResume={resume}
       />
@@ -306,6 +322,7 @@ export function PlayClient(props: PlayClientProps) {
         createdAt: stage.createdAt,
         ...(stage.resume === undefined ? {} : { resume: stage.resume }),
         reducedMotion: meta.settings.reducedMotion,
+        playerName: props.userName ?? meta.settings.playerName,
       }}
       onReady={onReady}
       onAct={act}

@@ -75,8 +75,23 @@ export function TicketBar({
             return (
               <Tooltip key={ticket.id}>
                 <TooltipTrigger asChild>
-                  <span className="flex shrink-0 items-center gap-1.5 rounded-md border border-line/60 border-dashed px-2 py-1 text-muted-foreground text-xs">
-                    <span className="tabular-nums opacity-70">#{ticket.id.slice(1)}</span>
+                  <span
+                    className={cn(
+                      "flex shrink-0 items-center gap-1.5 rounded-md border border-line/60 border-dashed px-2 py-1 text-muted-foreground text-xs",
+                      ticket.parentId !== undefined && "border-branch-obstacle/60",
+                    )}
+                  >
+                    {dev === undefined ? null : (
+                      <span
+                        className="font-medium"
+                        style={{ color: `var(--color-dev-${dev.colour})` }}
+                      >
+                        {dev.name}
+                      </span>
+                    )}
+                    <span className="tabular-nums opacity-70">
+                      {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
+                    </span>
                     <span className="tabular-nums">
                       {ticket.filled}/{ticket.points}
                     </span>
@@ -85,7 +100,12 @@ export function TicketBar({
                 <TooltipContent side="bottom">
                   {dev === undefined
                     ? null
-                    : `${dev.id} · ${game(`ranks.${dev.rank}.name` as never)}`}
+                    : `${dev.name} · ${game(`ranks.${dev.rank}.name` as never)}`}
+                  {ticket.parentId === undefined ? null : (
+                    <p className="text-branch-obstacle">
+                      {t("obstacleOn", { id: ticket.parentId.slice(1) })}
+                    </p>
+                  )}
                 </TooltipContent>
               </Tooltip>
             );
@@ -127,18 +147,30 @@ function TicketTab({
               ? "border-branch-feature bg-branch-feature/10 text-foreground"
               : "border-line text-muted-foreground hover:border-foreground/40 hover:text-foreground",
             ticket.kind === "hotfix" && "border-branch-hotfix/60",
+            ticket.parentId !== undefined && "border-branch-obstacle/60",
             ticket.ready && "border-branch-main",
           )}
         >
-          <span className="tabular-nums text-xs opacity-70">#{ticket.id.slice(1)}</span>
+          <span className="tabular-nums text-xs opacity-70">
+            {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
+          </span>
           <span
-            className={cn("max-w-40 truncate", ticket.kind === "hotfix" && "text-branch-hotfix")}
+            className={cn(
+              "max-w-40 truncate",
+              ticket.kind === "hotfix" && "text-branch-hotfix",
+              ticket.parentId !== undefined && "text-branch-obstacle",
+            )}
           >
             {name}
           </span>
           <span className="tabular-nums text-xs">
             {ticket.filled}/{ticket.points}
           </span>
+          {ticket.blockedBy.length > 0 ? (
+            <span className="rounded-full bg-branch-obstacle/20 px-1.5 text-branch-obstacle text-xs tabular-nums">
+              ⛔ {ticket.blockedBy.length}
+            </span>
+          ) : null}
           {ticket.bugs > 0 ? (
             <span className="rounded-full bg-branch-hotfix/20 px-1.5 text-branch-hotfix text-xs tabular-nums">
               {ticket.bugs}
@@ -162,8 +194,20 @@ function TicketTab({
         {ticket.behind > 0 ? (
           <p className="text-muted-foreground">{t("behindDev", { count: ticket.behind })}</p>
         ) : null}
+        {ticket.parentId === undefined ? null : (
+          <p className="text-branch-obstacle">
+            {t("obstacleOn", { id: ticket.parentId.slice(1) })}
+          </p>
+        )}
+        {ticket.blockedBy.length > 0 ? (
+          <p className="text-branch-obstacle">
+            {t("blockedBy", { count: ticket.blockedBy.length })}
+          </p>
+        ) : null}
         {ticket.ready ? (
-          <p className="text-branch-main">{t("readyToSubmit")}</p>
+          <p className="text-branch-main">
+            {ticket.parentId === undefined ? t("readyToSubmit") : t("readyToLand")}
+          </p>
         ) : (
           <p className="text-muted-foreground">{current ? t("inHand") : t("clickToSwitch")}</p>
         )}

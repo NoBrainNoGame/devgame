@@ -4,10 +4,17 @@ import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
 import { DEV_LANE, FIRST_FEATURE_LANE } from "@/game/core/map/layout";
+import { obstaclesOf } from "@/game/core/rules/tickets";
 import type { MapNode, NodeId, RunState } from "@/game/core/types";
 import { labelX, nodeX, nodeY } from "@/game/render/coords";
 import { drawCommit } from "@/game/render/drawNode";
-import { drawDottedLane, drawEdge, drawLane, laneSegments } from "@/game/render/lanes";
+import {
+  drawDottedLane,
+  drawEdge,
+  drawLane,
+  laneSegments,
+  ticketColour,
+} from "@/game/render/lanes";
 import { palette } from "@/game/render/palette";
 import { labelStyle } from "@/game/render/textStyles";
 import { LANE_ALPHA, laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER } from "@/game/render/theme";
@@ -41,6 +48,8 @@ interface CommitSprite {
 const REVEAL_MS = 260;
 /** Room a commit subject takes, for framing. */
 const SUBJECT_WIDTH = 200;
+/** Room the refs take when there are no subjects past them, for framing: a branch name and its owner's. */
+const REF_WIDTH = 150;
 
 export class GraphView extends ContainerChip<GraphViewEvents> {
   private lanes!: Graphics;
@@ -154,7 +163,16 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   private drawLanes(state: RunState, nodes: readonly MapNode[]): void {
     this.lanes.clear();
 
-    const segments = laneSegments(nodes, (id) => state.tickets[id]?.kind, this.topDepth);
+    // A feature an obstacle is holding waits, dotted, while the obstacle is written.
+    const segments = laneSegments(
+      nodes,
+      (id) => state.tickets[id]?.kind,
+      this.topDepth,
+      (id) => {
+        const ticket = state.tickets[id];
+        return ticket?.status === "open" && obstaclesOf(state, ticket).length > 0;
+      },
+    );
     for (const segment of segments) {
       const colour = palette.lane[segment.colour];
       if (segment.style === "dotted") {
@@ -181,11 +199,12 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
         if (parent === undefined || parent.lane === node.lane) continue;
 
         // A fork takes the colour of the branch it opens; a merge, of the
-        // branch it brings home.
+        // branch it brings home. A ticket's branch is its kind's colour.
+        const branch = node.lane >= FIRST_FEATURE_LANE ? node : parent;
         const colour =
-          node.lane >= FIRST_FEATURE_LANE
-            ? laneColour(node.lane, node.kind)
-            : laneColour(parent.lane, parent.kind);
+          branch.lane >= FIRST_FEATURE_LANE && branch.ticketId !== undefined
+            ? palette.lane[ticketColour(state.tickets[branch.ticketId]?.kind)]
+            : laneColour(branch.lane, branch.kind);
         drawEdge(this.edges, parent, node, colour, 0.9);
       }
     }
@@ -194,7 +213,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   // --- commits --------------------------------------------------------------
 
   private upsert(node: MapNode): void {
-    const { translate } = sceneContext(this.chipContext);
+    const { translate, subjects } = sceneContext(this.chipContext);
     let sprite = this.sprites.get(node.id);
 
     if (sprite === undefined) {
@@ -214,14 +233,16 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       sprite = { root, graphics, reveal: 0 };
       this.sprites.set(node.id, sprite);
 
-      const label = new Text({
-        text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`,
-        style: labelStyle,
-      });
-      label.anchor.set(0, 0.5);
-      label.alpha = 0;
-      this.labelLayer.addChild(label);
-      this.labels.set(node.id, label);
+      if (subjects) {
+        const label = new Text({
+          text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`,
+          style: labelStyle,
+        });
+        label.anchor.set(0, 0.5);
+        label.alpha = 0;
+        this.labelLayer.addChild(label);
+        this.labels.set(node.id, label);
+      }
     }
 
     const x = nodeX(node.lane);
@@ -293,10 +314,13 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const ys = all.map((node) => nodeY(node.depth));
 
     // The subjects are part of the picture: centring the lanes alone parks
-    // them half off screen on a narrow canvas.
+    // them half off screen on a narrow canvas. Without them, the refs are
+    // the picture's right edge.
+    const { subjects } = sceneContext(this.chipContext);
+    const rightEdge = subjects ? this.subjectX() + SUBJECT_WIDTH : this.refX() + REF_WIDTH;
     return {
       minX: Math.min(...xs),
-      maxX: Math.max(this.subjectX() + SUBJECT_WIDTH, ...xs),
+      maxX: Math.max(rightEdge, ...xs),
       minY: Math.min(...ys),
       maxY: Math.max(...ys),
     };

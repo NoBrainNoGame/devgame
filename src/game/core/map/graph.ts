@@ -48,6 +48,11 @@ export function headOf(state: RunState): MapNode {
   const onTicket = ticket === undefined ? null : tipOfTicket(state, ticket);
   if (onTicket !== null) return onTicket;
 
+  // An obstacle not yet written stands where it will fork from: its feature.
+  const parent = ticket?.parentId === undefined ? undefined : state.tickets[ticket.parentId];
+  const onParent = parent === undefined ? null : tipOfTicket(state, parent);
+  if (onParent !== null) return onParent;
+
   const dev = tipOfLane(state, DEV_LANE);
   if (dev === null) throw new Error("headOf: nothing has been written on dev");
   return dev;
@@ -104,7 +109,7 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
   // else happens in a ticket's column.
   for (const node of nodes) {
     if (node.lane === MAIN_LANE) {
-      if (node.kind !== "sprint_merge" && node.kind !== "release") {
+      if (node.kind !== "sprint_merge" && node.kind !== "release" && node.kind !== "init") {
         failures.push({ rule: "main-ships-only", detail: `${node.id} is a ${node.kind}` });
       }
     } else if (node.lane === DEV_LANE) {
@@ -137,9 +142,33 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
     }
   }
 
+  // An obstacle stands on a ticket that exists, that is not an obstacle
+  // itself, and that is still open while the obstacle is.
+  for (const ticket of Object.values(state.tickets)) {
+    if (ticket.parentId === undefined) continue;
+    const parent = state.tickets[ticket.parentId];
+    if (parent === undefined) {
+      failures.push({
+        rule: "obstacle-parent-exists",
+        detail: `${ticket.id} -> ${ticket.parentId}`,
+      });
+      continue;
+    }
+    if (parent.parentId !== undefined) {
+      failures.push({ rule: "obstacle-on-a-feature", detail: `${ticket.id} -> ${parent.id}` });
+    }
+    if (ticket.status === "open" && parent.status !== "open") {
+      failures.push({
+        rule: "open-obstacle-on-open-feature",
+        detail: `${ticket.id} -> ${parent.id}`,
+      });
+    }
+  }
+
   // A ticket is a chain: each commit's first parent is the previous one, and
-  // the first commit forks off `dev`. Two open tickets never share a column,
-  // and a column is held exactly when the ticket has written something.
+  // the first commit forks off `dev` — off its feature, for an obstacle. Two
+  // open tickets never share a column, and a column is held exactly when the
+  // ticket has written something.
   const lanes = new Map<number, string>();
   for (const ticket of Object.values(state.tickets)) {
     if (ticket.status === "open" && ticket.lane !== undefined) {
@@ -176,7 +205,11 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
       const expected = index === 0 ? undefined : ticket.nodeIds[index - 1];
       const first = node.parents[0];
       const firstIsDev = first !== undefined && state.nodes[first]?.lane === DEV_LANE;
-      if (expected === undefined ? !firstIsDev : first !== expected) {
+      const parent = ticket.parentId === undefined ? undefined : state.tickets[ticket.parentId];
+      const firstIsParent =
+        first !== undefined && parent !== undefined && parent.nodeIds.includes(first);
+      const forksRight = parent === undefined ? firstIsDev : firstIsParent;
+      if (expected === undefined ? !forksRight : first !== expected) {
         failures.push({ rule: "ticket-is-a-chain", detail: `${ticket.id} at ${id}` });
       }
     });

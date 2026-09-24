@@ -54,12 +54,23 @@ interface Held {
   hold: number;
 }
 
+export interface PlanOptions {
+  /**
+   * Whether a review holds the canvas still while its dialog reads the
+   * ticket. A canvas nobody plays has no dialog, and a demo that waits
+   * three seconds for one that never opens reads as stuck.
+   */
+  reviewHold?: boolean;
+}
+
 export function planBatch(
   events: readonly GameEvent[],
   state: RunState,
   shown: RevealSnapshot,
   translate: (text: I18nText) => string,
+  options: PlanOptions = {},
 ): Step[] {
+  const reviewHold = options.reviewHold ?? true;
   const steps: Step[] = [];
   const held: Held[] = [];
   const revealed = new Set<NodeId>(shown.nodes);
@@ -193,6 +204,17 @@ export function planBatch(
         flashAt(palette.lane.hotfix);
         break;
 
+      // Something turned up on the commit just written: it lights up, and
+      // what it is rises off it.
+      case "obstacle_spawned":
+        held.push({
+          caption: translate({ key: event.nameKey }),
+          colour: palette.lane.obstacle,
+          hold: STORY.popLong,
+        });
+        flashAt(palette.lane.obstacle);
+        break;
+
       case "hack":
         flashAt(event.success ? palette.lane.feature : palette.lane.hotfix);
         break;
@@ -211,7 +233,7 @@ export function planBatch(
 
       case "pr_reviewed":
         flush();
-        steps.push({ kind: "beat", hold: STORY.review });
+        steps.push({ kind: "beat", hold: reviewHold ? STORY.review : STORY.boundary });
         break;
 
       case "ticket_restarted":
@@ -264,6 +286,7 @@ export function planBatch(
         break;
 
       // Nothing to show on their own: their consequences are other events.
+      case "obstacle_cleared":
       case "ticket_merged":
       case "ticket_cancelled":
       case "conflict_resolved":

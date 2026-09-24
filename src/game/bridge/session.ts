@@ -3,7 +3,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { isActionAvailable } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { createRun } from "@/game/core/run";
+import { createRun, type ShowcaseOptions } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
 import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import type { MetaProgressDto } from "@/game/dto/meta";
@@ -32,6 +32,8 @@ export interface SessionOptions {
   createdAt: string;
   /** Replays a previously saved log, so a reload resumes where it left off. */
   resumeActions?: readonly PlayerAction[];
+  /** The landing page's run: a team from turn 1, and no way to lose. */
+  showcase?: ShowcaseOptions;
 }
 
 export type DispatchResult = { ok: true } | { ok: false; reason: string };
@@ -51,6 +53,7 @@ export class GameSession extends Emitter {
         unlockedSkills: options.meta.unlockedSkills,
         startingSkillPoints: accountSkillPoints(options.meta.level),
       },
+      ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
     });
 
     for (const action of options.resumeActions ?? []) {
