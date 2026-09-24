@@ -63,7 +63,11 @@ export interface RunStageProps {
     reducedMotion?: boolean;
     /** What the refs call you beside `HEAD`. */
     playerName?: string;
+    /** A saved run's own starting points, for the debugger. */
+    startingSkillPoints?: number;
   };
+  /** False keeps the idle clock off the stage: the debugger steps by hand. */
+  idle?: boolean;
   /** The live handle, for the controls that drive the camera directly. */
   handle: GameHandle | null;
   onReady: (handle: GameHandle | null) => void;
@@ -80,6 +84,7 @@ export function RunStage({
   onAct,
   onPlayAgain,
   runOverFooter,
+  idle = true,
 }: RunStageProps) {
   const t = useTranslations("play");
 
@@ -152,8 +157,8 @@ export function RunStage({
                 onOpenBoard={() => setBoardOpen(true)}
               />
               <SupervisorLine snapshot={snapshot} />
-              <IdleControls />
-              <IdleDriver paused={dialogOpen} onAct={onAct} />
+              {idle ? <IdleControls /> : null}
+              {idle ? <IdleDriver paused={dialogOpen} onAct={onAct} /> : null}
             </>
           )}
         </aside>

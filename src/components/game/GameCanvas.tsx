@@ -30,6 +30,7 @@ export function GameCanvas({
     resume?: RunSaveDto;
     reducedMotion?: boolean;
     playerName?: string;
+    startingSkillPoints?: number;
   };
   onReady: (handle: GameHandle | null) => void;
 }) {

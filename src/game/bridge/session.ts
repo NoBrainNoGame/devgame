@@ -34,6 +34,12 @@ export interface SessionOptions {
   resumeActions?: readonly PlayerAction[];
   /** The landing page's run: a team from turn 1, and no way to lose. */
   showcase?: ShowcaseOptions;
+  /**
+   * The skill points the run started with, when they are known rather than
+   * derived from the account: a saved run replayed for inspection has to
+   * start exactly where it started.
+   */
+  startingSkillPoints?: number;
 }
 
 export type DispatchResult = { ok: true } | { ok: false; reason: string };
@@ -51,7 +57,7 @@ export class GameSession extends Emitter {
       version: SAVE_VERSION,
       meta: {
         unlockedSkills: options.meta.unlockedSkills,
-        startingSkillPoints: accountSkillPoints(options.meta.level),
+        startingSkillPoints: options.startingSkillPoints ?? accountSkillPoints(options.meta.level),
       },
       ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
     });

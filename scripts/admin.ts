@@ -1,6 +1,7 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { BALANCE } from "@/game/core/balance";
+import { RunSaveSchema } from "@/game/dto/run";
 import { RULES_FINGERPRINT } from "@/game/dto/version";
 import type { ReportStatus } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
@@ -134,7 +135,7 @@ function page(
 function nav(current: string, csrf: string): string {
   const link = (href: string, label: string): string =>
     `<a href="${href}" class="${current === href ? "on" : ""}">${label}</a>`;
-  return `<nav>${link("/", "Stats")}${link("/accounts", "Accounts")}${link("/reports", "Reports")}${link("/balance", "Balance")}<form method="post" action="/logout" class="inline" style="margin-left:auto"><input type="hidden" name="csrf" value="${csrf}"><button>Log out</button></form></nav>`;
+  return `<nav>${link("/", "Stats")}${link("/accounts", "Accounts")}${link("/runs", "Runs")}${link("/reports", "Reports")}${link("/balance", "Balance")}<form method="post" action="/logout" class="inline" style="margin-left:auto"><input type="hidden" name="csrf" value="${csrf}"><button>Log out</button></form></nav>`;
 }
 
 function redirect(to: string, headers: Record<string, string> = {}): Response {
@@ -426,6 +427,44 @@ async function accountsPage(csrf: string, query: string, flash?: string): Promis
 
 const STATUSES: ReportStatus[] = ["open", "acknowledged", "closed"];
 
+/**
+ * The latest runs, each with a way into the site's debugger: the save is
+ * replayed there one action at a time, forward with the animations and back
+ * by replaying, which is how a run that went wrong is looked at.
+ */
+async function runsPage(csrf: string): Promise<Response> {
+  const runs = await prisma.run.findMany({
+    orderBy: { updatedAt: "desc" },
+    take: 100,
+    select: {
+      id: true,
+      seed: true,
+      mode: true,
+      status: true,
+      score: true,
+      updatedAt: true,
+      save: true,
+      profile: { select: { displayName: true, user: { select: { email: true } } } },
+    },
+  });
+  const rows = runs
+    .map((run) => {
+      const save = RunSaveSchema.safeParse(run.save);
+      const actions = save.success
+        ? String(save.data.actions.length)
+        : '<span class="bad">unreadable</span>';
+      const who = run.profile.displayName ?? run.profile.user.email;
+      const debug = `${env.APP_URL}/fr/debug/${encodeURIComponent(run.id)}`;
+      return `<tr><td>${esc(date(run.updatedAt))}</td><td>${esc(who)}<br><span class="muted">${esc(run.profile.user.email)}</span></td><td><code>${esc(run.seed)}</code><br><span class="muted">${esc(run.mode)}</span></td><td>${esc(run.status)}</td><td class="num">${actions}</td><td class="num">${run.score ?? "—"}</td><td><a href="${esc(debug)}" target="_top">Debug</a></td></tr>`;
+    })
+    .join("");
+  return page(
+    "Runs",
+    `<h1>Runs</h1><p class="muted">The last hundred saves. <b>Debug</b> opens the run in the site, one action at a time; the site has to run in development for the page to exist.</p><table><tr><th>Saved</th><th>Player</th><th>Seed</th><th>Status</th><th class="num">Actions</th><th class="num">Score</th><th></th></tr>${rows || '<tr><td colspan="7" class="muted">No run yet.</td></tr>'}</table>`,
+    { nav: nav("/runs", csrf) },
+  );
+}
+
 async function reportsPage(csrf: string, status: string, flash?: string): Promise<Response> {
   const filter = STATUSES.includes(status as ReportStatus) ? (status as ReportStatus) : "open";
   const reports = await prisma.bugReport.findMany({
@@ -566,6 +605,8 @@ async function handle(request: Request): Promise<Response> {
       return statsPage(csrf);
     case "/accounts":
       return accountsPage(csrf, url.searchParams.get("q") ?? "", flash);
+    case "/runs":
+      return runsPage(csrf);
     case "/reports":
       return reportsPage(csrf, url.searchParams.get("status") ?? "open", flash);
     case "/balance":

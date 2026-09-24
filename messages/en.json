@@ -2005,5 +2005,23 @@
   },
   "notes": {
     "obstacle_merge": "Lands on the feature: no points, nothing back, the feature goes on"
+  },
+  "debug": {
+    "title": "Run debugger",
+    "step": "action {step} / {total}",
+    "first": "Back to the start",
+    "previous": "One action back",
+    "next": "One action forward",
+    "last": "To the end of the log",
+    "where": "turn {turn} · sprint {sprint} · {phase}",
+    "lastAction": "last:",
+    "nextAction": "next:",
+    "stopped": "The replay stopped at action {step}: the one after it is no longer legal under today's rules.",
+    "status": {
+      "in_progress": "in progress",
+      "finished": "finished",
+      "abandoned": "abandoned",
+      "rejected": "rejected"
+    }
   }
 }

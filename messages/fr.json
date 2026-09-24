@@ -2005,5 +2005,23 @@
   },
   "notes": {
     "obstacle_merge": "Revient sur la feature : pas de points, rien en retour, la feature continue"
+  },
+  "debug": {
+    "title": "Débogueur de run",
+    "step": "action {step} / {total}",
+    "first": "Retour au début",
+    "previous": "Une action en arrière",
+    "next": "Une action en avant",
+    "last": "Jusqu'à la fin du journal",
+    "where": "tour {turn} · sprint {sprint} · {phase}",
+    "lastAction": "dernière :",
+    "nextAction": "suivante :",
+    "stopped": "Le replay s'arrête à l'action {step} : la suivante n'est plus légale avec les règles du jour.",
+    "status": {
+      "in_progress": "en cours",
+      "finished": "terminée",
+      "abandoned": "abandonnée",
+      "rejected": "rejetée"
+    }
   }
 }

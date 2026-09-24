@@ -6,5 +6,5 @@
 export const LINKS = {
   repository: "https://github.com/NoBrainNoGame/devgame",
   support: "https://buymeacoffee.com/ghom",
-  contact: "mailto:camille.abella@hotmail.fr",
+  contact: "mailto:camille.abella@proton.me",
 } as const;
