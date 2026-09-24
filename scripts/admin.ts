@@ -113,9 +113,9 @@ function page(
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
-      "x-frame-options": "DENY",
-      "content-security-policy":
-        "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'",
+      // Framed by the site's own /admin page in development, and by nothing
+      // else: `frame-ancestors` is what `X-Frame-Options: DENY` could not say.
+      "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'self' ${env.APP_URL}`,
       "referrer-policy": "no-referrer",
     },
   });
