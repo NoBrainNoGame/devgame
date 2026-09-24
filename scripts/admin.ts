@@ -477,6 +477,39 @@ async function reportsPage(csrf: string, status: string, flash?: string): Promis
     (value) =>
       `<a href="/reports?status=${value}" class="${value === filter ? "" : "muted"}">${value}</a>`,
   ).join(" · ");
+
+  // A report that names a seed names a run: the player's saves on that seed,
+  // newest first, each a way into the site's debugger.
+  const named = reports.filter((report) => report.seed !== null);
+  const runs =
+    named.length === 0
+      ? []
+      : await prisma.run.findMany({
+          where: {
+            OR: named.map((report) => ({
+              seed: report.seed ?? "",
+              profile: { userId: report.userId },
+            })),
+          },
+          orderBy: { updatedAt: "desc" },
+          select: {
+            id: true,
+            seed: true,
+            status: true,
+            updatedAt: true,
+            profile: { select: { userId: true } },
+          },
+        });
+  const runsOf = (report: { userId: string; seed: string | null }) =>
+    runs
+      .filter((run) => run.seed === report.seed && run.profile.userId === report.userId)
+      .slice(0, 3)
+      .map(
+        (run) =>
+          `<a href="${esc(`${env.APP_URL}/fr/debug/${encodeURIComponent(run.id)}`)}" target="_top">Debug run · ${esc(date(run.updatedAt))} · ${esc(run.status)}</a>`,
+      )
+      .join(" · ");
+
   const rows = reports
     .map((report) => {
       const hidden = `<input type="hidden" name="csrf" value="${csrf}"><input type="hidden" name="id" value="${esc(report.id)}">`;
@@ -484,7 +517,11 @@ async function reportsPage(csrf: string, status: string, flash?: string): Promis
         (value) =>
           `<option value="${value}" ${value === report.status ? "selected" : ""}>${value}</option>`,
       ).join("");
-      return `<tr><td>${esc(date(report.createdAt))}<br><span class="muted">${esc(report.user.email)}</span></td><td><b>${esc(report.title)}</b><span class="muted"> · ${esc(report.page ?? "—")} · ${esc(report.seed ?? "—")}</span><pre>${esc(report.body)}</pre><form method="post" action="/reports/status" class="inline">${hidden}<select name="status">${options}</select><input name="note" value="${esc(report.note ?? "")}" placeholder="note (never shown)" maxlength="1000" size="40"><button>Save</button></form><form method="post" action="/reports/delete" class="inline" onsubmit="return confirm('Delete this report?')">${hidden}<button class="danger">Delete</button></form></td></tr>`;
+      const debug =
+        report.seed === null
+          ? ""
+          : runsOf(report) || '<span class="muted">no save on this seed</span>';
+      return `<tr><td>${esc(date(report.createdAt))}<br><span class="muted">${esc(report.user.email)}</span></td><td><b>${esc(report.title)}</b><span class="muted"> · ${esc(report.page ?? "—")} · ${esc(report.seed ?? "—")}</span>${debug === "" ? "" : `<br>${debug}`}<pre>${esc(report.body)}</pre><form method="post" action="/reports/status" class="inline">${hidden}<select name="status">${options}</select><input name="note" value="${esc(report.note ?? "")}" placeholder="note (never shown)" maxlength="1000" size="40"><button>Save</button></form><form method="post" action="/reports/delete" class="inline" onsubmit="return confirm('Delete this report?')">${hidden}<button class="danger">Delete</button></form></td></tr>`;
     })
     .join("");
   const body = `<h1>Bug reports</h1><p>${tabs}</p><table><tr><th style="width:12rem">When · who</th><th>Report</th></tr>${rows}${reports.length === 0 ? '<tr><td colspan="2" class="muted">Nothing here.</td></tr>' : ""}</table>`;
