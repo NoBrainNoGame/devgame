@@ -109,16 +109,23 @@ pre{white-space:pre-wrap;word-break:break-word;background:#1b1e25;border:1px sol
 function page(
   title: string,
   body: string,
-  options: { nav?: string; flash?: string } = {},
+  options: { nav?: string; flash?: string; script?: string; status?: number } = {},
 ): Response {
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${esc(title)} · Devgame admin</title><style>${CSS}</style></head><body>${options.nav ?? ""}<main>${options.flash === undefined ? "" : `<p class="ok">${esc(options.flash)}</p>`}${body}</main></body></html>`;
+  // The panel runs no script but the login page's countdown, and that one
+  // only under a nonce minted for this response: the policy stays
+  // `default-src 'none'` for everything else.
+  const nonce = options.script === undefined ? null : randomBytes(16).toString("base64");
+  const script =
+    options.script === undefined ? "" : `<script nonce="${nonce}">${options.script}</script>`;
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${esc(title)} · Devgame admin</title><style>${CSS}</style></head><body>${options.nav ?? ""}<main>${options.flash === undefined ? "" : `<p class="ok">${esc(options.flash)}</p>`}${body}</main>${script}</body></html>`;
   return new Response(html, {
+    status: options.status ?? 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
       // Framed by the site's own /admin page in development, and by nothing
       // else: `frame-ancestors` is what `X-Frame-Options: DENY` could not say.
-      "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'self' ${env.APP_URL}`,
+      "content-security-policy": `default-src 'none'; style-src 'unsafe-inline'; ${nonce === null ? "" : `script-src 'nonce-${nonce}'; `}form-action 'self'; frame-ancestors 'self' ${env.APP_URL}`,
       "referrer-policy": "no-referrer",
     },
   });
@@ -286,18 +293,52 @@ ${spreadTable("Abandoned runs, where they were left", d.abandoned)}
   return page("Balance", body, { nav: nav("/balance", csrf) });
 }
 
-function loginPage(
-  error?: string,
-  options: { status?: number; "retry-after"?: string } = {},
-): Response {
-  const response = page(
-    "Log in",
-    `<div class="login"><h1>Devgame admin</h1><form method="post" action="/login"><label>Password<input type="password" name="password" autocomplete="current-password" autofocus required></label>${error === undefined ? "" : `<p class="bad">${esc(error)}</p>`}<button>Enter</button></form><p class="muted">The password is ADMIN_PASSWORD in .env. This panel listens on ${esc(origin)} only.</p></div>`,
-  );
-  if (options.status === undefined) return response;
+/**
+ * The password prompt. While the door is closed the page says how long is
+ * left and counts it down itself, a second at a time, then lets the form
+ * be sent again — the wait is real either way, the server keeps its own
+ * clock, and the page only spares a reload to find out it is over.
+ */
+function loginPage(options: { error?: string; waitMs?: number } = {}): Response {
+  const wait = options.waitMs ?? 0;
+  const closed = wait > 0;
+  const error =
+    options.error === undefined
+      ? ""
+      : `<p class="bad" id="cooldown">${esc(options.error)}${closed ? ` Try again in <span id="left">${esc(describeWait(wait))}</span>.` : ""}</p>`;
+  const body = `<div class="login"><h1>Devgame admin</h1><form method="post" action="/login"><label>Password<input type="password" name="password" autocomplete="current-password" autofocus required></label>${error}<button${closed ? " disabled" : ""}>Enter</button></form></div>`;
+  if (!closed) return page("Log in", body);
+
+  // The same words as `describeWait`, kept in step by hand.
+  const script = `(() => {
+  const until = Date.now() + ${Math.round(wait)};
+  const left = document.getElementById("left");
+  const notice = document.getElementById("cooldown");
+  const button = document.querySelector("button");
+  const describe = (ms) => {
+    const seconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const rest = seconds % 60;
+    if (minutes === 0) return rest + " s";
+    return rest === 0 ? minutes + " min" : minutes + " min " + rest + " s";
+  };
+  const tick = () => {
+    const ms = until - Date.now();
+    if (ms <= 0) {
+      notice.textContent = "You can try again.";
+      notice.className = "muted";
+      button.disabled = false;
+      return;
+    }
+    left.textContent = describe(ms);
+    setTimeout(tick, 1000 - (ms % 1000 || 1000) + 20);
+  };
+  tick();
+})();`;
+  const response = page("Log in", body, { script, status: 429 });
   const headers = new Headers(response.headers);
-  if (options["retry-after"] !== undefined) headers.set("retry-after", options["retry-after"]);
-  return new Response(response.body, { status: options.status, headers });
+  headers.set("retry-after", String(Math.ceil(wait / 1000)));
+  return new Response(response.body, { status: 429, headers });
 }
 
 async function statsPage(csrf: string): Promise<Response> {
@@ -498,20 +539,11 @@ async function handle(request: Request): Promise<Response> {
     if (request.method === "POST") {
       const now = Date.now();
       const wait = door.left(now);
-      if (wait > 0) {
-        return loginPage(`Wrong password earlier. Try again in ${describeWait(wait)}.`, {
-          status: 429,
-          "retry-after": String(Math.ceil(wait / 1000)),
-        });
-      }
+      if (wait > 0) return loginPage({ error: "Wrong password earlier.", waitMs: wait });
       const data = await form(request);
       const candidate = data.get("password") ?? "";
       if (!passwordMatches(candidate)) {
-        const closed = door.fail(now);
-        return loginPage(`Wrong password. Try again in ${describeWait(closed)}.`, {
-          status: 429,
-          "retry-after": String(Math.ceil(closed / 1000)),
-        });
+        return loginPage({ error: "Wrong password.", waitMs: door.fail(now) });
       }
       door.succeed();
       const fresh = openSession();
@@ -519,7 +551,9 @@ async function handle(request: Request): Promise<Response> {
         "set-cookie": `${COOKIE}=${fresh}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_HOURS * 3600}`,
       });
     }
-    return token === null ? loginPage() : redirect("/");
+    if (token !== null) return redirect("/");
+    const wait = door.left(Date.now());
+    return wait > 0 ? loginPage({ error: "Wrong password earlier.", waitMs: wait }) : loginPage();
   }
 
   if (token === null) return redirect("/login");
