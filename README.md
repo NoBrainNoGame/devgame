@@ -8,7 +8,7 @@ review decides what lands, production decides whether you keep your job, and
 the money your features earn buys you the team and the tooling to hold on a
 little longer.
 
-![The landing page: the headline, the pitch, and today's run drawn by the game itself — the player and two developers, each branch tagged with its owner's name](docs/homepage.png)
+![The landing page: the headline, the pitch, and today's run drawn by the game itself — the player and two developers, each branch tagged with its owner's name](docs/landing.png)
 
 There is no end. A run stops in **burnout** (you ran out of energy) or with
 **production firing you** (it ran out of patience). The score is what you held.
