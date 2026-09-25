@@ -1,26 +1,14 @@
 # Hosting
 
-This app is built for one specific production environment: **Coolify on a
-single VPS**, hosting many unrelated apps side by side. Everything in the
-repository that touches deployment — `Dockerfile`, `entrypoint.sh`,
-`output: "standalone"`, `/api/health` — exists to serve that target.
-
-It deploys to Vercel unchanged too. Read [If this does not fit
-you](#if-this-does-not-fit-you) before assuming you have to follow any of this.
+Target: **Coolify on a single VPS** hosting many unrelated apps; `Dockerfile`,
+`entrypoint.sh`, `output: "standalone"` and `/api/health` exist for it. Vercel
+also works unchanged ([below](#if-this-does-not-fit-you)).
 
 ## Why this shape
 
-The constraint is not the cost of one site — it is launching **a different site
-regularly** and having most of them not work out. That makes two things matter
-far more than they normally would:
-
-- **Flat cost.** Anything priced per project multiplies by the number of
-  experiments, most of which will be abandoned.
-- **Flat effort.** If putting a new site online means hand-writing compose
-  files, DNS records and TLS config, you stop launching sites.
-
-Coolify on a VPS is the answer to both: one machine, one bill, unlimited apps,
-and "new app" is a form — connect a repo, pick a domain, deploy.
+Sites launch often and mostly die, so cost and effort must be flat: no
+per-project pricing, no hand-written compose, DNS or TLS per site. Coolify is
+one machine, one bill, unlimited apps; a new app is a form.
 
 |  | Vercel Pro | Coolify on a VPS |
 |---|---|---|
@@ -31,60 +19,42 @@ and "new app" is a form — connect a repo, pick a domain, deploy.
 | Postgres | managed, per project | one instance, one database per app |
 | Ceiling | none | the machine's RAM |
 
-Vercel Pro is genuinely competitive — it is also flat, and it is less work. The
-gap at ten apps is maybe €15/month. Choose Coolify for the missing time limit,
-for full control of the database, and because the marginal app is free; choose
-Vercel if you would rather never think about a server.
-
-**The real recurring cost is neither**: it is domains, at ~€10/year each. See
-[Wildcard DNS](#wildcard-dns) for how to make that cost zero until a site earns
-a name of its own.
+Vercel is also flat, less work, ~€15/month more at ten apps. Coolify buys no
+time limit, full database control and free marginal apps. Domains (~€10/year
+each) are the real recurring cost, zero with [wildcard DNS](#wildcard-dns)
+until a site earns a name.
 
 ## The machine
 
-Any VPS with Docker. A 4 vCPU / 8 GB instance (Hetzner CX32 and equivalents,
-~€8/month at the time of writing — check, prices move) comfortably runs Coolify,
-Postgres and a dozen apps of this size.
-
-Do not start at 2 GB: Coolify itself wants ~1 GB, and you want headroom for
-builds, which are the memory-hungry part.
+Any VPS with Docker. 4 vCPU / 8 GB (Hetzner CX32 or equivalent, ~€8/month when
+written; prices move) runs Coolify, Postgres and a dozen apps like this. Not
+2 GB: Coolify takes ~1 GB, builds need headroom.
 
 ```bash
 # on a fresh Debian/Ubuntu VPS, as root
 curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
 ```
 
-Coolify then serves its own UI on port 8000, provisions TLS through its bundled
-proxy (Traefik or Caddy), and takes over deployments.
+Coolify serves its UI on port 8000, provisions TLS via its bundled proxy
+(Traefik or Caddy) and runs deployments.
 
 ## Wildcard DNS
 
-Do this once, before the first app. Point a wildcard at the box:
+Before the first app:
 
 ```
 *.lab.yourdomain.com.   A   <VPS IP>
 ```
 
-Set that as Coolify's instance wildcard domain. Every new app then gets a
-working HTTPS URL the moment you create it — no DNS record, no certificate
-request, no domain purchase. A site that proves itself gets a real domain later;
-one that does not costs you nothing.
-
-At a site a week this is the single biggest ergonomic win available, and it
-removes the largest line item in the whole plan.
+Set it as Coolify's instance wildcard domain: each new app gets a working HTTPS
+URL at creation, with no DNS record, certificate or domain to buy.
 
 ## Postgres: one instance, many databases
 
-Create **one** Postgres in Coolify for the whole machine, from the plain
-`postgres:17-alpine` image — the same image `docker-compose.yml` uses locally.
-This app's schema needs no extension, so a stock server is enough; keeping the
-two environments on the same image is what stops "works locally" from meaning
-anything less than "works in production".
-
-Then give each app its own database and its own role, rather than its own
-Postgres instance. Thirty containerised instances would each reserve shared
-buffers and a WAL writer for a database measured in megabytes; one instance with
-thirty databases is one process tree and one backup.
+**One** Postgres in Coolify for the machine, from plain `postgres:17-alpine`,
+the image `docker-compose.yml` uses locally (no extension needed). Each app
+gets a database and a role, not an instance: one instance is one set of shared
+buffers and WAL writer, one process tree, one backup.
 
 ```sql
 -- as the superuser, once per app
@@ -92,12 +62,9 @@ CREATE ROLE myapp LOGIN PASSWORD '<generated>';
 CREATE DATABASE myapp OWNER myapp;
 ```
 
-Raise `max_connections` on the shared instance (200 is a sane start). Every app
-holds its own pool through `@prisma/adapter-pg`, and the default 100 runs out
-sooner than you expect.
-
-Point the app at it over Coolify's internal network — the database should not be
-published to the host:
+Raise `max_connections` (200 is a sane start): every app holds its own
+`@prisma/adapter-pg` pool and the default 100 runs out early. Connect over
+Coolify's internal network; never publish the database to the host:
 
 ```
 DATABASE_URL=postgresql://myapp:<password>@<postgres-service>:5432/myapp?schema=public
@@ -114,54 +81,57 @@ In Coolify: **New Resource → Private/Public Repository**, then
 | Port | `3000` |
 | Health check path | `/api/health` |
 
-Paste the variables from `.env.example`. The required ones are `DATABASE_URL`,
-`BETTER_AUTH_SECRET`, `CRON_SECRET` and `DAILY_SEED_SECRET`; `APP_URL` and
-`BETTER_AUTH_URL` must be the real public URL or the OAuth callbacks break.
+Paste the variables from `.env.example` (checked by `src/lib/env.ts`):
 
-`DAILY_SEED_SECRET` keys the daily seed. Rotating it changes every *future*
-daily; past ones keep the seed memoised in the `DailySeed` table, so old boards
-stay comparable. Losing it is not a data loss, but two deployments with
-different values serve two different games of the day.
+- **Required** to boot: `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+  `DAILY_SEED_SECRET` (secrets: 16 characters minimum).
+- `CRON_SECRET`: unset, every `/api/cron` route is off.
+- `APP_URL`, `BETTER_AUTH_URL`: the real public URL, or OAuth callbacks break.
+- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`: see
+  [What gates what](#what-gates-what).
+
+`DAILY_SEED_SECRET` keys the daily seed. Rotating it changes *future* dailies
+only (past seeds are memoised in `DailySeed`, so old boards stay comparable).
+Losing it loses no data, but deployments with different values serve
+different games of the day.
 
 ### The image is the standalone build
 
-The `runner` stage copies `.next/standalone`, which contains only the files
-Next's build traced as reachable. Anything the build cannot see is not in the
-image.
+`output: "standalone"` in `next.config.ts` is load-bearing: `runner` copies
+`.next/standalone`; without it the image boots, then 404s on every asset. Only
+files the build traced as imported are in it, so `messages/` translations load
+by dynamic `import()` (`src/i18n/request.ts`), never `fs`: a runtime-built
+`readFile` path would build, start, pass the health check, then 500 on the
+first localised page. Same for any future data file.
 
-That is why translations under `messages/` are loaded with a dynamic
-`import()` in `src/i18n/request.ts` and never read with `fs`. File tracing
-follows imports; a `readFile` of a path built at runtime is invisible to it, so
-the image would build, start, pass its health check, and then return 500 on the
-first localised page. Same rule for any future data file.
+### The build runs on placeholder values
+
+`src/lib/env.ts` validates when `next build` imports it, so the Dockerfile's
+`builder` stage sets placeholder `DATABASE_URL`, `BETTER_AUTH_SECRET`,
+`CRON_SECRET` and `DAILY_SEED_SECRET` (never baked into the output). A new
+*required* variable needs a placeholder there too, or the image stops
+building. CI (`.github/workflows/ci.yml`, `main` only) builds the same way.
 
 ### Migrations run themselves
 
-`entrypoint.sh` runs `prisma migrate deploy` before starting the server, so a
-deploy is only ever a push. `migrate deploy` applies committed migrations only —
-it never prompts and never resets — and Prisma takes a Postgres advisory lock,
-so several replicas starting at once is safe.
+`entrypoint.sh` runs `prisma migrate deploy` from `/app/migrator` before the
+server, so a deploy is a push. It applies committed migrations only, never
+prompts or resets, and holds a Postgres advisory lock, so replicas starting
+together are safe. `RUN_MIGRATIONS=false` skips it (e.g. to debug a failed
+start).
 
-If a start-up failure needs debugging, `RUN_MIGRATIONS=false` skips the step.
-
-**The cost of this convenience is image size.** The Prisma 7 CLI weighs ~285 MB
-— it eagerly requires Prisma Studio and the dev server even for
-`migrate deploy`, so it cannot be pruned without breaking on the next patch
-release — which puts the image around 820 MB.
-
-That is less bad than it looks here, for two reasons. Coolify builds on the
-machine that runs the app, so nothing is ever pulled over the network. And the
-CLI lives in its own layer, built from a fixed command: every app built from
-this template produces a byte-identical layer, which Docker stores **once** on
-the host. The marginal disk cost of the next app is the ~70 MB standalone layer.
-
-If you would rather not pay it, set `RUN_MIGRATIONS=false` and run
-`bun run db:deploy` from CI or by hand before each deploy.
+**The cost is image size.** The Prisma 7 CLI is ~285 MB (it requires Prisma
+Studio and the dev server even for `migrate deploy`; pruning breaks on the
+next patch), so the image is ~820 MB. Coolify builds where it runs, so nothing
+crosses the network, and the CLI layer is built from a fixed command, so all
+apps from this template share one byte-identical layer stored **once**: the
+next app costs its ~70 MB standalone layer. To skip it, set
+`RUN_MIGRATIONS=false` and run `bun run db:deploy` by hand or from a deploy
+pipeline before each deploy (the repository's CI does not).
 
 ### Scheduled jobs
 
-Coolify has **Scheduled Tasks** per application. There is no crontab to edit and
-no separate scheduler to run:
+Coolify's per-application **Scheduled Tasks**; no crontab, no scheduler:
 
 ```
 Command:  curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" \
@@ -169,76 +139,56 @@ Command:  curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" \
 Schedule: 0 6 * * *
 ```
 
-`src/lib/cron.ts` verifies that bearer token in constant time. A cron route is a
-public endpoint that happens to be called on a schedule — nothing about being
-"internal" protects it.
-
-Two things worth doing: **make jobs idempotent** (schedulers retry, overlap, and
-fire more often than expected), and **stagger apps** if several run heavy jobs —
-ten jobs at 06:00 is ten pipelines and ten connection pools at once.
+`src/lib/cron.ts` checks the bearer token in constant time: a cron route is a
+public endpoint. Make jobs **idempotent** (schedulers retry, overlap, fire
+twice) and **stagger** heavy jobs across apps: ten at 06:00 is ten pipelines
+and ten pools at once.
 
 ## Backups
 
-One instance means one backup. Coolify can schedule Postgres backups to S3; turn
-it on when you create the database, not later.
+One instance, one backup: enable Coolify's scheduled Postgres backups to S3
+when creating the database.
 
 ```bash
 docker exec <postgres-container> pg_dumpall -U postgres | gzip > dump.sql.gz
 ```
 
-Nightly, off-machine, restore-tested. A dump you have never restored is a hope,
-not a backup. Every app's data is in that one file — the upside and the risk of
-a shared instance.
+Nightly, off-machine, restore-tested; that one file holds every app's data.
 
 ## Capacity
 
-An idle container from this app sits at **~45 MB RSS**; budget 150–250 MB
-once it serves traffic and holds a connection pool. On 8 GB, after Coolify and
-Postgres, that is comfortably a dozen apps.
-
-Watch `docker stats`. When memory tightens, the options are a bigger machine or
-a second one — Coolify manages multiple servers, and the shared Postgres can
-serve apps on another host over a private network.
-
-Builds are the spike, not the steady state. If a build OOMs on a small box,
-build elsewhere and deploy the image rather than sizing the machine for its
-worst minute.
+Idle container **~45 MB RSS**; budget 150–250 MB serving traffic with a pool,
+so a dozen apps on 8 GB after Coolify and Postgres. Watch `docker stats`; when
+memory tightens, add a bigger or second machine (Coolify manages several; the
+shared Postgres can serve another host over a private network). Builds are the
+spike: if one OOMs, build elsewhere and deploy the image.
 
 ## What gates what
 
-`ADMIN_PASSWORD` and `ADMIN_PORT` are never set on the server: the admin
-panel (`bun run admin`) is a local process that reads the same
-`DATABASE_URL` from a developer's machine and binds to the loopback
-address. Administering production means pointing a local `.env` at the
+`ADMIN_PASSWORD` and `ADMIN_PORT` are never set on the server: the admin panel
+(`bun run admin`) is a local, loopback-only process reading the local
+`DATABASE_URL`. To administer production, point a local `.env` at the
 production database, on a machine you trust.
 
-The app boots with `DATABASE_URL`, `BETTER_AUTH_SECRET`, `CRON_SECRET` and
-`DAILY_SEED_SECRET`. Everything else degrades on purpose — but one gap is worth
-knowing before you call a deployment done:
+Beyond the required variables everything degrades on purpose, except:
 
 | Left unset | Consequence |
 |---|---|
 | `GOOGLE_CLIENT_ID` / `SECRET` | **Nobody can sign in.** |
 
-That row is not fixable with an environment variable alone. The magic link
-*throws* in production because no email provider ships with the app
-(`src/lib/auth.ts`), so unless you fill in the Google OAuth pair or implement
-`sendMagicLink`, your deployment has no way in. Decide which before launch, not
-after.
-
-The game itself still works signed out, against `localStorage` — what a
-signed-out visitor loses is cloud saves and the leaderboard, not the game.
+No variable alone fixes it: no email provider ships, so `sendMagicLink` in
+`src/lib/auth.ts` *throws* in production. Fill in the Google pair or implement
+`sendMagicLink` before launch. Signed out, the game still works against
+`localStorage`, minus cloud saves and the leaderboard.
 
 ## If this does not fit you
 
-Nothing here is a one-way door. The app is an ordinary containerised Next server
-talking to Postgres over a URL:
+An ordinary containerised Next server talking to Postgres over a URL:
 
-- **Vercel**: works as-is. Add a `vercel.json` with a `crons` block, point
-  `DATABASE_URL` at any managed Postgres (Neon, Supabase — the schema needs no
-  extension), and note the 300 s function ceiling — `maxDuration` is already
-  declared on the example cron route. Vercel ignores the Dockerfile.
-- **Railway, Render, Fly**: all start a container, so `entrypoint.sh` and the
-  migrate-on-boot behaviour work unchanged.
-- **Plain Docker Compose**: `docker build --target runner .` and run it against
-  any Postgres. Coolify is a convenience, not a dependency.
+- **Vercel**: works as-is, ignores the Dockerfile. Add a `vercel.json` `crons`
+  block, point `DATABASE_URL` at any managed Postgres (Neon, Supabase), mind
+  the 300 s ceiling (`maxDuration` is set on the example cron route).
+- **Railway, Render, Fly**: they start a container; `entrypoint.sh` and
+  migrate-on-boot work unchanged.
+- **Plain Docker Compose**: `docker build --target runner .`, run against any
+  Postgres.

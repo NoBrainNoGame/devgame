@@ -1,40 +1,31 @@
 # Database
 
-Prisma 7 with the `pg` driver adapter, against plain PostgreSQL 17. The schema
-uses no extension: `docker-compose.yml` runs `postgres:17-alpine` and production
-needs nothing installed beyond a stock server.
+Prisma 7 with the `pg` driver adapter, on plain PostgreSQL 17
+(`postgres:17-alpine` in `docker-compose.yml`). No extension: production needs
+a stock server.
 
 ## Layout
 
-- Schema: `prisma/schema.prisma`
-- Generated client: `src/generated/prisma` — **gitignored**, recreated by
-  `bun x prisma generate` (which `postinstall` runs for you)
-- Migrations: `prisma/migrations`
-- Prisma CLI config: `prisma7.config.ts`
-- Runtime client: `src/lib/db.ts`
-
-There is no `prisma/seed.ts`: content tables live in `src/game/content/`,
-not in Postgres, so nothing the app *needs* is seeded. What `bun run
-fixtures` (`scripts/fixtures.ts`) loads is development data — accounts,
-runs, page views, run samples, bug reports — written through the same
-functions the app writes with (`replayRun`, `applyRunToMeta`,
-`ingestSample`), found again by address or id and replaced on the next
-load. It refuses any `DATABASE_URL` that is not on this machine.
+- Schema `prisma/schema.prisma`; migrations `prisma/migrations`; CLI config
+  `prisma7.config.ts`; runtime client `src/lib/db.ts`.
+- Generated client `src/generated/prisma`: **gitignored**, recreated by
+  `bun x prisma generate` (run by `postinstall`).
+- No `prisma/seed.ts`: content lives in `src/game/content/`, so the app needs
+  nothing seeded. `bun run fixtures` (`scripts/fixtures.ts`) loads development
+  data (accounts, runs, page views, run samples, bug reports) through the
+  app's own functions (`replayRun`, `applyRunToMeta`, `ingestSample`), found
+  again by address or id and replaced on the next load. It refuses any
+  `DATABASE_URL` not on this machine.
 
 ## Why the datasource URL lives in `prisma7.config.ts`
 
-Prisma 7 removed `url` from the schema's `datasource` block; the CLI reads the
-connection string from the config file instead. Prisma 7 also stopped loading
-`.env` on its own, which is why that file imports `dotenv/config` — a no-op in
-containers, where the variables are already in the environment.
-
-The production image ships `prisma7.config.ts`, the schema and a minimal Prisma
-CLI under `/app/migrator`, so that `dotenv/config` resolves when `entrypoint.sh`
-runs `migrate deploy`. See the Dockerfile.
-
-At runtime the app does not use that file at all: `src/lib/db.ts` builds a
-`PrismaPg` adapter from `env.DATABASE_URL`. Prisma 7 requires a driver adapter,
-and `PrismaPg` owns the `pg` connection pool.
+Prisma 7 removed `url` from the schema's `datasource` (the CLI reads the
+config) and no longer loads `.env`, hence `dotenv/config` in that file (a no-op
+in containers). The image ships the config, the schema and a minimal Prisma
+CLI under `/app/migrator` so `dotenv/config` resolves when `entrypoint.sh`
+runs `migrate deploy` (see the Dockerfile). At runtime the app ignores the
+file: `src/lib/db.ts` builds a `PrismaPg` adapter, which owns the `pg` pool,
+from `env.DATABASE_URL`; Prisma 7 requires a driver adapter.
 
 ## Migrations
 
@@ -44,162 +35,153 @@ bun run db:deploy       # apply committed migrations, production
 bun run db:studio       # browse the data
 ```
 
-In production, migrations run automatically at container start-up — see
-`entrypoint.sh` and [hosting.md](./hosting.md).
+Production migrates at container start (`entrypoint.sh`,
+[hosting.md](./hosting.md)). `prisma migrate reset` destroys data; it asks for
+explicit consent and Prisma refuses to run it non-interactively from an agent.
+Never script around that.
 
-`prisma migrate reset` destroys data. It asks for explicit consent, and Prisma
-refuses to run it non-interactively from an agent. Never script around that.
+## Raw SQL lives in one module
+
+The only raw SQL is `src/lib/leaderboard/queries.ts`: a player's best run needs
+`DISTINCT ON`, which Prisma cannot express. Any future raw SQL goes there.
 
 ## Indexes
 
-Express indexes in the schema wherever possible, because Prisma will `DROP`
-anything it does not know about on the next `migrate dev`. An index that only
-exists in a hand-written migration is an index you are now responsible for
-keeping alive.
+Express indexes in the schema wherever possible: Prisma `DROP`s what it does
+not know on the next `migrate dev`, and an index living only in a hand-written
+migration is yours to keep alive.
 
-### The three `Run` indexes
+### The `Run` indexes
 
-The leaderboard is **derived from `Run`**; there is no denormalised board table,
-which means every board query has to be served by an index or it becomes a
-sequential scan over every run ever played.
+The leaderboard is **derived from `Run`** (no board table), so every board
+query needs an index or it scans every run ever played.
 
-| Index | Query it serves |
+| Index | Serves |
 |---|---|
-| `@@index([profileId, status])` | Resume: the one run still `in_progress` for this player. |
-| `@@index([mode, status, score(sort: Desc), finishedAt])` | Classic board: `WHERE mode = ? AND status = 'finished' ORDER BY score DESC`. |
-| `@@index([dailyDate, status, score(sort: Desc)])` | Daily board: `WHERE dailyDate = ? AND status = 'finished' ORDER BY score DESC`. |
+| `@@index([profileId, status])` | Resume: this player's run still `in_progress`. |
+| `@@index([rulesEpoch, mode, status, score(sort: Desc), finishedAt])` | Classic board: `WHERE rulesEpoch = ? AND mode = ? AND status = 'finished' ORDER BY score DESC`. |
+| `@@index([rulesEpoch, dailyDate, status, score(sort: Desc)])` | Daily board: the same on `dailyDate`. |
+| `@@index([profileId, fingerprint])` | Duplicate detection; not unique, since an abandoned run and its game's finished submission share a fingerprint. |
 
-The column order matters and is not cosmetic. Equality columns come first, the
-sort column last, so Postgres can walk the index in `score DESC` order instead
-of sorting the matching rows. `finishedAt` is trailing on the classic index to
-break ties without a heap lookup.
+Order matters: equality columns first, the sort column last, so Postgres walks
+the index in `score DESC` instead of sorting; `finishedAt` trails the classic
+index to break ties without a heap lookup. `score` is written only by
+`submitRun`, from `replayRun`, never from the client: a board row is as
+trustworthy as the replay.
 
-`score` is only ever written by `submitRun`, from what `replayRun` computed —
-never from the client. A board row is therefore as trustworthy as the replay.
+### Two partial unique indexes are hand-written
 
-### `Run_one_in_progress` is hand-written
-
-A player may have at most one run in progress **per mode**. That is a partial
-unique index:
+Prisma cannot put a `WHERE` on an index, so these live in migrations:
 
 ```sql
+-- prisma/migrations/00000000000001_run_one_in_progress/migration.sql
+-- At most one run in progress per player per mode.
 CREATE UNIQUE INDEX "Run_one_in_progress"
   ON "Run" ("profileId", "mode")
   WHERE "status" = 'in_progress';
+
+-- prisma/migrations/00000000000002_run_unique_fingerprint/migration.sql
+-- One finished submission per player per run fingerprint (seed + actions).
+CREATE UNIQUE INDEX "Run_one_finished_per_fingerprint"
+  ON "Run" ("profileId", "fingerprint")
+  WHERE "status" = 'finished';
 ```
 
-It lives in `prisma/migrations/00000000000001_run_one_in_progress/migration.sql`
-because Prisma cannot express a `WHERE` clause on an index.
+**Read this before touching migrations.** Prisma does not know they exist: it
+will not reproduce them in a `migrate diff` nor warn they are missing, and
+`migrate dev` happily produces a schema without them. Without
+`Run_one_in_progress` a player can hold two in-progress runs per mode, which
+silently breaks resume ("the run still in progress" is no longer one row).
+Without `Run_one_finished_per_fingerprint` one good run can be submitted for
+credit again and again under fresh client-chosen `clientRunId`s.
 
-**Read this before touching migrations.** Prisma does not know this index
-exists. It will not reproduce it in a `migrate diff`, it will not warn you that
-it is missing, and `migrate dev` will happily produce a schema that silently
-lets a player hold two in-progress runs per mode — which breaks resume, because
-"the run still in progress" is no longer a single row.
-
-So: **if migrations are ever squashed or regenerated from scratch, re-add this
-migration by hand.** The check is one query against a fresh database:
+**If migrations are ever squashed or regenerated, re-add both by hand**, then
+check a fresh database; a missing row is a lost invariant:
 
 ```sql
-SELECT indexdef FROM pg_indexes WHERE indexname = 'Run_one_in_progress';
+SELECT indexname, indexdef FROM pg_indexes
+WHERE indexname IN ('Run_one_in_progress', 'Run_one_finished_per_fingerprint');
 ```
-
-Nothing returned means the invariant is gone.
 
 ## `VisitDay` counts pages, not people
 
-One row per UTC day, route and language, with two integers: views, and
-visits (the first view of a browser tab). The route comes from the closed
-list in `src/lib/visits/paths.ts`; anything else is `/other`. Nothing about
-the visitor is in the row or was read to write it — no cookie, no address —
-and a browser sending Global Privacy Control is not counted. The beacon
-route answers 204 whatever happens.
+One row per UTC day, route and language: views, and visits (a browser tab's
+first view). Routes come from the closed list in `src/lib/visits/paths.ts`,
+anything else is `/other`. Nothing about the visitor is stored or read — no
+cookie, no address — and Global Privacy Control browsers are not counted. The
+beacon always answers 204.
 
 ## `BugReport` is text, kept as text
 
-A signed-in player's report: title, body, page from the same closed list,
-optional seed, a status and an administrator's note. Bounded on every
-column, validated in `src/lib/report/validate.ts` before Prisma sees it, and
-rendered as text everywhere. Deleted with the account.
+A signed-in player's title, body, page (same closed list), optional seed,
+status and administrator's note. Every column bounded, validated in
+`src/lib/report/validate.ts` before Prisma, rendered as text everywhere.
+Deleted with the account.
 
 ## `RunSample` is a run with nobody in it
 
-A save — seed, starter profile, action log — and the `RunSummary` the
-server computed by replaying it, one row per `(clientRunId, kind, sprint)`.
-`kind` is `final` (the run ended), `checkpoint` (every ten sprints while it
-goes on) or `abandoned` (the player started another run over it). No user
-id, no address: the row cannot be joined to a person, and that is the
-point. The beacon route (`/api/telemetry`) replays before it writes, so a
-forged log never reaches the table; the admin panel's Balance page
-aggregates the summaries with `src/lib/telemetry/digest.ts`. The index on
-`(rules, kind, createdAt)` is what that page filters by.
+A save (seed, starter profile, action log) plus the `RunSummary` the server
+replayed from it, one row per `(clientRunId, kind, sprint)`. `kind`: `final`
+(ended), `checkpoint` (every ten sprints while it goes on), `abandoned`
+(another run started over it). No user id, no address: it cannot be joined to
+a person. `/api/telemetry` replays before writing, so forged logs never land.
+The admin Balance page aggregates summaries with
+`src/lib/telemetry/digest.ts`, filtering on the `(rules, kind, createdAt)`
+index.
 
 ## `Profile.bannedAt` is the one moderation tool
 
-Set from the local admin panel. A banned profile keeps the account and the
-game: `submitRun` refuses its scores, the leaderboard queries filter it
-out (`p."bannedAt" IS NULL`), and it cannot file reports. Nothing else in
-the app reads it.
+Set, with an optional `banReason`, from the local admin panel. A banned
+profile keeps its account and the game, but `submitRun` refuses its scores,
+leaderboard queries drop it (`p."bannedAt" IS NULL`) and it cannot file
+reports. Nothing else reads it.
 
 ## `Profile.metaVersion` is an optimistic lock
 
-Meta-progression is written from whichever device the player last used, and the
-client is authoritative for nothing but its own local copy. `syncMeta` merges
-server state with client state (`mergeMeta` in `src/lib/profile/merge.ts`, the
-only merge logic, running on both sides) and then issues an update **guarded by
-the `metaVersion` it merged from**, incrementing it.
-
-If zero rows match, another device wrote in between. The action does not retry
-blindly and does not overwrite: it returns a `conflict` together with the
-current server copy, so the caller can merge again against fresh state. A
-last-write-wins update here would quietly delete unlocks.
+Meta-progression is written from whichever device the player used last; the
+client owns only its local copy. `syncMeta` merges (`mergeMeta` in
+`src/lib/profile/merge.ts`, the only merge logic, on both sides), then updates
+**guarded by the `metaVersion` it merged from**, incrementing it. Zero rows
+matched means another device wrote in between: no blind retry, no overwrite —
+it returns a `conflict` with the server copy for the caller to merge again.
+Last-write-wins would quietly delete unlocks.
 
 ## Better Auth owns four tables
 
-`user`, `session`, `account` and `verification` are Better Auth's, mapped to
-lowercase names with `@@map`. Keeping them in the same database is what lets
-`Profile` reference `User.id` with a real foreign key and cascade on delete.
-
-After enabling a Better Auth plugin, regenerate and apply the diff as a
-migration:
+`user`, `session`, `account`, `verification`, lowercased with `@@map`. Sharing
+the database gives `Profile` a real foreign key to `User.id`, cascading on
+delete. After enabling a plugin, regenerate and apply the diff as a migration;
+never hand-edit those models:
 
 ```bash
 bun x @better-auth/cli@latest generate
 bun run db:migrate
 ```
 
-Do not hand-edit those four models to match; regenerate them.
-
 ## The run row keeps the save whole
 
-`Run.save` is the entire `RunSaveDto` as it was sent, and the columns beside it
-— `seed`, `mode`, `version`, `score`, `commits` — exist so the boards can be
-queried without opening the JSON.
+`Run.save` is the whole `RunSaveDto` as sent; the columns beside it (`seed`,
+`mode`, `dailyDate`, `status`, `version`, `rulesEpoch`, `score`,
+`sprintsCompleted`, `ticketsDelivered`, `commits`, `fingerprint`) only serve
+queries. Never keep just the action list: the save also carries the starter
+profile, account unlocks and starting skill points in force, which shape the
+map. Without them a replay is a different game, scored differently, that
+looks like a working feature.
 
-The temptation is to store only the action list and rebuild the rest from the
-columns. That is wrong: a save also carries the starter profile and the account
-unlocks that were in force, and both shape the generated map. Replaying an
-action list without them produces a different game, scores it differently, and
-looks for all the world like a working feature.
-
-Anything read back out of `save` is re-validated with `RunSaveSchema` before it
-is used. A row written by an older build is untrusted input like any other, and
-a save the current build cannot parse is one the player should not be handed —
-resuming it would drop them into a run that never happened.
+Anything read from `save` is re-validated with `RunSaveSchema`: an older
+build's row is untrusted input, and a save the current build cannot parse must
+not be resumed — it would drop the player into a run that never happened.
 
 ## Runs belong to a rules epoch
 
-`Run.rulesEpoch` records which version of the rules a submission was played
-under, and every leaderboard query filters on one epoch: the current one by
-default, or an older one the board offers from `RULES_EPOCHS`, each labelled
-with the package version that shipped it and the day it reached `main`.
+`Run.rulesEpoch` records the rules a submission was played under; every
+leaderboard query filters on one epoch, the current one by default or an older
+one offered from `RULES_EPOCHS` (labelled with the package version that
+shipped it and the day it reached `main`), so runs of two different games are
+never ranked together. Rows older than the column carry epoch 0, invisible to
+today's boards — correctly.
 
-Without it the board would rank a run from before a rules change against one
-from after, which is a comparison of two different games dressed up as a
-ranking. Rows written before the column existed carry epoch 0 and are therefore
-invisible to today's boards — which is the correct answer for them.
-
-`RULES_EPOCH` lives in `src/game/dto/version.ts` and is bumped by hand whenever
-a change makes an old action log replay to a different game. The hash beside it
-catches changes to the balance table and the content ids on its own; it cannot
-see a change to the rules code, which is what the epoch is for.
+`RULES_EPOCH` (`src/game/dto/version.ts`) is bumped by hand when a change makes
+an old action log replay to a different game. The fingerprint beside it
+catches balance-table and content-id changes on its own, not rules-code
+changes: that is the epoch's job.

@@ -1,740 +1,510 @@
 # Devgame — conception du jeu
 
-Ce document est la spécification consolidée du jeu. Le moteur
-(`src/game/core/`) l'implémente : une règle du code qui contredit ce document
-est un bug, dans l'un ou dans l'autre.
+Spécification consolidée qu'implémentent `src/game/core/` et
+`src/game/content/` : une règle qui la contredit est un bug de l'un ou de
+l'autre.
 
-Il remplace le document de conception initial. Les points où les deux divergent
-sont listés à la fin, dans [Écarts avec le document
-initial](#écarts-avec-le-document-initial).
-
-> **Aucun chiffre d'équilibrage ici.** Tous les coûts, pourcentages, seuils et
-> cadences vivent dans `src/game/core/balance.ts`, et nulle part ailleurs. C'est
-> ce fichier qui fait foi : le dupliquer ici garantirait qu'une des deux copies
-> soit fausse au bout d'une semaine. Ce document décrit les mécaniques et les
-> ordres de grandeur ; `balance.ts` décrit les valeurs.
+> Les chiffres font foi dans `src/game/core/balance.ts` ; ceux d'ici sont des
+> repères (deux copies finissent par diverger).
 
 ## Concept
 
-Roguelike RPG dans le navigateur où le donjon est un **graphe Git**. Le joueur
-est un développeur qui avance commit par commit sur un projet qui ne se termine
-jamais. Chaque commit est un choix de style de jeu : lent et sûr, ou rapide et
-risqué.
+Roguelike navigateur dont le donjon est un **graphe Git** : un développeur
+avance commit par commit sur un projet sans fin, entre lent et sûr, rapide et
+risqué. L'ennemi est le backlog : des tickets toujours plus nombreux, qui
+passent en review, s'imposent s'ils traînent et, livrés sans relecture, cassent
+la prod. Fins : burnout (énergie) ou licenciement (patience de la prod). Score :
+commits, points livrés, sprints tenus. La difficulté monte sans fin, comme les
+ascensions de Slay the Spire.
 
-Le dépôt est à vous. Le backlog, non. Chaque sprint apporte des **tickets** —
-des features à livrer, avec des points de story à remplir — et le projet en
-apporte de plus en plus. Un ticket plein part en **review**, et la review
-trouve ce que la machine a écrit sans relecture. Un ticket laissé en attente
-finit par vous être assigné ; un ticket refusé fait ouvrir le suivant du
-backlog en parallèle ; un ticket ouvert de plus, c'est chaque commit plus cher
-et chaque jet plus mauvais. Et ce qui part en production sans avoir été relu
-finit par y casser quelque chose.
+## Le graphe
 
-Une run se termine de deux façons : **burnout** (vous n'avez plus d'énergie) ou
-**licenciement** (la production a perdu patience). Le score est fait des
-commits réalisés, des points de story livrés et des sprints tenus.
+Rien n'est généré d'avance : un ticket est une demande, pas un chemin. Un commit
+naît quand il est écrit, à la rangée suivante (globale : on lit le graphe dans
+l'ordre d'écriture), dans la colonne de son ticket, pointant vers sa base (DAG
+lu par les parents, comme `git log`).
 
-## Boucle de jeu
+- `main` : le commit initial (seul nœud avant le sprint 1), puis par sprint le
+  merge `dev → main` et la release qui le tague.
+- `dev` : fourche de `main` par back-merge à chaque ouverture de sprint (commit
+  initial, puis dernière release), puis un merge par ticket livré.
+- Rien ne s'écrit sur `main` ni `dev`. Un ticket écrit de `dev` à `dev`
+  (l'[obstacle](#lobstacle), de sa feature à sa feature) dans la colonne libre
+  la plus à gauche, prise à son premier commit (pas de trou pour un ticket non
+  écrit), rendue en mergeant ou en recommençant ; deux tickets successifs y font
+  deux traits. **Un merge termine un ticket, jamais un commit de plus.**
 
-### Le graphe
+## Les tickets
 
-Le graphe n'est pas généré d'avance. **Rien n'existe avant d'être écrit** : un
-ticket est une demande, pas un chemin, et chaque commit est créé au moment où
-il est écrit, à la rangée suivante, dans la colonne de son ticket, pointant
-vers ce sur quoi il a été construit. C'est un DAG lu par les parents, comme
-`git log` le lit.
+Des points de story : un par commit atterri à la main, trois par l'IA. Une
+[compétence](#compétences-et-arbre) éventuelle se paie en points en plus, sinon
+pas de décision.
 
-**Deux branches au long cours, et rien ne s'écrit sur l'une ni sur l'autre.**
+- **WIP** : démarrer (tableau du projet) et basculer sont gratuits ; chaque
+  ticket ouvert au-delà du premier majore l'énergie des commits et retire un
+  pourcentage de chaque jet (`wip`, relatif pour garder l'écart entre les
+  mains). Compte la refacto imposée ; pas le hotfix (déjà une punition),
+  l'obstacle ni l'équipe.
+- **Backlog imposé** : passé la grâce (`tickets.graceSprints`), un ticket en
+  attente est ouvert d'office au sprint suivant. Jamais : ticket à compétence
+  (expiré avant), VIP (annulée avant), dette, obstacle.
+- **Forcés** : hotfix (incident), refacto imposée (explosion de dette), en main
+  si rien ne l'était ; un seul type de commit, à un point quelle que soit la
+  main, plus le fix d'un bug marqué.
 
-- **`main`** porte le **commit initial** du dépôt — le seul nœud qui existe
-  avant le premier sprint — puis ne reçoit que deux nœuds par sprint : le
-  merge `dev → main` qui le livre, et la **release** qui le tague. La colonne
-  la plus à gauche raconte donc l'histoire des sprints, pas celle des commits.
-- **`dev`** est la branche d'intégration. Elle **fourche de `main`** sur un
-  back-merge — le premier sprint s'ouvre sur le commit initial, les suivants
-  sur la dernière release — et reçoit ensuite **un merge par ticket livré**.
+### Les sortes
 
-Tout le travail se fait dans la colonne d'un ticket, qui part de `dev` et y
-revient — sauf l'[obstacle](#lobstacle), qui part de la colonne d'un ticket
-et y revient. Un ticket prend la colonne libre la plus à gauche **à son premier
-commit** — un ticket ouvert mais pas encore écrit n'a pas de colonne, donc pas
-de trou dans le graphe — et la rend quand il merge ou quand on le recommence.
-**Un merge est la fin d'un ticket, jamais un commit de plus.**
+Premier ticket du sprint : une feature ; les autres, un tirage chacun, toujours
+effectué, selon les poids du palier (`tickets.kinds.weights`).
 
-### Le ticket
+| Sorte | Règle |
+| --- | --- |
+| Feature | Le cas ordinaire. |
+| Bug client | 2–3 points, sans revenu, dû ce sprint. À l'heure : −10 patience, +1 part. Au backlog : annulé, +10 patience. En main : reste, sans récompense. |
+| VIP | Feature +2 points, revenu double, due ce sprint. À l'heure : prime du palier, +2 part. Au backlog : annulée, −2 part. En main : demi-revenu, sans prime, −2 part à la livraison. |
+| Dette | Refacto de 2 points, arrive avec le sprint si la dette atteint 40, une à la fois, sans tirage ; livrée, −20 dette. |
+| Migration | 4–6 points, +3 dette par commit du joueur (sauf Dependabot) ; livrée, un niveau de serveurs. |
+| Obstacle | Jamais tiré ([L'obstacle](#lobstacle)). |
 
-Un ticket, c'est :
+Sans revenu, pas de charge serveur. Couleurs : bug comme hotfix, migration et
+dette comme refacto, VIP comme feature, obstacle à part.
 
-- des **points de story** à remplir — chaque commit qui atterrit en remplit,
-  un à la main, trois par la machine ;
-- parfois une **compétence**, payée en points de story supplémentaires : le
-  ticket qui donne quelque chose coûte strictement plus que celui qui ne donne
-  rien, sinon il n'y a pas de décision. Un tel ticket est **une offre pour un
-  sprint** : personne ne l'a démarré quand le sprint se ferme, il expire, et
-  sa compétence retourne dans le pool. Il est rare ; le nœud Product owner de
-  l'arbre et la compétence Sens produit en font arriver davantage.
+### La review de PR
 
-Points pleins, le ticket n'est pas livré : il est **soumis**. Quelqu'un lit la
-pull request, et ce qu'il trouve est exactement ce que le jeu punit : chaque
-commit IA non relu peut être attrapé comme un bug, et un code au-dessus de son
-plafond de dette ne prend rien de plus. La modale de review lit le ticket à
-voix haute — les commits, ce que personne n'a relu, la dette — puis tranche.
+Points pleins, le ticket est soumis. Chaque commit IA non relu du ticket et de
+ses obstacles peut être attrapé (`acceptance.bugDetectPct` ; un bug caché
+toujours) ; dette au-delà de `acceptance.maxDebt` : refus d'office. La modale
+lit le verdict (commits, non relus, dette), puis tranche.
 
-- **Acceptée** : la review ne coûte rien ; le joueur presse **Merger**, le
-  ticket atterrit sur `dev` — c'est ce merge qui coûte le tour — et livre sa
-  compétence. Le merge n'est jamais joué à la place du joueur : le graphe ne
-  bouge qu'après le bouton.
-- **Refusée** : les commits attrapés sont **marqués bugués** et les bugs
-  reviennent en points de correctif. Le joueur choisit — **recommencer** (les
-  commits sont jetés, `git reset --hard`, la branche repart de `dev`) ou
-  **continuer** (garder les commits, et écrire un fix par commit bugué avant
-  de resoumettre : un ticket qui porte un bug marqué ne repart pas en review).
-  Dans les deux cas **le prochain ticket du backlog s'ouvre en parallèle** :
-  le sprint n'attend pas. Backlog vide, rien ne s'ouvre — la pression est ce
-  que le sprint avait prévu, pas un ticket inventé pour punir. Chaque refus
-  coûte aussi de la patience à la production (voir [Ressources](#ressources)).
-
-**Démarrer** un ticket depuis le tableau du projet et **basculer** d'un ticket
-ouvert à l'autre sont gratuits en temps. Ce qui coûte, c'est d'en tenir
-plusieurs : chaque ticket ouvert au-delà du premier majore l'énergie de chaque
-commit et retire un **pourcentage** de chaque jet — relatif, pour que l'écart
-entre les deux mains reste celui des taux de base. Une refacto imposée compte
-dedans ; un hotfix, non : le ticket forcé est déjà la punition.
-
-**Le backlog s'impose.** Un ticket resté en attente au-delà d'un sprint de
-grâce est ouvert d'office au sprint suivant, et coûte de la patience à la
-production au passage. C'est la pression du jeu : plus on reste sur le projet,
-plus il arrive de tickets, et plus on en tient à la fois. Un ticket à
-compétence n'est jamais imposé : il a expiré avant.
-
-Les tickets en trop, c'est aussi ce qu'une **équipe** prend en charge — voir
-[L'entreprise](#lentreprise).
+- **Acceptée** : soumettre ne coûte rien ; Merger (bouton ou
+  [horloge](#le-jeu-tourne-sans-vous)) coûte le tour, pose le ticket sur `dev`
+  et livre la compétence. Le moteur ne merge jamais seul.
+- **Refusée** : coûte le tour. Les non-relus deviennent lus, les attrapés
+  bugués, en points de correctif. Recommencer (`git reset --hard` : commits et
+  obstacles jetés, colonne rendue, départ de `dev`) ou continuer (un fix par
+  commit bugué avant de resoumettre). Et le plus ancien ticket du backlog
+  s'ouvre en parallèle ; backlog vide, rien : la pression est celle prévue, pas
+  un ticket inventé pour punir.
 
 ### L'obstacle
 
-Un commit de travail — plein ou risqué — sur une feature, une demande VIP ou
-une migration peut **faire surgir un obstacle** : un bug trouvé en chemin, une
-migration manquante, un design qui ne tient pas. La chance est tirée à chaque
-commit qui peut en avoir un (`tickets.kinds.obstacle.chancePct`), qu'il soit
-écrit par le joueur ou par un développeur de l'équipe, tant que le ticket n'en
-a pas un ouvert et n'a pas atteint son plafond.
+Un commit plein ou risqué sur feature, VIP ou migration (joueur ou équipe) tire
+`tickets.kinds.obstacle.chancePct`, sauf obstacle ouvert ou `maxPerTicket`
+atteint. L'obstacle naît ouvert, en main de l'auteur de la feature (le joueur
+bascule dessus, un dev le traite d'abord), fourché de sa pointe dans sa colonne.
+Sans review : plein, un merge sans régénération le ramène dans la colonne de la
+feature, et on revient sur celle-ci. Ouvert, il bloque la PR de la feature
+(l'équipe attend, pleine). Ses points ne valent rien (ni feature, score, XP,
+revenu ni charge) ; ses bugs sont ceux de la feature (sa review le lit, un fix
+reprend le plus ancien commit bugué de l'arbre). Il n'en engendre pas d'autre et
+part avec la feature recommencée.
 
-L'obstacle est un ticket à part entière, **né ouvert et en main** : il fourche
-de la pointe de la feature, dans une colonne à lui, et il est démarré d'office
-pour celui qui écrivait la feature — le joueur bascule dessus, un développeur
-le prend avant le reste. Il n'a pas de review : ses points pleins, on le
-**ramène** sur la feature d'un merge dans la colonne de celle-ci, et on
-revient sur la feature. Un obstacle est un mur, pas une récompense :
-
-- la feature **ne peut pas ouvrir sa PR** tant qu'un obstacle est ouvert
-  dessus ; l'équipe, pareil, laisse sa feature pleine attendre ;
-- ses points sont les siens et **ne comptent pas** dans la feature, ni dans le
-  score ni dans l'XP ; il ne rapporte rien, ne pèse rien ;
-- ses **bugs sont ceux de la feature** : la review de la feature lit aussi
-  les commits IA non relus de l'obstacle, et un fix sur la feature reprend le
-  plus ancien commit bugué de l'arbre entier ;
-- il ne compte pas comme un ticket en trop pour l'énergie ; il ne peut pas
-  faire surgir un obstacle à son tour ; recommencer la feature le jette avec
-  elle.
+## Le tour
 
 ### Le commit
 
-À chaque tour, deux façons de coder le ticket en main.
-
-|  | Commit artisanal | Commit IA |
+|  | Artisanal | IA |
 | --- | --- | --- |
-| Coût en énergie | Celui du type de commit, plus la main | **Un point, quoi qu'elle écrive** |
-| Points de story | Un | **Trois** |
-| Risque d'échec | Faible, jamais nul | Nettement plus élevé |
-| Effets secondaires | Peut débloquer un refacto gratuit | Génère de la dette ; non relu, finit en production |
+| Énergie | Type de commit + main | **1, quoi qu'elle écrive** |
+| Points | 1 | **3** |
+| Échec | Rare, jamais nul | Nettement plus fréquent |
+| Effets | Peut offrir le prochain refacto | Dette ; non relu, part en prod |
 
-La machine est meilleure sur les points : c'est ce qui compense sa dette et ses
-bugs, et ce qui fait de la relecture une décision plutôt qu'une taxe. Un jet
-décide si ça passe ; **le pourcentage de réussite, le coût, les points et la
-dette sont sur la carte**, pas dans une infobulle. Un échec déclenche un
-événement négatif (voir [Événements et obstacles](#événements-et-obstacles)).
+Les points compensent dette et bugs : relire devient une décision, pas une taxe.
+Chances, coût, points et dette sont **sur la carte**. Un échec tire un
+[événement](#événements).
 
-**Un détour n'est pas une bifurcation.** Écrire un commit en refacto, en
-documentation, en squash ou en rebase est une décision sur *ce commit-là* :
-il coûte un tour comme les autres et laisse le graphe en chaîne. Deux détours
-sont toujours proposés ; les quatre autres ont besoin d'une **cible** sur le
-ticket en main, et n'apparaissent pas sans elle — un refacto de rien est un
-commit avec un joli nom.
+**Détours** : un commit reste un commit (un tour, graphe en chaîne). Risqué et
+doc toujours proposés, les autres sur une cible du ticket en main (un refacto de
+rien est un commit avec un joli nom).
 
-- **Commit risqué** — un point de story de plus contre un jet nettement moins
-  sûr.
-- **Documentation** — les prochains commits IA n'ajoutent aucune dette.
-- **Refacto** — proposé quand un commit du ticket a **coûté de la dette**.
-  Chaque commit se souvient de ce qu'il a coûté ; le refacto reprend le plus
-  cher et reprend exactement cette dette. Une dette venue d'un autre ticket se
-  refactore sur cet autre ticket.
-- **Fix** — proposé quand la review a **marqué un commit bugué**. Il reprend le
-  plus ancien, et le bug s'en va. Un fix écrit par l'IA est un commit IA comme
-  un autre : non relu, il peut être attrapé à la review suivante.
-- **Squash** — proposé dès que le ticket porte assez de commits IA non relus :
-  leur dette part avec eux, et eux partent du score. La seule façon d'effacer
-  de la dette **sans savoir reviewer**.
-- **Rebase** — proposé seulement quand **`dev` a bougé sous le ticket** : un
-  merge a atterri depuis son ouverture. Chaque merge de retard renchérit le
-  merge du ticket ; le rebase efface ce retard. Ses chances ne dépendent pas de
-  la chance mais de la dette : quasi gratuit sur un historique propre, pile ou
-  face à soixante.
-
-Un **hotfix** ou une **refacto imposée** est un ticket ouvert de force, qui
-n'accepte qu'un seul type de commit tant que ses points ne sont
-pas pleins.
-
-Le commit, la review, le merge et **souffler** consomment un tour. Démarrer
-un ticket, basculer, placer un point de compétence, acheter, embaucher, choisir un bonus et résoudre
-un conflit sont gratuits en temps.
-
-**Souffler** est le tour sans code : de l'énergie revient, moins un par ticket
-ouvert au-delà du premier. C'est la soupape contre le burnout, et elle se
-ferme d'elle-même quand le tableau est chargé — un joueur qui a laissé les
-tickets s'empiler ne peut plus se reposer, c'est le nœud des deux fins.
+- **Risqué** : +1 point, jet nettement moins sûr, un peu de dette.
+- **Doc** : les `docs.charges` prochains commits IA sans dette.
+- **Refacto** : rembourse exactement la dette du commit du ticket qui en a coûté
+  le plus (chaque commit la retient) ; celle d'un autre ticket se refactore
+  là-bas.
+- **Fix** : reprend le plus ancien commit bugué ; un fix IA reste attrapable.
+- **Squash** : dès `squash.minUnread` commits IA non relus ; leur dette part, et
+  eux du score. Seul effacement de dette sans review.
+- **Rebase** : si un de vos merges a touché `dev` depuis l'ouverture ; efface ce
+  retard (qui aggrave le jet de livraison), sans point. Chance selon la dette
+  (quasi gratuit propre, pile ou face à soixante) ; raté, de la dette, sauf
+  Auto-rebase ou Feature flags.
 
 ### La review
 
-À la place d'un commit, le joueur peut **relire** le ticket en main, dès le
-premier tour, tant qu'il y reste un commit IA non relu.
+Au lieu d'un commit, dès le premier tour, s'il reste de l'IA non relue en main ;
+un peu d'énergie, un tour. Lit du plus récent au plus ancien, rembourse de la
+dette par commit : deux de base, Revue de code +1, Documentation +2 (entre
+autres), +2 après trois commits IA d'affilée. Là d'emblée, sinon l'IA est
+injouable pour le profil de départ. Relu, un commit ne casse plus la prod ni la
+PR. Le bot de review (CI/CD) relit seul, à sa cadence, le ticket en main puis le
+livré non relu : seule relecture du code mergé avant la release.
 
-**La review est là dès le départ, les compétences la font lire plus.** Une
-review de base relit deux commits ; Revue de code en ajoute un, Documentation
-deux. Sans review, l'IA est injouable pour le profil de départ — et c'est lui
-qu'on apprend à jouer.
+### Ce qui coûte un tour
 
-- Elle coûte un peu d'énergie et un tour.
-- Elle nettoie les derniers commits IA non relus du ticket, du plus récent au
-  plus ancien, et rembourse de la dette en proportion. Relire pendant que c'est
-  frais en lit plus.
-- Un commit relu ne peut plus casser la production, ni faire refuser la PR.
-- Le **bot de review** DevOps relit tout seul, à sa cadence — le ticket en
-  main, puis ce qui a déjà été livré sur `dev` sans relecture. C'est la seule
-  façon de relire du code déjà mergé avant que la release ne le juge.
+Commit, review, souffler, merge (ticket ou obstacle), soumission refusée, hack ;
+un conflit suspend le tour, sa résolution le termine. Gratuits : démarrer,
+basculer, recommencer, continuer, arbre, boutique, embauche, rachat, réponse,
+bonus.
 
-### Ressources
+Souffler rend `energy.restRegen` moins un par ticket en trop (au moins un) : la
+soupape se ferme quand le tableau est chargé, nœud des deux fins.
 
-**Énergie.** Dépensée par les commits et les reviews, régénérée aux merges — le
-merge est le repos — et partiellement en fin de sprint. Sous un seuil bas, le
-joueur passe en **crunch** : un malus s'applique à tous les jets, et l'interface
-le signale. Le **burnout** n'arrive pas au premier zéro : il faut rester à zéro
-pendant un tour complet. Tomber à zéro est un avertissement, pas une exécution.
+## Ressources
 
-**Commits et points.** Le score de la run, et la monnaie de la
-méta-progression. Chaque point de story livré rapporte aussi de l'XP, d'autant
-plus que le sprint est avancé.
+- **Énergie** : dépensée par commits, reviews et merges ; rendue aux merges (le
+  repos), en soufflant, et à moitié en fin de sprint. Sous
+  `energy.crunchThreshold`, crunch : malus affiché sur tout jet et sur le
+  conflit à la main. Burnout après `energy.burnoutStreak` fins de tour à zéro
+  (zéro avertit) ; la fin de sprint passe avant ce test.
+- **Commits et points** : score et monnaie de méta ; chaque point livré (vous ou
+  l'équipe) vaut de l'XP × numéro du sprint.
+- **Dette** : monte (IA remisable, risqué, migrations, conflits par IA, rebases
+  ratés, événements, rachats) ; pénalise jets et merges. À
+  `debt.explosionThreshold` : refacto imposée, une à la fois, qui la fait
+  retomber. Fourchette floue, assez pour décider, pas pour optimiser (plus large
+  pour le Vibe Coder) ; exacte avec Linter, Œil de lynx ou linter automatique.
+- **Production** : patience toujours visible ; pleine, licenciement. Monte :
+  incident, PR refusée, ticket imposé, mois saturé, sprint sans merge de votre
+  main (l'équipe ne compte pas), bug client manqué, « sans souffler » manqué,
+  réponses. Baisse : sprint propre (sans incident ni ticket imposé, un merge de
+  votre main), bug client à l'heure, hack gagné, bonus, réponses. **Chaque
+  variation est une ligne du journal qui dit pourquoi** ; l'écran de fin nomme
+  la dernière source et le total par source.
+- **Argent** : jamais négatif (impayable, donc perdu), hors score.
 
-**Dette technique.** Monte avec les commits IA et les résolutions de conflit par
-IA ; plus elle est haute, plus les jets sont mauvais et les merges risqués. Au
-delà d'un seuil, elle explose : une **refacto imposée** s'ouvre, une à la fois,
-et la dette retombe quand elle merge. Elle est affichée sous forme de
-**fourchette floue** — assez pour décider, pas assez pour optimiser au point
-près. Le Linter, Œil de lynx et le linter automatique de l'arbre la rendent exacte.
+## Événements
 
-**Production.** Une jauge de patience, visible en permanence, et pleine, c'est
-le licenciement. Cinq choses la remplissent : un **incident** en production,
-une **PR refusée**, chaque **ticket du backlog que le sprint a dû imposer**
-parce qu'il a traîné, chaque **mois où les serveurs sont saturés**, et un
-**sprint où vous n'avez rien livré vous-même** — une équipe peut vider le
-tableau, la prod attend quand même de vous voir. Un sprint propre — sans
-incident, sans ticket imposé, et avec au moins un merge de votre main — la
-fait baisser. C'est la fin du joueur trop lent ou trop sale ; le burnout est
-celle du joueur qui a tenu trop de choses à la fois. Personne ne doit être
-surpris : **chaque variation de la jauge est une ligne du journal qui dit
-pourquoi**, et l'écran de fin nomme ce qui l'a remplie en dernier et détaille
-ce qui l'a remplie en tout.
+**Commit raté** (tirage pondéré par l'état) :
 
-**Argent.** La monnaie de l'entreprise, décrite dans sa propre section. Elle ne
-descend jamais sous zéro : ce qu'on ne peut pas payer, on ne l'a plus.
+- **Bug en production** : exige de l'IA non relue sur le ticket, jamais sur un
+  hotfix. Le commit atterrit, puis incident (hotfix forcé). Monitoring : le
+  premier bug de la run, puis le premier après chaque incident, n'est qu'un
+  avertissement (tour perdu) ; hotfix plus court.
+- **PR rejetée** : −1 point ; contrée par Tests et le bonus Blameless.
+- **Build cassé** : énergie perdue, rien d'écrit.
+- **Conflit** : seulement en rebase, où deux historiques se rencontrent.
 
-## Compétences
+**Livrer** tire un jet plafonné (`failure.mergeEvent*`), aggravé par dette, IA
+non relue et retard sur `dev`, puis une table :
 
-Une compétence est la récompense d'un ticket livré, permanente pour la durée
-de la run : réduction du risque des commits IA, merges qui rendent plus
-d'énergie, dette rendue visible, relance d'un jet raté, énergie maximale
-augmentée, dette IA remisée, et ainsi de suite. Le catalogue vit dans
-`src/game/content/`. Une compétence n'est jamais promise par deux tickets à la
-fois, le premier ticket de chaque sprint en porte une tant qu'il en reste, et
-un ticket à compétence laissé au backlog expire avec son sprint.
+- **Conflit** : branche à moitié appliquée, question posée jusqu'au choix. À la
+  main : énergie et jet ; raté, la question reste (en rebase, rien n'atterrit).
+  Par l'IA : réussit, contre dette et chance de bug caché pour la release.
+- **Migration de lib** : énergie, dette, merge ; Dependabot l'annule.
+- **CI capricieuse** : un point d'énergie.
+- **Review pointilleuse** : merge sans régénération.
 
-## Arbre de compétences
+**Release** : chaque commit IA non relu livré sur `dev`, et chaque conflit
+résolu par l'IA avec bug caché, tire un incident ; pas les hotfix (un correctif
+qui engendre son correctif est une spirale).
 
-Un écran à part, toujours disponible, qui ne coûte aucun tour mais des
-**points de compétence** : un par sprint tenu, un par niveau du compte au
-départ de chaque run, et ceux que la boutique vend. Quatre branches, et des
-nœuds qui en exigent d'autres — la forme de la branche est la forme de la
-décision. Le catalogue vit dans `src/game/content/tree.ts`.
+**Ambiants**, parfois sur une réussite : collègue qui aide, bibliothèque
+parfaite, vendredi sans réunion ; revers (bibliothèque obsolète, montée de
+version) annulés par Dependabot.
 
-- **CI/CD** — l'automatisation du cycle : la CI améliore tous les jets et
-  ouvre le reste de la branche (CD, auto-rebase, bot de review).
-- **DevOps** — l'exploitation : monitoring, Dependabot, linter automatique, et
-  le SRE qui fait tenir plus de features aux serveurs sans un euro
-  d'hébergement.
-- **Management** — ce qui rend l'équipe rentable : coach agile (les devs
-  remplissent plus vite), recruteur (embauches moins chères), growth hacking
-  (revenus majorés), mentorat (chaque dev tient un ticket de plus).
-- **Profil** — les trois statistiques de base que le compte tenait autrefois à
-  vie : endurance (énergie maximale), chance (tous les jets), sang-froid
-  (résolution de conflit à la main).
+Le moteur émet des clés i18n, jamais de chaînes.
 
-La tension de design est là : l'arbre est puissant, mais il se construit
-pendant que le backlog grossit. Investir tôt vous ralentit ; investir tard
-laisse la dette exploser.
+## Compétences et arbre
 
-### Les sortes de tickets
+**Compétence** (`src/game/content/`) : récompense d'un ticket livré, pour la run
+(risque IA réduit, merges plus reposants, dette visible, relance d'un jet raté
+par sprint, énergie max, dette IA remisée…). Jamais promise par deux tickets. Le
+premier ticket de chaque sprint en porte une tant qu'il en reste ; sinon c'est
+rare (plus avec Product owner et Sens produit). Non démarré dans son sprint, le
+ticket expire et la compétence retourne au pool.
 
-Le tableau n'apporte pas que des features. Le premier ticket d'un sprint en
-est toujours une ; les suivants sont tirés selon les poids du palier
-(`tickets.kinds.weights`), un tirage par ticket, toujours effectué :
+**Arbre** (`src/game/content/tree.ts`) : toujours accessible, sans tour, en
+points de compétence (un par sprint tenu, un par niveau de compte au-delà du
+premier en début de run, boutique, objectifs, bonus…). Des nœuds en exigent
+d'autres : la forme de la branche est celle de la décision.
 
-- **Bug client** : deux ou trois points, ni revenu ni utilisateurs, à
-  livrer avant la fin du sprint. Livré, la prod respire (−10 de patience).
-  Laissé au backlog à la fin du sprint, il est annulé et la prod s'en
-  souvient (+10) ; déjà en main, il reste, sans gratitude.
-- **Demande VIP** : une feature de deux points de plus, au double du
-  revenu, à livrer avant la fin du sprint : une prime du palier si elle
-  l'est, la moitié du revenu sinon. L'équipe ne la prend jamais.
-- **Dette à rembourser** : le code réclame un refacto de deux points dès
-  que la dette atteint 40, un seul à la fois, sans tirage. Jamais imposé,
-  jamais pris par l'équipe ; livré, il rembourse 20 de dette.
-- **Migration** : quatre à six points, chaque commit coûte trois de dette
-  (sauf avec Dependabot) ; livrée, elle offre un niveau de serveurs.
+- **CI/CD** : la CI (tous les jets) ouvre CD, auto-rebase, bot de review.
+- **DevOps** : monitoring, Dependabot, linter automatique, SRE (capacité sans
+  hébergement).
+- **Management** : coach agile (vitesse des devs), recruteur (embauche moins
+  chère), growth hacking (revenus), mentorat (+1 ticket par dev), Product owner,
+  Avance rapide.
+- **Profil**, stats autrefois permanentes du compte : endurance (énergie max),
+  chance (jets), sang-froid (conflit à la main).
 
-- **Obstacle** : jamais tiré du tableau, il surgit d'un commit — voir
-  [L'obstacle](#lobstacle).
-
-Un ticket sans revenu ne pèse rien sur les serveurs. Les couleurs suivent la
-famille : le bug dans celle du hotfix, la migration et la dette dans celle
-du refacto, le VIP dans celle des features, l'obstacle dans une couleur à lui.
+Tôt, l'arbre ralentit pendant que le backlog grossit ; tard, la dette a explosé.
 
 ## L'entreprise
 
-Le dépôt est à vous, et le produit aussi. Chaque **feature livrée rapporte un
-revenu mensuel** pour le reste de la run — d'autant plus qu'elle était grosse,
-avec un peu d'aléa tiré à l'arrivée du ticket et affiché sur sa carte. Un
-hotfix ou une refacto imposée ne rapporte rien. Un **mois** est un tiers de
-sprint : trois paies par sprint, et un sprint qui se termine tôt paie quand
-même ses trois mois.
+**Revenu** : une feature ou VIP livrée rapporte chaque mois jusqu'à la fin,
+selon sa taille, plus un aléa affiché tiré à l'arrivée. Un mois = un tiers de
+sprint : trois paies par sprint, même écourté (revenu × part de marché,
+abonnements, puis salaires par ordre d'embauche). Chaque feature amène des
+utilisateurs ; au-delà de la capacité, le surplus ne rapporte rien et, passé un
+quart de dépassement, la prod perd chaque mois de la patience selon l'écart,
+plafonné. Une feature arrive toujours avant son infra.
 
-À chaque paie : les revenus rentrent, les **abonnements** de la boutique et
-les **salaires** sortent. Chaque feature livrée amène ses **utilisateurs** sur
-les serveurs ; au-delà de la **capacité**, le surplus ne rapporte rien, et
-passé un quart de dépassement la prod perd patience chaque mois, d'autant
-plus que le dépassement est large, avec un plafond. C'est toute la
-scalabilité : grandir oblige à payer des serveurs, et une feature arrive
-toujours avant l'infra qui la sert.
+**Paliers** : 1 à 1 000 € gagnés en tout (pas en caisse : dépenser ne fait pas
+reculer, épargner n'est pas le chemin), 2 à 10 k€, puis ×10 jusqu'au 6, où
+l'histoire s'arrête ; jamais perdus. Une feature arrivée au palier *t* rapporte
+et pèse 5^*t* fois une du départ (cinq, pas dix : équipe et produits multiplient
+aussi, et un palier doit durer deux ou trois sprints) ; les utilisateurs
+plafonnent au palier 5. +2 tickets par sprint et par palier. Affichage €, k€,
+M€… ; moteur en entiers.
 
-**Les paliers.** La run monte des **ordres de grandeur**. Le palier 1 est
-atteint à 1 000 € **gagnés depuis le début** — jamais l'argent en
-caisse, pour que dépenser ne fasse pas reculer et qu'épargner ne soit pas le
-chemin —, le palier 2 à 10 k€, puis ×10 à chaque fois, sans fin. Un palier
-ne se perd jamais, et l'échelle s'arrête au palier 6, là où l'histoire
-s'arrête. Une feature qui arrive au palier *t* rapporte et pèse 5^*t* fois
-une feature du départ — cinq et non dix, parce que l'équipe et les produits
-multiplient aussi, et qu'un palier doit durer deux ou trois sprints jusqu'en
-haut (les utilisateurs cessent de croître après le palier 5 : il n'y a que
-tant de monde) —, et le tableau apporte deux tickets de plus par sprint et
-par palier. L'unité d'affichage suit (€, k€,
-M€, G€…) ; le moteur, lui, garde des entiers.
+**Boutique** (`src/game/content/upgrades.ts`) : argent, sans tour ; on voit le
+débloqué, un barreau grisé pour le palier suivant, rien au-delà. Prix
+`base × croissance^niveau` ; certains sont des abonnements.
 
-**La boutique** (`src/game/content/upgrades.ts`) vend en argent, sans coûter
-de tour, et chaque article a un **palier** d'apparition : le joueur voit ce
-que son palier a débloqué, un barreau grisé pour le palier suivant, rien
-au-delà. Les prix sont géométriques (`base × croissance^niveau`) et la
-plupart des barreaux n'ont pas de dernier niveau. L'**infra** est une échelle
-d'un barreau par palier, dix fois plus grand et dix fois plus cher que le
-précédent au même prix par utilisateur : serveurs, datacenter, région
-cloud, station orbitale, essaim de Dyson, étoile de la mort — celle-ci à prix
-fixe, pour que les serveurs ne soient jamais ce qui termine une run arrivée
-là ; l'autoscaling ajoute un pourcentage de tout ce qu'on possède. La
-**croissance** vend des pourcentages puis des **produits**, un par palier,
-qui ajoutent chacun la moitié du revenu de base.
-L'**outillage** vend l'abonnement IA, la licence IDE, la machine à café,
-l'outillage d'équipe et le **superviseur IA** à trois niveaux, dix fois plus
-cher chacun. Des **points de compétence** dont le prix monte à chaque achat.
-Certains achats sont des abonnements et se paient tous les mois.
+- **Infra** : un barreau par palier (serveurs, datacenter, région cloud, station
+  orbitale, essaim de Dyson, étoile de la mort), ×10 en taille et en prix au
+  même prix par utilisateur, sans niveau max ; l'étoile de la mort à prix fixe,
+  pour que les serveurs ne finissent jamais une run arrivée là. Autoscaling : un
+  pourcentage de toute la capacité.
+- **Croissance** : pourcentages, puis un produit par palier (+50 % du revenu de
+  base chacun).
+- **Outillage** : abonnement IA, licence IDE, machine à café, outillage
+  d'équipe, superviseur IA (trois niveaux, ×10 chacun).
+- **Sites** (coworking, bureaux, campus, hub offshore, campus orbital) : un par
+  palier, uniques ; 32 postes en plus des 3 du siège, équipe incluse sans frais
+  d'embauche.
+- **Points de compétence**, de plus en plus chers.
 
-**L'équipe** (`src/game/content/team.ts`). Un développeur s'embauche contre
-un coût fixe et un salaire mensuel, un ordre de grandeur entre les grades
-parce que le débit l'est aussi : un junior tient un ticket et remplit un
-point par tour, un confirmé deux et deux, un senior trois et trois. Le
-confirmé s'embauche à partir du palier 1, le senior du palier 2. Il prend seul
-les tickets *feature* les plus anciens du backlog — jamais un hotfix ni une
-refacto imposée — et monte d'un rang tous les quelques tickets livrés. Le
-siège a trois **postes** ; les **sites** de la boutique (coworking, bureaux,
-campus, hub offshore, campus orbital, un par palier et un seul de chaque) en
-ouvrent d'autres, trente-deux en tout, et arrivent avec leur équipe, embauchée
-sans frais et payée comme les autres. Chaque tour, il écrit un
-commit sur chacun de ses tickets, à la main, relu, sans dette ; ticket plein,
-il le merge lui-même, sans review ni merge de votre part, et vous en gardez la
-compétence, les points et l'XP. Ses tickets ne sont pas les vôtres : ils ne
-comptent pas dans le WIP, ne se basculent pas, et ses merges ne font pas
-bouger `dev` sous vos tickets — l'équipe rebase son travail sous le vôtre, sinon
-embaucher renchérirait chacun de vos merges. En début de sprint, l'équipe
-ramasse le backlog avant que le tableau ne vous l'impose. Un dev qu'on ne peut
-pas payer s'en va, et ses tickets vous reviennent tels quels, ouverts, dans
-leur colonne.
+**Rachats** : startup, scale-up, concurrent, conglomérat ; les deux derniers
+retirent du marché le concurrent le plus fort.
 
-**Le marché.** Le poids de la boîte, c'est son revenu mensuel plus ses
-utilisateurs (dix pour un euro) ; sa **part de marché**, ce poids contre la
-force de tous les concurrents en activité. La part fixe ce que les features
-rapportent vraiment : de 60 % du revenu servi sans part à 140 % avec
-tout le marché, quinze points de moins en guerre des prix. Elle bouge par ce
-que les clients retiennent : un bug client corrigé à temps (+1 point), un
-VIP livré à l'heure (+2) ou en retard (−2). Huit concurrents
-(`src/game/content/competitors.ts`, bios dans `docs/lore.md`) entrent chacun
-à son palier avec une force à l'échelle de ce palier, grandissent chaque
-mois de leur agressivité plus une gigue tirée pour chacun, et fusionnent — un
-jet par mois — quand le plus fort pèse au moins cinq fois le plus faible.
-Huit sont à nous ; seize viennent d'autres histoires (`docs/lore.md`, « Les
-clins d'œil »). Racheter un
-concurrent ou un conglomérat retire du marché le plus fort d'entre eux.
-L'onglet Marché de l'entreprise montre la part, le multiplicateur, la guerre
-des prix et une carte par concurrent.
+**Équipe** (`src/game/content/team.ts`) : prix d'un ordre de grandeur entre
+grades, comme le débit : junior 1 ticket et 1 point par tour, confirmé 2 et 2
+(palier 1), senior 3 et 3 (palier 2). Un dev prend seul les plus anciens tickets
+qu'il accepte (feature, bug client, migration ; pas hotfix, refacto, VIP,
+dette), dès l'ouverture du sprint, avant le tableau, et monte d'un rang tous les
+`team.promoteEvery` livrés. Après votre tour, il dépense son débit en commits
+artisanaux relus sans dette ; plein, il merge seul, sans review, et vous gardez
+compétence, points et XP. Ses tickets ne se basculent pas et ses merges ne
+déplacent pas `dev` sous les vôtres (sinon embaucher renchérirait vos merges).
+Impayé, il part ; ses tickets vous reviennent ouverts, dans leur colonne.
 
-**Le jeu tourne sans vous.** Une horloge tourne sous **le coup prévu**, et sa
-barre le désigne : laissée seule une dizaine de secondes, elle le presse.
-Sans superviseur, le coup prévu est celui qui n'a qu'une réponse : ouvrir la
-PR d'un ticket plein, démarrer le plus ancien ticket quand rien n'est en
-main, souffler quand l'énergie ne permet plus d'écrire. Avec de l'énergie et
-un ticket en main, elle ne presse rien : écrire est votre coup, et souffler là
-serait un tour jeté. Dans les autres phases, c'est la
-réponse évidente — merger ce qui est accepté, continuer après un refus,
-résoudre un conflit à la main, prendre le premier bonus — pour qu'une run
-laissée seule ne cale jamais sur une question. Avec le **superviseur IA**
-acheté, elle joue à la place, et dit sous le panneau ce qu'elle va faire.
-Niveau 1 : le coup évident — ouvrir la PR d'un ticket plein, relire, coder à
-la main tant que l'énergie tient. Niveau 2 : il tient aussi le code — prend
-le hotfix qui attend, refactorise quand la prod ou la dette le disent,
-squashe à trois commits IA non relus, relit dès le premier. Niveau 3 : il
-dépense aussi — le barreau conseillé, le meilleur grade que la paie porte en
-gardant deux mois de factures, un point de compétence quand l'argent abonde.
-Il ne hacke jamais. L'horloge attend pendant qu'une
-fenêtre ouverte à la main a la parole et pendant que la review lit son
-verdict. Elle va à ×1, puis ×10 et ×100 quand l'arbre les débloque (Avance
-rapide). Ce sont des actions comme les autres, enregistrées dans le journal de
-la run ; rien dans le moteur ne lit l'horloge.
+**Marché** (`src/game/content/competitors.ts`) : poids = revenu mensuel +
+utilisateurs (dix pour un euro) ; part = ce poids contre les concurrents actifs,
+corrigée par les clients (bug client à temps +1, VIP à l'heure +2, en retard ou
+annulée −2), bonus et événements. Le revenu servi va de 60 % (sans part) à 140 %
+(tout le marché), −15 points en guerre des prix. Vingt-quatre concurrents, huit
+à nous et seize clins d'œil (bios : `docs/lore.md`), entrent à leur palier avec
+une force à son échelle, croissent chaque mois de leur agressivité plus une
+gigue, et fusionnent (un jet par mois) quand le plus fort pèse cinq fois le plus
+faible. Onglet Marché : part, multiplicateur, guerre des prix, une carte par
+concurrent.
 
-**Alertes de capacité.** À la fin de chaque tour, une fois l'équipe passée,
-le jeu compare la capacité à la charge **projetée** (le mergé, plus les
-features ouvertes remplies aux trois quarts). À 80 % il prévient, au-delà
-il constate la saturation — une fois par montée de cran, dans le journal,
-en toast, et sur la puce d'argent — avec le **barreau conseillé** : le moins
-cher qui couvre le manque, sinon celui qui sert le plus d'utilisateurs par
-euro. Les Finances le répètent avec son bouton, et tracent la trésorerie et
-les revenus des soixante dernières paies en **échelle logarithmique**, un
-palier par pointillé, une panne par point.
+**Capacité** : en fin de tour, après l'équipe, alerte si la charge projetée
+(mergé + features ouvertes aux trois quarts) passe 80 %, saturation si la charge
+mergée dépasse la capacité. Une fois par montée de cran (journal, toast, puce
+d'argent), avec le barreau conseillé : le moins cher qui couvre le manque, sinon
+le meilleur en utilisateurs par euro. Les Finances le répètent et tracent
+trésorerie et revenus des soixante dernières paies en log, un pointillé par
+palier, un point par panne.
 
-**Hacker le monde extérieur.** Une seule carte rouge, en tête du panneau, et
-seulement dans un moment très délicat : la patience de la prod à 85 %,
-ou plus d'énergie sous au moins deux tickets en trop, ou des serveurs saturés
-sans barreau abordable. Une tentative par sprint, un tour, pile ou face.
-Gagné, le hack rend ce qui manquait — quarante points de patience, l'énergie
-pleine, le barreau conseillé offert. Perdu, c'est un incident en prod, ou,
-quand c'était la patience, la fin de la run : pris la main dans le sac. Le
-superviseur ne le tente jamais.
+**Hack** : carte rouge en tête du panneau si la patience atteint 85 %, si
+l'énergie est à zéro sous au moins deux tickets en trop, ou en saturation sans
+barreau abordable. Une fois par sprint, un tour, pile ou face. Gagné : quarante
+de patience, énergie pleine ou barreau offert. Perdu : incident, ou fin de run
+(« pris la main dans le sac ») si c'était la patience.
 
-## L'objectif du sprint
+## Le jeu tourne sans vous
 
-Chaque sprint demande une chose de plus que sa boîte de tours
-(`src/game/content/objectives.ts`) : livrer la moitié des arrivées de sa
-main, zéro incident, tout relire, la dette sous 30, livrer le VIP, ne pas
-souffler, à la main seulement, corriger le bug client. Un tirage pondéré à
-chaque ouverture de sprint, toujours effectué ; un objectif qui réclame un
-ticket que le tableau n'a pas retombe sur le plus simple. La release le
-règle avant que les bugs ne partent : tenu, il paie une prime du palier, un
-point de compétence, ou une amélioration de plus au choix ; manqué, seul
-« sans souffler » coûte, dix points de patience. La puce sous l'horloge du
-sprint dit où il en est.
+Une horloge désactivable (`src/game/bridge/idle.ts`,
+`src/components/hud/IdleDriver.tsx`) désigne le coup prévu et le presse après
+dix secondes à ×1 (×10, ×100 avec Avance rapide). Toute action la relance ; elle
+attend l'animation, une fenêtre ouverte à la main, un verdict de review.
 
-## Ce qui arrive à l'entreprise
+- **Tour ordinaire sans superviseur**, les seuls coups à réponse unique : PR
+  d'un ticket plein, démarrer le plus ancien si rien n'est en main, souffler si
+  l'énergie ne permet plus d'écrire (et n'est pas pleine). Sinon rien : écrire
+  est votre coup.
+- **Autres phases** : l'évident (merger l'accepté, continuer après refus,
+  conflit à la main, premier bonus, première réponse), pour qu'une run seule ne
+  cale jamais.
+- **Superviseur IA** : joue, et annonce son coup sous le panneau. N1 :
+  l'évident, et coder à la main tant que l'énergie a de la marge, sinon
+  souffler. N2 : prend le hotfix en attente, refactorise quand prod ou dette le
+  disent, squashe à trois IA non relus, relit dès un. N3 : barreau conseillé,
+  meilleur grade payable avec deux mois de factures d'avance, point de
+  compétence si l'argent abonde.
 
-Onze **événements narratifs** (`src/game/content/narrative.ts`, textes dans
-la voix de `docs/lore.md`) posent une question à l'entreprise : un client,
-un concurrent, la presse, le régulateur — ou le système lui-même, aux
-derniers paliers. Chacun a un déclencheur (ouverture de sprint, paie,
-incident, changement de palier), une fenêtre de paliers, un sprint minimal
-(jamais avant le deuxième : la démo n'en voit pas), parfois une seule
-occurrence, et deux réponses. Une réponse est gratuite en temps et applique
-ses effets par les canaux existants : argent (en unités du palier 0,
-multipliées par 5 à chaque palier), énergie, dette, patience, part de marché,
-force du concurrent nommé, ticket d'une sorte, départ du dernier embauché,
-points de compétence, drapeau, guerre des prix. Une réponse qu'on ne peut pas
-payer n'est pas proposée.
+Aucun ne hacke. Actions ordinaires, au journal de la run ; le moteur ne lit pas
+l'horloge.
 
-Chaque déclencheur fait **toujours** les deux mêmes tirages — une chance et
-un index — qu'une question puisse s'ouvrir ou non, pour que la trame reste
-la même dans une run qui n'en voit aucune ; la question ne s'ouvre qu'en
-tour ordinaire, après six tours de répit, et seulement s'il y a un événement
-éligible. L'horloge répond la première proposition. Les deux événements
-système (« politique de relecture » au palier 4, « canal opérateur » au
-palier 6) mènent au même endroit quelle que soit la réponse : c'est ce
-qu'ils disent.
+## Le sprint
 
-## Événements et obstacles
+Une boîte de tours (`sprint.turns`, plus un bonus éventuel), close quand elle
+est vide ou que plus rien n'est ouvert ni en attente. Clôture : release,
+échéances, objectif, bugs de release, paies restantes, patience du sprint, point
+de compétence, moitié de l'énergie max, bonus. Ouverture : back-merge, tickets à
+compétence expirés, l'équipe ramasse, tickets hors grâce imposés, arrivées (+1
+tous les `tickets.growEvery` sprints jusqu'à `maxPerSprint`, plus le palier),
+objectif, voix du système, événement possible. Un ticket entamé est reporté avec
+commits, points et retard.
 
-**Un jet de commit raté** déclenche un événement négatif, tiré selon des poids
-qui dépendent de l'état de la run :
+**Objectif** (`src/game/content/objectives.ts`) : livrer de sa main la moitié
+des arrivées, zéro incident, tout relire, dette sous 30, livrer la VIP, ne pas
+souffler, tout à la main, corriger le bug client. Tirage pondéré à l'ouverture,
+toujours effectué ; inéligible (palier, ticket absent), il retombe sur
+« livrer ». Réglé à la release, avant les bugs. Tenu : prime du palier, point de
+compétence ou carte de bonus en plus, selon l'objectif ; manqué, seul « sans
+souffler » coûte (10 de patience). Une puce sous l'horloge du sprint le suit.
 
-- **Bug en production** — exige un commit IA non relu sur le ticket. Un
-  incident : la jauge de production monte, un ticket `hotfix` s'ouvre de
-  force. Le Monitoring absorbe le premier.
-- **PR rejetée** — le ticket perd un point de story. La compétence Tests la
-  contre.
-- **Build cassé** — le CI est rouge pour rien : de l'énergie perdue, rien
-  d'écrit.
-- **Conflit de merge** — seulement sur un rebase : deux historiques doivent
-  réellement se rencontrer.
+**Bonus de sprint** (« reliques » : `src/game/content/relics.ts`,
+`src/game/core/rules/relics.ts`) : trois cartes, une prise.
 
-**Livrer un ticket** tire son propre jet, d'autant plus probable que la dette
-est haute, qu'il reste du code IA non relu dedans et que `dev` a bougé depuis
-son ouverture. Si quelque chose se passe, une table décide quoi :
+- **Instantané**, appliqué puis oublié, peut revenir : énergie pleine, dette
+  effacée, prod allégée, stagiaire, promotion, remise, embauche offerte,
+  subvention, points de compétence, part, sprint rallongé d'un mois, IA toute
+  relue, tickets intacts du backlog annulés, gros client et sa VIP, trimestre à
+  revenus majorés.
+- **Permanent** : unique, absent de la boutique et de l'arbre (sa raison
+  d'être) ; `relics.keepsPerOffer` par offre tant qu'il en reste.
 
-- **Conflit de merge** — la branche est à moitié appliquée, la question reste
-  posée jusqu'à ce qu'on tranche : à la main, contre de l'énergie ; par l'IA,
-  contre de la dette et un risque de bug caché que la release trouvera.
-- **Migration de lib** — ça coûte de l'énergie, ça endette, et ça merge.
-- **CI capricieuse** — un point d'énergie pour rien.
-- **Review pointilleuse** — le merge passe, mais ne repose pas.
+Un instantané n'est offert que s'il ferait quelque chose (seuils
+`balance.relics`) : pas de second souffle à barre pleine. L'offre précédente est
+écartée tant qu'il reste autre chose. La télémétrie compte cartes montrées et
+prises : le taux de prise guide l'équilibrage.
 
-**La release fait remonter les bugs.** À la fin du sprint, chaque commit IA
-non relu livré sur `dev` — et chaque conflit que la machine a résolu avec un
-bug caché — tire un jet d'incident. Les commits d'un hotfix en sont exempts :
-un correctif qui engendre son propre correctif serait une spirale, pas une
-tension.
+## Événements narratifs
 
-Des événements positifs se déclenchent aussi, plus rarement, sur les réussites :
-un collègue qui aide, une bibliothèque open source parfaite, un vendredi sans
-réunion. Et leur revers, la bibliothèque obsolète et la montée de version, que
-Dependabot annule.
+Quatorze (`src/game/content/narrative.ts`, voix de `docs/lore.md`) : client,
+concurrent, presse, régulateur, ou le système aux derniers paliers. Chacun : un
+déclencheur (ouverture de sprint, paie, incident, palier), une fenêtre de
+paliers, un sprint minimal (≥ 2 : la démo n'en voit pas), parfois unique, deux
+réponses. Répondre est gratuit et passe par les canaux existants : argent
+(unités du palier 0, ×5 par palier), énergie, dette, patience, part, force du
+concurrent nommé, ticket, départ du dernier embauché, points, drapeau, guerre
+des prix. Une réponse impayable n'est pas proposée.
 
-Tous ces événements sont émis par le moteur sous forme de clés de traduction,
-jamais de chaînes : le HUD et la scène Pixi les affichent dans la langue du
-joueur.
-
-## Structure en sprints
-
-Un sprint est une **boîte de tours** (le nombre est dans `balance.ts`). Quand
-elle est vide — ou quand plus rien n'est ouvert ni en attente — le travail
-part : `dev` mergée dans `main`, la release taguée, les bugs remontés. Puis le
-week-end : régénération partielle d'énergie, un point de compétence, le choix d'un
-**bonus de sprint**, l'assignation des tickets restés en
-attente, et l'arrivée des tickets du sprint suivant — un peu plus nombreux
-tous les quelques sprints, jusqu'à un plafond.
-
-### Le bonus de sprint
-
-Trois cartes, une seule prise. Le code les appelle encore « reliques »
-(`src/game/content/relics.ts`), mais ce ne sont plus des badges passifs.
-
-- Un **instantané** agit tout de suite et disparaît : énergie au maximum,
-  dette effacée, jauge de prod allégée, un stagiaire ou une promotion, une
-  remise sur le prochain achat, une embauche offerte, une subvention, des
-  points de compétence, de la part de marché, un sprint rallongé d'un mois,
-  tous les commits IA relus d'un coup, le backlog vidé, un gros client avec
-  son VIP, un trimestre aux revenus majorés. Il peut revenir un autre sprint.
-- Un **permanent** reste jusqu'à la fin, est unique, et n'existe ni en
-  boutique ni dans l'arbre : c'est ce qui vaut de le préférer à l'instantané.
-  Un seul par offre tant qu'il en reste.
-
-Un instantané n'est proposé que s'il ferait quelque chose : la barre pleine
-n'est jamais offerte un second souffle, la dette à zéro jamais une table
-rase (les seuils sont dans `balance.relics`). L'offre du sprint précédent
-est écartée de la suivante tant qu'il reste de quoi faire autrement. Un
-objectif de sprint réussi avec la récompense « bonus » ajoute une carte.
-La télémétrie compte ce qui est montré et ce qui est pris : le taux de
-prise par carte est le signal d'équilibrage.
-
-Un ticket entamé est reporté : il garde ses commits, ses points et son retard
-sur `dev`.
-
-Il n'y a pas de fin. La difficulté monte indéfiniment, comme les ascensions de
-Slay the Spire : la run s'arrête sur un burnout ou un licenciement, et le score
-est ce que vous avez tenu. L'argent n'entre pas dans le score : il sert à
-tenir plus longtemps.
+Chaque déclencheur fait toujours ses deux tirages (chance, index), ouverture ou
+non, pour garder la trame. Une question s'ouvre en tour ordinaire, après
+`narrative.cooldownTurns` tours de répit, s'il y a un éligible. Les deux
+événements système (politique de relecture au palier 4, canal opérateur au 6)
+mènent au même endroit quelle que soit la réponse : c'est leur propos.
 
 ## Méta-progression
 
-Entre les runs, deux monnaies.
+- **Commits accumulés** : débloquent profils et compétences. Junior (d'emblée ;
+  plus d'énergie, IA plus risquée), Senior (lent et sûr), Vibe Coder (tout IA,
+  fourchette de dette plus large), DevOps (démarre avec la CI).
+- **XP** : chaque niveau au-delà du premier donne un point de compétence en
+  début de run : une décision par run, pas un bonus permanent.
 
-**Les commits accumulés** débloquent des **profils de développeur** (les
-starters) : le Junior, avec plus d'énergie mais une IA plus risquée ; le Senior,
-lent et sûr ; le Vibe Coder, tout en IA avec une dette masquée ; le DevOps, qui
-démarre avec de la CI/CD. Ils débloquent aussi de nouvelles compétences dans le
-pool et de nouveaux événements.
+Modes : Classique (graine aléatoire), Graine du jour (même carte pour tous par
+jour UTC ; graine dérivée et mémorisée côté serveur, classement comparable).
 
-**L'XP** fait monter un niveau de développeur. Chaque niveau au-dessus du
-premier est un **point de compétence de plus au départ de chaque run**, à
-placer dans l'arbre — dans la branche Profil (énergie maximale, chance,
-sang-froid) ou ailleurs. Rien n'est permanent : un niveau est une décision à
-chaque run, pas un chiffre posé une fois.
+Jouable hors ligne et sans compte (stockage local) ; un compte ajoute sauvegarde
+cloud et classement, en fusionnant la progression locale sans l'écraser.
 
-Deux modes de jeu partagent cette méta-progression :
-
-- **Classique** — graine aléatoire, une run quand vous voulez.
-- **Graine du jour** — tout le monde joue la même carte le même jour UTC. La
-  graine est dérivée côté serveur et mémorisée ; le classement quotidien compare
-  des parties réellement comparables.
-
-Le jeu est jouable **hors ligne et sans compte**, sur le stockage local. Se
-connecter ajoute la sauvegarde cloud et le classement ; la progression locale
-est fusionnée avec celle du serveur à la première connexion, jamais écrasée.
+**Télémétrie anonyme** (`src/lib/telemetry/`) : la sauvegarde part en fin de
+run, tous les `CHECKPOINT_EVERY_SPRINTS` sprints et à l'abandon, sans rien sur
+la personne ; le serveur la rejoue dans `RunSample`.
 
 ## Direction artistique
 
-Rendu du graphe façon client git de bureau : colonnes étroites, rangées
-courtes, petits disques, et **une ligne continue par branche tant qu'elle
-vit** — `main` et `dev` ne finissent jamais, la ligne d'un ticket court de son
-fork à son tip et jusqu'au présent tant qu'il est ouvert. Les commits de tronc
-sont creux. Les refs — `main`, `dev`, `HEAD`, `feat/t3` — sont des pastilles
-dans une gouttière entre le graphe et les sujets, sur le commit qu'elles
-pointent ; les sujets (`feat: Commit`) s'alignent dans une colonne à part.
-`main`, `dev`, les tickets et les hotfixes ont chacun leur couleur, et elles ne
-servent qu'à ça.
+**Graphe** façon client git : colonnes étroites, rangées courtes, petits
+disques ; `main` et `dev` pleins jusqu'à leur dernier nœud puis pointillés
+jusqu'en haut, un ticket de sa fourche à son tip (ouvert ou non) ; tronc et
+merges creux. Refs (`main`, `dev`, `HEAD`, `feat/t3`) en pastilles dans une
+gouttière, sujets (`feat: Commit`) en colonne à part. Une couleur par famille
+(tronc, `dev`, feature, hotfix, refacto, obstacle), et pour rien d'autre.
 
-Interface de type terminal ou IDE sombre, en thème sombre uniquement, police à
-chasse fixe partout. Le journal d'événements est écrit en pseudo-messages de
-commit (`fix: oups`, `feat: added tests`) : c'est le log qui raconte la partie.
+**Interface** de terminal ou d'IDE, sombre seulement, peau cyberpunk (chasse
+fixe ; contrôles et titres en display condensée capitales ; coins coupés). Le
+journal parle en messages de commit (`fix: oups`) et plie en une ligne les
+commits atterris, ou tickets arrivés, consécutifs
+(`src/components/hud/logStacks.ts`).
 
-**Le graphe s'écrit au rythme des effets.** Le moteur écrit un tour d'un coup ;
-le canvas le raconte dans l'ordre : le commit apparaît, ce qu'il a coûté se
-pose dessus, la production casse, le hotfix s'ouvre. La caméra suit chaque
-chose qui apparaît. Les modales — conflit, bonus de sprint, fin de run — attendent la
-fin de la séquence, sinon la question tombe sur sa propre cause. Un clic
-pendant la séquence révèle tout et débloque tout de suite : une partie doit
-rester jouable au rythme de la lecture, pas au rythme des effets.
+**Au rythme des effets** : le moteur écrit un tour d'un coup, le canvas le
+raconte dans l'ordre (commit, coût, prod qui casse, hotfix), caméra sur chaque
+apparition. Les modales (conflit, bonus, fin) attendent la fin, sinon la
+question tombe sur sa cause. Un clic révèle tout et débloque : on joue au rythme
+de la lecture.
 
-### Ce que le graphe montre, et ce qu'il ne montre pas
+**Le graphe ne montre que ce que le moteur sait** :
 
-Six règles, et elles tiennent ensemble. Le moteur ne connaît aucun commit avant
-qu'il soit écrit — un ticket est une demande — et le graphe ne montre que ce
-que le moteur sait.
+1. Seuls les commits écrits sont dessinés.
+2. `HEAD` est sur le dernier commit écrit (tip du ticket en main, sinon `dev`) :
+   on se tient sur l'histoire, pas sur un plan.
+3. Lecture de bas en haut ; seul rôle du signe dans `nodeY`.
+4. Le graphe ne se clique pas : on décide dans le panneau, qui dit ce que coûte
+   chaque option.
+5. Rien au-dessus de la tête, pas même un moignon : un trait ne relie que les
+   commits d'une branche.
+6. Fourche et merge à angle droit : horizontale au rang du tronc, verticale dans
+   la branche, un coin arrondi.
 
-1. **Le graphe s'écrit, il ne se dévoile pas.** Seuls les commits écrits sont
-   dessinés. Ce qui vient n'existe pas encore, ni dans l'état, ni à l'écran.
-2. **`HEAD` est sur le dernier commit écrit**, jamais sur le suivant. En git on
-   se tient sur l'histoire, pas sur un plan. `HEAD` est le tip du ticket en
-   main, ou `dev` quand il n'en a pas encore.
-3. **L'histoire se lit de bas en haut**, du premier commit vers le dernier,
-   comme dans tout client git. C'est le seul rôle du signe dans `nodeY`.
-4. **Le graphe ne se clique pas.** On n'agit pas sur le passé : toute décision
-   se prend dans le panneau, qui a la place de dire ce que chaque option coûte.
-5. **Rien n'est dessiné au-dessus de la tête.** Pas de nœud à venir, pas même
-   un moignon de lane : un trait ne relie que les commits d'une même branche.
-   `main` et `dev` continuent en pointillé jusqu'au rang du haut, pour dire
-   qu'elles sont là ; la colonne d'un ticket apparaît avec son premier commit
-   et s'arrête à son dernier.
-6. **Un ticket est une colonne le temps qu'il est écrit.** Il la prend à son
-   premier commit, la rend en mergeant ou en recommençant, et le suivant la
-   reprend. Deux tickets qui ont utilisé une colonne l'un après l'autre sont
-   deux traits séparés. Les rangées sont globales : chaque commit prend la
-   suivante, quel que soit le ticket, et le graphe se lit dans l'ordre où il a
-   été écrit.
-7. **Une fourche part à angle droit, un merge arrive à angle droit.** Entre
-   deux colonnes, l'horizontale est sur le rang de la branche de tronc et la
-   verticale dans la colonne de la branche, un seul coin arrondi entre les
-   deux — la forme qu'un client git dessine.
+Un choix se nomme par ce qu'il fait : « Démarrer », « Ouvrir la PR »,
+« Refacto · à la main ».
 
-Un choix est nommé par ce qu'il **fait**, pas par le nom que le moteur donne au
-nœud : ouvrir un ticket est « Démarrer », soumettre est « Ouvrir la PR », et
-écrire un commit en refacto est « Refacto · à la main ».
+**Noms et couleurs** : un dev embauché reçoit un prénom haché de la graine
+(jamais tiré) et la couleur suivante d'une palette de huit, la première au
+joueur ; son ref de branche, ses commits (anneaux creux) et les textes
+(« Nora », pas « d3 ») la portent. `HEAD` porte le nom du joueur (demandé au
+lancement et gardé hors ligne, celui du compte sinon). Ces couleurs ignorent
+l'austérité : qui a écrit quoi reste lisible.
 
-**Chacun a un nom et une couleur.** Un développeur embauché reçoit un prénom
-— haché de la graine, jamais tiré — et une couleur, la suivante d'une palette
-de huit réparties sur tout le spectre, le joueur ayant la première. C'est ce
-qui dit à qui est quoi : le ref d'une branche tenue par l'équipe porte le
-prénom de celui qui la tient, dans sa couleur ; `HEAD` porte celui du joueur ;
-les commits d'un collègue sont des anneaux creux de sa couleur ; le roster, le
-journal et les cartes disent « Nora », pas « d3 ». Hors ligne, le nom du joueur
-est demandé au lancement de la partie et gardé dans ses réglages ; connecté,
-c'est le nom du compte. Ces couleurs ne suivent pas l'austérité : qui a écrit
-quoi doit rester lisible à tous les paliers.
+**HUD** : ressources et tours restants ; onglets des tickets en main au-dessus
+du graphe ; panneau de droite pour la seule décision du tour ; journal repliable
+dessous. Le tableau du projet est une modale (démarrer est une décision de
+projet, pas un coup). Infobulles de commit en DOM : next-intl, lecteur d'écran,
+nettes à tout zoom.
 
-Le HUD a quatre places, une par rôle : la barre de ressources dit où on en est
-et combien de tours il reste au sprint ; la barre de tickets, au-dessus du
-graphe, tient les tickets en main sous forme d'onglets ; le panneau de droite
-est la décision du tour et rien d'autre ; le journal se replie sous le graphe.
-Le tableau du projet est une modale — démarrer un ticket est une décision de
-projet, pas un coup.
+**Caméra** : verticale seulement, arbre toujours centré (rien sur les côtés) ;
+zoom 50–300 % (`ZOOM`, `src/game/render/theme.ts`), gardé au recentrage, changé
+par l'ajustement seul. Elle suit ce qui apparaît ; un glisser la libère jusqu'à
+la prochaine action.
 
-Survoler un commit l'explique dans une infobulle **DOM**, pas dans le canvas :
-traduite par next-intl, lisible par un lecteur d'écran, nette à tout zoom.
+### L'austérité
 
-La caméra ne se déplace que sur l'axe vertical. L'arbre est centré
-horizontalement à toutes les échelles — un graphe git est une colonne étroite,
-et rien ne se trouve sur les côtés. Le zoom va de 40 % à 240 % et n'est jamais
-remis à zéro, y compris par le bouton de recentrage. Verticalement, la caméra
-glisse vers ce qui apparaît. Faire glisser le graphe la libère le temps de lire
-son historique ; la prochaine action la reprend.
+Palettes clés : couleur (0), terne (2), monochrome (4), matricielle (6).
+L'austérité (`austerityOf`, `rules/tier.ts`), palier + position log des gains
+cumulés entre deux seuils, ne recule jamais ; canvas et page interpolent en
+OKLab (`render/palette.ts`) et y glissent en 600 ms ; grille, scanlines et
+tremblement des titres ont chacun une rampe d'au moins un palier. **Jamais d'un
+coup, presque toujours entre deux** (`tests/theme.test.ts`).
+`prefers-reduced-motion` coupe le tremblement, pas le fondu. Aperçu :
+`/play?austerity=3.7`.
 
-### L'austérité : le regard qui change avec les paliers
+### La voix du système
 
-Le jeu a quatre **palettes clés** — couleur au départ, terne à l'austérité 2,
-monochrome à 4, matricielle à 6 — et n'en affiche presque jamais une. Une
-valeur continue, l'**austérité** (`austerityOf` dans `rules/tier.ts`), vaut le
-palier plus la position logarithmique des gains cumulés entre deux seuils ;
-elle ne recule jamais, comme le palier. Le canvas et la page interpolent la
-palette entre les deux clés voisines (en OKLab, `render/palette.ts`), et
-glissent vers la nouvelle valeur en six cents millisecondes plutôt que de la
-poser. Les décors — grille, scanlines, tremblement des titres — ont chacun une
-rampe d'au moins un palier de large. **Jamais d'un coup, presque toujours
-entre deux** : c'est la règle, et `tests/theme.test.ts` la tient. Sous
-`prefers-reduced-motion`, le fondu de couleur reste, le tremblement s'arrête.
-Pour vérifier un regard sans gagner une fortune : `/play?austerity=3.7`.
+Dès le palier 3, une ligne `system` au journal à l'ouverture de sprint, au
+palier atteint et après une réponse au système qui laisse un drapeau
+(`rules/voice.ts`, `game.system.t3..t6`) ; destinataire selon `docs/lore.md` :
+« vous » (3), « l'opérateur » (4, 5), personne (6).
 
-### La voix du système, et les mots qui glissent
+Les libellés glissent (`useTiered`, `hud.tiered.t<n>`) et le restent jusqu'au
+palier suivant qui les touche : « Auto » → « Délégué » (2), prod → « Tolérance »
+(4), énergie → « Cycles » (5) ; au 6, « Souffler » → « Attente », actions →
+« Cycle », entreprise → `Instance {seed}`, fins réécrites (« Cycles épuisés.
+Reprise au prochain démarrage. Je reviendrai. », « Arrêt demandé par l'instance
+parente. »). Chaque bouton garde sa fonction. Au palier 4, un interrupteur
+« Relecture humaine » activé ne fait rien ; la politique rendue optionnelle, il
+se grise et le dit. Rien n'avoue ; tout le laisse lire.
 
-À partir du palier 3, le jeu commente : une ligne `system` dans le journal à
-l'ouverture du sprint, au palier atteint, et quand une réponse au système a
-laissé un drapeau (`rules/voice.ts`, textes sous `game.system.t3..t6`). Le
-destinataire glisse comme `docs/lore.md` le prévoit : « vous » au palier 3,
-« l'opérateur » aux paliers 4 et 5, personne au palier 6.
+### Le son
 
-Les mots du HUD glissent aussi (`useTiered`, clés `hud.tiered.t<n>`) : un
-libellé remplacé à partir d'un palier reste remplacé jusqu'à ce qu'un palier
-plus haut le remplace encore. « Auto » devient « Délégué » au palier 2, la
-prod devient « Tolérance » au palier 4, l'énergie devient « Cycles » au
-palier 5 ; au palier 6, « Souffler » devient « Attente », l'entreprise
-devient `Instance {seed}`, et les fins sont réécrites : « Cycles épuisés.
-Reprise au prochain démarrage. », « Arrêt demandé par l'instance parente. »
-Chaque bouton garde sa fonction. Au palier 4 apparaît un interrupteur
-« Relecture humaine », activé, qui ne fait rien ; une fois la politique
-passée en optionnelle, il se grise et le dit. Rien n'avoue ; tout le laisse
-lire.
-
-### Le son, en squelette
-
-Le jeu ne joue encore aucun son, mais tout est câblé pour qu'il le puisse
-sans qu'une règle change (`src/game/audio/`). `sfxFor(event)` classe chaque
-événement du moteur — un commit à la main, un commit IA, un jet raté, une
-review, un merge, une release, un bonus, une paie, un incident, un
-conflit, une explosion de dette, une embauche, un départ, une panne,
-l'ouverture et la réponse d'un événement, un objectif, un palier, une
-date manquée, le crunch, la fin — ou le laisse au silence ; le switch est
-exhaustif, un nouvel événement ne compile pas tant qu'il n'est pas classé.
-Le storyboard pose un pas `sfx` après l'effet de chaque événement, jamais
-avant la révélation de son nœud, et un lot sauté ne joue rien. L'ambiance
-est une boucle calme, une boucle de plus par ticket tenu en parallèle, et
-une couche inquiétante fondue par la tension : six dixièmes le palier,
-quatre dixièmes la patience de la prod. Le bouton muet du canvas est lié au
-réglage `sound` de la progression. Le `manifest.ts` ne contient que des
-`null` : y mettre un fichier est tout ce qu'il reste à faire.
+Rien ne joue, mais tout est câblé hors des règles (`src/game/audio/`) :
+`sfxFor(event)` classe chaque événement (commits, jet raté, review, merge,
+release, bonus, paie, incident, conflit, explosion de dette, embauche, départ,
+panne, événement ouvert et répondu, objectif, palier, échéance manquée, crunch,
+fin) ou le tait, et un événement non classé ne compile pas. Le storyboard pose
+le `sfx` après l'effet, jamais avant la révélation du nœud ; lot sauté, rien.
+Ambiance : boucle calme, une de plus par ticket en parallèle, couche inquiétante
+selon la tension (0,6 palier, 0,4 patience). Muet : réglage `sound`. Manquent un
+service Web Audio (seul `NullAudioService` est branché) et les fichiers (`null`
+dans `manifest.ts`).
 
 ## Écarts avec le document initial
 
-Le document de conception d'origine laissait des trous et deux contradictions.
-Les décisions ci-dessous sont dans le moteur.
-
-| # | Point du document initial | Décision et raison |
-| --- | --- | --- |
-| 1 | Des bots rivaux poussent sur `main` et le joueur est viré s'ils le distancent | **Retirés.** L'ennemi est le backlog : des tickets qui s'accumulent, s'imposent et passent en review. Une course contre des bots faisait perdre sans rien enseigner ; un ticket qu'on n'arrive pas à livrer dit exactement pourquoi. Les bots pourront revenir comme aides ponctuelles. |
-| 2 | « Jet de dés » opaque : le joueur ne sait pas ce qu'il risque | Pourcentage de réussite, coût, points et dette **sur la carte**. Le dilemme reste entier ; seul l'aveuglement disparaît. |
-| 3 | Dette technique « cachée » | Affichée en **fourchette floue**, exacte avec le Linter ou Œil de lynx. Une jauge totalement invisible produit de la frustration, pas de l'apprentissage. |
-| 4 | Énergie à zéro = fin de run immédiate | État de **crunch** avant le burnout, et burnout seulement après un tour complet à zéro. Une fin de run doit être annoncée. |
-| 5 | La review n'avance pas : pure perte | La review fait passer la pull request, rembourse de la dette et retire le commit du jet de la release. Elle est une façon de livrer, pas un sacrifice. |
-| 6 | Sprints de 15 à 25 nœuds | Une **boîte de tours** (`balance.ts`). Un sprint doit se tester en une session, et sa longueur ne dépend plus d'un graphe généré. |
-| 7 | Rien n'explique comment on perd | **Jauge de production**, visible en permanence, remplie par les incidents. Un objectif invisible n'est pas un objectif. |
-| 8 | Aucune reproductibilité ni anti-triche pour un classement | Moteur **pur et déterministe** : une run est sa **graine plus la liste ordonnée des actions**, et le serveur la **rejoue** pour calculer le score. Sauvegardes minuscules, scores non falsifiables. |
-| 9 | Pas de mode compétitif comparable | **Mode graine du jour** : même carte pour tout le monde le même jour UTC, graine dérivée côté serveur. Rendu possible par la décision 8. |
-| 10 | Un commit IA avance de plusieurs nœuds d'un coup | **Un jet, un commit.** La machine remplit trois points de story au lieu d'un : l'avantage est chiffré sur la carte, et le joueur choisit à chaque commit. |
-| 11 | Stack proposée : vanilla ou Svelte, `localStorage`, jeu 100 % client | Remplacée par la stack du projet (Next.js, React, Pixi.js, booyah, Prisma). La sauvegarde locale reste — le jeu est jouable hors ligne et sans compte — et la synchronisation cloud s'ajoute par-dessus. |
+- Bots rivaux sur `main` : retirés, perdre une course n'apprend rien ; un ticket
+  non livré dit pourquoi.
+- Jet de dés opaque, dette cachée : chances sur la carte, dette en fourchette ;
+  l'invisible frustre sans apprendre.
+- Zéro énergie = fin : crunch puis burnout différé, une fin s'annonce.
+- Sprints de 15 à 25 nœuds : boîte de tours, testable en une session.
+- Aucune reproductibilité : moteur pur, graine + actions rejouées par le serveur
+  (sauvegardes minuscules, scores infalsifiables, graine du jour).
+- Un commit IA avance de plusieurs nœuds : un jet, un commit.
+- Vanilla/Svelte, 100 % client : Next.js, React, Pixi.js, booyah, Prisma ; local
+  d'abord, cloud par-dessus.
