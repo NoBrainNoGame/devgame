@@ -3,6 +3,7 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 
+import type { HeldGauges } from "@/game/bridge/gauges";
 import type { RenderMode } from "@/game/bridge/sceneGuard";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
 import type { GameEvent, LogLine, NodeId } from "@/game/core/types";
@@ -45,10 +46,10 @@ export interface GameStore {
    */
   renderMode: RenderMode;
   /**
-   * A modal is open over the run: the canvas holds its story still until it
-   * closes. Written by the page, read by the effect queue.
+   * Values the HUD keeps showing while the canvas tells how they changed;
+   * each pop releases its gauge as it rises (`gaugeCues.ts`).
    */
-  scenePaused: boolean;
+  heldGauges: HeldGauges | null;
 }
 
 export const INITIAL_STORE: GameStore = {
@@ -64,7 +65,7 @@ export const INITIAL_STORE: GameStore = {
   pendingReview: null,
   lastError: null,
   renderMode: "webgl",
-  scenePaused: false,
+  heldGauges: null,
 };
 
 export const gameStore = createStore<GameStore>()(() => ({ ...INITIAL_STORE }));

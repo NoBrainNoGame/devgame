@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BoardDialog } from "@/components/hud/BoardDialog";
@@ -13,6 +13,7 @@ import {
   RelicDialog,
   RunOverDialog,
 } from "@/components/hud/GameDialogs";
+import { GaugeFx } from "@/components/hud/GaugeFx";
 import { GraphControls } from "@/components/hud/GraphControls";
 import { GraphTooltip } from "@/components/hud/GraphTooltip";
 import { IdleControls } from "@/components/hud/IdleControls";
@@ -20,6 +21,9 @@ import { IdleDriver } from "@/components/hud/IdleDriver";
 import { InfoPanel } from "@/components/hud/InfoPanel";
 import { useIdleStore } from "@/components/hud/idleStore";
 import { LogDrawer } from "@/components/hud/LogDrawer";
+import { MatrixRain } from "@/components/hud/MatrixRain";
+import { ReducedMotionProvider } from "@/components/hud/motion";
+import type { OnAct } from "@/components/hud/origin";
 import { ResourceBar } from "@/components/hud/ResourceBar";
 import { ReviewDialog } from "@/components/hud/ReviewDialog";
 import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
@@ -28,9 +32,8 @@ import { TicketBar } from "@/components/hud/TicketBar";
 import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
-import { gameStore, useGameStore } from "@/game";
-import { useModalsOpen } from "@/lib/ui/modals";
+import type { GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
+import { useGameStore } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -73,7 +76,7 @@ export interface RunStageProps {
   /** The live handle, for the controls that drive the camera directly. */
   handle: GameHandle | null;
   onReady: (handle: GameHandle | null) => void;
-  onAct: (action: PlayerAction) => void;
+  onAct: OnAct;
   onPlayAgain: () => void;
   runOverFooter?: React.ReactNode;
   /**
@@ -96,11 +99,6 @@ export function RunStage({
 }: RunStageProps) {
   const t = useTranslations("play");
   const renderMode = useGameStore((state) => state.renderMode);
-  // Any modal over the run holds the canvas's story still until it closes.
-  const modalsOpen = useModalsOpen();
-  useEffect(() => {
-    gameStore.setState({ scenePaused: modalsOpen > 0 });
-  }, [modalsOpen]);
 
   const snapshot = useGameStore((state) => state.snapshot);
   const log = useGameStore((state) => state.log);
@@ -118,102 +116,111 @@ export function RunStage({
   useAusterity();
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {snapshot === null ? null : (
-        <ResourceBar
-          snapshot={snapshot}
-          onOpenCompany={() => setCompanyOpen(true)}
-          onOpenTree={() => setTreeOpen(true)}
-        />
-      )}
-      {snapshot === null ? null : (
-        <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
-      )}
+    <ReducedMotionProvider reduced={options.reducedMotion ?? false}>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {/* Flies what the canvas raises, or a dialog gives, to its gauge. */}
+        <GaugeFx />
+        {snapshot === null ? null : (
+          <ResourceBar
+            snapshot={snapshot}
+            onOpenCompany={() => setCompanyOpen(true)}
+            onOpenTree={() => setTreeOpen(true)}
+          />
+        )}
+        {snapshot === null ? null : (
+          <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
+        )}
 
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-        <aside className="order-2 w-full min-w-0 shrink-0 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
-          {snapshot === null ? null : <InfoPanel snapshot={snapshot} />}
-        </aside>
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          <aside className="order-2 w-full min-w-0 shrink-0 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
+            {snapshot === null ? null : <InfoPanel snapshot={snapshot} />}
+          </aside>
 
-        <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">
-          <GameCanvas key={runKey} options={options} onReady={onReady} />
-          {/* The grid and the scanlines the higher tiers bring, fading in by the variables the look writes. */}
-          <div aria-hidden className="austerity-layer" />
+          <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">
+            {/* Behind the graph: the rain the higher tiers bring, fading in by its ramp. */}
+            <MatrixRain />
+            {/* Above the rain, so its canvas is transparent and the container paints the background. */}
+            <div className="relative z-[1] size-full">
+              <GameCanvas key={runKey} options={options} onReady={onReady} />
+            </div>
+            {/* The grid and the scanlines the higher tiers bring, fading in by the variables the look writes. */}
+            <div aria-hidden className="austerity-layer" />
 
-          {snapshot === null ? (
-            <p className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
-              {t("loading")}
-            </p>
-          ) : (
-            <>
-              {renderMode === "none" ? null : <GraphTooltip />}
-              {renderMode === "none" ? null : <GraphControls handle={handle} />}
-              <LogDrawer log={log} />
-            </>
-          )}
+            {snapshot === null ? (
+              <p className="absolute inset-0 grid place-items-center text-muted-foreground text-sm">
+                {t("loading")}
+              </p>
+            ) : (
+              <>
+                {renderMode === "none" ? null : <GraphTooltip />}
+                {renderMode === "none" ? null : <GraphControls handle={handle} />}
+                <LogDrawer log={log} />
+              </>
+            )}
 
-          {/* WebGL given up: the graph is drawn by Canvas2D, or not at all. */}
-          {renderMode === "webgl" ? null : (
-            <p
-              role="status"
-              className={cn(
-                "absolute inset-x-3 z-10 border border-debt/60 bg-panel/90 px-3 py-2 text-debt text-xs leading-relaxed backdrop-blur-sm",
-                renderMode === "none" ? "top-1/2 -translate-y-1/2 text-center text-sm" : "top-3",
-              )}
-            >
-              {fallbackNote ?? t("webglLost")}
-            </p>
-          )}
+            {/* WebGL given up: the graph is drawn by Canvas2D, or not at all. */}
+            {renderMode === "webgl" ? null : (
+              <p
+                role="status"
+                className={cn(
+                  "absolute inset-x-3 z-10 border border-debt/60 bg-panel/90 px-3 py-2 text-debt text-xs leading-relaxed backdrop-blur-sm",
+                  renderMode === "none" ? "top-1/2 -translate-y-1/2 text-center text-sm" : "top-3",
+                )}
+              >
+                {fallbackNote ?? t("webglLost")}
+              </p>
+            )}
+          </div>
+
+          <aside className="order-3 flex w-full min-w-0 shrink-0 flex-col gap-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
+            {snapshot === null ? null : (
+              <>
+                <ActionPanel
+                  snapshot={snapshot}
+                  onAct={onAct}
+                  onOpenBoard={() => setBoardOpen(true)}
+                />
+                <SupervisorLine snapshot={snapshot} />
+                {idle ? <IdleControls /> : null}
+                {idle ? <IdleDriver paused={readingReview} onAct={onAct} /> : null}
+              </>
+            )}
+          </aside>
         </div>
 
-        <aside className="order-3 flex w-full min-w-0 shrink-0 flex-col gap-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:w-80 lg:border-t-0 lg:border-l">
-          {snapshot === null ? null : (
-            <>
-              <ActionPanel
-                snapshot={snapshot}
-                onAct={onAct}
-                onOpenBoard={() => setBoardOpen(true)}
-              />
-              <SupervisorLine snapshot={snapshot} />
-              {idle ? <IdleControls /> : null}
-              {idle ? <IdleDriver paused={readingReview} onAct={onAct} /> : null}
-            </>
-          )}
-        </aside>
+        {snapshot === null ? null : (
+          <>
+            <BoardDialog
+              open={boardOpen}
+              onOpenChange={setBoardOpen}
+              snapshot={snapshot}
+              onAct={onAct}
+            />
+            <CompanyDialog
+              open={companyOpen}
+              onOpenChange={setCompanyOpen}
+              snapshot={snapshot}
+              onAct={onAct}
+            />
+            <SkillTreeDialog
+              open={treeOpen}
+              onOpenChange={setTreeOpen}
+              snapshot={snapshot}
+              onAct={onAct}
+            />
+            <ReviewDialog snapshot={snapshot} onAct={onAct} />
+            <ConflictDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+            <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+            <EventDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+            <RunOverDialog
+              snapshot={snapshot}
+              busy={busy}
+              onPlayAgain={onPlayAgain}
+              {...(runOverFooter === undefined ? {} : { footer: runOverFooter })}
+            />
+          </>
+        )}
       </div>
-
-      {snapshot === null ? null : (
-        <>
-          <BoardDialog
-            open={boardOpen}
-            onOpenChange={setBoardOpen}
-            snapshot={snapshot}
-            onAct={onAct}
-          />
-          <CompanyDialog
-            open={companyOpen}
-            onOpenChange={setCompanyOpen}
-            snapshot={snapshot}
-            onAct={onAct}
-          />
-          <SkillTreeDialog
-            open={treeOpen}
-            onOpenChange={setTreeOpen}
-            snapshot={snapshot}
-            onAct={onAct}
-          />
-          <ReviewDialog snapshot={snapshot} onAct={onAct} />
-          <ConflictDialog snapshot={snapshot} busy={busy} onAct={onAct} />
-          <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
-          <EventDialog snapshot={snapshot} busy={busy} onAct={onAct} />
-          <RunOverDialog
-            snapshot={snapshot}
-            busy={busy}
-            onPlayAgain={onPlayAgain}
-            {...(runOverFooter === undefined ? {} : { footer: runOverFooter })}
-          />
-        </>
-      )}
-    </div>
+    </ReducedMotionProvider>
   );
 }

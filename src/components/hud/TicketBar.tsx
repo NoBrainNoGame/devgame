@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { TicketDetails } from "@/components/hud/TicketDetails";
 import { ticketName } from "@/components/hud/ticketName";
+import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PlayerAction, RunSnapshot, TicketView } from "@/game";
@@ -91,9 +92,7 @@ export function TicketBar({
                     <span className="tabular-nums opacity-70">
                       {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
                     </span>
-                    <span className="tabular-nums">
-                      {ticket.filled}/{ticket.points}
-                    </span>
+                    <ShownPoints ticket={ticket} />
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className={DETAILS_TOOLTIP}>
@@ -166,9 +165,7 @@ function TicketTab({
           >
             {name}
           </span>
-          <span className="tabular-nums text-xs">
-            {ticket.filled}/{ticket.points}
-          </span>
+          <ShownPoints ticket={ticket} className="text-xs" />
           {ticket.blockedBy.length > 0 ? (
             <span className="rounded-full bg-branch-obstacle/20 px-1.5 text-branch-obstacle text-xs tabular-nums">
               ⛔ {ticket.blockedBy.length}
@@ -196,5 +193,21 @@ function TicketTab({
         )}
       </TooltipContent>
     </Tooltip>
+  );
+}
+
+/** A ticket's points on its tab, held until the canvas shows them rise; the balls land here. */
+function ShownPoints({
+  ticket,
+  className,
+}: {
+  ticket: { id: string; filled: number; points: number };
+  className?: string;
+}) {
+  const filled = useShownFilled(ticket);
+  return (
+    <span data-gauge={`points:${ticket.id}`} className={cn("tabular-nums", className)}>
+      {filled}/{ticket.points}
+    </span>
   );
 }

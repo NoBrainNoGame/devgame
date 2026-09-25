@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { IdleBar } from "@/components/hud/IdleBar";
 import { idleStore } from "@/components/hud/idleStore";
+import { type OnAct, originOf, type PagePoint } from "@/components/hud/origin";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
@@ -30,13 +31,7 @@ import { cn } from "@/lib/utils";
 
 const STEP_MS = 650;
 
-export function ReviewDialog({
-  snapshot,
-  onAct,
-}: {
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
+export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct: OnAct }) {
   const t = useTranslations("hud");
   const pending = useGameStore((state) => state.pendingReview);
   const reducedMotion = useGameStore(() => false);
@@ -83,8 +78,8 @@ export function ReviewDialog({
 
   // The reading is cleared once the answer is in: were it ever refused, the
   // dialog stays the one the player was reading, not a bare verdict.
-  const answer = (action: PlayerAction): void => {
-    onAct(action);
+  const answer = (action: PlayerAction, origin?: PagePoint): void => {
+    onAct(action, origin);
     gameStore.setState({ pendingReview: null });
   };
 
@@ -129,7 +124,10 @@ export function ReviewDialog({
           <div className="flex items-center justify-between gap-3">
             <p className="text-muted-foreground text-xs">{t("reviewMergeHint")}</p>
             <div className="relative">
-              <Button disabled={!decided} onClick={() => answer({ type: "merge" })}>
+              <Button
+                disabled={!decided}
+                onClick={(event) => answer({ type: "merge" }, originOf(event))}
+              >
                 {t("reviewMerge")}
               </Button>
               <IdleBar action={{ type: "merge" }} />
@@ -146,7 +144,7 @@ export function ReviewDialog({
                 variant="outline"
                 className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
                 disabled={!decided}
-                onClick={() => answer({ type: "restart" })}
+                onClick={(event) => answer({ type: "restart" }, originOf(event))}
               >
                 <span>{t("reviewRestart")}</span>
                 <span className="font-normal text-muted-foreground text-xs">
@@ -157,7 +155,7 @@ export function ReviewDialog({
                 <Button
                   className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left"
                   disabled={!decided}
-                  onClick={() => answer({ type: "resume" })}
+                  onClick={(event) => answer({ type: "resume" }, originOf(event))}
                 >
                   <span>{t("reviewResume")}</span>
                   <span className="font-normal text-xs opacity-80">{t("reviewResumeHint")}</span>

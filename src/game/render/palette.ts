@@ -174,16 +174,26 @@ export function paletteAt(austerity: number): Palette {
 /**
  * The decorations, each with a ramp at least a tier wide: a grid that fades
  * in from 3.5 to 4.5, scanlines from 5.5 to 6, a jitter of the labels whose
- * amplitude grows from 5 to 6. Zero everywhere before the ramp starts.
+ * amplitude grows from 5 to 6; the share of the balls flying to the HUD that
+ * are bits instead, from 3 to 6; a rain of glyphs behind the graph, from 3.5
+ * to 6. Zero everywhere before the ramp starts, so nothing ever switches on.
  */
 export function decorationsAt(austerity: number): {
   grid: number;
   scanlines: number;
   jitter: number;
+  bits: number;
+  rain: number;
 } {
   const ramp = (from: number, to: number): number =>
     Math.min(1, Math.max(0, (austerity - from) / (to - from)));
-  return { grid: ramp(3.5, 4.5) * 0.35, scanlines: ramp(5.5, 6) * 0.25, jitter: ramp(5, 6) };
+  return {
+    grid: ramp(3.5, 4.5) * 0.35,
+    scanlines: ramp(5.5, 6) * 0.25,
+    jitter: ramp(5, 6),
+    bits: ramp(3, 6),
+    rain: ramp(3.5, 6),
+  };
 }
 
 /** What the canvas draws with. Mutated in place by `setAusterity`; read at draw time. */

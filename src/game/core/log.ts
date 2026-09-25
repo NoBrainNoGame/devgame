@@ -337,7 +337,14 @@ export function toLogLine(
         seq,
         turn,
         kind: "note",
-        text: text("log.narrative_opened", { title: ref(`narrative.${event.eventId}.title`) }),
+        // The title may name the competitor or the developer it is about.
+        text: text("log.narrative_opened", {
+          title: ref(`narrative.${event.eventId}.title`, {
+            competitor:
+              event.competitorId === undefined ? "" : ref(`competitors.${event.competitorId}.name`),
+            dev: event.devId === undefined ? "" : nameOf(event.devId),
+          }),
+        }),
       };
 
     case "narrative_answered":
@@ -500,11 +507,26 @@ export function toLogLine(
   }
 }
 
+function withOpenedTitle(log: readonly LogLine[], line: LogLine): LogLine {
+  const title = line.text.params?.title;
+  if (typeof title !== "object" || !("key" in title)) return line;
+  for (let i = log.length - 1; i >= 0; i -= 1) {
+    const opened = log[i]?.text;
+    const params = opened?.key === "log.narrative_opened" ? opened.params?.title : undefined;
+    if (typeof params === "object" && "key" in params && params.key === title.key) {
+      return { ...line, text: { ...line.text, params: { ...line.text.params, title: params } } };
+    }
+  }
+  return line;
+}
+
 export function appendLog(state: RunState, events: readonly GameEvent[]): void {
   const nameOf = (id: DevId): string => state.devs.find((dev) => dev.id === id)?.name ?? id;
   for (const event of events) {
-    const line = toLogLine(event, state.turn, state.nextLogSeq, state.nodes, nameOf);
-    if (line === null) continue;
+    const found = toLogLine(event, state.turn, state.nextLogSeq, state.nodes, nameOf);
+    if (found === null) continue;
+    // The answer names the event the way its opening did, competitor included.
+    const line = event.type === "narrative_answered" ? withOpenedTitle(state.log, found) : found;
     state.nextLogSeq += 1;
     state.log.push(line);
   }

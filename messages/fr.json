@@ -1319,7 +1319,10 @@
       },
       "objective_failed": "objectif manqué : {objective}",
       "relic_used": "{relic} appliqué",
-      "ticket_dropped": "{ticket} retiré du backlog"
+      "ticket_dropped": "{ticket} retiré du backlog",
+      "obstacle_spawned": "un obstacle surgit : {name}",
+      "obstacle_cleared": "obstacle réglé, retour sur la feature",
+      "obstacle_cleared_by": "{dev} a réglé l'obstacle"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -1390,7 +1393,8 @@
       },
       "event_health": "Santé du code {delta}",
       "event_patience": "Patience de la prod {delta}",
-      "health_refusal": "Santé du code sous le plancher ({floor}) : la review refusera"
+      "health_refusal": "Santé du code sous le plancher ({floor}) : la review refusera",
+      "obstacle_merge": "Revient sur la feature, sans review ni événement"
     },
     "tickets": {
       "feature": {
@@ -1983,6 +1987,15 @@
       "7": {
         "name": "Données à rattraper"
       }
+    },
+    "fx": {
+      "energy": "{delta} ⚡",
+      "health": "{delta} santé",
+      "patience": "{delta} patience",
+      "points": "{delta} pts",
+      "moneyGain": "+{amount}",
+      "moneyLoss": "−{amount}",
+      "skills": "{delta} compétence"
     }
   },
   "report": {

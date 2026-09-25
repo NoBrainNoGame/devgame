@@ -2,10 +2,11 @@
 
 import { useTranslations } from "next-intl";
 
+import { AnimatedGauge } from "@/components/hud/AnimatedGauge";
 import { ticketName } from "@/components/hud/ticketName";
 import { useMoney } from "@/components/hud/useGameText";
+import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import type { RunSnapshot, TicketView } from "@/game";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +120,7 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
   const t = useTranslations("hud");
   const money = useMoney();
   const game = useTranslations("game");
+  const filled = useShownFilled(ticket);
 
   return (
     <div className="space-y-1.5 rounded-md border border-line bg-panel/60 px-3 py-2">
@@ -130,10 +132,15 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
             : game(`skills.${ticket.skillId}.name` as never)}
         </span>
         <span className="shrink-0 text-xs tabular-nums">
-          {ticket.filled}/{ticket.points}
+          {filled}/{ticket.points}
         </span>
       </div>
-      <Progress value={(ticket.filled / Math.max(1, ticket.points)) * 100} className="h-1.5" />
+      <AnimatedGauge
+        gauge={`points:${ticket.id}`}
+        value={(filled / Math.max(1, ticket.points)) * 100}
+        barClassName="bg-primary"
+        className="h-1.5"
+      />
       {ticket.mustWrite === undefined ? null : (
         <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
       )}

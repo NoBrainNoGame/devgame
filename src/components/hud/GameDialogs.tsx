@@ -6,6 +6,7 @@ import { Fragment } from "react";
 import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { IdleBar } from "@/components/hud/IdleBar";
+import { type OnAct, originOf } from "@/components/hud/origin";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export function ConflictDialog({
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
-  onAct: (action: PlayerAction) => void;
+  onAct: OnAct;
 }) {
   const t = useTranslations("hud");
   const reviewing = useReviewing();
@@ -61,7 +62,9 @@ export function ConflictDialog({
             <Button
               variant="outline"
               className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-              onClick={() => onAct({ type: "resolve_conflict", how: "manual" })}
+              onClick={(event) =>
+                onAct({ type: "resolve_conflict", how: "manual" }, originOf(event))
+              }
             >
               <span>
                 {t("conflictManual")}
@@ -79,7 +82,7 @@ export function ConflictDialog({
           <Button
             variant="outline"
             className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-            onClick={() => onAct({ type: "resolve_conflict", how: "ai" })}
+            onClick={(event) => onAct({ type: "resolve_conflict", how: "ai" }, originOf(event))}
           >
             <span>
               {t("conflictAi")}
@@ -104,7 +107,7 @@ export function RelicDialog({
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
-  onAct: (action: PlayerAction) => void;
+  onAct: OnAct;
 }) {
   const t = useTranslations("hud");
   const game = useTranslations("game");
@@ -127,7 +130,7 @@ export function RelicDialog({
               <Button
                 variant="outline"
                 className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-                onClick={() => onAct({ type: "choose_relic", relicId })}
+                onClick={(event) => onAct({ type: "choose_relic", relicId }, originOf(event))}
               >
                 <span className="flex w-full items-center justify-between gap-2">
                   <span>{game(`relics.${relicId}.name` as never)}</span>
@@ -160,7 +163,7 @@ export function EventDialog({
 }: {
   snapshot: RunSnapshot;
   busy: boolean;
-  onAct: (action: PlayerAction) => void;
+  onAct: OnAct;
 }) {
   const t = useTranslations("hud");
   const game = useTranslations("game");
@@ -211,7 +214,7 @@ export function EventDialog({
                   variant="outline"
                   className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
                   disabled={!offered}
-                  onClick={() => onAct(action)}
+                  onClick={(event) => onAct(action, originOf(event))}
                 >
                   <span>
                     {game(

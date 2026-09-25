@@ -44,10 +44,16 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   austerityOverride?: number;
   /** The sound engine. Absent, the run is silent. */
   audio?: AudioService;
+  /** Whether the page holds the canvas's story still — a modal is open. */
+  paused?: () => boolean;
 }
 
 export interface GameHandle {
-  dispatch(action: PlayerAction): { ok: true } | { ok: false; reason: string };
+  /** `origin`: where in the page the action was taken, when it was in a dialog. */
+  dispatch(
+    action: PlayerAction,
+    origin?: { x: number; y: number },
+  ): { ok: true } | { ok: false; reason: string };
   /** The graph's view controls, for the buttons beside the canvas. */
   camera: {
     zoomIn(): void;
@@ -138,6 +144,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     austerityOverride: options.austerityOverride ?? null,
     audio: options.audio ?? new NullAudioService(),
     controls,
+    paused: options.paused ?? (() => false),
   };
 
   const supervisor = new SceneSupervisor<PixiScene>({
@@ -146,13 +153,16 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       // Only a WebGL scene animates. Without one — between two builds, in
       // Canvas2D, with no picture at all — nothing is ever waited for.
       const animated = scene !== null && mode === "webgl";
-      session.setPresentation({ animated });
+      // The gauges wait for the pops only where there are pops to release them.
+      const holdGauges =
+        animated && sceneOptions.pops && sceneOptions.interactive && !sceneOptions.reducedMotion;
+      session.setPresentation({ animated, holdGauges });
       if (!owns()) return;
       gameStore.setState({
         renderMode: mode,
         hoveredNodeId: null,
         hoveredAt: null,
-        ...(animated ? {} : { pendingAnimation: false }),
+        ...(animated ? {} : { pendingAnimation: false, heldGauges: null }),
       });
     },
     now: () => performance.now(),
@@ -168,8 +178,8 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   });
 
   const created: GameHandle = {
-    dispatch(action) {
-      return session.dispatch(action);
+    dispatch(action, origin) {
+      return session.dispatch(action, origin);
     },
     camera: {
       zoomIn: () => controls.camera?.zoomIn(),

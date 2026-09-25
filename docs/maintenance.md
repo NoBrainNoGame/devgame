@@ -284,6 +284,20 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
 
 ### Other rule hooks
 
+- **A HUD gauge the canvas moves**: a `GaugeId` and its cue in `planBatch`
+  (`render/storyboard.ts`, `gaugePop`: delta and value in the gauge's own
+  terms), its value in `readout`/`holdFor` (`bridge/gauges.ts`), a `data-gauge`
+  on the element that shows it (`AnimatedGauge` or `AnimatedCounter`), a
+  `game.fx.<gauge>` caption. Check: `tests/storyboard.test.ts`,
+  `tests/gauges.test.ts`.
+- **Scene guard**: the picture is rebuilt around a session that never is
+  (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the
+  Pixi tree is tied to `sceneContext.signal`: a scene that threw in a frame
+  never terminates its chips. Limits in `SCENE_RETRY` (`bridge/sceneGuard.ts`).
+- **A modal**: goes through `DialogContent`, whose `ModalCount` counts it
+  (`lib/ui/modals.ts`) while its content is mounted; the canvas holds its story
+  still while any is open. An action taken in one passes `originOf(event)` to
+  `onAct`, so its gains fly from the button.
 - **Production's patience**: `raiseQuality` (`rules/quality.ts`) with a
   `QualitySource`, never writing `state.quality`; the source feeds the log line,
   canvas pop and run-over screen, and `RunStats` counts it in that rule (never

@@ -20,8 +20,10 @@ hack. The score is what you held.
   always lands; a machine commit costs one energy, fills three, fails more,
   adds debt and, unread, ships bugs. A reviewer reads unread machine commits
   before a ticket merges.
-- **Two gauges.** Energy, and production's patience. The backlog grows every
-  sprint, and every open ticket beyond the first taxes energy and every roll.
+- **Three gauges, full when things go well.** Energy, code health and
+  production's patience, each moving when the canvas shows the figure that
+  moves it. The backlog grows every sprint, and every open ticket beyond the
+  first taxes energy and every roll.
 - **The company.** Features earn revenue that buys servers, tooling, an AI
   supervisor and developers; six tiers of magnitude, from servers to the
   Death Star.

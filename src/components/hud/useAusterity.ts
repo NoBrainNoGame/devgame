@@ -57,6 +57,8 @@ export function useAusterity(): void {
       root.style.setProperty("--austerity-grid", d.grid.toFixed(3));
       root.style.setProperty("--austerity-scan", d.scanlines.toFixed(3));
       root.style.setProperty("--austerity-jitter", d.jitter.toFixed(3));
+      root.style.setProperty("--austerity-bits", d.bits.toFixed(3));
+      root.style.setProperty("--austerity-rain", d.rain.toFixed(3));
     };
 
     const tick = (now: number): void => {

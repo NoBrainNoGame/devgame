@@ -8,6 +8,7 @@ import type { GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
 import { mountGame } from "@/game";
 import { audioService } from "@/game/audio/AudioService";
 import { readLocalRun } from "@/lib/storage/sync";
+import { modalsOpen } from "@/lib/ui/modals";
 
 /**
  * The canvas, and nothing else.
@@ -75,6 +76,11 @@ export function GameCanvas({
     void mountGame(host, {
       ...wanted,
       ...(resume === undefined ? {} : { resume }),
+      // The run's page paints the background itself, interpolated with the
+      // look, and draws the rain under the graph: the canvas stays clear.
+      transparent: true,
+      // Any modal over the run holds the canvas's story still.
+      paused: () => modalsOpen() > 0,
       translate: (value) => translateRef.current(value),
       ...(override === null ? {} : { austerityOverride: override }),
       audio: audioService(),

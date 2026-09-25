@@ -1,6 +1,6 @@
 import { type SfxId, sfxFor } from "@/game/audio/sfx";
 import type { RevealSnapshot } from "@/game/bridge/reveal";
-import type { I18nText } from "@/game/core/i18n";
+import { type I18nText, money, signed as signedAmount, text } from "@/game/core/i18n";
 import { headOf } from "@/game/core/map/graph";
 import { MAIN_LANE } from "@/game/core/map/layout";
 import type { GameEvent, NodeId, RunState } from "@/game/core/types";
@@ -26,10 +26,37 @@ export interface Point {
   y: number;
 }
 
+/** The HUD readouts a pop can move. */
+export type GaugeId = "energy" | "health" | "patience" | "points" | "money" | "skills";
+
+/**
+ * What a pop tells the HUD: which gauge moves, by how much in the gauge's own
+ * terms (a debt of +5 is a health of −5), and the value it lands on. The
+ * code's health has no exact value mid-batch — its blur is only known at the
+ * end — so its value is null and the HUD moves to the final one.
+ */
+export interface GaugeCue {
+  gauge: GaugeId;
+  delta: number;
+  value: number | null;
+  /** The ticket whose points bar moves, for a points cue. */
+  ticketId?: string;
+  /** Order within the batch: a late cue never moves a gauge back. */
+  serial: number;
+}
+
 export type Step =
   | { kind: "reveal"; nodeId: NodeId; at: Point; asHead: boolean; hold: number }
   | { kind: "look"; y: number | null; hold: number }
-  | { kind: "pop"; anchor: NodeId; at: Point; caption: string; colour: number; hold: number }
+  | {
+      kind: "pop";
+      anchor: NodeId;
+      at: Point;
+      caption: string;
+      colour: number;
+      hold: number;
+      cue?: GaugeCue;
+    }
   | { kind: "flash"; anchor: NodeId; at: Point; colour: number; hold: number }
   | { kind: "beat"; hold: number }
   /** A sound, placed after the effect of the event that makes it. */
@@ -52,6 +79,7 @@ interface Held {
   caption: string;
   colour: number;
   hold: number;
+  cue?: GaugeCue;
 }
 
 export interface PlanOptions {
@@ -61,6 +89,12 @@ export interface PlanOptions {
    * three seconds for one that never opens reads as stuck.
    */
   reviewHold?: boolean;
+  /**
+   * Whether money and skill points rise off the graph. Off for a purchase:
+   * the shop shows the price paid itself, and the canvas under it has
+   * nothing to tell.
+   */
+  economyPops?: boolean;
 }
 
 export function planBatch(
@@ -71,6 +105,26 @@ export function planBatch(
   options: PlanOptions = {},
 ): Step[] {
   const reviewHold = options.reviewHold ?? true;
+  const economyPops = options.economyPops ?? true;
+  let serial = 0;
+  // A gain in the gauge's colour; any loss in the colour of a problem.
+  const gaugePop = (
+    gauge: GaugeId,
+    delta: number,
+    value: number | null,
+    caption: string,
+    gainColour: number,
+    extra: { ticketId?: string } = {},
+  ): void => {
+    if (delta === 0) return;
+    serial += 1;
+    held.push({
+      caption,
+      colour: delta > 0 ? gainColour : palette.lane.hotfix,
+      hold: STORY.pop,
+      cue: { gauge, delta, value, serial, ...extra },
+    });
+  };
   const steps: Step[] = [];
   const held: Held[] = [];
   const revealed = new Set<NodeId>(shown.nodes);
@@ -103,8 +157,6 @@ export function planBatch(
     }
   };
 
-  const signed = (delta: number): string => `${delta > 0 ? "+" : ""}${delta}`;
-
   for (const event of events) {
     switch (event.type) {
       case "node_done": {
@@ -130,32 +182,76 @@ export function planBatch(
         break;
       }
 
+      // Every figure as the HUD reads it: the code's health and production's
+      // patience are the debt and the impatience turned over.
       case "energy":
-        held.push({ caption: `${signed(event.delta)}⚡`, colour: palette.energy, hold: STORY.pop });
+        gaugePop(
+          "energy",
+          event.delta,
+          event.value,
+          translate(text("fx.energy", { delta: signedAmount(event.delta) })),
+          palette.energy,
+        );
         break;
 
       case "debt":
-        held.push({
-          caption: `${signed(event.delta)} dette`,
-          colour: palette.debt,
-          hold: STORY.pop,
-        });
+        gaugePop(
+          "health",
+          -event.delta,
+          null,
+          translate(text("fx.health", { delta: signedAmount(-event.delta) })),
+          palette.debt,
+        );
         break;
 
       case "points":
-        held.push({
-          caption: `${signed(event.delta)} pts`,
-          colour: palette.lane.feature,
-          hold: STORY.pop,
-        });
+        gaugePop(
+          "points",
+          event.delta,
+          event.value,
+          translate(text("fx.points", { delta: signedAmount(event.delta) })),
+          palette.lane.feature,
+          { ticketId: event.ticketId },
+        );
         break;
 
       case "quality":
-        held.push({
-          caption: `${signed(event.delta)} prod`,
-          colour: event.delta < 0 ? palette.lane.trunk : palette.lane.hotfix,
-          hold: STORY.pop,
-        });
+        gaugePop(
+          "patience",
+          -event.delta,
+          event.max - event.value,
+          translate(text("fx.patience", { delta: signedAmount(-event.delta) })),
+          palette.lane.trunk,
+        );
+        break;
+
+      case "money": {
+        if (!economyPops) break;
+        // A payday is revenue, then upkeep, then salaries: one figure, the net.
+        const last = held[held.length - 1];
+        const delta = last?.cue?.gauge === "money" ? last.cue.delta + event.delta : event.delta;
+        if (last?.cue?.gauge === "money") held.pop();
+        gaugePop(
+          "money",
+          delta,
+          event.value,
+          translate(
+            text(delta >= 0 ? "fx.moneyGain" : "fx.moneyLoss", { amount: money(Math.abs(delta)) }),
+          ),
+          palette.lane.dev,
+        );
+        break;
+      }
+
+      case "skill_points":
+        if (!economyPops) break;
+        gaugePop(
+          "skills",
+          event.delta,
+          event.value,
+          translate(text("fx.skills", { delta: signedAmount(event.delta) })),
+          palette.node.ai,
+        );
         break;
 
       case "skill_gained":
@@ -298,8 +394,6 @@ export function planBatch(
       case "debt_explosion":
       case "relic_chosen":
       case "tree_placed":
-      case "skill_points":
-      case "money":
       case "month_closed":
       case "outage":
       case "upgrade_bought":

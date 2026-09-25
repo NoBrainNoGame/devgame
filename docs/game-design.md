@@ -164,19 +164,27 @@ soupape se ferme quand le tableau est chargé, nœud des deux fins.
   (zéro avertit) ; la fin de sprint passe avant ce test.
 - **Commits et points** : score et monnaie de méta ; chaque point livré (vous ou
   l'équipe) vaut de l'XP × numéro du sprint.
-- **Dette** : monte (IA remisable, risqué, migrations, conflits par IA, rebases
-  ratés, événements, rachats) ; pénalise jets et merges. À
-  `debt.explosionThreshold` : refacto imposée, une à la fois, qui la fait
-  retomber. Fourchette floue, assez pour décider, pas pour optimiser (plus large
-  pour le Vibe Coder) ; exacte avec Linter, Œil de lynx ou linter automatique.
-- **Production** : patience toujours visible ; pleine, licenciement. Monte :
-  incident, PR refusée, ticket imposé, mois saturé, sprint sans merge de votre
-  main (l'équipe ne compte pas), bug client manqué, « sans souffler » manqué,
-  réponses. Baisse : sprint propre (sans incident ni ticket imposé, un merge de
-  votre main), bug client à l'heure, hack gagné, bonus, réponses. **Chaque
-  variation est une ligne du journal qui dit pourquoi** ; l'écran de fin nomme
-  la dernière source et le total par source.
+- **Dette** (jauge **Santé du code**, `debt.max` − dette) : monte (IA remisable,
+  risqué, migrations, conflits par IA, rebases ratés, événements, rachats) ;
+  pénalise jets et merges. À `debt.explosionThreshold` : refacto imposée, une à
+  la fois, qui la fait retomber. Fourchette floue, assez pour décider, pas pour
+  optimiser (plus large pour le Vibe Coder) ; exacte avec Linter, Œil de lynx ou
+  linter automatique. La jauge montre la fourchette retournée, jamais un chiffre
+  exact sans eux.
+- **Patience de la production** (« Tolérance » au palier 4) : toujours
+  visible ; vide, licenciement. Le moteur compte l'impatience
+  (`state.quality`), la jauge son complément. Baisse : incident, PR refusée,
+  ticket imposé, mois saturé, sprint sans merge de votre main (l'équipe ne
+  compte pas), bug client manqué, « sans souffler » manqué, réponses. Remonte :
+  sprint propre (sans incident ni ticket imposé, un merge de votre main), bug
+  client à l'heure, hack gagné, bonus, réponses. **Chaque variation est une
+  ligne du journal qui dit pourquoi** ; l'écran de fin nomme la dernière source
+  et le total par source.
 - **Argent** : jamais négatif (impayable, donc perdu), hors score.
+- **Toute jauge est pleine quand tout va bien** : une baisse est toujours une
+  mauvaise nouvelle, en rouge. Santé et patience sont de la présentation
+  (`bridge/gauges.ts`) : les règles, le journal descriptif et la sauvegarde
+  comptent toujours dette et impatience.
 
 ## Événements
 
@@ -461,6 +469,27 @@ projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
 de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle. Infobulles de commit en DOM : next-intl, lecteur d'écran,
 nettes à tout zoom.
 
+**Le HUD suit le canvas.** Une jauge ne bouge pas quand l'action s'applique
+mais quand le canvas en montre le chiffre (`heldGauges`, `bridge/gaugeCues.ts`) :
+en hausse, des boules de la couleur du chiffre y volent et la font monter en
+arrivant ; en baisse, elle flashe en rouge, le morceau perdu clignote en blanc
+en se rétractant et des étincelles s'en évaporent. Énergie, santé du code,
+patience, points du ticket, argent (une paie = un chiffre net) et points de
+compétence. Un gain obtenu dans une modale (bonus, réponse, merge depuis la
+review) part du bouton pressé ; un achat affiche son prix tout de suite, sans
+chiffre sur le canvas. **Aucun bouton n'attend une animation** : agir coupe
+l'histoire en cours et joue la suivante ; seules les modales de phase attendent
+la fin de l'histoire pour s'ouvrir. **Toute modale ouverte met l'histoire du
+canvas en pause.** Mouvement réduit : ni boules, ni clignotement, ni étincelles.
+
+**Perte du contexte WebGL.** La run vit dans la session, pas dans l'image :
+une perte de contexte, un démarrage raté ou une erreur dans une image
+reconstruisent la scène autour de la même partie (`bridge/sceneGuard.ts`).
+Trois échecs en dix secondes abandonnent WebGL jusqu'au rechargement de la
+page : Pixi dessine le graphe en Canvas2D, sans animation attendue, sous un
+bandeau qui dit que la sauvegarde est automatique. Si Canvas2D échoue aussi, il
+ne reste que le HUD, qui suffit à jouer.
+
 **Caméra** : verticale seulement, arbre toujours centré (rien sur les côtés) ;
 zoom 50–300 % (`ZOOM`, `src/game/render/theme.ts`), gardé au recentrage, changé
 par l'ajustement seul. Elle suit ce qui apparaît ; un glisser la libère jusqu'à
@@ -474,6 +503,11 @@ cumulés entre deux seuils, ne recule jamais ; canvas et page interpolent en
 OKLab (`render/palette.ts`) et y glissent en 600 ms ; grille, scanlines et
 tremblement des titres ont chacun une rampe d'au moins un palier. **Jamais d'un
 coup, presque toujours entre deux** (`tests/theme.test.ts`).
+Deux rampes gagnent le HUD et le fond : de 3 à 6, une part croissante des
+boules qui volent vers une jauge sont des bits (un 0 et un 1 qui alternent) ; de
+3,5 à 6, une pluie de glyphes en colonnes façon Matrix, de plus en plus dense,
+tombe derrière le graphe (`hud/MatrixRain.tsx`, un canvas 2D sous celui de Pixi,
+qui survit donc à la perte de WebGL).
 `prefers-reduced-motion` coupe le tremblement, pas le fondu. Aperçu :
 `/play?austerity=3.7`.
 

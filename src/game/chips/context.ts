@@ -65,6 +65,8 @@ export interface SceneContext {
   signal: AbortSignal;
   /** Reports a throw inside a frame: the scene is rebuilt around the same run. */
   fault: (error: unknown) => void;
+  /** Whether something over the canvas — a modal — holds its story still, now. */
+  paused: () => boolean;
 }
 
 export function sceneContext(context: Readonly<Record<string, unknown>>): SceneContext {

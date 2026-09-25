@@ -4,6 +4,7 @@ import { useEffect } from "react";
 
 import { hydrateIdleSettings, idleStore, useIdleStore } from "@/components/hud/idleStore";
 import { idleSpeedAllowed, idleTarget, type PlayerAction, useGameStore } from "@/game";
+import { useModalsOpen } from "@/lib/ui/modals";
 
 /** Seconds the idle clock takes to press the planned move, at normal speed. Rendering, not rules. */
 export const IDLE_SECONDS = 10;
@@ -35,8 +36,8 @@ export function IdleDriver({
   const target = snapshot === null ? undefined : idleTarget(snapshot);
   // It waits for the story to end — unless a modal is holding the story
   // still, which must not hold the clock: pressing cuts the story short.
-  const scenePaused = useGameStore((state) => state.scenePaused);
-  const running = settings.enabled && (!busy || scenePaused) && !paused && target !== undefined;
+  const modals = useModalsOpen();
+  const running = settings.enabled && (!busy || modals > 0) && !paused && target !== undefined;
 
   // A new snapshot is a new clock: the effect re-runs on every dispatch,
   // free or not, and starts from zero.

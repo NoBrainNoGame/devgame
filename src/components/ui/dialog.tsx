@@ -41,6 +41,17 @@ function DialogOverlay({
   );
 }
 
+/**
+ * Counts the dialog in while its content is on screen — mounted by Radix only
+ * when open — and out when it leaves: the run holds its canvas still under
+ * any modal. The dialogs themselves stay mounted while closed, so the count
+ * cannot live in their own body.
+ */
+function ModalCount(): null {
+  useEffect(() => modalOpened(), []);
+  return null;
+}
+
 function DialogContent({
   className,
   frameClassName,
@@ -52,8 +63,6 @@ function DialogContent({
   /** Classes for the framed box inside, where the children lay out. */
   frameClassName?: string;
 }) {
-  // Counted while it is on screen: the run pauses its canvas under any modal.
-  useEffect(() => modalOpened(), []);
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -68,6 +77,7 @@ function DialogContent({
         {...props}
       >
         <span aria-hidden="true" className="cyber-sidebar" />
+        <ModalCount />
         <div
           className={cn(
             "cyber-frame grid gap-4 p-4 *:min-w-0 [--cyber-corner:14px] [--cyber-fill:color-mix(in_oklab,var(--color-popover)_88%,transparent)]",

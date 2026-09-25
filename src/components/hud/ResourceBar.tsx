@@ -3,14 +3,17 @@
 import { Building2, GitBranchPlus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { AnimatedCounter } from "@/components/hud/AnimatedCounter";
+import { AnimatedGauge } from "@/components/hud/AnimatedGauge";
 import { displayTier } from "@/components/hud/displayTier";
 import { useMoney } from "@/components/hud/useGameText";
+import { useShownGauges } from "@/components/hud/useShownGauges";
 import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RunSnapshot } from "@/game";
-import { HEALTH_MAX, healthOf, healthText, patienceOf } from "@/game/bridge/gauges";
+import { HEALTH_MAX, healthOf, healthText } from "@/game/bridge/gauges";
 import { OBJECTIVES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
@@ -38,18 +41,22 @@ export function ResourceBar({
 
   const { player, debt, economy } = snapshot;
   // Full when all is well: the code's health is the debt turned over, and
-  // production's patience is its impatience turned over.
-  const health = healthOf(debt);
-  const patience = patienceOf(snapshot.quality, snapshot.qualityMax);
+  // production's patience is its impatience turned over. The gauges show
+  // what the canvas has told so far: a figure still to rise holds its gauge.
+  const shown = useShownGauges(snapshot);
+  const health = shown.health;
+  const patience = shown.patience;
+  // The objective's own figure is the run as it stands, not the story.
+  const liveHealth = healthOf(debt);
   // The debt objective reads in the same terms as the gauge it watches.
   const objectiveParams =
     snapshot.objective?.id === "debt_under"
-      ? { progress: healthText(health), target: HEALTH_MAX - snapshot.objective.target }
+      ? { progress: healthText(liveHealth), target: HEALTH_MAX - snapshot.objective.target }
       : snapshot.objective === null
         ? null
         : { progress: snapshot.objective.progress, target: snapshot.objective.target };
   const saturated = economy.load > economy.capacity;
-  const energyPct = player.energyMax === 0 ? 0 : (player.energy / player.energyMax) * 100;
+  const energyPct = player.energyMax === 0 ? 0 : (shown.energy / player.energyMax) * 100;
 
   return (
     <div className="grid grid-cols-1 items-center gap-4 border-line border-b bg-panel/60 px-4 py-2 text-sm sm:grid-cols-[1fr_auto_1fr]">
@@ -118,10 +125,14 @@ export function ResourceBar({
               {tiered("energyLabel")}
             </span>
             <span className="tabular-nums">
-              {player.energy}/{player.energyMax}
+              {shown.energy}/{player.energyMax}
             </span>
           </div>
-          <Progress value={energyPct} className={cn(player.crunch && "[&>*]:bg-energy")} />
+          <AnimatedGauge
+            gauge="energy"
+            value={energyPct}
+            barClassName={player.crunch ? "bg-energy" : "bg-primary"}
+          />
           {player.crunch ? <p className="mt-1 text-energy text-xs">{t("crunchHint")}</p> : null}
         </div>
 
@@ -132,8 +143,14 @@ export function ResourceBar({
                 <span className="text-muted-foreground">{common("codeHealth")}</span>
                 <span className="tabular-nums text-debt">{healthText(health)}</span>
               </div>
-              {/* The worst the blur allows: a gauge that promises more than it knows is a lie. */}
-              <Progress value={(health.range[0] / HEALTH_MAX) * 100} className="[&>*]:bg-debt" />
+              {/* Solid to the worst the blur allows, faint to the best: a gauge that
+                  promises more than it knows is a lie. */}
+              <AnimatedGauge
+                gauge="health"
+                value={(health.range[0] / HEALTH_MAX) * 100}
+                upper={(health.range[1] / HEALTH_MAX) * 100}
+                barClassName="bg-debt"
+              />
             </div>
           </TooltipTrigger>
           <TooltipContent>{t("codeHealthHint")}</TooltipContent>
@@ -153,9 +170,10 @@ export function ResourceBar({
                   {patience}/{snapshot.qualityMax}
                 </span>
               </div>
-              <Progress
+              <AnimatedGauge
+                gauge="patience"
                 value={(patience / snapshot.qualityMax) * 100}
-                className="[&>*]:bg-branch-main"
+                barClassName="bg-branch-main"
               />
             </div>
           </TooltipTrigger>
@@ -168,7 +186,9 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenCompany}>
               <Building2 className="size-4" />
-              <span className="tabular-nums">{t("money", { money: money(economy.money) })}</span>
+              <AnimatedCounter gauge="money" value={shown.money} className="tabular-nums">
+                {t("money", { money: money(shown.money) })}
+              </AnimatedCounter>
               <span
                 className={cn(
                   "text-xs tabular-nums",
@@ -208,8 +228,10 @@ export function ResourceBar({
               className="shrink-0"
               onClick={onOpenTree}
             >
-              <GitBranchPlus className="size-4" />
-              {t("treePoints", { count: snapshot.skillPoints })}
+              <AnimatedCounter gauge="skills" value={shown.skills}>
+                <GitBranchPlus className="size-4" />
+                {t("treePoints", { count: shown.skills })}
+              </AnimatedCounter>
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t("treeHint")}</TooltipContent>

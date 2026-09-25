@@ -30,6 +30,8 @@ export interface SceneOptions {
   audio: AudioService;
   /** The handle's box: the scene fills it in and empties it on the way out. */
   controls: SceneControls;
+  /** Whether the page holds the canvas's story still (a modal is open). */
+  paused: () => boolean;
 }
 
 export interface PixiScene extends SceneInstance {
@@ -108,6 +110,7 @@ export async function buildPixiScene(
       austerityOverride: options.austerityOverride,
       audio: options.audio,
       signal: abort.signal,
+      paused: options.paused,
       fault: (error: unknown) => {
         console.error("The scene failed in a frame and is being rebuilt:", error);
         report("frame");

@@ -9,7 +9,16 @@
  * the engine keeps raw integers and has no idea what a thousand looks like.
  */
 
-export type I18nParam = string | number | { key: string } | { money: number };
+/**
+ * A reference to another key, with the parameters that key needs itself —
+ * an event's title that names a competitor carries the competitor.
+ */
+export interface I18nRef {
+  key: string;
+  params?: Readonly<Record<string, string | number | I18nRef | { money: number }>>;
+}
+
+export type I18nParam = string | number | I18nRef | { money: number };
 
 export interface I18nText {
   key: string;
@@ -20,8 +29,8 @@ export function text(key: string, params?: Record<string, I18nParam>): I18nText 
   return params === undefined ? { key } : { key, params };
 }
 
-export function ref(key: string): { key: string } {
-  return { key };
+export function ref(key: string, params?: I18nRef["params"]): I18nRef {
+  return params === undefined ? { key } : { key, params };
 }
 
 export function money(value: number): { money: number } {
@@ -42,15 +51,20 @@ export function renderText(
 ): string {
   if (value.params === undefined) return translate(value.key);
 
-  const resolved: Record<string, string | number> = {};
-  for (const [name, param] of Object.entries(value.params)) {
-    resolved[name] =
-      typeof param !== "object"
-        ? param
-        : "money" in param
-          ? formatMoney(param.money)
-          : translate(param.key);
-  }
+  const resolve = (params: NonNullable<I18nRef["params"]>): Record<string, string | number> => {
+    const resolved: Record<string, string | number> = {};
+    for (const [name, param] of Object.entries(params)) {
+      resolved[name] =
+        typeof param !== "object"
+          ? param
+          : "money" in param
+            ? formatMoney(param.money)
+            : param.params === undefined
+              ? translate(param.key)
+              : translate(param.key, resolve(param.params));
+    }
+    return resolved;
+  };
 
-  return translate(value.key, resolved);
+  return translate(value.key, resolve(value.params));
 }

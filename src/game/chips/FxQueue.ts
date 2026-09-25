@@ -1,3 +1,5 @@
+import { clearHeld, cueKey, emitGaugeCue, releaseUncued } from "@/game/bridge/gaugeCues";
+import { isShopAction } from "@/game/bridge/gauges";
 import type { AppliedPayload } from "@/game/bridge/session";
 import { gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
@@ -38,6 +40,8 @@ interface Batch {
 
 /** Longer than any storyboard, shorter than a player's patience. */
 const WATCHDOG_MS = 8_000;
+/** Long enough for the HUD's balls to land (`gaugeFxMath.ts`), rendering only. */
+const DIALOG_FLIGHT_MS = 520;
 
 export class FxQueue extends booyah.Queue {
   private serial = 0;
@@ -73,6 +77,7 @@ export class FxQueue extends booyah.Queue {
     if (this.current !== null) this.current.skip.value = true;
     reveal.showAll(session.getState());
     this.focus(null);
+    clearHeld();
     gameStore.setState({ pendingAnimation: false });
   }
 
@@ -91,7 +96,7 @@ export class FxQueue extends booyah.Queue {
         if (signal.aborted) return;
         if (batch.serial !== this.serial || !gameStore.getState().pendingAnimation) return;
         // Held still under a modal is not stuck: wait for it to close.
-        if (gameStore.getState().scenePaused) {
+        if (sceneContext(this.chipContext).paused()) {
           arm();
           return;
         }
@@ -108,13 +113,36 @@ export class FxQueue extends booyah.Queue {
       }
       this.add(new Beat(1, batch.skip));
     } else {
-      // A review's hold is for its dialog, which only a played run opens.
+      // A review's hold is for its dialog, which only a played run opens. A
+      // purchase shows its own price; the canvas has no money to raise.
       const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate, {
         reviewHold: interactive,
+        economyPops: !isShopAction(payload.action),
       });
+      const cued = new Set<string>();
       for (const step of steps) {
+        if (step.kind === "pop" && step.cue !== undefined && payload.origin !== undefined) {
+          // Taken in a dialog: what it gives flies from there, at once, and
+          // the canvas under the dialog does not repeat it.
+          cued.add(cueKey(step.cue));
+          emitGaugeCue({
+            cue: step.cue,
+            batch: payload.batch,
+            from: payload.origin,
+            colour: step.colour,
+          });
+          continue;
+        }
         if (step.kind === "pop" && !pops) continue;
-        this.add(this.chipFor(step, batch.skip));
+        if (step.kind === "pop" && step.cue !== undefined) cued.add(cueKey(step.cue));
+        this.add(this.chipFor(step, batch.skip, payload.batch));
+      }
+      // A figure that will never rise — its commit never shown, pops off —
+      // moves nothing: its gauge shows the run now.
+      releaseUncued(payload.batch, cued);
+      // Figures flying from a dialog land before the story says it is over.
+      if (payload.origin !== undefined && cued.size > 0) {
+        this.add(new Beat(DIALOG_FLIGHT_MS, batch.skip));
       }
     }
 
@@ -124,6 +152,7 @@ export class FxQueue extends booyah.Queue {
         // the one that says "done".
         clearTimeout(watchdog);
         if (batch.serial !== this.serial) return;
+        clearHeld();
         // Whatever the storyboard did not think to reveal, the end of the
         // batch does: the screen always ends a turn complete.
         reveal.showAll(sceneContext(this.chipContext).session.getState());
@@ -136,18 +165,25 @@ export class FxQueue extends booyah.Queue {
 
   /** Under a modal, the story holds still: nothing advances until it closes. */
   tick(tickInfo: booyah.TickInfo): void {
-    if (gameStore.getState().scenePaused) return;
+    if (sceneContext(this.chipContext).paused()) return;
     super.tick(tickInfo);
   }
 
-  private chipFor(step: Step, skip: SkipFlag): booyah.Chip {
+  private chipFor(step: Step, skip: SkipFlag, batch: number): booyah.Chip {
     switch (step.kind) {
       case "reveal":
         return new Reveal(step.nodeId, step.at.y, step.asHead, step.hold, skip);
       case "look":
         return new Look(step.y, step.hold, skip);
       case "pop":
-        return new Pop(step.at, step.caption, step.colour, step.hold, skip);
+        return new Pop(
+          step.at,
+          step.caption,
+          step.colour,
+          step.hold,
+          skip,
+          step.cue === undefined ? undefined : { cue: step.cue, batch },
+        );
       case "flash":
         return new Flash(step.at, step.colour, step.hold, skip);
       case "beat":

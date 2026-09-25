@@ -949,3 +949,117 @@ h3,
     background-color: color-mix(in oklab, var(--color-energy) 18%, transparent);
   }
 }
+
+/*
+  The HUD's effects. A gauge that drops flashes red and the piece it loses
+  blinks white as it shrinks away; a figure that drops flashes red, one that
+  rises glows. Balls and bits fly on a fixed layer under the dialogs; bits
+  flip between 0 and 1. Reduced motion keeps the flash and drops the rest.
+*/
+.gauge-fx-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  overflow: hidden;
+}
+.gauge-fx-ball,
+.gauge-fx-spark,
+.gauge-fx-bit {
+  position: absolute;
+  translate: -50% -50%;
+  will-change: transform, opacity;
+}
+.gauge-fx-ball {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--fx-colour);
+  box-shadow: 0 0 8px var(--fx-colour);
+}
+.gauge-fx-spark {
+  width: 3px;
+  height: 3px;
+  background: var(--fx-colour);
+  box-shadow: 0 0 4px var(--fx-colour);
+}
+.gauge-fx-bit {
+  display: grid;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fx-colour);
+  text-shadow: 0 0 6px var(--fx-colour);
+}
+.gauge-fx-bit > span {
+  grid-area: 1 / 1;
+  animation: gauge-bit-flip 180ms steps(1, end) infinite;
+  animation-delay: inherit;
+}
+.gauge-fx-bit > .gauge-fx-bit-1 {
+  animation-direction: reverse;
+}
+@keyframes gauge-bit-flip {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.gauge-loss {
+  animation: gauge-loss 620ms ease-in forwards;
+}
+@keyframes gauge-loss {
+  0%,
+  30%,
+  60% {
+    opacity: 1;
+  }
+  15%,
+  45% {
+    opacity: 0.15;
+  }
+  100% {
+    opacity: 0.9;
+    width: 0;
+  }
+}
+.gauge-hit {
+  animation: gauge-hit 600ms ease-out forwards;
+}
+@keyframes gauge-hit {
+  from {
+    background: color-mix(in oklab, var(--color-branch-hotfix) 85%, transparent);
+    box-shadow: 0 0 10px var(--color-branch-hotfix);
+  }
+  to {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+.counter-hit {
+  animation: counter-hit 600ms ease-out;
+}
+@keyframes counter-hit {
+  from {
+    color: var(--color-branch-hotfix);
+    text-shadow: 0 0 8px var(--color-branch-hotfix);
+  }
+}
+.counter-gain {
+  animation: counter-gain 700ms ease-out;
+}
+@keyframes counter-gain {
+  from {
+    text-shadow: 0 0 10px currentColor;
+    filter: brightness(1.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gauge-loss,
+  .gauge-fx-bit > span {
+    animation: none;
+  }
+}

@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { setIdleSettings } from "@/components/hud/idleStore";
+import type { PagePoint } from "@/components/hud/origin";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui/notify";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
@@ -187,7 +188,7 @@ export function PlayClient(props: PlayClientProps) {
     });
   }, [resumable]);
 
-  const act = useCallback((action: PlayerAction) => {
+  const act = useCallback((action: PlayerAction, origin?: PagePoint) => {
     const handle = handleRef.current;
     if (handle === null) return;
     // A decision taken while the canvas still tells the last turn — the
@@ -195,7 +196,7 @@ export function PlayClient(props: PlayClientProps) {
     // story short instead of being dropped. A dropped answer left the review
     // dialog up, its reading gone, with nothing done.
     if (gameStore.getState().pendingAnimation) handle.skipAnimations();
-    handle.dispatch(action);
+    handle.dispatch(action, origin);
   }, []);
 
   const onReady = useCallback((created: GameHandle | null) => {

@@ -1,4 +1,5 @@
 import { Emitter } from "@/game/bridge/emitter";
+import { holdFor, readout } from "@/game/bridge/gauges";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { isActionAvailable } from "@/game/core/rules/actions";
@@ -25,6 +26,11 @@ export interface AppliedPayload {
   action: PlayerAction;
   /** This publication's number, so a late effect can tell it belongs to an older one. */
   batch: number;
+  /**
+   * Where the action was taken, in page coordinates, when it was taken in a
+   * dialog over the canvas: what it gives flies from there to the HUD.
+   */
+  origin?: { x: number; y: number };
 }
 
 /**
@@ -34,6 +40,11 @@ export interface AppliedPayload {
  */
 export interface Presentation {
   animated: boolean;
+  /**
+   * Whether the HUD holds its gauges until the canvas shows how they moved.
+   * Only with pops on screen to release them.
+   */
+  holdGauges: boolean;
 }
 
 export interface SessionOptions {
@@ -60,7 +71,7 @@ export type DispatchResult = { ok: true } | { ok: false; reason: string };
 export class GameSession extends Emitter {
   private readonly actionLog: PlayerAction[] = [];
   private state: RunState;
-  private presentation: Presentation = { animated: true };
+  private presentation: Presentation = { animated: true, holdGauges: false };
   private batch = 0;
 
   constructor(private readonly options: SessionOptions) {
@@ -104,7 +115,7 @@ export class GameSession extends Emitter {
    * second action land mid-sequence would play the two out of order, and the
    * player would see a commit resolve before the node it happened on appeared.
    */
-  dispatch(action: PlayerAction): DispatchResult {
+  dispatch(action: PlayerAction, origin?: { x: number; y: number }): DispatchResult {
     if (gameStore.getState().pendingAnimation) {
       return { ok: false, reason: "animating" };
     }
@@ -117,12 +128,13 @@ export class GameSession extends Emitter {
     this.actionLog.push(action);
 
     this.batch += 1;
-    this.publish(result.events);
+    this.publish(result.events, action);
     const payload: AppliedPayload = {
       events: result.events,
       state: result.state,
       action,
       batch: this.batch,
+      ...(origin === undefined ? {} : { origin }),
     };
     this.emit("applied", payload);
 
@@ -148,14 +160,22 @@ export class GameSession extends Emitter {
   }
 
   /** Pushes the current state into the store. Public so the mount can republish. */
-  publish(events: GameEvent[] = []): void {
+  publish(events: GameEvent[] = [], action?: PlayerAction): void {
     const isOver = this.state.phase.kind === "game_over";
 
     const review = events.find((event) => event.type === "pr_reviewed");
+    const snapshot = toSnapshot(this.state);
+    // The gauges keep their old values until the canvas shows them moving.
+    const previous = gameStore.getState().snapshot;
+    const heldGauges =
+      this.presentation.holdGauges && action !== undefined && previous !== null && events.length > 0
+        ? holdFor(readout(previous), readout(snapshot), action, this.batch)
+        : null;
 
     gameStore.setState({
       status: isOver ? "game_over" : "running",
-      snapshot: toSnapshot(this.state),
+      snapshot,
+      heldGauges,
       ...(review === undefined ? {} : { pendingReview: review }),
       // Nothing to watch means nothing to wait for; the scene clears this once
       // it has played whatever it was given. With no scene animating — WebGL

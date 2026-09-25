@@ -1319,7 +1319,10 @@
       },
       "objective_failed": "objective missed: {objective}",
       "relic_used": "{relic} applied",
-      "ticket_dropped": "{ticket} dropped from the backlog"
+      "ticket_dropped": "{ticket} dropped from the backlog",
+      "obstacle_spawned": "an obstacle turns up: {name}",
+      "obstacle_cleared": "obstacle cleared, back on the feature",
+      "obstacle_cleared_by": "{dev} cleared the obstacle"
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
@@ -1390,7 +1393,8 @@
       },
       "event_health": "Code health {delta}",
       "event_patience": "Production's patience {delta}",
-      "health_refusal": "Code health under the floor ({floor}): the review will refuse"
+      "health_refusal": "Code health under the floor ({floor}): the review will refuse",
+      "obstacle_merge": "Lands back on the feature, with no review and no event"
     },
     "tickets": {
       "feature": {
@@ -1983,6 +1987,15 @@
       "7": {
         "name": "Data to backfill"
       }
+    },
+    "fx": {
+      "energy": "{delta} ⚡",
+      "health": "{delta} health",
+      "patience": "{delta} patience",
+      "points": "{delta} pts",
+      "moneyGain": "+{amount}",
+      "moneyLoss": "−{amount}",
+      "skills": "{delta} skill"
     }
   },
   "report": {

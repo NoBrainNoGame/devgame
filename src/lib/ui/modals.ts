@@ -16,6 +16,11 @@ export function modalOpened(): () => void {
   return () => modals.setState((state) => ({ open: Math.max(0, state.open - 1) }));
 }
 
+/** For code outside React that has to know, now — the canvas, between two frames. */
+export function modalsOpen(): number {
+  return modals.getState().open;
+}
+
 export function useModalsOpen(): number {
   return useStore(modals, (state) => state.open);
 }

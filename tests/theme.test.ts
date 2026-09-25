@@ -73,7 +73,16 @@ describe("austerity", () => {
   });
 
   test("every decoration fades in over at least a tier, and none is on at the start", () => {
-    expect(decorationsAt(0)).toEqual({ grid: 0, scanlines: 0, jitter: 0 });
+    expect(decorationsAt(0)).toEqual({ grid: 0, scanlines: 0, jitter: 0, bits: 0, rain: 0 });
+    // Bits among the balls from 3 to 6, the rain from 3.5 to 6: never a switch.
+    expect(decorationsAt(3).bits).toBe(0);
+    expect(decorationsAt(4.5).bits).toBeGreaterThan(0);
+    expect(decorationsAt(4.5).bits).toBeLessThan(decorationsAt(5.5).bits);
+    expect(decorationsAt(6).bits).toBe(1);
+    expect(decorationsAt(3.5).rain).toBe(0);
+    expect(decorationsAt(4.5).rain).toBeGreaterThan(0);
+    expect(decorationsAt(4.5).rain).toBeLessThan(decorationsAt(5.5).rain);
+    expect(decorationsAt(6).rain).toBe(1);
     expect(decorationsAt(3.5).grid).toBe(0);
     expect(decorationsAt(4).grid).toBeGreaterThan(0);
     expect(decorationsAt(4).grid).toBeLessThan(decorationsAt(4.5).grid);
