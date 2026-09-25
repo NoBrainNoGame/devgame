@@ -10,7 +10,7 @@ import { Pop } from "@/game/chips/fx/Pop";
 import { Reveal } from "@/game/chips/fx/Reveal";
 import { Sfx } from "@/game/chips/fx/Sfx";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
-import { planBatch, type Step } from "@/game/render/storyboard";
+import { planBatch, STORY, type Step } from "@/game/render/storyboard";
 
 /**
  * Plays a turn's events one after another.
@@ -41,7 +41,6 @@ interface Batch {
 /** Longer than any storyboard, shorter than a player's patience. */
 const WATCHDOG_MS = 8_000;
 /** Long enough for the HUD's balls to land (`gaugeFxMath.ts`), rendering only. */
-const DIALOG_FLIGHT_MS = 520;
 
 export class FxQueue extends booyah.Queue {
   private serial = 0;
@@ -140,9 +139,13 @@ export class FxQueue extends booyah.Queue {
       // A figure that will never rise — its commit never shown, pops off —
       // moves nothing: its gauge shows the run now.
       releaseUncued(payload.batch, cued);
-      // Figures flying from a dialog land before the story says it is over.
-      if (payload.origin !== undefined && cued.size > 0) {
-        this.add(new Beat(DIALOG_FLIGHT_MS, batch.skip));
+      // Figures flying to the HUD land before the story says it is over: the
+      // gauge fills ball by ball, and the end of a batch would jump it. From a
+      // dialog they all leave at once; off the canvas, the last pop's hold
+      // has already covered part of the flight.
+      if (cued.size > 0) {
+        const tail = payload.origin === undefined ? STORY.flight - STORY.pop : STORY.flight;
+        this.add(new Beat(tail, batch.skip));
       }
     }
 

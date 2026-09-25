@@ -91,6 +91,35 @@ export function releaseGauge(batch: number, cue: GaugeCue): void {
   });
 }
 
+/**
+ * One ball of a figure has landed: its gauge moves by that ball's share, so
+ * it fills as the balls arrive. The last ball lands the figure itself
+ * (`releaseGauge`). The code's health has no exact value mid-batch and only
+ * moves with the last.
+ */
+export function stepGauge(batch: number, cue: GaugeCue, landed: number, count: number): void {
+  if (landed >= count) {
+    releaseGauge(batch, cue);
+    return;
+  }
+  const held = gameStore.getState().heldGauges;
+  if (held === null || held.batch !== batch) return;
+  if ((held.applied[cueKey(cue)] ?? 0) >= cue.serial) return;
+  if (cue.value === null || cue.gauge === "health") return;
+
+  const value = Math.round(cue.value - cue.delta + (cue.delta * landed) / count);
+  if (cue.gauge === "points") {
+    if (cue.ticketId === undefined) return;
+    gameStore.setState({
+      heldGauges: { ...held, points: { ...held.points, [cue.ticketId]: value } },
+    });
+    return;
+  }
+  gameStore.setState({
+    heldGauges: { ...held, values: { ...held.values, [cue.gauge]: value } },
+  });
+}
+
 /** Releases every held gauge no cue of this batch will ever move. */
 export function releaseUncued(batch: number, cued: ReadonlySet<string>): void {
   const held = gameStore.getState().heldGauges;

@@ -2,11 +2,12 @@
 
 import { useEffect } from "react";
 
-import { ballCount, cssColour } from "@/components/hud/gaugeFxMath";
+import { cancelFlights, flyUnits } from "@/components/hud/flights";
+import { ballCount } from "@/components/hud/gaugeFxMath";
 import { useReducedMotion } from "@/components/hud/motion";
-import { cancelParticles, flyBalls } from "@/components/hud/particles";
+import { cancelParticles } from "@/components/hud/particles";
 import { gameStore } from "@/game";
-import { cueKey, releaseGauge, subscribeGaugeCues } from "@/game/bridge/gaugeCues";
+import { cueKey, releaseGauge, stepGauge, subscribeGaugeCues } from "@/game/bridge/gaugeCues";
 
 /**
  * Where a figure's gauge is on screen, if it is: the first element named for
@@ -26,9 +27,10 @@ function targetOf(key: string): DOMRect | null {
 /**
  * The HUD's effect layer. Mounted once on the run's page, it hears every
  * figure the canvas raises — or a dialog gives — and flies it to its gauge:
- * a gain in balls (bits, as the run turns austere) that move the gauge when
- * the first lands. A loss moves its gauge at once, and the gauge shows it
- * itself. Nothing flies with reduced motion, off-screen, or without a target.
+ * a gain in balls, one per unit (bits, as the run turns austere), each moving
+ * the gauge by its share as it lands. A loss moves its gauge at once, and the
+ * gauge shows it itself. Nothing flies with reduced motion, off-screen, or
+ * without a target.
  */
 export function GaugeFx(): null {
   const reduced = useReducedMotion();
@@ -46,12 +48,13 @@ export function GaugeFx(): null {
           release();
           return;
         }
-        flyBalls({
+        const count = ballCount(cue.gauge, cue.delta);
+        flyUnits({
           from,
           to: { x: target.left + target.width / 2, y: target.top + target.height / 2 },
-          colour: cssColour(colour),
-          count: ballCount(cue.delta),
-          onArrive: release,
+          colour,
+          count,
+          onLand: (landed) => stepGauge(batch, cue, landed, count),
         });
       }),
     [reduced],
@@ -61,12 +64,21 @@ export function GaugeFx(): null {
   useEffect(
     () =>
       gameStore.subscribe((state, previous) => {
-        if (previous.heldGauges !== null && state.heldGauges === null) cancelParticles();
+        if (previous.heldGauges !== null && state.heldGauges === null) {
+          cancelFlights();
+          cancelParticles();
+        }
       }),
     [],
   );
 
-  useEffect(() => () => cancelParticles(), []);
+  useEffect(
+    () => () => {
+      cancelFlights();
+      cancelParticles();
+    },
+    [],
+  );
 
   return null;
 }
