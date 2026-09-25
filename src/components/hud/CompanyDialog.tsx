@@ -4,11 +4,9 @@ import { useTranslations } from "next-intl";
 
 import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
-import { Ladder } from "@/components/hud/Shop";
 import { ticketName } from "@/components/hud/ticketName";
-import { useGameText, useMoney } from "@/components/hud/useGameText";
+import { useMoney } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,15 +19,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { DevView, PlayerAction, RunSnapshot } from "@/game";
-import { actionKey } from "@/game";
-import {
-  ACQUISITION_IDS,
-  ACQUISITIONS,
-  type AcquisitionId,
-  DEV_RANK,
-  DEV_RANKS,
-  PROFILES,
-} from "@/game/content";
+import { PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,10 +28,9 @@ import { cn } from "@/lib/utils";
  * Three tabs. Finances is the payday read out in advance — revenue, what the
  * servers can carry, what the subscriptions and the team cost — so the number
  * at the end of the month is never a surprise. The market is the share and
- * the competitors; the team is who to hire and who is there. The shop lives
- * with the skill tree (`UpgradesDialog`): this dialog is where the run is
- * read, that one where it is built. Everything here is free in time, so the
- * dialog stays open across hires.
+ * the competitors; the team is who is there. Everything bought — skills,
+ * hires, the shop — lives in `UpgradesDialog`: this dialog is where the run
+ * is read, that one where it is built.
  */
 export function CompanyDialog({
   open,
@@ -102,8 +91,7 @@ export function CompanyDialog({
             <Market snapshot={snapshot} />
           </TabsContent>
           <TabsContent value="team" className="pt-3">
-            {snapshot.boosts.freeHire ? <Badge className="mb-3">{t("freeHire")}</Badge> : null}
-            <Team snapshot={snapshot} onAct={onAct} />
+            <Roster snapshot={snapshot} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -311,118 +299,11 @@ function Line({ label, value, tone }: { label: string; value: number; tone?: str
   );
 }
 
-function Team({
-  snapshot,
-  onAct,
-}: {
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
+/** Who works here: each developer, what they hold, what they have delivered. */
+function Roster({ snapshot }: { snapshot: RunSnapshot }) {
   const t = useTranslations("hud");
-  const money = useMoney();
-  const game = useTranslations("game");
-  const render = useGameText();
-
-  const { seats, tier } = snapshot.economy;
-
   return (
     <div className="space-y-4">
-      <section className="space-y-2">
-        <div className="flex items-baseline justify-between gap-2">
-          <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
-            {t("hire")}
-          </h3>
-          <span
-            className={cn(
-              "text-xs tabular-nums",
-              seats.used >= seats.max ? "text-branch-hotfix" : "text-muted-foreground",
-            )}
-          >
-            {t("seats", { used: seats.used, max: seats.max })}
-          </span>
-        </div>
-        <p className="text-muted-foreground text-xs">{t("hireHint")}</p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          {DEV_RANKS.map((rank) => {
-            const action: PlayerAction = { type: "hire", rank };
-            const offered = snapshot.actions.some((a) => a.type === "hire" && a.rank === rank);
-            const preview = snapshot.previews[actionKey(action)];
-            const locked = DEV_RANK[rank].tier > tier;
-            return (
-              <article
-                key={rank}
-                className={cn(
-                  "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
-                  locked && "opacity-60",
-                )}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="font-medium">{game(`ranks.${rank}.name` as never)}</p>
-                  {locked ? (
-                    <span className="shrink-0 text-muted-foreground text-xs">
-                      {t("nextTier", { tier: DEV_RANK[rank].tier })}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {t("rankCapacity", { count: DEV_RANK[rank].capacity })}
-                  {" · "}
-                  {t("rankSpeed", { count: DEV_RANK[rank].speed })}
-                  {" · "}
-                  {t("rankSalary", { money: money(DEV_RANK[rank].salary) })}
-                </p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="block">
-                      <Button
-                        size="sm"
-                        variant={offered ? "default" : "outline"}
-                        className="w-full"
-                        disabled={!offered}
-                        onClick={() => onAct(action)}
-                      >
-                        {t("buyFor", { money: money(snapshot.economy.hireCosts[rank]) })}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {preview?.notes.length ? (
-                    <TooltipContent side="bottom">
-                      {preview.notes.map((note) => (
-                        <p key={note.key}>{render(note)}</p>
-                      ))}
-                    </TooltipContent>
-                  ) : null}
-                </Tooltip>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="space-y-2">
-        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
-          {t("sites")}
-        </h3>
-        <p className="text-muted-foreground text-xs">{t("sitesHint")}</p>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <Ladder category="org" snapshot={snapshot} onAct={onAct} />
-        </div>
-      </section>
-
-      {ACQUISITION_IDS.some((id) => ACQUISITIONS[id].tier <= tier + 1) ? (
-        <section className="space-y-2">
-          <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
-            {t("acquisitions")}
-          </h3>
-          <p className="text-muted-foreground text-xs">{t("acquisitionsHint")}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {ACQUISITION_IDS.filter((id) => ACQUISITIONS[id].tier <= tier + 1).map((id) => (
-              <AcquisitionCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
       <section className="space-y-2">
         <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
           {t("roster")}
@@ -438,71 +319,6 @@ function Team({
         )}
       </section>
     </div>
-  );
-}
-
-function AcquisitionCard({
-  id,
-  snapshot,
-  onAct,
-}: {
-  id: AcquisitionId;
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
-  const t = useTranslations("hud");
-  const money = useMoney();
-  const game = useTranslations("game");
-  const render = useGameText();
-  const def = ACQUISITIONS[id];
-  const bought = snapshot.economy.acquisitions.includes(id);
-  const locked = def.tier > snapshot.economy.tier;
-  const action: PlayerAction = { type: "acquire", id };
-  const offered = snapshot.actions.some((a) => a.type === "acquire" && a.id === id);
-  const preview = snapshot.previews[actionKey(action)];
-
-  return (
-    <article
-      className={cn(
-        "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
-        bought && "border-branch-main/60",
-        locked && "opacity-60",
-      )}
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate font-medium">{game(`acquisitions.${id}.name` as never)}</span>
-        {locked ? (
-          <span className="shrink-0 text-muted-foreground text-xs">
-            {t("nextTier", { tier: def.tier })}
-          </span>
-        ) : null}
-      </div>
-      <p className="text-muted-foreground text-xs leading-relaxed">
-        {game(`acquisitions.${id}.desc` as never)}
-      </p>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="block">
-            <Button
-              size="sm"
-              variant={offered ? "default" : "outline"}
-              className="w-full"
-              disabled={!offered}
-              onClick={() => onAct(action)}
-            >
-              {bought ? t("acquired") : t("buyFor", { money: money(def.cost) })}
-            </Button>
-          </span>
-        </TooltipTrigger>
-        {preview?.notes.length ? (
-          <TooltipContent side="bottom">
-            {preview.notes.map((note) => (
-              <p key={note.key}>{render(note)}</p>
-            ))}
-          </TooltipContent>
-        ) : null}
-      </Tooltip>
-    </article>
   );
 }
 

@@ -489,8 +489,8 @@
     "upgradesTitle": "Améliorations",
     "upgradesHint": "Rien ici ne coûte de tour.",
     "skillsShort": "{count, plural, one {# pt} other {# pts}}",
-    "upgradesButtonHint": "La boutique et l'arbre de compétences.",
-    "upgradesReadyHint": "Du nouveau : un point à placer ou une amélioration à votre portée.",
+    "upgradesButtonHint": "Compétences, recrutement et achats.",
+    "upgradesReadyHint": "Du nouveau : un point à placer, une embauche ou un achat à votre portée.",
     "treeSpent": "{count, plural, one {# point placé} other {# points placés}}",
     "treeLinkLevel": "niv. {level}",
     "treePick": "Choisissez une compétence dans l'arbre pour voir ce qu'elle fait et y placer un point.",
@@ -508,7 +508,14 @@
     "affinityHint": {
       "ally": "Votre profil lui doit quelque chose.",
       "rival": "Votre profil lui garde une rancune."
-    }
+    },
+    "upgradesTabs": {
+      "skills": "Compétences",
+      "hiring": "Recrutement",
+      "purchases": "Achats"
+    },
+    "upgradesTabNews": "Nouveau",
+    "treeIntro": "Placer un point ne coûte pas de tour."
   },
   "leaderboard": {
     "title": "Classement",

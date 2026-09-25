@@ -489,8 +489,8 @@
     "upgradesTitle": "Upgrades",
     "upgradesHint": "Nothing here costs a turn.",
     "skillsShort": "{count, plural, one {# pt} other {# pts}}",
-    "upgradesButtonHint": "The shop and the skill tree.",
-    "upgradesReadyHint": "Something new: a point to place or an upgrade you can afford.",
+    "upgradesButtonHint": "Skills, hiring and purchases.",
+    "upgradesReadyHint": "Something new: a point to place, a hire or a purchase you can afford.",
     "treeSpent": "{count, plural, one {# point spent} other {# points spent}}",
     "treeLinkLevel": "lvl {level}",
     "treePick": "Pick a skill in the tree to see what it does and place a point in it.",
@@ -508,7 +508,14 @@
     "affinityHint": {
       "ally": "Your starter owes it something.",
       "rival": "Your starter holds a grudge against it."
-    }
+    },
+    "upgradesTabs": {
+      "skills": "Skills",
+      "hiring": "Hiring",
+      "purchases": "Purchases"
+    },
+    "upgradesTabNews": "New",
+    "treeIntro": "Placing a point costs no turn."
   },
   "leaderboard": {
     "title": "Leaderboard",

@@ -2,22 +2,44 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { hasNews, stillSeen, upgradeOffers } from "@/components/hud/upgradeOffers";
+import {
+  newsByTab,
+  stillSeen,
+  type UpgradesTab,
+  upgradeOffers,
+} from "@/components/hud/upgradeOffers";
 import type { RunSnapshot } from "@/game";
 
+export interface UpgradesNews {
+  /** Something anywhere in the dialog the player has not seen: the button shines. */
+  any: boolean;
+  tabs: Record<UpgradesTab, boolean>;
+}
+
+const NO_NEWS: Record<UpgradesTab, boolean> = { skills: false, hiring: false, purchases: false };
+
 /**
- * Whether the upgrades button should shine: something is on offer that the
- * player has not seen with the dialog open. Opening it marks everything on
- * offer as seen; a reload forgets, and shows the news once more.
+ * What is new in the upgrades dialog. `viewing` is the tab on screen, or
+ * null with the dialog shut: its offers are seen as they appear. A reload
+ * forgets, and shows the news once more.
  */
-export function useUpgradesNews(snapshot: RunSnapshot | null, open: boolean): boolean {
+export function useUpgradesNews(
+  snapshot: RunSnapshot | null,
+  viewing: UpgradesTab | null,
+): UpgradesNews {
   const offers = useMemo(() => (snapshot === null ? null : upgradeOffers(snapshot)), [snapshot]);
   const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
 
   useEffect(() => {
     if (offers === null) return;
-    setSeen((previous) => (open ? new Set([...previous, ...offers]) : stillSeen(previous, offers)));
-  }, [open, offers]);
+    setSeen((previous) => {
+      const kept = stillSeen(previous, offers);
+      if (viewing === null) return kept;
+      const shown = offers.filter((offer) => offer.tab === viewing && !kept.has(offer.key));
+      return shown.length === 0 ? kept : new Set([...kept, ...shown.map((offer) => offer.key)]);
+    });
+  }, [viewing, offers]);
 
-  return offers !== null && hasNews(offers, seen);
+  const tabs = offers === null ? NO_NEWS : newsByTab(offers, seen);
+  return { any: tabs.skills || tabs.hiring || tabs.purchases, tabs };
 }

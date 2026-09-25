@@ -505,12 +505,15 @@ droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
 projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
 de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.
-L'entreprise se lit dans une modale (Finances, Marché, Équipe) et se renforce
-dans une autre, **Améliorations** : la boutique d'un côté, l'arbre de l'autre,
-l'achat de points avec l'arbre. Son bouton brille quand une offre est apparue
-depuis la dernière ouverture (un point que l'arbre peut prendre, une
-amélioration devenue abordable) : pas tant que quelque chose est abordable,
-un barreau de serveurs l'est presque toujours. Infobulles de commit en DOM :
+L'entreprise se lit dans une modale (Finances, Marché, Équipe : qui y
+travaille) et se renforce dans une autre, **Améliorations**, un onglet par
+dépense : Compétences (l'arbre, et l'achat de points), Recrutement (les rangs,
+les sites qui font la place), Achats (la boutique, les rachats). Son bouton
+brille quand une offre est apparue qu'on n'a pas encore vue dans son onglet
+(un point que l'arbre peut prendre, une embauche ou un achat devenus
+abordables) : pas tant que quelque chose est abordable, un barreau de serveurs
+l'est presque toujours. La modale s'ouvre sur l'onglet qui a du nouveau, un
+point marque les autres, et l'alerte des serveurs mène aux Achats. Infobulles de commit en DOM :
 next-intl, lecteur d'écran, nettes à tout zoom.
 
 **Le HUD suit le canvas.** Une jauge ne bouge pas quand l'action s'applique

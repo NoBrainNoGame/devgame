@@ -2,8 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
+import { Hiring } from "@/components/hud/Hiring";
 import { BuyPoint, Shop } from "@/components/hud/Shop";
 import { SkillTree } from "@/components/hud/SkillTree";
+import { UPGRADES_TABS, type UpgradesTab } from "@/components/hud/upgradeOffers";
 import { useMoney } from "@/components/hud/useGameText";
 import {
   Dialog,
@@ -12,22 +14,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PlayerAction, RunSnapshot } from "@/game";
 
 /**
- * Everything that makes the run stronger, side by side: what money buys on
- * one side, where skill points go on the other. Both are spent without
- * spending a turn, so the dialog stays open across purchases; the snapshot
- * republishes after each and both sides update in place.
+ * Everything that makes the run stronger, one tab per kind of spending:
+ * skill points in the tree, money on the team, money in the shop. All three
+ * are spent without spending a turn, so the dialog stays open across
+ * purchases; the snapshot republishes after each and the tabs update in
+ * place. A tab with something new in it carries a dot until it is shown.
  */
 export function UpgradesDialog({
   open,
   onOpenChange,
+  tab,
+  onTabChange,
+  news,
   snapshot,
   onAct,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  tab: UpgradesTab;
+  onTabChange: (tab: UpgradesTab) => void;
+  /** Which tabs hold an offer not seen yet. */
+  news: Record<UpgradesTab, boolean>;
   snapshot: RunSnapshot;
   onAct: (action: PlayerAction) => void;
 }) {
@@ -55,22 +66,43 @@ export function UpgradesDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid min-h-0 gap-6 overflow-y-auto lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:overflow-hidden">
-          <section className="min-w-0 space-y-3 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
-            <h3 className="hud-title font-medium text-sm uppercase tracking-wider">{t("shop")}</h3>
-            <Shop snapshot={snapshot} onAct={onAct} />
-          </section>
+        <Tabs
+          value={tab}
+          onValueChange={(value) => {
+            const next = UPGRADES_TABS.find((id) => id === value);
+            if (next !== undefined) onTabChange(next);
+          }}
+          className="flex min-h-0 flex-col"
+        >
+          <TabsList variant="line">
+            {UPGRADES_TABS.map((id) => (
+              <TabsTrigger key={id} value={id} className="gap-1.5">
+                {t(`upgradesTabs.${id}`)}
+                {news[id] && id !== tab ? (
+                  <span
+                    role="img"
+                    aria-label={t("upgradesTabNews")}
+                    className="upgrades-tab-news size-1.5 rounded-full bg-cyber"
+                  />
+                ) : null}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-          <section className="min-w-0 space-y-3 lg:min-h-0 lg:overflow-y-auto lg:pr-2">
+          <TabsContent value="skills" className="min-h-0 space-y-3 overflow-y-auto pt-3 pr-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="hud-title font-medium text-sm uppercase tracking-wider">
-                {t("tree")}
-              </h3>
+              <p className="text-muted-foreground text-sm">{t("treeIntro")}</p>
               <BuyPoint snapshot={snapshot} onAct={onAct} />
             </div>
             <SkillTree snapshot={snapshot} onAct={onAct} />
-          </section>
-        </div>
+          </TabsContent>
+          <TabsContent value="hiring" className="min-h-0 overflow-y-auto pt-3 pr-2">
+            <Hiring snapshot={snapshot} onAct={onAct} />
+          </TabsContent>
+          <TabsContent value="purchases" className="min-h-0 overflow-y-auto pt-3 pr-2">
+            <Shop snapshot={snapshot} onAct={onAct} />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );

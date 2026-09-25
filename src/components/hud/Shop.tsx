@@ -9,6 +9,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { PlayerAction, RunSnapshot } from "@/game";
 import { actionKey } from "@/game";
 import {
+  ACQUISITION_IDS,
+  ACQUISITIONS,
+  type AcquisitionId,
   discounted,
   UPGRADE_CATEGORIES,
   UPGRADES,
@@ -21,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The shop: what money buys for the product and the tools, category by
- * category.
+ * category, and the companies it can buy outright.
  *
  * Each category is a ladder: what the run's tier has unlocked, then one
  * greyed rung for the tier after, and nothing beyond. A run learns there is
@@ -37,6 +40,7 @@ export function Shop({
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
+  const { tier } = snapshot.economy;
 
   return (
     <div className="space-y-5">
@@ -53,6 +57,20 @@ export function Shop({
           </div>
         </section>
       ))}
+
+      {ACQUISITION_IDS.some((id) => ACQUISITIONS[id].tier <= tier + 1) ? (
+        <section className="space-y-2">
+          <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
+            {t("acquisitions")}
+          </h3>
+          <p className="text-muted-foreground text-xs">{t("acquisitionsHint")}</p>
+          <div className="grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(13rem,1fr))]">
+            {ACQUISITION_IDS.filter((id) => ACQUISITIONS[id].tier <= tier + 1).map((id) => (
+              <AcquisitionCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -179,6 +197,71 @@ function UpgradeCard({
               onClick={() => onAct(action)}
             >
               {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost) })}
+            </Button>
+          </span>
+        </TooltipTrigger>
+        {preview?.notes.length ? (
+          <TooltipContent side="bottom">
+            {preview.notes.map((note) => (
+              <p key={note.key}>{render(note)}</p>
+            ))}
+          </TooltipContent>
+        ) : null}
+      </Tooltip>
+    </article>
+  );
+}
+
+function AcquisitionCard({
+  id,
+  snapshot,
+  onAct,
+}: {
+  id: AcquisitionId;
+  snapshot: RunSnapshot;
+  onAct: (action: PlayerAction) => void;
+}) {
+  const t = useTranslations("hud");
+  const money = useMoney();
+  const game = useTranslations("game");
+  const render = useGameText();
+  const def = ACQUISITIONS[id];
+  const bought = snapshot.economy.acquisitions.includes(id);
+  const locked = def.tier > snapshot.economy.tier;
+  const action: PlayerAction = { type: "acquire", id };
+  const offered = snapshot.actions.some((a) => a.type === "acquire" && a.id === id);
+  const preview = snapshot.previews[actionKey(action)];
+
+  return (
+    <article
+      className={cn(
+        "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
+        bought && "border-branch-main/60",
+        locked && "opacity-60",
+      )}
+    >
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="truncate font-medium">{game(`acquisitions.${id}.name` as never)}</span>
+        {locked ? (
+          <span className="shrink-0 text-muted-foreground text-xs">
+            {t("nextTier", { tier: def.tier })}
+          </span>
+        ) : null}
+      </div>
+      <p className="text-muted-foreground text-xs leading-relaxed">
+        {game(`acquisitions.${id}.desc` as never)}
+      </p>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block">
+            <Button
+              size="sm"
+              variant={offered ? "default" : "outline"}
+              className="w-full"
+              disabled={!offered}
+              onClick={() => onAct(action)}
+            >
+              {bought ? t("acquired") : t("buyFor", { money: money(def.cost) })}
             </Button>
           </span>
         </TooltipTrigger>

@@ -112,8 +112,8 @@ Check: +actions +rules.
    `mrrBonusPct`), `rules/team.ts` (`teamSeats`, `devSpeedBonus`,
    `devCapacityBonus`, `hiringDiscountPct`), HUD (`autopilot` level).
 4. No wiring: `Shop.tsx` lists `upgradesIn(category)` plus a greyed next-tier
-   rung, in the upgrades dialog (`org`: Sites, in the company dialog's Team
-   tab, and never lights the upgrades button); `getAvailableActions` offers `buy`
+   rung, in the upgrades dialog's Purchases tab (`org`: Sites, in its Hiring
+   tab; `upgradeOffers` files each offer under its tab); `getAvailableActions` offers `buy`
    as tier and money allow; `buyUpgrade` (`rules/shop.ts`) refreshes effects
    and energy ceiling and hires a site's team via `addDev`. No randomness.
 

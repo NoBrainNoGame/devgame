@@ -29,6 +29,7 @@ import { ReviewDialog } from "@/components/hud/ReviewDialog";
 import { SupervisorLine } from "@/components/hud/SupervisorLine";
 import { TicketBar } from "@/components/hud/TicketBar";
 import { UpgradesDialog } from "@/components/hud/UpgradesDialog";
+import { UPGRADES_TABS, type UpgradesTab } from "@/components/hud/upgradeOffers";
 import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { useUpgradesNews } from "@/components/hud/useUpgradesNews";
@@ -108,14 +109,25 @@ export function RunStage({
   const [boardOpen, setBoardOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [upgradesOpen, setUpgradesOpen] = useState(false);
+  const [upgradesTab, setUpgradesTab] = useState<UpgradesTab>("skills");
   // Once on, the idle clock stops for nothing the player opens: a dialog
   // left open is not a decision, and the switch is the way to stop it. It
   // only waits for the review's verdict to be read, as it waits for an
   // animation to end.
   const readingReview = useIdleStore((state) => state.readingReview);
-  const openShop = useCallback(() => setUpgradesOpen(true), []);
+  // The servers' alert points at the shop itself.
+  const openShop = useCallback(() => {
+    setUpgradesTab("purchases");
+    setUpgradesOpen(true);
+  }, []);
   useGameAlerts(openShop);
-  const upgradesNews = useUpgradesNews(snapshot, upgradesOpen);
+  const upgradesNews = useUpgradesNews(snapshot, upgradesOpen ? upgradesTab : null);
+  // The button opens on what is new, or where the player last was.
+  const openUpgrades = (): void => {
+    const fresh = UPGRADES_TABS.find((tab) => upgradesNews.tabs[tab]);
+    if (fresh !== undefined) setUpgradesTab(fresh);
+    setUpgradesOpen(true);
+  };
   useAusterity();
   useAudioSettings();
   const bars = useToastsBelow();
@@ -130,8 +142,8 @@ export function RunStage({
             <ResourceBar
               snapshot={snapshot}
               onOpenCompany={() => setCompanyOpen(true)}
-              onOpenUpgrades={() => setUpgradesOpen(true)}
-              upgradesNews={upgradesNews}
+              onOpenUpgrades={openUpgrades}
+              upgradesNews={upgradesNews.any}
             />
           )}
           {snapshot === null ? null : (
@@ -213,6 +225,9 @@ export function RunStage({
             <UpgradesDialog
               open={upgradesOpen}
               onOpenChange={setUpgradesOpen}
+              tab={upgradesTab}
+              onTabChange={setUpgradesTab}
+              news={upgradesNews.tabs}
               snapshot={snapshot}
               onAct={onAct}
             />

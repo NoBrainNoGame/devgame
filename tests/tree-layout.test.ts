@@ -8,8 +8,13 @@ import {
   TREE_LAYOUT,
   treeRows,
 } from "@/components/hud/treeLayout";
-import { hasNews, stillSeen, upgradeOffers } from "@/components/hud/upgradeOffers";
-import { TREE, TREE_BRANCHES, TREE_IDS, treeBranch } from "@/game/content";
+import {
+  newsByTab,
+  stillSeen,
+  type UpgradesTab,
+  upgradeOffers,
+} from "@/components/hud/upgradeOffers";
+import { ACQUISITION_IDS, TREE, TREE_BRANCHES, TREE_IDS, treeBranch } from "@/game/content";
 import { actionKey } from "@/game/core/rules/preview";
 
 describe("skill tree layout", () => {
@@ -71,20 +76,33 @@ describe("skill tree layout", () => {
 });
 
 describe("the upgrades button", () => {
-  test("offers are the points the tree takes and the upgrades the money covers", () => {
+  const offer = (action: Parameters<typeof actionKey>[0], tab: UpgradesTab) => ({
+    key: actionKey(action),
+    tab,
+  });
+
+  test("each offer belongs to its tab: skills, hiring (the sites too), purchases", () => {
     expect(
       upgradeOffers({
         phase: { kind: "choose_action" },
         actions: [
           { type: "tree", id: "ci" },
-          { type: "buy", id: "servers" },
-          // A point for sale is almost always on offer; a site is bought from the team tab.
-          { type: "buy_point" },
+          { type: "hire", rank: "junior" },
           { type: "buy", id: "coworking" },
+          { type: "buy", id: "servers" },
+          { type: "acquire", id: ACQUISITION_IDS[0] },
+          // A point for sale is almost always on offer: never news.
+          { type: "buy_point" },
           { type: "rest" },
         ],
       }),
-    ).toEqual([actionKey({ type: "tree", id: "ci" }), actionKey({ type: "buy", id: "servers" })]);
+    ).toEqual([
+      offer({ type: "tree", id: "ci" }, "skills"),
+      offer({ type: "hire", rank: "junior" }, "hiring"),
+      offer({ type: "buy", id: "coworking" }, "hiring"),
+      offer({ type: "buy", id: "servers" }, "purchases"),
+      offer({ type: "acquire", id: ACQUISITION_IDS[0] }, "purchases"),
+    ]);
   });
 
   test("a phase that sells nothing says nothing about what is affordable", () => {
@@ -93,18 +111,26 @@ describe("the upgrades button", () => {
     ).toBeNull();
   });
 
-  test("shines for an offer not seen yet, and again for one that comes back", () => {
-    const ci = actionKey({ type: "tree", id: "ci" });
-    const servers = actionKey({ type: "buy", id: "servers" });
-    expect(hasNews([ci], new Set())).toBe(true);
-    expect(hasNews([ci], new Set([ci]))).toBe(false);
+  test("each tab keeps its own news, and an offer that comes back is news again", () => {
+    const ci = offer({ type: "tree", id: "ci" }, "skills");
+    const servers = offer({ type: "buy", id: "servers" }, "purchases");
+    expect(newsByTab([ci, servers], new Set())).toEqual({
+      skills: true,
+      hiring: false,
+      purchases: true,
+    });
+    expect(newsByTab([ci, servers], new Set([ci.key]))).toEqual({
+      skills: false,
+      hiring: false,
+      purchases: true,
+    });
 
     // Seen, then gone: the servers are news again when they come back.
-    const seen = stillSeen(new Set([ci, servers]), [ci]);
-    expect(seen.has(servers)).toBe(false);
-    expect(hasNews([ci, servers], seen)).toBe(true);
-    // Nothing gone, nothing new: the same set, so no re-render for nothing.
-    const same = new Set([ci]);
+    const seen = stillSeen(new Set([ci.key, servers.key]), [ci]);
+    expect(seen.has(servers.key)).toBe(false);
+    expect(newsByTab([ci, servers], seen).purchases).toBe(true);
+    // Nothing gone: the same set, so no re-render for nothing.
+    const same = new Set([ci.key]);
     expect(stillSeen(same, [ci])).toBe(same);
   });
 });
