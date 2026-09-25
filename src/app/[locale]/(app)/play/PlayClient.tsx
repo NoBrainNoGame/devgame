@@ -188,7 +188,14 @@ export function PlayClient(props: PlayClientProps) {
   }, [resumable]);
 
   const act = useCallback((action: PlayerAction) => {
-    handleRef.current?.dispatch(action);
+    const handle = handleRef.current;
+    if (handle === null) return;
+    // A decision taken while the canvas still tells the last turn — the
+    // review can be answered before its beat on the canvas ends — cuts the
+    // story short instead of being dropped. A dropped answer left the review
+    // dialog up, its reading gone, with nothing done.
+    if (gameStore.getState().pendingAnimation) handle.skipAnimations();
+    handle.dispatch(action);
   }, []);
 
   const onReady = useCallback((created: GameHandle | null) => {

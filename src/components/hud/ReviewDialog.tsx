@@ -80,9 +80,11 @@ export function ReviewDialog({
 
   const ticket = snapshot.tickets.find((item) => item.id === verdict.ticketId);
 
+  // The reading is cleared once the answer is in: were it ever refused, the
+  // dialog stays the one the player was reading, not a bare verdict.
   const answer = (action: PlayerAction): void => {
-    gameStore.setState({ pendingReview: null });
     onAct(action);
+    gameStore.setState({ pendingReview: null });
   };
 
   return (
