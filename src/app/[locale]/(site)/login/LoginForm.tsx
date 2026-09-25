@@ -2,13 +2,13 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { notify } from "@/components/ui/notify";
 import type { ActionErrorCode } from "@/lib/actions/result";
 import { authClient } from "@/lib/auth-client";
 
@@ -50,7 +50,7 @@ export function LoginForm(props: LoginFormProps): React.JSX.Element {
 
     setPending(false);
     if (error) {
-      toast.error(errors(codeFor(error.status)));
+      notify.error(errors(codeFor(error.status)));
       return;
     }
 

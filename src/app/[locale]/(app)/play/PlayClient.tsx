@@ -2,10 +2,10 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 
 import { setIdleSettings } from "@/components/hud/idleStore";
 import { Button } from "@/components/ui/button";
+import { notify } from "@/components/ui/notify";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
 import { gameStore, useGameStore } from "@/game";
 import { Link } from "@/i18n/navigation";
@@ -277,8 +277,8 @@ export function PlayClient(props: PlayClientProps) {
       clearLocalRun();
       if (props.online) sendRunSample(save, "final", locale, Date.now() - startedAtRef.current);
 
-      if (reward.levelsGained > 0) toast.success(t("levelUp", { level: reward.meta.level }));
-      for (const id of reward.unlocked) toast.success(t("unlocked", { name: id }));
+      if (reward.levelsGained > 0) notify.success(t("levelUp", { level: reward.meta.level }));
+      for (const id of reward.unlocked) notify.success(t("unlocked", { name: id }));
 
       // Held so the offer to submit survives a trip through sign-in.
       if (!props.signedIn) writePendingSubmit(save);
@@ -295,11 +295,11 @@ export function PlayClient(props: PlayClientProps) {
     if (result.ok) {
       setSubmitted(true);
       clearPendingSubmit();
-      toast.success(t("submitted"));
+      notify.success(t("submitted"));
       return;
     }
 
-    toast.error(errors(result.error.code as never));
+    notify.error(errors(result.error.code as never));
   }, [errors, t]);
 
   if (!hydrated) {

@@ -296,7 +296,10 @@ concurrent.
 (mergé + features ouvertes aux trois quarts) passe 80 %, saturation si la charge
 mergée dépasse la capacité. Une fois par montée de cran (journal, toast, puce
 d'argent), avec le barreau conseillé : le moins cher qui couvre le manque, sinon
-le meilleur en utilisateurs par euro. Les Finances le répètent et tracent
+le meilleur en utilisateurs par euro. Tout toast reste affiché jusqu'à être
+traité : sa croix, son bouton, ou la fin de sa cause (celui des serveurs se
+ferme quand la capacité suffit de nouveau) ; alertes et erreurs pulsent
+jusque-là. Les Finances le répètent et tracent
 trésorerie et revenus des soixante dernières paies en log, un pointillé par
 palier, un point par panne.
 

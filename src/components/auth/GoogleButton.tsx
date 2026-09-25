@@ -2,9 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { notify } from "@/components/ui/notify";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +38,7 @@ export function GoogleButton({
 
     if (error) {
       setPending(false);
-      toast.error(errors("unknown"));
+      notify.error(errors("unknown"));
     }
   }
 

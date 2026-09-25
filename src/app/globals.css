@@ -875,3 +875,50 @@ h3,
     background-color: color-mix(in oklab, var(--color-branch-hotfix) 55%, transparent);
   }
 }
+
+/*
+  A toast, in the game's frame. The glow is a drop-shadow on the wrapper,
+  because the frame itself is clipped and would clip its own shadow. Warnings
+  and errors keep pulsing until the player deals with them; reduced motion
+  keeps the glow and drops the pulse.
+*/
+.cyber-toast {
+  --tone: var(--color-cyber);
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--tone) 45%, transparent));
+}
+.cyber-toast[data-tone="info"] {
+  --tone: var(--color-branch-feature);
+}
+.cyber-toast[data-tone="warning"] {
+  --tone: var(--color-energy);
+}
+.cyber-toast[data-tone="error"] {
+  --tone: var(--color-cyber-hot);
+}
+.cyber-toast > .cyber-frame {
+  --cyber-stroke: var(--tone);
+  --cyber-fill: color-mix(in oklab, var(--color-panel) 94%, var(--tone));
+}
+.cyber-toast-bar {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 4px;
+  background: var(--tone);
+}
+.cyber-toast:is([data-tone="warning"], [data-tone="error"]) {
+  animation: cyber-toast-pulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes cyber-toast-pulse {
+  from {
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--tone) 35%, transparent));
+  }
+  to {
+    filter: drop-shadow(0 0 18px color-mix(in oklab, var(--tone) 85%, transparent));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cyber-toast:is([data-tone="warning"], [data-tone="error"]) {
+    animation: none;
+  }
+}

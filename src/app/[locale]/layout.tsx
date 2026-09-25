@@ -120,9 +120,10 @@ export default async function LocaleLayout({
             </div>
             {/* Inside the intl provider: it reads the locale and the pathname. */}
             {env.ONLINE ? <VisitBeacon /> : null}
+            {/* Inside it too: a toast's close button is translated. */}
+            <Toaster />
           </TooltipProvider>
         </NextIntlClientProvider>
-        <Toaster position="bottom-right" />
       </body>
     </html>
   );

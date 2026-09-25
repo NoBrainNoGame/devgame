@@ -2,11 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { notify } from "@/components/ui/notify";
 import { useRouter } from "@/i18n/navigation";
 import { setDisplayName } from "@/lib/profile/actions";
 
@@ -30,7 +30,7 @@ export function DisplayNameForm({ initialName }: { initialName: string }): React
       const result = await setDisplayName(name);
 
       if (!result.ok) {
-        toast.error(errors(result.error.code));
+        notify.error(errors(result.error.code));
         return;
       }
 

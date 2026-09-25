@@ -2,11 +2,11 @@
 
 import { useTranslations } from "next-intl";
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { notify } from "@/components/ui/notify";
 import { useRouter } from "@/i18n/navigation";
 import { submitBugReport } from "@/lib/report/actions";
 import { REPORT_LIMITS } from "@/lib/report/validate";
@@ -46,10 +46,10 @@ export function ReportForm({ recent }: { recent: RecentRun[] }): React.JSX.Eleme
     startTransition(async () => {
       const result = await submitBugReport({ title, body, seed, website, startedAt });
       if (!result.ok) {
-        toast.error(errors(result.error.code));
+        notify.error(errors(result.error.code));
         return;
       }
-      toast.success(t("sent"));
+      notify.success(t("sent"));
       setTitle("");
       setBody("");
       setTyped("");
