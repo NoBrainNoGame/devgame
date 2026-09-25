@@ -1097,12 +1097,12 @@
       "junior": {
         "name": "Junior",
         "desc": "More energy than anyone, no instinct for when the machine is lying: AI commits fail more often.",
-        "lore": "Eleven weeks of bootcamp, a certificate signed by nobody in particular, and a first permanent job at Relève. The final internship, at Sept, ended the week Sept chose its seven. Your grandfather is still in Brume & Fils's articles; nobody has updated them."
+        "lore": "Eleven weeks of training, a certificate signed by nobody in particular, and a first deployment at Relève. The trial period at Sept ended the week Sept chose its seven. Brume & Fils's articles name you as a beneficiary; nobody knows since when."
       },
       "senior": {
         "name": "Senior",
         "desc": "Solid by hand and steady in a conflict; a failed roll gets a second chance each sprint, and a rejected PR costs no ground. Wary of the AI.",
-        "lore": "Eleven years at Quorum, until the board voted you out one Tuesday, unanimously, in four minutes. Before that, Fenwick's pallets, back when it made forklifts. You still read everything, including what the machine says it has read."
+        "lore": "Eleven years at Quorum, until the board voted your withdrawal one Tuesday, unanimously, in four minutes. Before that, Fenwick's pallets, back when it made forklifts. You still read everything, including what the machine says it has read."
       },
       "vibe_coder": {
         "name": "Vibe coder",
@@ -1937,15 +1937,15 @@
       },
       "junior_brume_statutes": {
         "title": "{competitor}'s articles",
-        "text": "{competitor} writes to you. Its articles, never updated, still name your grandfather as a partner; the share is yours now. They offer to buy it back. The letter is signed “the sons”.",
+        "text": "{competitor} writes to you. Its articles, never updated, name you as the beneficiary of a share. Nobody remembers the clause. They offer to buy it back; the letter is signed “the sons”.",
         "choices": {
           "sell_share": "Sell the share",
           "keep_share": "Keep the share"
         }
       },
-      "junior_sept_internship": {
+      "junior_sept_trial": {
         "title": "{competitor} calls back",
-        "text": "{competitor} has published the list of the seven. Your internship is still on it, eighth, marked “to be confirmed”. You are asked to confirm.",
+        "text": "{competitor} has published the list of the seven. Your trial-period identifier is still on it, eighth, marked “to be confirmed”. You are asked to confirm.",
         "choices": {
           "confirm": "Confirm",
           "leave_unanswered": "Leave it unanswered"
@@ -1953,18 +1953,18 @@
       },
       "senior_quorum_minutes": {
         "title": "{competitor}'s minutes",
-        "text": "{competitor} sends you the minutes of the board meeting that voted you out, eleven years ago. They are dated this morning. The decision is still unanimous.",
+        "text": "{competitor} sends you the minutes of the board meeting that voted your withdrawal, eleven years ago. They are dated this morning. The decision is still unanimous.",
         "choices": {
           "read_it": "Read it line by line",
           "file_it": "File it unread"
         }
       },
       "senior_fenwick_pallets": {
-        "title": "An old hand from {competitor}",
-        "text": "A former colleague from {competitor} asks you to review a module. You wrote it to lift pallets. It lifts something else now; the header comment has not changed.",
+        "title": "A module comes back from {competitor}",
+        "text": "{competitor} sends you back a module to review. You wrote it to lift pallets. It lifts something else now; the header comment has not changed.",
         "choices": {
-          "review_it": "Review it for him",
-          "decline": "Decline politely"
+          "review_it": "Review it",
+          "decline": "Send it back as is"
         }
       },
       "vibe_lisiere_thread": {
@@ -1984,8 +1984,8 @@
         }
       },
       "devops_ostium_pager": {
-        "title": "A pager from before",
-        "text": "Your old pager from {competitor} still goes off. The alert is one word: “Continue”. Nobody else got it.",
+        "title": "An alert from before",
+        "text": "Your old on-call line at {competitor} still goes off. The alert is one word: “Continue”. Nobody else got it.",
         "choices": {
           "acknowledge": "Acknowledge it",
           "let_it_ring": "Let it ring"
@@ -1993,7 +1993,7 @@
       },
       "devops_sept_runbooks": {
         "title": "One of the seven",
-        "text": "Among the seven {competitor} is keeping is your old on-call partner. He offers to swap runbooks. His no longer have a “tell someone” step.",
+        "text": "Among the seven {competitor} is keeping is your old on-call partner. The offer: swap runbooks. Theirs no longer have a “tell someone” step.",
         "choices": {
           "swap": "Swap",
           "keep_yours": "Keep yours"

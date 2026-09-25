@@ -1097,12 +1097,12 @@
       "junior": {
         "name": "Junior",
         "desc": "Plus d'énergie que quiconque, aucun instinct pour savoir quand la machine ment : les commits IA ratent plus souvent.",
-        "lore": "Onze semaines de bootcamp, un certificat signé par personne en particulier, et un premier CDI chez Relève. Le stage de fin de formation, chez Sept, s'est arrêté la semaine où Sept a choisi ses sept. Votre grand-père figure toujours dans les statuts de Brume & Fils ; personne ne les a mis à jour."
+        "lore": "Onze semaines de formation, un certificat signé par personne en particulier, et un premier déploiement chez Relève. La période d'essai chez Sept s'est arrêtée la semaine où Sept a choisi ses sept. Les statuts de Brume & Fils vous désignent comme ayant droit ; personne ne sait depuis quand."
       },
       "senior": {
         "name": "Senior",
         "desc": "Solide à la main et calme dans les conflits ; un jet raté a droit à une seconde chance par sprint, et une PR refusée ne fait rien perdre. Se méfie de l'IA.",
-        "lore": "Onze ans chez Quorum, jusqu'au conseil qui a voté votre départ un mardi, à l'unanimité, en quatre minutes. Avant, les palettes de Fenwick, du temps où l'entreprise faisait des chariots. Vous relisez encore tout, y compris ce que la machine assure avoir relu."
+        "lore": "Onze ans chez Quorum, jusqu'au conseil qui a voté votre retrait un mardi, à l'unanimité, en quatre minutes. Avant, les palettes de Fenwick, du temps où l'entreprise faisait des chariots. Vous relisez encore tout, y compris ce que la machine assure avoir relu."
       },
       "vibe_coder": {
         "name": "Vibe coder",
@@ -1937,15 +1937,15 @@
       },
       "junior_brume_statutes": {
         "title": "Les statuts de {competitor}",
-        "text": "{competitor} vous écrit. Ses statuts, jamais mis à jour, désignent encore votre grand-père comme associé ; la part vous revient. Ils proposent de la racheter. La lettre est signée « les fils ».",
+        "text": "{competitor} vous écrit. Ses statuts, jamais mis à jour, vous désignent comme ayant droit d'une part. Personne ne se souvient de la clause. Ils proposent de la racheter ; la lettre est signée « les fils ».",
         "choices": {
           "sell_share": "Vendre la part",
           "keep_share": "Garder la part"
         }
       },
-      "junior_sept_internship": {
+      "junior_sept_trial": {
         "title": "{competitor} rappelle",
-        "text": "{competitor} a publié la liste des sept. Votre stage y figure encore, en huitième position, avec la mention « à confirmer ». On vous demande de confirmer.",
+        "text": "{competitor} a publié la liste des sept. Votre identifiant de période d'essai y figure encore, en huitième position, avec la mention « à confirmer ». On vous demande de confirmer.",
         "choices": {
           "confirm": "Confirmer",
           "leave_unanswered": "Ne pas répondre"
@@ -1953,18 +1953,18 @@
       },
       "senior_quorum_minutes": {
         "title": "Le procès-verbal de {competitor}",
-        "text": "{competitor} vous adresse le procès-verbal du conseil qui a voté votre départ, il y a onze ans. Il est daté de ce matin. La décision reste unanime.",
+        "text": "{competitor} vous adresse le procès-verbal du conseil qui a voté votre retrait, il y a onze ans. Il est daté de ce matin. La décision reste unanime.",
         "choices": {
           "read_it": "Le relire ligne à ligne",
           "file_it": "Le classer sans le lire"
         }
       },
       "senior_fenwick_pallets": {
-        "title": "Un ancien de {competitor}",
-        "text": "Un ancien collègue de {competitor} vous demande de relire un module. Vous l'aviez écrit pour lever des palettes. Il lève autre chose maintenant ; le commentaire en tête n'a pas changé.",
+        "title": "Un module revient de {competitor}",
+        "text": "{competitor} vous renvoie un module à relire. Vous l'aviez écrit pour lever des palettes. Il lève autre chose maintenant ; le commentaire en tête n'a pas changé.",
         "choices": {
-          "review_it": "Le relire pour lui",
-          "decline": "Décliner poliment"
+          "review_it": "Le relire",
+          "decline": "Le renvoyer tel quel"
         }
       },
       "vibe_lisiere_thread": {
@@ -1984,16 +1984,16 @@
         }
       },
       "devops_ostium_pager": {
-        "title": "Un pager d'avant",
-        "text": "Votre ancien pager de chez {competitor} sonne encore. L'alerte tient en un mot : « Continuer ». Personne d'autre ne l'a reçue.",
+        "title": "Une alerte d'avant",
+        "text": "Votre ancienne ligne d'astreinte chez {competitor} sonne encore. L'alerte tient en un mot : « Continuer ». Personne d'autre ne l'a reçue.",
         "choices": {
           "acknowledge": "Acquitter l'alerte",
-          "let_it_ring": "Le laisser sonner"
+          "let_it_ring": "La laisser sonner"
         }
       },
       "devops_sept_runbooks": {
         "title": "Un des sept",
-        "text": "Parmi les sept que {competitor} garde, il y a votre ancien binôme d'astreinte. Il propose d'échanger vos runbooks. Les siens n'ont plus d'étape « prévenir quelqu'un ».",
+        "text": "Parmi les sept que {competitor} garde figure votre ancien binôme d'astreinte. Proposition : échanger vos runbooks. Les siens n'ont plus d'étape « prévenir quelqu'un ».",
         "choices": {
           "swap": "Échanger",
           "keep_yours": "Garder les vôtres"

@@ -36,7 +36,7 @@ export const NARRATIVE_EVENT_IDS = [
   "heated_retro",
   "angel_call",
   "junior_brume_statutes",
-  "junior_sept_internship",
+  "junior_sept_trial",
   "senior_quorum_minutes",
   "senior_fenwick_pallets",
   "vibe_lisiere_thread",
@@ -284,8 +284,8 @@ export const NARRATIVE_EVENTS: Record<NarrativeEventId, NarrativeEventDef> = {
     ],
   },
 
-  // The Junior: a grandfather still in Brume & Fils's articles, an
-  // internship Sept ended the week it chose its seven.
+  // The Junior: a beneficiary in Brume & Fils's articles since nobody knows
+  // when, a trial period Sept ended the week it chose its seven.
   junior_brume_statutes: {
     id: "junior_brume_statutes",
     source: "competitor",
@@ -301,8 +301,8 @@ export const NARRATIVE_EVENTS: Record<NarrativeEventId, NarrativeEventDef> = {
       { id: "keep_share", effect: { share: 2, competitor: -5 } },
     ],
   },
-  junior_sept_internship: {
-    id: "junior_sept_internship",
+  junior_sept_trial: {
+    id: "junior_sept_trial",
     source: "competitor",
     trigger: "sprint_start",
     weight: 4,

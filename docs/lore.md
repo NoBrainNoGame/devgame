@@ -24,6 +24,14 @@ de la chaîne.
    passage d'une bande à l'autre ne se voit qu'en relisant le journal d'un
    sprint à l'autre. Comme les paliers visuels : toujours entre deux états.
 
+6. **Le joueur n'a rien d'humain à montrer.** Ni famille, ni corps, ni âge,
+   ni enfance, ni collègue qui lui parle comme à une personne : ce qui le
+   décrit se lit dans les deux sens — une formation ou un entraînement, un
+   déploiement ou une embauche, un retrait ou un départ, un identifiant, une
+   astreinte. Son humanité reste une question. Les autres personnages et les
+   entreprises gardent la leur : Brume & Fils a perdu sa famille ; du joueur,
+   rien de tel n'est jamais dit.
+
 ## L'entreprise, le produit
 
 **Relève** est l'entreprise : son nom signe les lignes système et titre la
@@ -79,8 +87,8 @@ Elles entrent au palier `entersAtTier`, dans cet ordre, et leur force croît de
 
 ## Les profils
 
-Le joueur reste « vous ». Le profil dit d'où vous venez, jamais qui vous
-êtes : un passé chez deux des entreprises maison, l'une à qui vous devez
+Le joueur reste « vous ». Le profil dit d'où vous venez, jamais ce que vous
+êtes (règle 6) : un passé chez deux des entreprises maison, l'une à qui vous devez
 quelque chose, l'autre contre qui vous gardez une rancune
 (`src/game/content/profiles.ts`, `ally` et `rival`). Chacune vous pose une
 question personnelle pendant la run, une fois, quand elle est sur le marché
@@ -89,8 +97,8 @@ inquiète est ce qui manque.
 
 | Profil | D'où il vient | Doit à | Rancune | Ce qui manque |
 | --- | --- | --- | --- | --- |
-| Junior | onze semaines de bootcamp, un stage chez Sept | Brume & Fils (le grand-père toujours dans les statuts) | Sept (le stage arrêté la semaine des sept) | la place de huitième |
-| Senior | onze ans chez Quorum, avant cela Fenwick | Fenwick (le module qui levait des palettes) | Quorum (le conseil qui l'a voté dehors en quatre minutes) | quelqu'un qui relise encore |
+| Junior | onze semaines de formation, une période d'essai chez Sept | Brume & Fils (ayant droit dans les statuts, depuis on ne sait quand) | Sept (la période d'essai arrêtée la semaine des sept) | la place de huitième |
+| Senior | onze ans chez Quorum, avant cela Fenwick | Fenwick (le module qui levait des palettes) | Quorum (le conseil qui a voté son retrait en quatre minutes) | quelqu'un qui relise encore |
 | Vibe coder | trois startups écrites en conversation | Volute (le complément de prix, contre un post-mortem daté) | Lisière (qui lit les fils publics avant vous) | la relecture |
 | DevOps | six ans d'astreinte chez Ostium | Sept (un ancien binôme parmi les sept) | Ostium (le pager qui sonne encore) | l'étape « prévenir quelqu'un » |
 
