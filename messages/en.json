@@ -472,7 +472,6 @@
     "waitingOnObstacle": "Full: only obstacle #{id} still blocks the PR.",
     "switchToObstacle": "Go to the obstacle",
     "switchToObstacleHint": "Nothing left to write here: land obstacle #{id} to open the PR.",
-    "vipWaiting": "VIP waiting: nobody is working on it.",
     "patience": "Patience",
     "patienceHint": "Production's patience: a bug in production, a refused pull request or a backlog ticket left waiting wear it down. Empty is the sack. A clean sprint brings it back up.",
     "codeHealthHint": "Code health is technical debt turned upside down. It is only shown exactly once a linter is watching.",
@@ -492,7 +491,12 @@
     "treeSpent": "{count, plural, one {# point spent} other {# points spent}}",
     "treeLinkLevel": "lvl {level}",
     "treePick": "Pick a skill in the tree to see what it does and place a point in it.",
-    "treeNeeds": "Requires: {nodes}"
+    "treeNeeds": "Requires: {nodes}",
+    "urgent": {
+      "vip": "VIP waiting: nobody is working on it.",
+      "deadline": "Due by sprint {sprint}: nobody is working on it.",
+      "obstacle": "Ticket #{id} is waiting on nothing but this one."
+    }
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -2115,5 +2119,13 @@
       "builtWith": "Made with {tools}.",
       "rules": "Rules version: {fingerprint}"
     }
+  },
+  "toasts": {
+    "label": "Notifications",
+    "count": "{count, plural, one {# notification} other {# notifications}}",
+    "minimize": "Minimise",
+    "restore": "Restore",
+    "minimizeAll": "Minimise all",
+    "closeAll": "Close all"
   }
 }

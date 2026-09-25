@@ -7,7 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/shell/Footer";
 import { Header } from "@/components/shell/Header";
 import { VisitBeacon } from "@/components/shell/VisitBeacon";
-import { Toaster } from "@/components/ui/sonner";
+import { ToastManager } from "@/components/ui/notify";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routing } from "@/i18n/routing";
 import { env } from "@/lib/env";
@@ -120,8 +120,8 @@ export default async function LocaleLayout({
             </div>
             {/* Inside the intl provider: it reads the locale and the pathname. */}
             {env.ONLINE ? <VisitBeacon /> : null}
-            {/* Inside it too: a toast's close button is translated. */}
-            <Toaster />
+            {/* Inside it too: a toast's window buttons are translated. */}
+            <ToastManager />
           </TooltipProvider>
         </NextIntlClientProvider>
       </body>

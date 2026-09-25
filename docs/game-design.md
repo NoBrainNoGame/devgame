@@ -315,9 +315,12 @@ concurrent.
 mergée dépasse la capacité. Une fois par montée de cran (journal, toast, puce
 d'argent), avec le barreau conseillé : le moins cher qui couvre le manque, sinon
 le meilleur en utilisateurs par euro. Tout toast reste affiché jusqu'à être
-traité : sa croix, son bouton, ou la fin de sa cause (celui des serveurs se
-ferme quand la capacité suffit de nouveau) ; alertes et erreurs pulsent
-jusque-là. Les Finances le répètent et tracent
+traité : sa croix, son bouton (qui le ferme en agissant), ou la fin de sa
+cause (celui des serveurs se ferme quand la capacité suffit de nouveau) ;
+alertes et erreurs pulsent jusque-là. Ils se gèrent comme des fenêtres
+(`ui/toastStore.ts`) : chacun se réduit en une pastille d'une ligne, rouverte
+d'un clic, et à partir de deux on peut tout réduire ou tout fermer. Les
+Finances le répètent et tracent
 trésorerie et revenus des soixante dernières paies en log, la part de marché
 de chaque paie sur son propre axe (linéaire, à droite), un pointillé par
 palier, un point par panne.
@@ -484,8 +487,10 @@ l'austérité : qui a écrit quoi reste lisible.
 
 **HUD** : ressources et tours restants ; onglets des tickets en main au-dessus
 du graphe (ceux de l'équipe à droite), dont l'infobulle montre le ticket entier,
-un VIP à soi clignotant tant que ni lui ni un de ses sous-tickets n'est en
-main ; panneau de droite pour la seule décision du tour ; journal repliable
+un ticket à soi qui presse (VIP, échéance) clignotant tant que personne
+n'est dessus ni sur un de ses sous-tickets — et, quand il n'attend plus que son
+obstacle, c'est l'obstacle qui clignote (`hud/ticketFocus.ts`) ; panneau de
+droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
 projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
 de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BoardDialog } from "@/components/hud/BoardDialog";
@@ -118,23 +118,26 @@ export function RunStage({
   const upgradesNews = useUpgradesNews(snapshot, upgradesOpen);
   useAusterity();
   useAudioSettings();
+  const bars = useToastsBelow();
 
   return (
     <ReducedMotionProvider reduced={options.reducedMotion ?? false}>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {/* Flies what the canvas raises, or a dialog gives, to its gauge. */}
         <GaugeFx />
-        {snapshot === null ? null : (
-          <ResourceBar
-            snapshot={snapshot}
-            onOpenCompany={() => setCompanyOpen(true)}
-            onOpenUpgrades={() => setUpgradesOpen(true)}
-            upgradesNews={upgradesNews}
-          />
-        )}
-        {snapshot === null ? null : (
-          <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
-        )}
+        <div ref={bars} className="contents">
+          {snapshot === null ? null : (
+            <ResourceBar
+              snapshot={snapshot}
+              onOpenCompany={() => setCompanyOpen(true)}
+              onOpenUpgrades={() => setUpgradesOpen(true)}
+              upgradesNews={upgradesNews}
+            />
+          )}
+          {snapshot === null ? null : (
+            <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
+          )}
+        </div>
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <aside className="order-2 w-full min-w-0 shrink-0 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
@@ -228,4 +231,46 @@ export function RunStage({
       </div>
     </ReducedMotionProvider>
   );
+}
+
+/** How far under the bars a toast lands. */
+const TOAST_GAP_PX = 8;
+
+/**
+ * Keeps the toasts under the run's bars, however tall the bars wrap: their
+ * bottom edge, written to `--toast-top` on the root while the run is on
+ * screen, and removed with it.
+ */
+function useToastsBelow(): React.RefObject<HTMLDivElement | null> {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const wrapper = ref.current;
+    if (wrapper === null) return;
+    const root = document.documentElement;
+    const place = (): void => {
+      let bottom = 0;
+      for (const child of wrapper.children) {
+        bottom = Math.max(bottom, child.getBoundingClientRect().bottom);
+      }
+      if (bottom > 0) root.style.setProperty("--toast-top", `${bottom + TOAST_GAP_PX}px`);
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    for (const child of wrapper.children) observer.observe(child);
+    // A bar that mounts late (the snapshot arrives after the first paint).
+    const mutations = new MutationObserver(() => {
+      observer.disconnect();
+      for (const child of wrapper.children) observer.observe(child);
+      place();
+    });
+    mutations.observe(wrapper, { childList: true });
+    window.addEventListener("resize", place);
+    return () => {
+      observer.disconnect();
+      mutations.disconnect();
+      window.removeEventListener("resize", place);
+      root.style.removeProperty("--toast-top");
+    };
+  }, []);
+  return ref;
 }

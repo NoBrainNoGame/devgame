@@ -472,7 +472,6 @@
     "waitingOnObstacle": "Plein : seul l'obstacle #{id} bloque encore la PR.",
     "switchToObstacle": "Passer sur l'obstacle",
     "switchToObstacleHint": "Plus rien à écrire ici : ramenez l'obstacle #{id} pour ouvrir la PR.",
-    "vipWaiting": "VIP en attente : personne n'y travaille.",
     "patience": "Patience",
     "patienceHint": "La patience de la prod : un bug en production, une PR refusée ou un ticket du backlog qui a traîné la font baisser. Vide, c'est le licenciement. Un sprint propre la fait remonter.",
     "codeHealthHint": "La santé du code, c'est la dette technique à l'envers. Elle n'est affichée précisément qu'avec un linter.",
@@ -492,7 +491,12 @@
     "treeSpent": "{count, plural, one {# point placé} other {# points placés}}",
     "treeLinkLevel": "niv. {level}",
     "treePick": "Choisissez une compétence dans l'arbre pour voir ce qu'elle fait et y placer un point.",
-    "treeNeeds": "Requiert : {nodes}"
+    "treeNeeds": "Requiert : {nodes}",
+    "urgent": {
+      "vip": "VIP en attente : personne n'y travaille.",
+      "deadline": "Échéance au sprint {sprint} : personne n'y travaille.",
+      "obstacle": "Le ticket #{id} n'attend plus que celui-ci."
+    }
   },
   "leaderboard": {
     "title": "Classement",
@@ -2115,5 +2119,13 @@
       "builtWith": "Fait avec {tools}.",
       "rules": "Version des règles : {fingerprint}"
     }
+  },
+  "toasts": {
+    "label": "Notifications",
+    "count": "{count, plural, one {# notification} other {# notifications}}",
+    "minimize": "Réduire",
+    "restore": "Rouvrir",
+    "minimizeAll": "Tout réduire",
+    "closeAll": "Tout fermer"
   }
 }

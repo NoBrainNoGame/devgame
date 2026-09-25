@@ -928,16 +928,17 @@ h3,
 }
 
 /*
-  A VIP of the player's that nobody is working on: its tab blinks in the
-  HUD's accent until it — or one of its obstacles — is checked out. Reduced
-  motion keeps it lit, still.
+  A ticket of the player's that asks for them — a VIP, a deadline, or the
+  obstacle that is all such a ticket still waits on — and that nobody is on:
+  its tab blinks in the HUD's accent until it is checked out. Reduced motion
+  keeps it lit, still.
 */
-.ticket-vip-waiting {
+.ticket-urgent {
   border-color: var(--color-cyber);
   color: var(--color-cyber);
-  animation: ticket-vip-blink 0.9s steps(1, end) infinite;
+  animation: ticket-urgent-blink 0.9s steps(1, end) infinite;
 }
-@keyframes ticket-vip-blink {
+@keyframes ticket-urgent-blink {
   0%,
   100% {
     background-color: color-mix(in oklab, var(--color-cyber) 22%, transparent);
@@ -949,7 +950,7 @@ h3,
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ticket-vip-waiting {
+  .ticket-urgent {
     animation: none;
     background-color: color-mix(in oklab, var(--color-cyber) 18%, transparent);
   }

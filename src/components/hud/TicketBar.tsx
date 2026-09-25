@@ -4,7 +4,7 @@ import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { TicketDetails } from "@/components/hud/TicketDetails";
-import { workingOn } from "@/components/hud/ticketFocus";
+import { blinks, type Urgency, urgencies } from "@/components/hud/ticketFocus";
 import { ticketName } from "@/components/hud/ticketName";
 import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,10 @@ import { cn } from "@/lib/utils";
  * The tickets you are holding, as tabs above the graph. The one in hand is
  * lit; clicking another checks it out. Switching is free, so it lives where a
  * free thing belongs — beside the work, not among the actions that cost a
- * turn. Hovering any tab, yours or the team's, shows the whole ticket; a VIP
- * of yours that nobody is working on blinks until you pick it up.
+ * turn. Hovering any tab, yours or the team's, shows the whole ticket. A tab
+ * that asks for you blinks until you pick it up: a VIP or a ticket with a
+ * deadline that nobody is on — or, once one has nothing left but its
+ * obstacle, that obstacle.
  */
 export function TicketBar({
   snapshot,
@@ -36,6 +38,7 @@ export function TicketBar({
     (ticket) => ticket.status === "open" && ticket.assignee !== undefined,
   );
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
+  const urgent = urgencies(open);
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto border-line border-b bg-panel/40 px-3 py-2">
@@ -63,6 +66,7 @@ export function TicketBar({
             ticket={ticket}
             snapshot={snapshot}
             current={ticket.id === snapshot.player.ticketId}
+            urgency={urgent.get(ticket.id)}
             onAct={onAct}
           />
         ))
@@ -110,11 +114,13 @@ function TicketTab({
   ticket,
   snapshot,
   current,
+  urgency,
   onAct,
 }: {
   ticket: TicketView;
   snapshot: RunSnapshot;
   current: boolean;
+  urgency: Urgency | undefined;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -123,9 +129,7 @@ function TicketTab({
     ticket.skillId === undefined
       ? ticketName(game, ticket)
       : game(`skills.${ticket.skillId}.name` as never);
-  // Double revenue and a deadline, and nobody on it — not even on one of its
-  // obstacles: it asks to be picked up.
-  const vipWaiting = ticket.kind === "vip" && !workingOn(snapshot, ticket.id);
+  const waitingForYou = urgency !== undefined && blinks(snapshot, ticket, urgency);
 
   return (
     <Tooltip>
@@ -141,7 +145,7 @@ function TicketTab({
           }}
           className={cn(
             "flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
-            vipWaiting && "ticket-vip-waiting",
+            waitingForYou && "ticket-urgent",
             // Every ticket looks alike: the kind is in the name, the colours are the branches'.
             current
               ? "border-cyber bg-cyber/10 text-foreground"
@@ -173,9 +177,9 @@ function TicketTab({
       </TooltipTrigger>
       <TooltipContent side="bottom" className={DETAILS_TOOLTIP}>
         <TicketDetails ticket={ticket} snapshot={snapshot} compact />
-        {current && !vipWaiting ? null : (
-          <p className={cn("text-xs", vipWaiting ? "text-cyber" : "text-muted-foreground")}>
-            {vipWaiting ? `${t("vipWaiting")} ` : ""}
+        {current && !waitingForYou ? null : (
+          <p className={cn("text-xs", waitingForYou ? "text-cyber" : "text-muted-foreground")}>
+            {waitingForYou && urgency !== undefined ? `${urgencyText(t, urgency)} ` : ""}
             {current ? "" : t("clickToSwitch")}
           </p>
         )}
@@ -198,4 +202,16 @@ function ShownPoints({
       {filled}/{ticket.points}
     </span>
   );
+}
+
+/** Why a blinking tab asks for you, in its tooltip. */
+function urgencyText(t: ReturnType<typeof useTranslations<"hud">>, urgency: Urgency): string {
+  switch (urgency.reason) {
+    case "vip":
+      return t("urgent.vip");
+    case "deadline":
+      return t("urgent.deadline", { sprint: urgency.sprint });
+    case "obstacle":
+      return t("urgent.obstacle", { id: urgency.parentId.slice(1) });
+  }
 }

@@ -18,9 +18,8 @@ const OUTAGE_TOAST = "outage";
  * not a hundred.
  *
  * A toast stays until dealt with. The server ones carry the rung the game
- * would buy and a button to the shop; opening the shop is not fixing the
- * servers, so they stay up after it and close by themselves when the
- * capacity is back, or when the player closes them.
+ * would buy and a button to the shop, which closes them like any toast's
+ * action; left alone, they close by themselves when the capacity is back.
  */
 export function useGameAlerts(onOpenShop: () => void): void {
   const t = useTranslations("hud");
@@ -39,7 +38,7 @@ export function useGameAlerts(onOpenShop: () => void): void {
       shown.current.set(kind, turn);
       return true;
     };
-    const shopAction = { label: t("toastOpenShop"), onClick: onOpenShop, keepOpen: true };
+    const shopAction = { label: t("toastOpenShop"), onClick: onOpenShop };
 
     for (const event of events) {
       if (event.type === "capacity_warning" && once(`capacity:${event.level}`)) {

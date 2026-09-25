@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { GameHandle, PlayerAction, RunSaveDto } from "@/game";
-import { emptyMeta, useGameStore } from "@/game";
+import { emptyMeta, gameStore, useGameStore } from "@/game";
 
 import { RunStage } from "../../play/RunStage";
 
@@ -40,7 +40,6 @@ export function RunDebugger({
   const [handle, setHandle] = useState<GameHandle | null>(null);
   const [stoppedAt, setStoppedAt] = useState<number | null>(null);
   const snapshot = useGameStore((state) => state.snapshot);
-  const busy = useGameStore((state) => state.pendingAnimation);
 
   const meta = useMemo(() => {
     const base = emptyMeta(save.createdAt);
@@ -74,6 +73,9 @@ export function RunDebugger({
   const forward = useCallback(() => {
     const next = actions[cursor];
     if (handle === null || next === undefined) return;
+    // As in a run (`PlayClient.act`): a step cuts the story short rather than
+    // wait for it — and a dialog on screen holds the story still for good.
+    if (gameStore.getState().pendingAnimation) handle.skipAnimations();
     const result = handle.dispatch(next);
     if (!result.ok) {
       setStoppedAt(cursor);
@@ -86,6 +88,7 @@ export function RunDebugger({
   const onAct = useCallback(
     (action: PlayerAction) => {
       if (handle === null) return;
+      if (gameStore.getState().pendingAnimation) handle.skipAnimations();
       const result = handle.dispatch(action);
       if (!result.ok) return;
       setActions((log) => [...log.slice(0, cursor), action]);
@@ -125,7 +128,7 @@ export function RunDebugger({
           <Button
             size="icon-sm"
             variant="outline"
-            disabled={busy || cursor === 0}
+            disabled={cursor === 0}
             onClick={() => jump(0)}
             aria-label={t("first")}
           >
@@ -134,7 +137,7 @@ export function RunDebugger({
           <Button
             size="icon-sm"
             variant="outline"
-            disabled={busy || cursor === 0}
+            disabled={cursor === 0}
             onClick={() => jump(cursor - 1)}
             aria-label={t("previous")}
           >
@@ -145,7 +148,6 @@ export function RunDebugger({
             min={0}
             max={actions.length}
             value={cursor}
-            disabled={busy}
             onChange={(event) => jump(Number(event.target.value))}
             className="w-40 accent-cyber"
             aria-label={t("step", { step: cursor, total: actions.length })}
@@ -153,7 +155,7 @@ export function RunDebugger({
           <Button
             size="icon-sm"
             variant="outline"
-            disabled={busy || atEnd || handle === null}
+            disabled={atEnd || handle === null}
             onClick={forward}
             aria-label={t("next")}
           >
@@ -162,7 +164,7 @@ export function RunDebugger({
           <Button
             size="icon-sm"
             variant="outline"
-            disabled={busy || atEnd}
+            disabled={atEnd}
             onClick={() => jump(actions.length)}
             aria-label={t("last")}
           >
