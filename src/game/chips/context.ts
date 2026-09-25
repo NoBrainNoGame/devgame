@@ -57,6 +57,14 @@ export interface SceneContext {
   austerityOverride?: number | null;
   /** Where the sounds go. The landing page passes none and gets the silent one. */
   audio: AudioService;
+  /**
+   * Aborted when the scene is torn down. Anything a chip hangs outside the
+   * tree — a document listener, a timer — is tied to it, because a scene
+   * that threw in a frame never runs its chips' teardown.
+   */
+  signal: AbortSignal;
+  /** Reports a throw inside a frame: the scene is rebuilt around the same run. */
+  fault: (error: unknown) => void;
 }
 
 export function sceneContext(context: Readonly<Record<string, unknown>>): SceneContext {

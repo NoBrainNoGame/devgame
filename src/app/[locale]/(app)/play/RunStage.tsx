@@ -30,6 +30,7 @@ import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
 import { useGameStore } from "@/game";
+import { cn } from "@/lib/utils";
 
 /**
  * A run in progress: the canvas, the HUD around it, and the dialogs the game
@@ -74,6 +75,11 @@ export interface RunStageProps {
   onAct: (action: PlayerAction) => void;
   onPlayAgain: () => void;
   runOverFooter?: React.ReactNode;
+  /**
+   * What to tell the player once WebGL is given up. The debugger has no
+   * autosave to promise, so it says less.
+   */
+  fallbackNote?: string;
 }
 
 export function RunStage({
@@ -84,9 +90,11 @@ export function RunStage({
   onAct,
   onPlayAgain,
   runOverFooter,
+  fallbackNote,
   idle = true,
 }: RunStageProps) {
   const t = useTranslations("play");
+  const renderMode = useGameStore((state) => state.renderMode);
 
   const snapshot = useGameStore((state) => state.snapshot);
   const log = useGameStore((state) => state.log);
@@ -137,10 +145,23 @@ export function RunStage({
             </p>
           ) : (
             <>
-              <GraphTooltip />
-              <GraphControls handle={handle} />
+              {renderMode === "none" ? null : <GraphTooltip />}
+              {renderMode === "none" ? null : <GraphControls handle={handle} />}
               <LogDrawer log={log} />
             </>
+          )}
+
+          {/* WebGL given up: the graph is drawn by Canvas2D, or not at all. */}
+          {renderMode === "webgl" ? null : (
+            <p
+              role="status"
+              className={cn(
+                "absolute inset-x-3 z-10 border border-debt/60 bg-panel/90 px-3 py-2 text-debt text-xs leading-relaxed backdrop-blur-sm",
+                renderMode === "none" ? "top-1/2 -translate-y-1/2 text-center text-sm" : "top-3",
+              )}
+            >
+              {fallbackNote ?? t("webglLost")}
+            </p>
           )}
         </div>
 

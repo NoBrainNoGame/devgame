@@ -1,18 +1,14 @@
 "use client";
 
-import { Application } from "pixi.js";
-
 import { type AudioService, NullAudioService } from "@/game/audio/AudioService";
-import { RevealSet } from "@/game/bridge/reveal";
+import { buildPixiScene, type PixiScene, type SceneOptions } from "@/game/bridge/scene";
+import { pageSceneMemory, SceneSupervisor } from "@/game/bridge/sceneGuard";
 import { GameSession, type SessionOptions } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
-import * as booyah from "@/game/chips/booyah";
 import type { SceneControls } from "@/game/chips/context";
-import { GameRoot } from "@/game/chips/GameRoot";
 import type { I18nText } from "@/game/core/i18n";
 import type { PlayerAction } from "@/game/core/types";
 import type { RunSaveDto } from "@/game/dto/run";
-import { THEME } from "@/game/render/theme";
 
 /**
  * Starts a run on a canvas and hands back the only handle the app needs.
@@ -98,30 +94,12 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   const serial = mountSerial;
   const isCurrent = (): boolean => serial === mountSerial;
 
-  const app = new Application();
-  await app.init({
-    resizeTo: element,
-    // A transparent canvas clears to premultiplied black: a colour with an
-    // alpha of zero would still be added to the page underneath.
-    background: options.transparent === true ? 0x000000 : THEME.background,
-    backgroundAlpha: options.transparent === true ? 0 : 1,
-    antialias: true,
-    resolution: typeof window === "undefined" ? 1 : window.devicePixelRatio,
-    autoDensity: true,
-    // Booyah owns the loop. Two tickers would render twice per frame and drift.
-    autoStart: false,
-    sharedTicker: false,
-  });
-
-  element.appendChild(app.canvas);
-  app.canvas.style.touchAction = "none";
-  app.canvas.style.display = "block";
-
-  // A resumed run is rebuilt from what the save says the account was when
-  // it started — its unlocks and its skill points — never from the account
-  // as it is now. A level gained mid-run would otherwise change the map the
-  // log was written on, and the replay would stop at the first move that no
-  // longer fits, throwing the rest of the run away.
+  // The run first, and for good: the picture around it may be lost and
+  // rebuilt, the session never is. A resumed run is rebuilt from what the save
+  // says the account was when it started — its unlocks and its skill points —
+  // never from the account as it is now. A level gained mid-run would
+  // otherwise change the map the log was written on, and the replay would stop
+  // at the first move that no longer fits, throwing the rest of the run away.
   const resume = options.resume;
   const session = new GameSession({
     seed: options.seed,
@@ -140,40 +118,56 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   });
 
   const controls: SceneControls = { camera: null, skip: null };
+  let disposed = false;
+  let handle: GameHandle | null = null;
+  // Only the mount that owns the store writes to it: a superseded one, or
+  // one already disposed, stays quiet whatever its scene does.
+  const owns = (): boolean =>
+    !disposed &&
+    isCurrent() &&
+    (!claimsGlobal || handle === null || globalThis.__devgameHandle === handle);
 
-  // A resumed run is replayed inside the session without an `applied` event,
-  // so everything it wrote is on screen from the first frame and nothing of
-  // it is animated.
-  const reveal = new RevealSet();
-  reveal.showAll(session.getState());
+  const sceneOptions: SceneOptions = {
+    translate: options.translate,
+    reducedMotion: options.reducedMotion ?? false,
+    interactive: options.interactive ?? true,
+    subjects: options.showSubjects ?? true,
+    pops: options.showPops ?? true,
+    playerName: options.playerName ?? "",
+    transparent: options.transparent === true,
+    austerityOverride: options.austerityOverride ?? null,
+    audio: options.audio ?? new NullAudioService(),
+    controls,
+  };
 
-  const runner = new booyah.Runner(() => new GameRoot(), {
-    rootContext: {
-      app,
-      session,
-      reveal,
-      translate: options.translate,
-      reducedMotion: options.reducedMotion ?? false,
-      interactive: options.interactive ?? true,
-      subjects: options.showSubjects ?? true,
-      pops: options.showPops ?? true,
-      playerName: options.playerName ?? "",
-      controls,
-      austerityOverride: options.austerityOverride ?? null,
-      audio: options.audio ?? new NullAudioService(),
+  const supervisor = new SceneSupervisor<PixiScene>({
+    build: (mode, report) => buildPixiScene(element, session, sceneOptions, mode, report),
+    onChange: (mode, scene) => {
+      // Only a WebGL scene animates. Without one — between two builds, in
+      // Canvas2D, with no picture at all — nothing is ever waited for.
+      const animated = scene !== null && mode === "webgl";
+      session.setPresentation({ animated });
+      if (!owns()) return;
+      gameStore.setState({
+        renderMode: mode,
+        hoveredNodeId: null,
+        hoveredAt: null,
+        ...(animated ? {} : { pendingAnimation: false }),
+      });
     },
-    minFps: 10,
+    now: () => performance.now(),
+    schedule: (fn, ms) => {
+      const timer = setTimeout(fn, ms);
+      return () => clearTimeout(timer);
+    },
+    memory: pageSceneMemory,
   });
-  runner.start();
 
   const observer = new ResizeObserver(() => {
-    app.renderer.resize(element.clientWidth, element.clientHeight);
+    supervisor.scene?.resize(element.clientWidth, element.clientHeight);
   });
-  observer.observe(element);
 
-  let disposed = false;
-
-  const handle: GameHandle = {
+  const created: GameHandle = {
     dispatch(action) {
       return session.dispatch(action);
     },
@@ -195,20 +189,18 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       else gameStore.setState({ pendingAnimation: false });
     },
     resize() {
-      app.renderer.resize(element.clientWidth, element.clientHeight);
+      supervisor.scene?.resize(element.clientWidth, element.clientHeight);
     },
     dispose() {
       if (disposed) return;
       disposed = true;
 
       observer.disconnect();
-      // `stop()` throws when the runner is already stopped or paused.
-      if (runner.isRunning) runner.stop();
+      supervisor.dispose();
       session.destroy();
-      app.destroy(true, { children: true });
 
       // Only the mount that currently owns the store may clear it.
-      if (globalThis.__devgameHandle === handle) {
+      if (globalThis.__devgameHandle === created) {
         globalThis.__devgameHandle = undefined;
         resetGameStore();
       } else if (!claimsGlobal && isCurrent()) {
@@ -216,15 +208,18 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       }
     },
   };
+  handle = created;
 
   // A superseded mount keeps its handle — the caller still has to be able to
   // dispose of it — but it neither claims the store nor writes to it.
   if (isCurrent()) {
-    if (claimsGlobal) globalThis.__devgameHandle = handle;
+    if (claimsGlobal) globalThis.__devgameHandle = created;
     // Publishing after claiming ownership means the store always describes the
     // run that is actually on screen.
     session.publish();
   }
 
-  return handle;
+  await supervisor.start();
+  observer.observe(element);
+  return created;
 }

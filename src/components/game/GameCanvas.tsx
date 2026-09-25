@@ -78,14 +78,20 @@ export function GameCanvas({
       translate: (value) => translateRef.current(value),
       ...(override === null ? {} : { austerityOverride: override }),
       audio: audioService(),
-    }).then((created) => {
-      if (cancelled) {
-        created.dispose();
-        return;
-      }
-      handle = created;
-      onReadyRef.current(created);
-    });
+    })
+      .then((created) => {
+        if (cancelled) {
+          created.dispose();
+          return;
+        }
+        handle = created;
+        onReadyRef.current(created);
+      })
+      // The picture's own failures are handled inside (`sceneGuard.ts`): only
+      // the engine refusing the run lands here, and there is nothing to show.
+      .catch((error: unknown) => {
+        console.error("The run could not be mounted:", error);
+      });
 
     return () => {
       cancelled = true;

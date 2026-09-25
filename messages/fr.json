@@ -130,7 +130,8 @@
       }
     },
     "yourName": "Pseudo",
-    "yourNamePlaceholder": "John Doe"
+    "yourNamePlaceholder": "John Doe",
+    "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Vous pouvez quitter ou recharger la page à tout moment, la sauvegarde est automatique."
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -2035,6 +2036,7 @@
       "finished": "terminée",
       "abandoned": "abandonnée",
       "rejected": "rejetée"
-    }
+    },
+    "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Le graphe est dessiné sans WebGL jusqu'au rechargement de la page."
   }
 }

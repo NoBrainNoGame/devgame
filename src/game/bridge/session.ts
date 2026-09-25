@@ -21,6 +21,19 @@ import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 export interface AppliedPayload {
   events: GameEvent[];
   state: RunState;
+  /** The action that produced them: a purchase is told differently from a turn. */
+  action: PlayerAction;
+  /** This publication's number, so a late effect can tell it belongs to an older one. */
+  batch: number;
+}
+
+/**
+ * How the run is being shown right now, which the scene decides and may
+ * change at any moment: with no WebGL scene up, nothing animates, so nothing
+ * may ever be waited for.
+ */
+export interface Presentation {
+  animated: boolean;
 }
 
 export interface SessionOptions {
@@ -47,6 +60,8 @@ export type DispatchResult = { ok: true } | { ok: false; reason: string };
 export class GameSession extends Emitter {
   private readonly actionLog: PlayerAction[] = [];
   private state: RunState;
+  private presentation: Presentation = { animated: true };
+  private batch = 0;
 
   constructor(private readonly options: SessionOptions) {
     super();
@@ -101,8 +116,15 @@ export class GameSession extends Emitter {
     this.state = result.state;
     this.actionLog.push(action);
 
+    this.batch += 1;
     this.publish(result.events);
-    this.emit("applied", { events: result.events, state: result.state });
+    const payload: AppliedPayload = {
+      events: result.events,
+      state: result.state,
+      action,
+      batch: this.batch,
+    };
+    this.emit("applied", payload);
 
     return { ok: true };
   }
@@ -136,12 +158,27 @@ export class GameSession extends Emitter {
       snapshot: toSnapshot(this.state),
       ...(review === undefined ? {} : { pendingReview: review }),
       // Nothing to watch means nothing to wait for; the scene clears this once
-      // it has played whatever it was given.
-      pendingAnimation: events.length > 0,
+      // it has played whatever it was given. With no scene animating — WebGL
+      // lost, or given up for Canvas2D — nothing is ever waited for.
+      pendingAnimation: this.presentation.animated && events.length > 0,
       log: [...this.state.log],
       lastEvents: events,
       lastError: null,
     });
+  }
+
+  /** Changes how the run is shown, live: the scene may come and go under it. */
+  setPresentation(next: Partial<Presentation>): void {
+    this.presentation = { ...this.presentation, ...next };
+  }
+
+  /**
+   * Drops every subscriber. A scene torn down after a throw inside a frame
+   * never runs its chips' own teardown, so it cannot be trusted to have
+   * unsubscribed itself.
+   */
+  detachListeners(): void {
+    this.clearListeners();
   }
 
   destroy(): void {

@@ -130,7 +130,8 @@
       }
     },
     "yourName": "Nickname",
-    "yourNamePlaceholder": "John Doe"
+    "yourNamePlaceholder": "John Doe",
+    "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. You can leave or reload the page at any time; your progress is saved automatically."
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -2035,6 +2036,7 @@
       "finished": "finished",
       "abandoned": "abandoned",
       "rejected": "rejected"
-    }
+    },
+    "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. The graph is drawn without WebGL until the page is reloaded."
   }
 }

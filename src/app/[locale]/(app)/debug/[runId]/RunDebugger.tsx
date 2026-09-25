@@ -203,6 +203,7 @@ export function RunDebugger({
       </div>
 
       <RunStage
+        fallbackNote={t("webglLost")}
         runKey={`debug-${generation}`}
         handle={handle}
         idle={false}

@@ -51,12 +51,11 @@ export class FxQueue extends booyah.Queue {
       const payload = args[0] as AppliedPayload | undefined;
       if (payload !== undefined) this.enqueue(payload);
     });
-    document.addEventListener("visibilitychange", this.onVisibility);
-  }
-
-  protected _onTerminate(): void {
-    document.removeEventListener("visibilitychange", this.onVisibility);
-    super._onTerminate?.();
+    // Tied to the scene's signal, not to this chip's teardown: a scene that
+    // threw in a frame never terminates its chips.
+    document.addEventListener("visibilitychange", this.onVisibility, {
+      signal: sceneContext(this.chipContext).signal,
+    });
   }
 
   // A hidden tab draws no frames, so no effect would ever end: the story is
@@ -85,13 +84,19 @@ export class FxQueue extends booyah.Queue {
     this.serial += 1;
     const batch: Batch = { serial: this.serial, skip: { value: false } };
     this.current = batch;
+    const { signal, audio } = sceneContext(this.chipContext);
     const watchdog = setTimeout(() => {
+      if (signal.aborted) return;
       if (batch.serial !== this.serial || !gameStore.getState().pendingAnimation) return;
       this.skip();
     }, WATCHDOG_MS);
 
     if (reducedMotion) {
       reveal.showAll(payload.state);
+      // Nothing moves, but a sound is not a motion: it plays at once.
+      for (const step of planBatch(payload.events, payload.state, reveal.snapshot(), translate)) {
+        if (step.kind === "sfx") audio.play(step.id);
+      }
       this.add(new Beat(1, batch.skip));
     } else {
       // A review's hold is for its dialog, which only a played run opens.

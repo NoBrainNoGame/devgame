@@ -3,6 +3,7 @@
 import { useStore } from "zustand";
 import { createStore } from "zustand/vanilla";
 
+import type { RenderMode } from "@/game/bridge/sceneGuard";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
 import type { GameEvent, LogLine, NodeId } from "@/game/core/types";
 
@@ -38,6 +39,11 @@ export interface GameStore {
   pendingReview: ReviewEvent | null;
   /** Why the last dispatch was refused, if it was. */
   lastError: string | null;
+  /**
+   * What draws the graph: WebGL, Pixi's Canvas2D once WebGL has failed too
+   * often, or nothing at all (`sceneGuard.ts`).
+   */
+  renderMode: RenderMode;
 }
 
 export const INITIAL_STORE: GameStore = {
@@ -52,6 +58,7 @@ export const INITIAL_STORE: GameStore = {
   lastEvents: [],
   pendingReview: null,
   lastError: null,
+  renderMode: "webgl",
 };
 
 export const gameStore = createStore<GameStore>()(() => ({ ...INITIAL_STORE }));
