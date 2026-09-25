@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, GitBranchPlus } from "lucide-react";
+import { Building2, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AnimatedCounter } from "@/components/hud/AnimatedCounter";
@@ -27,11 +27,14 @@ import { cn } from "@/lib/utils";
 export function ResourceBar({
   snapshot,
   onOpenCompany,
-  onOpenTree,
+  onOpenUpgrades,
+  upgradesNews,
 }: {
   snapshot: RunSnapshot;
   onOpenCompany: () => void;
-  onOpenTree: () => void;
+  onOpenUpgrades: () => void;
+  /** Something on offer in the upgrades dialog the player has not seen yet. */
+  upgradesNews: boolean;
 }) {
   const t = useTranslations("hud");
   const game = useTranslations("game");
@@ -60,7 +63,7 @@ export function ResourceBar({
 
   return (
     <div className="grid grid-cols-1 items-center gap-4 border-line border-b bg-panel/60 px-4 py-2 text-sm sm:grid-cols-[1fr_auto_1fr]">
-      {/* Left: the sprint clock. Centre: the three gauges. Right: money and the tree. */}
+      {/* Left: the sprint clock. Centre: the three gauges. Right: the company and the upgrades. */}
       <div className="flex justify-start">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -224,17 +227,24 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <Button
               size="sm"
-              variant={snapshot.actions.some((a) => a.type === "tree") ? "default" : "outline"}
-              className="shrink-0"
-              onClick={onOpenTree}
+              variant="outline"
+              className={cn("shrink-0", upgradesNews && "upgrades-ready")}
+              onClick={onOpenUpgrades}
             >
-              <AnimatedCounter gauge="skills" value={shown.skills}>
-                <GitBranchPlus className="size-4" />
-                {t("treePoints", { count: shown.skills })}
+              <Sparkles className="size-4" />
+              {t("upgrades")}
+              <AnimatedCounter
+                gauge="skills"
+                value={shown.skills}
+                className="text-muted-foreground text-xs tabular-nums"
+              >
+                {t("skillsShort", { count: shown.skills })}
               </AnimatedCounter>
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{t("treeHint")}</TooltipContent>
+          <TooltipContent>
+            {upgradesNews ? t("upgradesReadyHint") : t("upgradesButtonHint")}
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

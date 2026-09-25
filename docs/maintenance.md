@@ -79,11 +79,14 @@ rates: rewrite a card nobody takes.
 3. `perLevel` is one level; levels sum, so booleans cannot level (`review_bot`:
    `freeReviewEvery: 1` per level, made a cadence by `freeReviewCadence()`,
    `rules/modifiers.ts`).
-4. `requires`: **same branch** (the connector is drawn under the parent), no
-   cycle (tested). `canPlaceTree` (`rules/tree.ts`) hides locked nodes; the
-   preview names what is missing.
-5. New branch: `game.branches.<id>.name`; `SkillTreeDialog.tsx` maps
-   `TREE_BRANCHES` to columns in an `lg:grid-cols-4` grid: widen it.
+4. `requires`: **same branch** (the connector is drawn inside the branch's
+   panel), no cycle (tested). `canPlaceTree` (`rules/tree.ts`) hides locked
+   nodes; the preview names what is missing.
+5. Drawing (`components/hud/`): a cell in `TREE_LAYOUT` (`treeLayout.ts`,
+   three columns, under its requirements, no connector through another node —
+   `tests/tree-layout.test.ts`) and an icon in `ICONS` (`SkillTree.tsx`);
+   both are typed by `TreeNodeId`, so a missing one does not compile. New
+   branch: `game.branches.<id>.name` and a colour in `ACCENTS`.
 6. No action wiring: `getAvailableActions`, `gatherEffects` iterate `TREE_IDS`;
    `PlayerActionSchema` uses `z.enum(TREE_IDS)`.
 7. No randomness: appended **last**, old logs replay unchanged (fingerprint and
@@ -108,8 +111,9 @@ Check: +actions +rules.
 3. Readers: `rules/economy.ts` (`infraCapacity`, `infraCapacityPct`,
    `mrrBonusPct`), `rules/team.ts` (`teamSeats`, `devSpeedBonus`,
    `devCapacityBonus`, `hiringDiscountPct`), HUD (`autopilot` level).
-4. No wiring: `CompanyDialog.tsx` lists `upgradesIn(category)` plus a greyed
-   next-tier rung (`org`: Sites, Team tab); `getAvailableActions` offers `buy`
+4. No wiring: `Shop.tsx` lists `upgradesIn(category)` plus a greyed next-tier
+   rung, in the upgrades dialog (`org`: Sites, in the company dialog's Team
+   tab, and never lights the upgrades button); `getAvailableActions` offers `buy`
    as tier and money allow; `buyUpgrade` (`rules/shop.ts`) refreshes effects
    and energy ceiling and hires a site's team via `addDev`. No randomness.
 

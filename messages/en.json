@@ -77,7 +77,6 @@
     "start": "Start",
     "resume": "Resume",
     "abandon": "Abandon",
-    "runInProgress": "A run is already in progress.",
     "loading": "Loading the run…",
     "signInToSubmit": "Sign in",
     "signInToSubmitHint": "Sign in to send this score to the leaderboard.",
@@ -131,7 +130,13 @@
     },
     "yourName": "Nickname",
     "yourNamePlaceholder": "John Doe",
-    "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. You can leave or reload the page at any time; your progress is saved automatically."
+    "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. You can leave or reload the page at any time; your progress is saved automatically.",
+    "resumeTitle": "Run in progress",
+    "resumeStarted": "started {date}",
+    "resumeActions": "{count, plural, one {# action} other {# actions}}",
+    "confirmNewTitle": "Are you sure?",
+    "confirmNewBody": "A run is in progress. Starting a new one abandons it: it cannot be resumed afterwards.",
+    "confirmNewAction": "Abandon and start"
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -152,8 +157,6 @@
     "review": "Review",
     "reviewHint": "Reads back AI commits and repays debt.",
     "tree": "Skills",
-    "treeTitle": "Skill tree",
-    "treeHint": "Placing a point costs no turn, only points.",
     "treePoints": "{count, plural, one {# skill point} other {# skill points}}",
     "treeLevel": "Level {level} / {max}",
     "logTitle": "Log",
@@ -261,7 +264,7 @@
     "rest": "Take a breath",
     "restHint": "A turn without code: energy comes back, minus one per extra open ticket.",
     "company": "Company",
-    "companyHint": "Finances, shop and team. Next payday in {count, plural, one {# turn} other {# turns}}.",
+    "companyHint": "Finances, market and team. Next payday in {count, plural, one {# turn} other {# turns}}.",
     "money": "{money}",
     "monthShort": "month",
     "mrr": "{money} revenue per month",
@@ -282,7 +285,6 @@
     "capacityHint": "Every shipped feature brings its users onto the servers. Past the capacity the excess earns nothing and production loses patience every month, all the more as the overrun is wide.",
     "saturated": "Servers saturated: the excess earns nothing and production loses patience at every payday.",
     "moneyEarned": "{money} collected so far",
-    "buyPoint": "Skill point",
     "buyPointHint": "A point to place in the tree, right now. Each one makes the next dearer.",
     "buyFor": "{money}",
     "category": {
@@ -368,7 +370,7 @@
       "hire": "hire",
       "point": "buy a skill point"
     },
-    "financeChart": "Cash and revenue, log scale",
+    "financeChart": "Cash and revenue on a log scale, market share on the right",
     "financeEmpty": "The chart draws itself at the first payday.",
     "chartMoney": "cash",
     "chartMrr": "monthly revenue",
@@ -478,7 +480,19 @@
     "reviewHealth": "Code health: {health} (floor {floor})",
     "chipHealth": "{delta} health",
     "chipPoints": "+{points} pts",
-    "conflictAiCost": " — −{delta} health"
+    "conflictAiCost": " — −{delta} health",
+    "chartShare": "market share",
+    "buyPointFor": "Buy a point · {money}",
+    "upgrades": "Upgrades",
+    "upgradesTitle": "Upgrades",
+    "upgradesHint": "Nothing here costs a turn.",
+    "skillsShort": "{count, plural, one {# pt} other {# pts}}",
+    "upgradesButtonHint": "The shop and the skill tree.",
+    "upgradesReadyHint": "Something new: a point to place or an upgrade you can afford.",
+    "treeSpent": "{count, plural, one {# point spent} other {# points spent}}",
+    "treeLinkLevel": "lvl {level}",
+    "treePick": "Pick a skill in the tree to see what it does and place a point in it.",
+    "treeNeeds": "Requires: {nodes}"
   },
   "leaderboard": {
     "title": "Leaderboard",

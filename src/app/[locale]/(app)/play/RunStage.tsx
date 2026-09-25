@@ -26,11 +26,12 @@ import { ReducedMotionProvider } from "@/components/hud/motion";
 import type { OnAct } from "@/components/hud/origin";
 import { ResourceBar } from "@/components/hud/ResourceBar";
 import { ReviewDialog } from "@/components/hud/ReviewDialog";
-import { SkillTreeDialog } from "@/components/hud/SkillTreeDialog";
 import { SupervisorLine } from "@/components/hud/SupervisorLine";
 import { TicketBar } from "@/components/hud/TicketBar";
+import { UpgradesDialog } from "@/components/hud/UpgradesDialog";
 import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
+import { useUpgradesNews } from "@/components/hud/useUpgradesNews";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
 import { useGameStore } from "@/game";
@@ -105,14 +106,15 @@ export function RunStage({
   const busy = useGameStore((state) => state.pendingAnimation);
   const [boardOpen, setBoardOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
-  const [treeOpen, setTreeOpen] = useState(false);
+  const [upgradesOpen, setUpgradesOpen] = useState(false);
   // Once on, the idle clock stops for nothing the player opens: a dialog
   // left open is not a decision, and the switch is the way to stop it. It
   // only waits for the review's verdict to be read, as it waits for an
   // animation to end.
   const readingReview = useIdleStore((state) => state.readingReview);
-  const openShop = useCallback(() => setCompanyOpen(true), []);
+  const openShop = useCallback(() => setUpgradesOpen(true), []);
   useGameAlerts(openShop);
+  const upgradesNews = useUpgradesNews(snapshot, upgradesOpen);
   useAusterity();
 
   return (
@@ -124,7 +126,8 @@ export function RunStage({
           <ResourceBar
             snapshot={snapshot}
             onOpenCompany={() => setCompanyOpen(true)}
-            onOpenTree={() => setTreeOpen(true)}
+            onOpenUpgrades={() => setUpgradesOpen(true)}
+            upgradesNews={upgradesNews}
           />
         )}
         {snapshot === null ? null : (
@@ -202,9 +205,9 @@ export function RunStage({
               snapshot={snapshot}
               onAct={onAct}
             />
-            <SkillTreeDialog
-              open={treeOpen}
-              onOpenChange={setTreeOpen}
+            <UpgradesDialog
+              open={upgradesOpen}
+              onOpenChange={setUpgradesOpen}
               snapshot={snapshot}
               onAct={onAct}
             />

@@ -77,7 +77,6 @@
     "start": "Commencer",
     "resume": "Reprendre",
     "abandon": "Abandonner",
-    "runInProgress": "Une run est déjà en cours.",
     "loading": "Chargement de la partie…",
     "signInToSubmit": "Se connecter",
     "signInToSubmitHint": "Connectez-vous pour envoyer ce score au classement.",
@@ -131,7 +130,13 @@
     },
     "yourName": "Pseudo",
     "yourNamePlaceholder": "John Doe",
-    "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Vous pouvez quitter ou recharger la page à tout moment, la sauvegarde est automatique."
+    "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Vous pouvez quitter ou recharger la page à tout moment, la sauvegarde est automatique.",
+    "resumeTitle": "Run en cours",
+    "resumeStarted": "commencée le {date}",
+    "resumeActions": "{count, plural, one {# action} other {# actions}}",
+    "confirmNewTitle": "Vous êtes sûr ?",
+    "confirmNewBody": "Une run est en cours. En commencer une nouvelle l'abandonne : elle ne pourra plus être reprise.",
+    "confirmNewAction": "Abandonner et commencer"
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -152,8 +157,6 @@
     "review": "Review",
     "reviewHint": "Relit les commits IA et rembourse de la dette.",
     "tree": "Compétences",
-    "treeTitle": "Arbre de compétences",
-    "treeHint": "Placer un point ne coûte pas de tour, seulement des points.",
     "treePoints": "{count, plural, one {# point de compétence} other {# points de compétence}}",
     "treeLevel": "Niveau {level} / {max}",
     "logTitle": "Journal",
@@ -261,7 +264,7 @@
     "rest": "Souffler",
     "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus.",
     "company": "Entreprise",
-    "companyHint": "Finances, boutique et équipe. Prochaine paie dans {count, plural, one {# tour} other {# tours}}.",
+    "companyHint": "Finances, marché et équipe. Prochaine paie dans {count, plural, one {# tour} other {# tours}}.",
     "money": "{money}",
     "monthShort": "mois",
     "mrr": "{money} de revenus par mois",
@@ -282,7 +285,6 @@
     "capacityHint": "Chaque feature livrée amène ses utilisateurs sur les serveurs. Au-delà de la capacité, le surplus ne rapporte rien et la prod perd patience chaque mois, d'autant plus que le dépassement est large.",
     "saturated": "Serveurs saturés : le surplus ne rapporte rien et la prod perd patience à chaque paie.",
     "moneyEarned": "{money} encaissés depuis le début",
-    "buyPoint": "Point de compétence",
     "buyPointHint": "Un point à placer dans l'arbre, tout de suite. Chaque achat renchérit le suivant.",
     "buyFor": "{money}",
     "category": {
@@ -368,7 +370,7 @@
       "hire": "embaucher",
       "point": "acheter un point de compétence"
     },
-    "financeChart": "Trésorerie et revenus, en échelle log",
+    "financeChart": "Trésorerie et revenus en échelle log, part de marché à droite",
     "financeEmpty": "Le graphique se dessine à la première paie.",
     "chartMoney": "trésorerie",
     "chartMrr": "revenus mensuels",
@@ -478,7 +480,19 @@
     "reviewHealth": "Santé du code : {health} (plancher {floor})",
     "chipHealth": "{delta} santé",
     "chipPoints": "+{points} pts",
-    "conflictAiCost": " — −{delta} santé"
+    "conflictAiCost": " — −{delta} santé",
+    "chartShare": "part de marché",
+    "buyPointFor": "Acheter un point · {money}",
+    "upgrades": "Améliorations",
+    "upgradesTitle": "Améliorations",
+    "upgradesHint": "Rien ici ne coûte de tour.",
+    "skillsShort": "{count, plural, one {# pt} other {# pts}}",
+    "upgradesButtonHint": "La boutique et l'arbre de compétences.",
+    "upgradesReadyHint": "Du nouveau : un point à placer ou une amélioration à votre portée.",
+    "treeSpent": "{count, plural, one {# point placé} other {# points placés}}",
+    "treeLinkLevel": "niv. {level}",
+    "treePick": "Choisissez une compétence dans l'arbre pour voir ce qu'elle fait et y placer un point.",
+    "treeNeeds": "Requiert : {nodes}"
   },
   "leaderboard": {
     "title": "Classement",

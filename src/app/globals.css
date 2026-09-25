@@ -951,6 +951,224 @@ h3,
 }
 
 /*
+  The upgrades button, while its dialog holds something to take: a slow
+  breathing glow in the colour of what is healthy. Reduced motion keeps it
+  lit, still.
+*/
+.upgrades-ready {
+  border-color: var(--color-branch-main);
+  color: var(--color-branch-main);
+  animation: upgrades-ready 1.8s ease-in-out infinite;
+}
+@keyframes upgrades-ready {
+  0%,
+  100% {
+    box-shadow: 0 0 4px color-mix(in oklab, var(--color-branch-main) 30%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 14px 2px color-mix(in oklab, var(--color-branch-main) 60%, transparent),
+      inset 0 0 8px color-mix(in oklab, var(--color-branch-main) 25%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .upgrades-ready {
+    animation: none;
+    box-shadow: 0 0 10px color-mix(in oklab, var(--color-branch-main) 45%, transparent);
+  }
+}
+
+/*
+  The skill tree, after the talent trees of the genre. A branch is a panel
+  in its own colour (`--tree-accent`); a skill is a cut-corner tile, grey
+  until a point goes in, lit in the branch's colour once placed, solid when
+  maxed, breathing when a point can go there now, dimmed and locked while a
+  requirement is missing. A requirement is a line, dashed until met.
+*/
+.tree-branch {
+  border: 1px solid color-mix(in oklab, var(--tree-accent) 30%, var(--color-line));
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--tree-accent) 8%, var(--color-panel)),
+      var(--color-panel) 40%
+    );
+}
+.tree-branch-header {
+  color: var(--tree-accent);
+  border-bottom: 1px solid color-mix(in oklab, var(--tree-accent) 30%, transparent);
+}
+.tree-card {
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  box-shadow: 0 -12px 24px -12px color-mix(in oklab, var(--color-bg) 90%, transparent);
+}
+.tree-card .tree-node {
+  animation: none;
+}
+.tree-node {
+  --tree-cut: 9px;
+  --tree-clip: polygon(
+    var(--tree-cut) 0,
+    100% 0,
+    100% calc(100% - var(--tree-cut)),
+    calc(100% - var(--tree-cut)) 100%,
+    0 100%,
+    0 var(--tree-cut)
+  );
+  position: relative;
+  display: block;
+  width: 3.25rem;
+  height: 3.25rem;
+  flex-shrink: 0;
+  cursor: pointer;
+  outline-offset: 4px;
+  transition: filter 150ms ease-out;
+}
+.tree-node-frame,
+.tree-node-face {
+  position: absolute;
+  clip-path: var(--tree-clip);
+  transition:
+    background 150ms ease-out,
+    color 150ms ease-out;
+}
+.tree-node-frame {
+  inset: 0;
+  background: var(--color-line);
+}
+.tree-node-face {
+  inset: 2px;
+  display: grid;
+  place-items: center;
+  background: var(--color-panel);
+  color: var(--color-muted-foreground);
+}
+.tree-node:hover .tree-node-frame {
+  background: color-mix(in oklab, var(--tree-accent) 60%, var(--color-line));
+}
+.tree-node[data-state="ready"] .tree-node-frame {
+  background: var(--tree-accent);
+}
+.tree-node[data-state="ready"] .tree-node-face {
+  color: var(--color-foreground);
+}
+.tree-node[data-state="ready"] {
+  animation: tree-node-ready 1.6s ease-in-out infinite;
+}
+.tree-node[data-placed] .tree-node-frame {
+  background: var(--tree-accent);
+}
+.tree-node[data-placed] .tree-node-face {
+  background: color-mix(in oklab, var(--tree-accent) 16%, var(--color-panel));
+  color: var(--tree-accent);
+}
+.tree-node[data-state="maxed"] .tree-node-frame {
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--tree-accent) 55%, white),
+    var(--tree-accent) 55%
+  );
+}
+.tree-node[data-state="maxed"] .tree-node-face {
+  background: color-mix(in oklab, var(--tree-accent) 30%, var(--color-panel));
+}
+.tree-node[data-state="locked"] {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.tree-node[aria-pressed="true"] .tree-node-frame {
+  background: var(--color-foreground);
+}
+.tree-node[aria-pressed="true"] {
+  filter: drop-shadow(0 0 7px color-mix(in oklab, var(--color-foreground) 45%, transparent));
+}
+@keyframes tree-node-ready {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px color-mix(in oklab, var(--tree-accent) 40%, transparent));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px color-mix(in oklab, var(--tree-accent) 90%, transparent));
+  }
+}
+.tree-node-rank {
+  position: absolute;
+  right: -0.55rem;
+  bottom: -0.45rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 0 0.25rem;
+  font-size: 0.65rem;
+  line-height: 1.1rem;
+  color: var(--color-muted-foreground);
+}
+.tree-node[data-placed] .tree-node-rank {
+  border-color: var(--tree-accent);
+  color: var(--tree-accent);
+}
+.tree-node[data-state="maxed"] .tree-node-rank {
+  border-color: transparent;
+  background: var(--tree-accent);
+  color: var(--color-panel);
+}
+.tree-node-lock {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.35rem;
+  width: 0.9rem;
+  height: 0.9rem;
+  color: var(--color-muted-foreground);
+}
+/* On the panel's own colour: a connector running down behind it is hidden, not crossed. */
+.tree-node-name {
+  margin-top: 0.55rem;
+  max-width: 100%;
+  padding: 0 0.25rem;
+  background: var(--color-panel);
+  text-align: center;
+  font-size: 0.7rem;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tree-link {
+  fill: none;
+  stroke: var(--color-line);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.tree-link[data-met] {
+  stroke: var(--tree-accent);
+  stroke-dasharray: none;
+}
+.tree-link-level {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 0 0.3rem;
+  font-size: 0.6rem;
+  line-height: 1rem;
+  color: var(--color-muted-foreground);
+  white-space: nowrap;
+}
+.tree-link-level[data-met] {
+  border-color: var(--tree-accent);
+  color: var(--tree-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .tree-node[data-state="ready"] {
+    animation: none;
+    filter: drop-shadow(0 0 6px color-mix(in oklab, var(--tree-accent) 70%, transparent));
+  }
+}
+
+/*
   The HUD's effects. A gauge that drops flashes red and the piece it loses
   blinks white as it shrinks away; a figure that drops flashes red, one that
   rises glows. Balls and bits fly on a fixed layer under the dialogs; bits

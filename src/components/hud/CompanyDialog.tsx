@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
+import { Ladder } from "@/components/hud/Shop";
 import { ticketName } from "@/components/hud/ticketName";
 import { useGameText, useMoney } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
@@ -27,28 +28,19 @@ import {
   type AcquisitionId,
   DEV_RANK,
   DEV_RANKS,
-  discounted,
-  UPGRADE_CATEGORIES,
-  UPGRADES,
-  type UpgradeCategory,
-  type UpgradeId,
-  upgradeCost,
-  upgradesIn,
 } from "@/game/content";
 import { cn } from "@/lib/utils";
 
 /**
- * The company: what it earns, what it can buy, who works there.
+ * The company: what it earns, where it stands, who works there.
  *
  * Three tabs. Finances is the payday read out in advance — revenue, what the
  * servers can carry, what the subscriptions and the team cost — so the number
- * at the end of the month is never a surprise. The shop and the team are the
- * two things that number buys. Everything here is free in time, so the
- * dialog stays open across purchases.
- *
- * The shop is a ladder: each category shows what the run's tier has unlocked,
- * then one greyed rung for the tier after, and nothing beyond. A run learns
- * there is a Death Star by earning the Dyson swarm.
+ * at the end of the month is never a surprise. The market is the share and
+ * the competitors; the team is who to hire and who is there. The shop lives
+ * with the skill tree (`UpgradesDialog`): this dialog is where the run is
+ * read, that one where it is built. Everything here is free in time, so the
+ * dialog stays open across hires.
  */
 export function CompanyDialog({
   open,
@@ -86,7 +78,6 @@ export function CompanyDialog({
         <Tabs defaultValue="finances">
           <TabsList variant="line">
             <TabsTrigger value="finances">{t("finances")}</TabsTrigger>
-            <TabsTrigger value="shop">{t("shop")}</TabsTrigger>
             <TabsTrigger value="market">
               {t("market")}
               <span className="ml-1 tabular-nums text-muted-foreground">
@@ -108,14 +99,6 @@ export function CompanyDialog({
           </TabsContent>
           <TabsContent value="market" className="pt-3">
             <Market snapshot={snapshot} />
-          </TabsContent>
-          <TabsContent value="shop" className="pt-3">
-            {snapshot.boosts.shopDiscountPct > 0 ? (
-              <Badge className="mb-3">
-                {t("shopDiscount", { pct: snapshot.boosts.shopDiscountPct })}
-              </Badge>
-            ) : null}
-            <Shop snapshot={snapshot} onAct={onAct} />
           </TabsContent>
           <TabsContent value="team" className="pt-3">
             {snapshot.boosts.freeHire ? <Badge className="mb-3">{t("freeHire")}</Badge> : null}
@@ -324,161 +307,6 @@ function Line({ label, value, tone }: { label: string; value: number; tone?: str
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={cn("tabular-nums", tone)}>{money(value, { signed: true })}</dd>
     </div>
-  );
-}
-
-function Shop({
-  snapshot,
-  onAct,
-}: {
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
-  const t = useTranslations("hud");
-  const money = useMoney();
-  const point: PlayerAction = { type: "buy_point" };
-  const pointOffered = snapshot.actions.some((a) => a.type === "buy_point");
-
-  return (
-    <div className="space-y-4">
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-panel/60 p-3 text-sm">
-        <div>
-          <p className="font-medium">{t("buyPoint")}</p>
-          <p className="text-muted-foreground text-xs">{t("buyPointHint")}</p>
-        </div>
-        <Button
-          size="sm"
-          variant={pointOffered ? "default" : "outline"}
-          disabled={!pointOffered}
-          onClick={() => onAct(point)}
-        >
-          {t("buyFor", { money: money(snapshot.economy.skillPointPrice) })}
-        </Button>
-      </section>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        {UPGRADE_CATEGORIES.filter((category) => category !== "org").map((category) => (
-          <section key={category} className="min-w-0 space-y-2">
-            <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
-              {t(`category.${category}`)}
-            </h3>
-            <div className="space-y-2">
-              <Ladder category={category} snapshot={snapshot} onAct={onAct} />
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * One category's rungs: everything unlocked, then the first rung of the next
- * tier greyed as a promise, and the rest kept out of sight.
- */
-function Ladder({
-  category,
-  snapshot,
-  onAct,
-}: {
-  category: UpgradeCategory;
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
-  const tier = snapshot.economy.tier;
-  const shown = upgradesIn(category).filter((id) => UPGRADES[id].tier <= tier + 1);
-  return (
-    <div className="contents">
-      {shown.map((id) => (
-        <UpgradeCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
-      ))}
-    </div>
-  );
-}
-
-function UpgradeCard({
-  id,
-  snapshot,
-  onAct,
-}: {
-  id: UpgradeId;
-  snapshot: RunSnapshot;
-  onAct: (action: PlayerAction) => void;
-}) {
-  const t = useTranslations("hud");
-  const money = useMoney();
-  const game = useTranslations("game");
-  const render = useGameText();
-
-  const def = UPGRADES[id];
-  const level = snapshot.upgrades[id] ?? 0;
-  const listed = upgradeCost(id, level);
-  const cost =
-    listed === undefined ? undefined : discounted(listed, snapshot.boosts.shopDiscountPct);
-  const maxed = cost === undefined;
-  const locked = def.tier > snapshot.economy.tier;
-  const action: PlayerAction = { type: "buy", id };
-  const offered = snapshot.actions.some((a) => a.type === "buy" && a.id === id);
-  const preview = snapshot.previews[actionKey(action)];
-
-  return (
-    <article
-      className={cn(
-        "space-y-1.5 rounded-md border border-line bg-panel/60 p-3 text-sm",
-        maxed && "border-branch-main/60",
-        locked && "opacity-60",
-      )}
-    >
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="truncate font-medium">{game(`upgrades.${id}.name` as never)}</span>
-        {locked ? (
-          <span className="shrink-0 text-muted-foreground text-xs">
-            {t("nextTier", { tier: def.tier })}
-          </span>
-        ) : def.maxLevel === undefined ? (
-          level > 0 ? (
-            <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-              {t("levelOf", { level })}
-            </span>
-          ) : null
-        ) : def.maxLevel > 1 ? (
-          <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
-            {level}/{def.maxLevel}
-          </span>
-        ) : null}
-      </div>
-      <p className="text-muted-foreground text-xs leading-relaxed">
-        {game(`upgrades.${id}.desc` as never)}
-      </p>
-      {def.upkeep > 0 ? (
-        <p className="text-muted-foreground text-xs">
-          {t("upkeepPerLevel", { money: money(def.upkeep) })}
-          {level > 0 ? ` · ${t("upkeepNow", { money: money(def.upkeep * level) })}` : ""}
-        </p>
-      ) : null}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="block">
-            <Button
-              size="sm"
-              variant={offered ? "default" : "outline"}
-              className="w-full"
-              disabled={!offered}
-              onClick={() => onAct(action)}
-            >
-              {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost) })}
-            </Button>
-          </span>
-        </TooltipTrigger>
-        {preview?.notes.length ? (
-          <TooltipContent side="bottom">
-            {preview.notes.map((note) => (
-              <p key={note.key}>{render(note)}</p>
-            ))}
-          </TooltipContent>
-        ) : null}
-      </Tooltip>
-    </article>
   );
 }
 

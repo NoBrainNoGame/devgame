@@ -5,24 +5,40 @@ import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { accountSkillPoints, type MetaProgressDto, type RunMode } from "@/game";
+import { accountSkillPoints, type MetaProgressDto, type RunMode, type RunSaveDto } from "@/game";
 import { PROFILE_IDS, PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
+
+import { ResumePanel } from "./ResumePanel";
 
 /**
  * Choosing what kind of developer to be, and whether to play today's shared map.
  *
  * Locked starters are shown rather than hidden: the cost is the goal, and a
  * player who cannot see what banking commits buys has no reason to bank them.
+ *
+ * A run left in progress takes the first place, drawn as it stands, and
+ * starting another over it asks first: the new run replaces the save, and
+ * the old one cannot be resumed after.
  */
 export interface RunSetupProps {
   meta: MetaProgressDto;
   dailyAvailable: boolean;
-  resumable: boolean;
+  /** The run left in progress, if any. */
+  resumable: RunSaveDto | null;
   /** Signed in, the account's name is the player's: nothing to ask. */
   signedIn: boolean;
+  /** What the saved run's `HEAD` is called. */
+  playerName: string;
   onStart: (choice: {
     profileId: MetaProgressDto["unlockedProfiles"][number];
     mode: RunMode;
@@ -40,6 +56,7 @@ export function RunSetup({
   dailyAvailable,
   resumable,
   signedIn,
+  playerName: headName,
   onStart,
   onResume,
 }: RunSetupProps) {
@@ -52,28 +69,23 @@ export function RunSetup({
   );
   const [mode, setMode] = useState<RunMode>("classic");
   const [playerName, setPlayerName] = useState(meta.settings.playerName);
+  const [confirming, setConfirming] = useState(false);
   const start = (): void =>
     onStart({ profileId, mode, playerName: playerName.trim().slice(0, NAME_MAX) });
+  // A run in progress is one click from gone: the new one takes its save.
+  const requestStart = (): void => {
+    if (resumable === null) start();
+    else setConfirming(true);
+  };
 
-  return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
+  const form = (
+    <div className="min-w-0">
       <h1 className="mb-1 font-medium text-xl">{t("title")}</h1>
       <p className="mb-8 text-muted-foreground text-sm">
         {common("commits")} {meta.commitsBank}
         {" · "}
         {t("startingPoints", { count: accountSkillPoints(meta.level) })}
       </p>
-
-      {resumable ? (
-        <Card className="mb-8 border-branch-feature/40">
-          <CardHeader>
-            <CardTitle className="text-base">{t("runInProgress")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={onResume}>{t("resume")}</Button>
-          </CardContent>
-        </Card>
-      ) : null}
 
       <section className="mb-8">
         <h2 className="mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wider">
@@ -149,15 +161,52 @@ export function RunSetup({
             onChange={(event) => setPlayerName(event.target.value)}
             // Typing a name and pressing Enter is the whole ceremony.
             onKeyDown={(event) => {
-              if (event.key === "Enter") start();
+              if (event.key === "Enter") requestStart();
             }}
           />
         </section>
       )}
 
-      <Button size="lg" onClick={start}>
+      <Button size="lg" variant={resumable === null ? "default" : "outline"} onClick={requestStart}>
         {t("start")}
       </Button>
+    </div>
+  );
+
+  return (
+    // The run's area never scrolls; this screen may, inside it, on a short window.
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      {resumable === null ? (
+        <div className="mx-auto w-full max-w-3xl px-4 py-10">{form}</div>
+      ) : (
+        <div className="mx-auto grid w-full max-w-[96rem] gap-8 px-4 py-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <ResumePanel save={resumable} meta={meta} playerName={headName} onResume={onResume} />
+          {form}
+        </div>
+      )}
+
+      <Dialog open={confirming} onOpenChange={setConfirming}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("confirmNewTitle")}</DialogTitle>
+            <DialogDescription>{t("confirmNewBody")}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(false)}>
+              {common("cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirming(false);
+                start();
+              }}
+            >
+              {t("confirmNewAction")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

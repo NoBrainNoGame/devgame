@@ -312,8 +312,9 @@ export function PlayClient(props: PlayClientProps) {
       <RunSetup
         meta={meta}
         dailyAvailable={props.dailySeed !== null}
-        resumable={resumable !== null}
+        resumable={resumable}
         signedIn={props.signedIn}
+        playerName={props.userName ?? meta.settings.playerName}
         onStart={start}
         onResume={resume}
       />

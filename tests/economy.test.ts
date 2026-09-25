@@ -107,10 +107,13 @@ describe("the month", () => {
   test("every payday is a month of history, and the history is capped", () => {
     const state = inHand("history");
     state.sprintTurn = monthTurns() - 1;
+    const paidAt = monthlyReport(state, gatherEffects(state)).share;
     const after = applyAction(state, { type: "rest" }).state;
     expect(after.finance.length).toBe(1);
     expect(after.finance[0]?.month).toBe(1);
     expect(after.finance[0]?.money).toBe(after.money);
+    // The share the month was paid at, before the market drifts.
+    expect(after.finance[0]?.share).toBe(paidAt);
 
     const long = structuredClone(after);
     for (let i = 0; i < BALANCE.economy.historyMonths + 5; i += 1) {

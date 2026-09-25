@@ -10,13 +10,19 @@ import type { FinanceMonth } from "@/game";
  * orders of magnitude, and a decade a tier draws as a straight climb rather
  * than a hockey stick with every early month flattened to nothing. Cash is
  * the area, revenue the line, a saturated month a red dot, a tier reached a
- * dashed rule. Inline SVG, no library: a dozen numbers a month is not a
- * charting problem.
+ * dashed rule. The market share has its own linear axis on the right: a
+ * percentage on a log scale would hide the only moves that matter, the small
+ * ones. Inline SVG, no library: a dozen numbers a month is not a charting
+ * problem.
  */
 
 const WIDTH = 640;
 const HEIGHT = 140;
-const PAD = { top: 10, right: 8, bottom: 16, left: 40 };
+const PAD = { top: 10, right: 30, bottom: 16, left: 40 };
+/** The share axis never tops out under this, so a flat 3 % does not fill the chart. */
+const SHARE_AXIS_MIN = 0.1;
+/** What a tier's label needs right of its rule, in chart units. */
+const TIER_LABEL_ROOM = 40;
 
 function log10(value: number): number {
   return Math.log10(Math.max(1, value));
@@ -37,6 +43,13 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
   const x = (index: number): number =>
     PAD.left + (index / Math.max(1, history.length - 1)) * innerWidth;
   const y = (value: number): number => PAD.top + innerHeight - (log10(value) / yTop) * innerHeight;
+  // Rounded up to the next ten percent: the axis reads in round numbers.
+  const shareTop = Math.max(
+    SHARE_AXIS_MIN,
+    Math.ceil(Math.max(...history.map((m) => m.share)) * 10) / 10,
+  );
+  const yShare = (share: number): number =>
+    PAD.top + innerHeight - (Math.min(share, shareTop) / shareTop) * innerHeight;
 
   const first = history[0];
   const last = history[history.length - 1];
@@ -45,6 +58,10 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
   const moneyLine = history.map((m, i) => `${x(i).toFixed(1)},${y(m.money).toFixed(1)}`);
   const area = `M${x(0).toFixed(1)},${(PAD.top + innerHeight).toFixed(1)} L${moneyLine.join(" L")} L${x(history.length - 1).toFixed(1)},${(PAD.top + innerHeight).toFixed(1)} Z`;
   const mrrLine = history.map((m, i) => `${x(i).toFixed(1)},${y(m.mrr).toFixed(1)}`).join(" L");
+  const shareLine = history
+    .map((m, i) => `${x(i).toFixed(1)},${yShare(m.share).toFixed(1)}`)
+    .join(" L");
+  const shareTicks = [0, shareTop / 2, shareTop];
   const decades = Array.from({ length: yTop + 1 }, (_, k) => k);
   const tierRises = history.flatMap((m, i) => {
     const previous = history[i - 1];
@@ -81,6 +98,17 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
             </text>
           </g>
         ))}
+        {shareTicks.map((tick) => (
+          <text
+            key={tick}
+            x={WIDTH - PAD.right + 4}
+            y={yShare(tick) + 3}
+            className="fill-branch-feature"
+            fontSize={8}
+          >
+            {Math.round(tick * 100)}%
+          </text>
+        ))}
         {tierRises.map((rise) => (
           <g key={rise.index}>
             <line
@@ -88,14 +116,16 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
               x2={x(rise.index)}
               y1={PAD.top}
               y2={PAD.top + innerHeight}
-              className="stroke-branch-feature"
+              className="stroke-muted-foreground"
               strokeWidth={0.75}
               strokeDasharray="2 2"
             />
+            {/* Near the right edge the label goes left of its rule, clear of the share axis. */}
             <text
-              x={x(rise.index) + 2}
+              x={x(rise.index) + (x(rise.index) > WIDTH - PAD.right - TIER_LABEL_ROOM ? -2 : 2)}
               y={PAD.top + 8}
-              className="fill-branch-feature"
+              textAnchor={x(rise.index) > WIDTH - PAD.right - TIER_LABEL_ROOM ? "end" : "start"}
+              className="fill-muted-foreground"
               fontSize={8}
             >
               {t("chartTier")} {rise.tier}
@@ -110,6 +140,13 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
           strokeWidth={1.25}
         />
         <path d={`M${mrrLine}`} className="stroke-energy" fill="none" strokeWidth={1} />
+        <path
+          d={`M${shareLine}`}
+          className="stroke-branch-feature"
+          fill="none"
+          strokeWidth={1}
+          strokeDasharray="4 2"
+        />
         {history.map((m, i) =>
           m.outage ? (
             <circle key={m.month} cx={x(i)} cy={y(m.mrr)} r={2} className="fill-branch-hotfix" />
@@ -131,8 +168,9 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
       <figcaption className="flex flex-wrap gap-x-3 text-muted-foreground text-xs">
         <span className="text-branch-main">▬ {t("chartMoney")}</span>
         <span className="text-energy">— {t("chartMrr")}</span>
+        <span className="text-branch-feature">╌ {t("chartShare")}</span>
         <span className="text-branch-hotfix">● {t("chartOutage")}</span>
-        <span className="text-branch-feature">┆ {t("chartTier")}</span>
+        <span>┆ {t("chartTier")}</span>
       </figcaption>
     </figure>
   );

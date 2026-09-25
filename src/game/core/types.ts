@@ -253,6 +253,8 @@ export interface FinanceMonth {
   load: number;
   capacity: number;
   outage: boolean;
+  /** The run's share of the market the month was paid at, 0 to 1. */
+  share: number;
 }
 
 /** What can spend production's patience. The run-over screen names the last one. */

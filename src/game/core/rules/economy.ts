@@ -202,6 +202,7 @@ export function closeMonth(context: RuleContext): void {
     load: report.load,
     capacity: report.capacity,
     outage: report.overPct > 0,
+    share: report.share,
   });
   if (state.finance.length > BALANCE.economy.historyMonths) {
     state.finance.splice(0, state.finance.length - BALANCE.economy.historyMonths);

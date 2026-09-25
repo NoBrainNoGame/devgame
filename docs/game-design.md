@@ -230,7 +230,13 @@ ticket expire et la compétence retourne au pool.
 **Arbre** (`src/game/content/tree.ts`) : toujours accessible, sans tour, en
 points de compétence (un par sprint tenu, un par niveau de compte au-delà du
 premier en début de run, boutique, objectifs, bonus…). Des nœuds en exigent
-d'autres : la forme de la branche est celle de la décision.
+d'autres : la forme de la branche est celle de la décision. Dessiné comme les
+arbres de talents du genre (`hud/SkillTree.tsx`) : un panneau par branche dans
+sa couleur, une tuile-icône par nœud posée sous ce qu'elle exige
+(`hud/treeLayout.ts`), l'exigence en trait, pointillé tant qu'elle n'est pas
+remplie, le rang dans le coin de la tuile. Une tuile pulse quand un point peut y
+aller, grise et cadenassée tant qu'il manque un prérequis ; la choisir ouvre sa
+fiche en bas (effet, prérequis, prix), d'où le point se place.
 
 - **CI/CD** : la CI (tous les jets) ouvre CD, auto-rebase, bot de review.
 - **DevOps** : monitoring, Dependabot, linter automatique, SRE (capacité sans
@@ -312,7 +318,8 @@ le meilleur en utilisateurs par euro. Tout toast reste affiché jusqu'à être
 traité : sa croix, son bouton, ou la fin de sa cause (celui des serveurs se
 ferme quand la capacité suffit de nouveau) ; alertes et erreurs pulsent
 jusque-là. Les Finances le répètent et tracent
-trésorerie et revenus des soixante dernières paies en log, un pointillé par
+trésorerie et revenus des soixante dernières paies en log, la part de marché
+de chaque paie sur son propre axe (linéaire, à droite), un pointillé par
 palier, un point par panne.
 
 **Hack** : carte rouge en tête du panneau si la patience atteint 85 %, si
@@ -410,8 +417,12 @@ mènent au même endroit quelle que soit la réponse : c'est leur propos.
 Modes : Classique (graine aléatoire), Graine du jour (même carte pour tous par
 jour UTC ; graine dérivée et mémorisée côté serveur, classement comparable).
 
-Jouable hors ligne et sans compte (stockage local) ; un compte ajoute sauvegarde
-cloud et classement, en fusionnant la progression locale sans l'écraser.
+Jouable hors ligne et sans compte (stockage local) ; un compte ajoute sauvegarde
+cloud et classement, en fusionnant la progression locale sans l'écraser. Une run
+en cours tient la première place de l'écran de lancement, dessinée telle
+qu'elle est (le graphe rejoué depuis la sauvegarde, sprint, argent, part, jauges)
+avec son bouton Reprendre ; en commencer une autre demande confirmation, car la
+nouvelle remplace la sauvegarde.
 
 **Télémétrie anonyme** (`src/lib/telemetry/`) : la sauvegarde part en fin de
 run, tous les `CHECKPOINT_EVERY_SPRINTS` sprints et à l'abandon, sans rien sur
@@ -466,8 +477,14 @@ du graphe (ceux de l'équipe à droite), dont l'infobulle montre le ticket entie
 un VIP à soi que personne ne travaille clignotant en jaune ; panneau de droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
 projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
-de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle. Infobulles de commit en DOM : next-intl, lecteur d'écran,
-nettes à tout zoom.
+de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.
+L'entreprise se lit dans une modale (Finances, Marché, Équipe) et se renforce
+dans une autre, **Améliorations** : la boutique d'un côté, l'arbre de l'autre,
+l'achat de points avec l'arbre. Son bouton brille quand une offre est apparue
+depuis la dernière ouverture (un point que l'arbre peut prendre, une
+amélioration devenue abordable) : pas tant que quelque chose est abordable,
+un barreau de serveurs l'est presque toujours. Infobulles de commit en DOM :
+next-intl, lecteur d'écran, nettes à tout zoom.
 
 **Le HUD suit le canvas.** Une jauge ne bouge pas quand l'action s'applique
 mais quand le canvas en montre le chiffre (`heldGauges`, `bridge/gaugeCues.ts`) :
