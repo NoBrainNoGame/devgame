@@ -8,8 +8,15 @@ import { freeFeatureSkills, PROFILE_IDS, SKILL_IDS } from "@/game/content";
  * schema on both sides.
  */
 
+/** The levels a new player hears: the music under the effects. */
+export const DEFAULT_VOLUMES = { music: 60, sfx: 80 } as const;
+
 export const SettingsSchema = z.object({
+  /** The master switch: off, nothing plays whatever the levels say. */
   sound: z.boolean().default(true),
+  /** Percent. Defaulted, so a meta saved before the levels existed still parses. */
+  musicVolume: z.number().int().min(0).max(100).default(DEFAULT_VOLUMES.music),
+  sfxVolume: z.number().int().min(0).max(100).default(DEFAULT_VOLUMES.sfx),
   reducedMotion: z.boolean().default(false),
   /** What the run calls you, signed out. Signed in, the account's name wins. */
   playerName: z.string().trim().max(24).default(""),
@@ -49,7 +56,13 @@ export function emptyMeta(now: string): MetaProgressDto {
     ticketsDelivered: 0,
     unlockedProfiles: ["junior"],
     unlockedSkills: freeFeatureSkills(),
-    settings: { sound: true, reducedMotion: false, playerName: "" },
+    settings: {
+      sound: true,
+      musicVolume: DEFAULT_VOLUMES.music,
+      sfxVolume: DEFAULT_VOLUMES.sfx,
+      reducedMotion: false,
+      playerName: "",
+    },
     metaVersion: 0,
     updatedAt: now,
   };

@@ -9,6 +9,7 @@ import { displayTier } from "@/components/hud/displayTier";
 import { useMoney } from "@/components/hud/useGameText";
 import { useShownGauges } from "@/components/hud/useShownGauges";
 import { useTiered } from "@/components/hud/useTiered";
+import { GameSettingsButton } from "@/components/settings/GameSettings";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -246,6 +247,8 @@ export function ResourceBar({
             {upgradesNews ? t("upgradesReadyHint") : t("upgradesButtonHint")}
           </TooltipContent>
         </Tooltip>
+
+        <GameSettingsButton />
       </div>
     </div>
   );

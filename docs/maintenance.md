@@ -288,6 +288,16 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
 
 ### Other rule hooks
 
+- **A setting**: a field of `SettingsSchema` (`dto/meta.ts`) with a
+  `.default()` (old metas and old `Profile.settings` rows parse through it, no
+  migration) and the same value in `emptyMeta`; changed through `useSettings`
+  (`components/settings/`), which dates the change so `mergeMeta` keeps it; a
+  control in `GameSettings.tsx` and `settings.*` messages. A sound setting
+  reaches the engine in `useAudioSettings` only.
+- **The save file** (`dto/saveFile.ts`): it wraps `MetaProgressSchema` and
+  `RunSaveSchema`, so a change to either changes it; a change to the wrapper
+  itself bumps `SAVE_FILE_VERSION` and keeps reading the old one.
+  Check: `tests/save-file.test.ts`.
 - **A HUD gauge the canvas moves**: a `GaugeId` and its cue in `planBatch`
   (`render/storyboard.ts`, `gaugePop`: delta and value in the gauge's own
   terms), its value in `readout`/`holdFor` (`bridge/gauges.ts`), a `data-gauge`

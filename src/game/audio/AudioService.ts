@@ -3,7 +3,7 @@ import type { SfxId } from "@/game/audio/sfx";
 /**
  * What the game asks of a sound engine, and nothing more: play a named
  * effect, set how many ambient layers are on and how tense the drone is,
- * mute. The engine never touches it — the storyboard turns events into
+ * set the music and the effects apart, mute. The engine never touches it — the storyboard turns events into
  * `sfx` steps and a scene chip drives the ambience — so the whole of the
  * audio can be swapped, or absent, without a rule knowing.
  *
@@ -18,7 +18,14 @@ export interface AudioService {
   /** 0 calm to 1 dread: how far the unsettling layer is faded in. */
   setTension(value: number): void;
   setMuted(muted: boolean): void;
+  /** The player's levels, 0 to 1: the ambience is the music, everything `play`s is an effect. */
+  setVolumes(volumes: AudioVolumes): void;
   dispose(): void;
+}
+
+export interface AudioVolumes {
+  music: number;
+  sfx: number;
 }
 
 export class NullAudioService implements AudioService {
@@ -26,6 +33,7 @@ export class NullAudioService implements AudioService {
   setAmbientLayers(): void {}
   setTension(): void {}
   setMuted(): void {}
+  setVolumes(): void {}
   dispose(): void {}
 }
 

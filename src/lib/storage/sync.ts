@@ -8,6 +8,8 @@ import { STORAGE_KEYS } from "@/lib/storage/keys";
 import { readJson, remove, writeJson } from "@/lib/storage/local";
 import type { SyncState } from "@/lib/storage/useMetaStore";
 
+export { pickLongerRun } from "@/lib/storage/runs";
+
 /**
  * Bringing a local save and a cloud save into agreement.
  *
@@ -99,19 +101,6 @@ export function writePendingSubmit(save: RunSaveDto): void {
 
 export function clearPendingSubmit(): void {
   remove(STORAGE_KEYS.pendingSubmit);
-}
-
-/**
- * Which of two unfinished runs to keep: the one with more decisions in it.
- *
- * Comparing timestamps would be the obvious rule and the wrong one — two
- * devices disagree about the time, and the clock says nothing about how much
- * of the run actually happened.
- */
-export function pickLongerRun(a: RunSaveDto | null, b: RunSaveDto | null): RunSaveDto | null {
-  if (a === null) return b;
-  if (b === null) return a;
-  return a.actions.length >= b.actions.length ? a : b;
 }
 
 /** Pushes the run in progress up, quietly. Failure is not worth a toast. */

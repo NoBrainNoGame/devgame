@@ -2068,5 +2068,52 @@
       "rejected": "rejected"
     },
     "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. The graph is drawn without WebGL until the page is reloaded."
+  },
+  "settings": {
+    "open": "Settings",
+    "title": "Settings",
+    "hint": "Everything is saved the moment you change it.",
+    "tabs": {
+      "sound": "Sound",
+      "display": "Display",
+      "save": "Save",
+      "credits": "Credits"
+    },
+    "sound": "Sound",
+    "soundHint": "Off, nothing plays, whatever the levels say.",
+    "music": "Music",
+    "sfx": "Sound effects",
+    "audioSoon": "Music and sound effects are coming soon: your levels will be waiting for them.",
+    "reducedMotion": "Reduced motion",
+    "reducedMotionHint": "No balls, no blinking, no sparks. The graph applies it the next time the run opens.",
+    "export": "Export",
+    "exportHint": "A file with your progress and the run in progress, to keep or to take to another device.",
+    "exportAction": "Download the save",
+    "import": "Import",
+    "importHint": "Loads an exported file. Your progress never goes down: the better of the two is kept.",
+    "importAction": "Choose a file…",
+    "importError": {
+      "too_large": "This file is too large to be a save.",
+      "not_json": "This file cannot be read: it is not an exported save.",
+      "not_a_save": "This file is not a valid Devgame save."
+    },
+    "importSummary": "Save from {date}: level {level}, {commits} banked commits.",
+    "importNoRun": "No run in progress in this file: the one here is kept.",
+    "importRun": "A run in progress, {count, plural, one {# action} other {# actions}} long.",
+    "importMerge": "Progress is merged with the one here, then the page reloads.",
+    "importReplacesRun": "This run will replace the one in progress here, which cannot be resumed afterwards.",
+    "importConfirm": "Import",
+    "importCancel": "Cancel",
+    "credits": {
+      "roles": {
+        "making": "Development, game design, writing and art",
+        "soundtrack": "Music and sound effects",
+        "assistant": "Development assistance",
+        "studio": "Studio"
+      },
+      "upcoming": "coming soon",
+      "builtWith": "Made with {tools}.",
+      "rules": "Rules version: {fingerprint}"
+    }
   }
 }

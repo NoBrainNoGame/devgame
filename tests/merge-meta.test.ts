@@ -103,16 +103,30 @@ describe("mergeMeta", () => {
     const older = meta({
       updatedAt: "2026-09-20T10:00:00.000Z",
       xp: 9999,
-      settings: { sound: true, reducedMotion: false, playerName: "" },
+      settings: {
+        sound: true,
+        musicVolume: 60,
+        sfxVolume: 80,
+        reducedMotion: false,
+        playerName: "",
+      },
     });
     const newer = meta({
       updatedAt: "2026-09-21T10:00:00.000Z",
       xp: 1,
-      settings: { sound: false, reducedMotion: true, playerName: "" },
+      settings: {
+        sound: false,
+        musicVolume: 10,
+        sfxVolume: 35,
+        reducedMotion: true,
+        playerName: "",
+      },
     });
 
     expect(mergeMeta(older, newer).settings).toEqual({
       sound: false,
+      musicVolume: 10,
+      sfxVolume: 35,
       reducedMotion: true,
       playerName: "",
     });

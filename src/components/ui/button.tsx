@@ -15,17 +15,18 @@ const buttonVariants = cva(
       variant: {
         default:
           "text-primary-foreground [--cyber-fill:var(--color-cyber)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_85%,white)]",
-        // A tint rather than a fill on hover: what a button holds may carry
-        // colours of its own — a revenue in green, a share in grey — and a
-        // solid accent behind them would swallow both.
+        // A tint rather than a fill, at rest and on hover: what a button holds
+        // may carry colours of its own — a revenue in green, a share in grey —
+        // and a solid accent behind them would swallow both. At rest the tint
+        // is still there, so a button stands off the near-black page.
         outline:
-          "text-cyber [--cyber-fill:color-mix(in_oklab,var(--color-panel)_55%,transparent)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_16%,var(--color-panel))] hover:[--cyber-stroke:var(--color-foreground)] aria-expanded:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_16%,var(--color-panel))] aria-expanded:[--cyber-stroke:var(--color-foreground)]",
+          "text-cyber [--cyber-fill:color-mix(in_oklab,var(--color-cyber)_9%,var(--color-panel))] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_20%,var(--color-panel))] hover:[--cyber-stroke:var(--color-foreground)] aria-expanded:[--cyber-fill:color-mix(in_oklab,var(--color-cyber)_20%,var(--color-panel))] aria-expanded:[--cyber-stroke:var(--color-foreground)]",
         secondary:
-          "text-foreground [--cyber-stroke:var(--color-line)] [--cyber-fill:var(--color-secondary)] hover:[--cyber-stroke:var(--color-cyber)] aria-expanded:[--cyber-stroke:var(--color-cyber)]",
+          "text-foreground [--cyber-stroke:var(--color-line)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber)_7%,var(--color-secondary))] hover:[--cyber-stroke:var(--color-cyber)] aria-expanded:[--cyber-stroke:var(--color-cyber)]",
         ghost:
           "text-muted-foreground [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:text-foreground hover:[--cyber-fill:var(--color-accent)] aria-expanded:text-foreground aria-expanded:[--cyber-fill:var(--color-accent)]",
         destructive:
-          "text-cyber-hot [--cyber-stroke:var(--color-cyber-hot)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_12%,transparent)] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_28%,var(--color-panel))] focus-visible:[--cyber-stroke:var(--color-cyber-hot)]",
+          "text-cyber-hot [--cyber-stroke:var(--color-cyber-hot)] [--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_14%,var(--color-panel))] hover:[--cyber-fill:color-mix(in_oklab,var(--color-cyber-hot)_28%,var(--color-panel))] focus-visible:[--cyber-stroke:var(--color-cyber-hot)]",
         link: "text-cyber underline-offset-4 [--cyber-stroke:transparent] [--cyber-fill:transparent] hover:underline",
       },
       size: {

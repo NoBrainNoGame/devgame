@@ -424,6 +424,16 @@ sauvegarde (`bridge/rebuild.ts`, comme à la reprise) : le graphique des
 finances, sprint, argent, part, jauges, et son bouton Reprendre ; en commencer
 une autre demande confirmation, car la nouvelle remplace la sauvegarde.
 
+**Réglages** (l'engrenage, en jeu comme à l'écran de lancement ;
+`components/settings/`) : le son, le niveau de la musique et celui des effets
+(gardés pour le jour où des sons existent), le mouvement réduit ; l'export de la
+sauvegarde (progression et run en cours, un fichier JSON) et son import,
+validé par schéma (`dto/saveFile.ts`) : la progression importée passe par
+`mergeMeta` et ne fait donc jamais reculer celle d'ici, une autre run en cours
+la remplace après confirmation, puis la page se recharge ; les crédits. Tout
+s'enregistre au changement, daté pour que la synchronisation garde le plus
+récent.
+
 **Télémétrie anonyme** (`src/lib/telemetry/`) : la sauvegarde part en fin de
 run, tous les `CHECKPOINT_EVERY_SPRINTS` sprints et à l'abandon, sans rien sur
 la personne ; le serveur la rejoue dans `RunSample`.

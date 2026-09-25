@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { GameSettingsButton } from "@/components/settings/GameSettings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +78,10 @@ export function RunSetup({
 
   const form = (
     <div className="min-w-0">
-      <h1 className="mb-1 font-medium text-xl">{t("title")}</h1>
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <h1 className="font-medium text-xl">{t("title")}</h1>
+        <GameSettingsButton />
+      </div>
       <p className="mb-8 text-muted-foreground text-sm">
         {common("commits")} {meta.commitsBank}
         {" · "}

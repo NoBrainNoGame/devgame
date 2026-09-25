@@ -32,6 +32,7 @@ import { UpgradesDialog } from "@/components/hud/UpgradesDialog";
 import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { useUpgradesNews } from "@/components/hud/useUpgradesNews";
+import { useAudioSettings } from "@/components/settings/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
 import { useGameStore } from "@/game";
@@ -116,6 +117,7 @@ export function RunStage({
   useGameAlerts(openShop);
   const upgradesNews = useUpgradesNews(snapshot, upgradesOpen);
   useAusterity();
+  useAudioSettings();
 
   return (
     <ReducedMotionProvider reduced={options.reducedMotion ?? false}>

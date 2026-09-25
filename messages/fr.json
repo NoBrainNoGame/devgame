@@ -2068,5 +2068,52 @@
       "rejected": "rejetée"
     },
     "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Le graphe est dessiné sans WebGL jusqu'au rechargement de la page."
+  },
+  "settings": {
+    "open": "Réglages",
+    "title": "Réglages",
+    "hint": "Tout s'enregistre dès que vous le changez.",
+    "tabs": {
+      "sound": "Son",
+      "display": "Affichage",
+      "save": "Sauvegarde",
+      "credits": "Crédits"
+    },
+    "sound": "Son",
+    "soundHint": "Coupé, rien ne joue, quels que soient les niveaux.",
+    "music": "Musique",
+    "sfx": "Effets sonores",
+    "audioSoon": "La musique et les effets sonores arrivent bientôt : vos niveaux les attendront.",
+    "reducedMotion": "Mouvement réduit",
+    "reducedMotionHint": "Ni boules, ni clignotements, ni étincelles. Le graphe l'applique à la prochaine ouverture de la run.",
+    "export": "Exporter",
+    "exportHint": "Un fichier avec votre progression et la run en cours, à garder ou à emporter sur un autre appareil.",
+    "exportAction": "Télécharger la sauvegarde",
+    "import": "Importer",
+    "importHint": "Reprend un fichier exporté. Votre progression n'est jamais diminuée : on garde le meilleur des deux.",
+    "importAction": "Choisir un fichier…",
+    "importError": {
+      "too_large": "Ce fichier est trop gros pour être une sauvegarde.",
+      "not_json": "Ce fichier n'est pas lisible : ce n'est pas une sauvegarde exportée.",
+      "not_a_save": "Ce fichier n'est pas une sauvegarde Devgame valide."
+    },
+    "importSummary": "Sauvegarde du {date} : niveau {level}, {commits} commits en banque.",
+    "importNoRun": "Pas de run en cours dans ce fichier : celle d'ici est gardée.",
+    "importRun": "Une run en cours de {count, plural, one {# action} other {# actions}}.",
+    "importMerge": "La progression est fusionnée avec celle d'ici, puis la page se recharge.",
+    "importReplacesRun": "Cette run remplacera celle en cours ici, qui ne pourra plus être reprise.",
+    "importConfirm": "Importer",
+    "importCancel": "Annuler",
+    "credits": {
+      "roles": {
+        "making": "Développement, game design, écriture et graphismes",
+        "soundtrack": "Musique et effets sonores",
+        "assistant": "Assistance au développement",
+        "studio": "Studio"
+      },
+      "upcoming": "à venir",
+      "builtWith": "Fait avec {tools}.",
+      "rules": "Version des règles : {fingerprint}"
+    }
   }
 }
