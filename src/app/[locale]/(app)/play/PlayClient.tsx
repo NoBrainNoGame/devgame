@@ -314,7 +314,6 @@ export function PlayClient(props: PlayClientProps) {
         dailyAvailable={props.dailySeed !== null}
         resumable={resumable}
         signedIn={props.signedIn}
-        playerName={props.userName ?? meta.settings.playerName}
         onStart={start}
         onResume={resume}
       />

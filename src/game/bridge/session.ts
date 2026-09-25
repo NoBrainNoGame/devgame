@@ -1,10 +1,11 @@
 import { Emitter } from "@/game/bridge/emitter";
 import { holdFor, readout } from "@/game/bridge/gauges";
+import { rebuildRun } from "@/game/bridge/rebuild";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { isActionAvailable } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { createRun, type ShowcaseOptions } from "@/game/core/run";
+import type { ShowcaseOptions } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
 import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import type { MetaProgressDto } from "@/game/dto/meta";
@@ -76,26 +77,23 @@ export class GameSession extends Emitter {
 
   constructor(private readonly options: SessionOptions) {
     super();
-    this.state = createRun({
-      seed: options.seed,
-      mode: options.mode,
-      profileId: options.profileId,
-      version: SAVE_VERSION,
-      meta: {
-        unlockedSkills: options.meta.unlockedSkills,
-        startingSkillPoints: options.startingSkillPoints ?? accountSkillPoints(options.meta.level),
+    const rebuilt = rebuildRun(
+      {
+        seed: options.seed,
+        mode: options.mode,
+        profileId: options.profileId,
+        version: SAVE_VERSION,
+        meta: {
+          unlockedSkills: options.meta.unlockedSkills,
+          startingSkillPoints:
+            options.startingSkillPoints ?? accountSkillPoints(options.meta.level),
+        },
+        ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
       },
-      ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
-    });
-
-    for (const action of options.resumeActions ?? []) {
-      // A resumed log was legal when it was recorded. If it is not legal now,
-      // the rules changed under it — stop and keep what replayed cleanly rather
-      // than dropping the player into a state that never existed.
-      if (!isActionAvailable(this.state, action)) break;
-      this.state = applyAction(this.state, action).state;
-      this.actionLog.push(action);
-    }
+      options.resumeActions ?? [],
+    );
+    this.state = rebuilt.state;
+    this.actionLog.push(...rebuilt.replayed);
 
     this.publish();
   }

@@ -419,10 +419,10 @@ jour UTC ; graine dérivée et mémorisée côté serveur, classement comparabl
 
 Jouable hors ligne et sans compte (stockage local) ; un compte ajoute sauvegarde
 cloud et classement, en fusionnant la progression locale sans l'écraser. Une run
-en cours tient la première place de l'écran de lancement, dessinée telle
-qu'elle est (le graphe rejoué depuis la sauvegarde, sprint, argent, part, jauges)
-avec son bouton Reprendre ; en commencer une autre demande confirmation, car la
-nouvelle remplace la sauvegarde.
+en cours tient la première place de l'écran de lancement, rejouée depuis la
+sauvegarde (`bridge/rebuild.ts`, comme à la reprise) : le graphique des
+finances, sprint, argent, part, jauges, et son bouton Reprendre ; en commencer
+une autre demande confirmation, car la nouvelle remplace la sauvegarde.
 
 **Télémétrie anonyme** (`src/lib/telemetry/`) : la sauvegarde part en fin de
 run, tous les `CHECKPOINT_EVERY_SPRINTS` sprints et à l'abandon, sans rien sur

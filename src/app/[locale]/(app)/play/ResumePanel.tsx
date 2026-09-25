@@ -1,48 +1,42 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useFormatter, useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
 import { displayTier } from "@/components/hud/displayTier";
+import { FinanceChart } from "@/components/hud/FinanceChart";
 import { useMoney } from "@/components/hud/useGameText";
 import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { MetaProgressDto, RunSaveDto, RunSnapshot } from "@/game";
-import { useGameStore } from "@/game";
+import type { RunSaveDto, RunSnapshot } from "@/game";
 import { HEALTH_MAX, healthOf, healthText, patienceOf } from "@/game/bridge/gauges";
+import { snapshotOfSave } from "@/game/bridge/rebuild";
 
 /**
- * The run left in progress, as it stands: the graph it has drawn so far and
- * the figures a player needs to decide whether to go back to it — where the
- * sprint is, what the company is worth, how close the gauges are to the end.
- * The figures are the engine's: the preview replays the save and publishes
- * it like any run.
+ * The run left in progress, as it stands: its paydays drawn as the finances
+ * tab draws them — cash, revenue, market share — and the figures a player
+ * needs to decide whether to go back to it: where the sprint is, what the
+ * company is worth, how close the gauges are to the end. All of it is the
+ * engine's, from the save replayed here: the save itself holds nothing but
+ * the seed and the actions.
  */
-const RunPreview = dynamic(
-  () => import("@/components/game/RunPreview").then((module) => module.RunPreview),
-  { ssr: false, loading: () => <Skeleton className="size-full rounded-none" /> },
-);
-
-export function ResumePanel({
-  save,
-  meta,
-  playerName,
-  onResume,
-}: {
-  save: RunSaveDto;
-  meta: MetaProgressDto;
-  playerName: string;
-  onResume: () => void;
-}) {
+export function ResumePanel({ save, onResume }: { save: RunSaveDto; onResume: () => void }) {
   const t = useTranslations("play");
+  const hud = useTranslations("hud");
   const game = useTranslations("game");
   const format = useFormatter();
-  const snapshot = useGameStore((state) => state.snapshot);
+  // Replayed after the first paint, not during it: about a fifth of a
+  // millisecond an action, so a tenth of a second for a long run — the rest
+  // of the screen need not wait for it.
+  const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
+  useEffect(() => {
+    setSnapshot(snapshotOfSave(save));
+  }, [save]);
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 border border-branch-feature/40 bg-panel/60 p-4">
+    <section className="flex min-w-0 flex-col gap-4 self-start border border-branch-feature/40 bg-panel/60 p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="hud-title font-medium text-lg">{t("resumeTitle")}</h2>
         <p className="text-muted-foreground text-xs">
@@ -61,9 +55,16 @@ export function ResumePanel({
         </p>
       </header>
 
-      <div className="relative h-[min(52dvh,30rem)] min-h-64 overflow-hidden border border-line bg-bg">
-        <RunPreview save={save} meta={meta} playerName={playerName} />
-      </div>
+      <section className="space-y-2 border border-line bg-bg/60 p-3">
+        <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
+          {hud("financeChart")}
+        </h3>
+        {snapshot === null ? (
+          <Skeleton className="aspect-[640/140] w-full" />
+        ) : (
+          <FinanceChart history={snapshot.economy.history} />
+        )}
+      </section>
 
       {snapshot === null ? (
         <div className="grid gap-2 sm:grid-cols-3">

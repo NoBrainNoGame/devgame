@@ -37,8 +37,6 @@ export interface RunSetupProps {
   resumable: RunSaveDto | null;
   /** Signed in, the account's name is the player's: nothing to ask. */
   signedIn: boolean;
-  /** What the saved run's `HEAD` is called. */
-  playerName: string;
   onStart: (choice: {
     profileId: MetaProgressDto["unlockedProfiles"][number];
     mode: RunMode;
@@ -56,7 +54,6 @@ export function RunSetup({
   dailyAvailable,
   resumable,
   signedIn,
-  playerName: headName,
   onStart,
   onResume,
 }: RunSetupProps) {
@@ -180,7 +177,7 @@ export function RunSetup({
         <div className="mx-auto w-full max-w-3xl px-4 py-10">{form}</div>
       ) : (
         <div className="mx-auto grid w-full max-w-[96rem] gap-8 px-4 py-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          <ResumePanel save={resumable} meta={meta} playerName={headName} onResume={onResume} />
+          <ResumePanel save={resumable} onResume={onResume} />
           {form}
         </div>
       )}
