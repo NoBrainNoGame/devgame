@@ -178,7 +178,6 @@
     "unreviewed": "{count, plural, one {# commit non relu} other {# commits non relus}}",
     "zoomIn": "Zoomer",
     "zoomOut": "Dézoomer",
-    "zoomFit": "Voir tout l'historique",
     "recentre": "Revenir à HEAD",
     "tooltipAuthor": "Écrit",
     "tooltipByHand": "à la main",
@@ -496,7 +495,8 @@
       "vip": "VIP en attente : personne n'y travaille.",
       "deadline": "Échéance au sprint {sprint} : personne n'y travaille.",
       "obstacle": "Le ticket #{id} n'attend plus que celui-ci."
-    }
+    },
+    "zoomFitWidth": "Adapter à la largeur"
   },
   "leaderboard": {
     "title": "Classement",

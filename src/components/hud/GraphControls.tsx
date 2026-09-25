@@ -1,6 +1,6 @@
 "use client";
 
-import { Crosshair, Maximize2, Minus, Plus, Volume2, VolumeX } from "lucide-react";
+import { Crosshair, Minus, MoveHorizontal, Plus, Volume2, VolumeX } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useSettings } from "@/components/settings/useSettings";
@@ -36,8 +36,8 @@ export function GraphControls({ handle }: { handle: GameHandle | null }): React.
       <Control label={t("zoomIn")} onClick={() => handle?.camera.zoomIn()}>
         <Plus className="size-4" />
       </Control>
-      <Control label={t("zoomFit")} onClick={() => handle?.camera.fit()}>
-        <Maximize2 className="size-4" />
+      <Control label={t("zoomFitWidth")} onClick={() => handle?.camera.fitWidth()}>
+        <MoveHorizontal className="size-4" />
       </Control>
       <Control
         label={t("recentre")}

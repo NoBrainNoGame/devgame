@@ -60,8 +60,8 @@ export interface GameHandle {
     zoomOut(): void;
     /** Back to following the head commit at the default scale. */
     recentre(): void;
-    /** Zoom out until the whole revealed history fits. */
-    fit(): void;
+    /** Zoom until the picture spans the canvas's width, still following the head. */
+    fitWidth(): void;
     /** Fit the picture without letting go of the head: for a canvas that watches a run. */
     frame(): void;
   };
@@ -185,7 +185,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       zoomIn: () => controls.camera?.zoomIn(),
       zoomOut: () => controls.camera?.zoomOut(),
       recentre: () => controls.camera?.recentre(),
-      fit: () => controls.camera?.fit(),
+      fitWidth: () => controls.camera?.fitWidth(),
       frame: () => controls.camera?.frame(),
     },
     save() {

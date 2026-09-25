@@ -533,8 +533,9 @@ ne reste que le HUD, qui suffit à jouer.
 
 **Caméra** : verticale seulement, arbre toujours centré (rien sur les côtés) ;
 zoom 50–300 % (`ZOOM`, `src/game/render/theme.ts`), gardé au recentrage, changé
-par l'ajustement seul. Elle suit ce qui apparaît ; un glisser la libère jusqu'à
-la prochaine action.
+par le bouton « Adapter à la largeur », qui fait tenir couloirs, étiquettes et
+sujets dans la largeur sans lâcher `HEAD`. Elle suit ce qui apparaît ; un
+glisser la libère jusqu'à la prochaine action.
 
 ### L'austérité
 

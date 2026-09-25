@@ -197,26 +197,27 @@ export class Camera extends booyah.ChipBase {
     this.publish();
   }
 
-  fit(): void {
-    const { app } = sceneContext(this.chipContext);
+  /**
+   * The zoom at which the whole picture — lanes, refs, subjects — spans the
+   * canvas's width, still following the head: the history runs off the
+   * bottom as it does in a run, and fitting its height would shrink the graph
+   * to a thread. Unlike `frame`, it zooms in as well as out, up to the zoom's
+   * ceiling; with subjects to read, never below the zoom where they vanish.
+   */
+  fitWidth(): void {
+    const { app, subjects } = sceneContext(this.chipContext);
     const bounds = this.graph?.bounds();
     if (bounds === null || bounds === undefined) {
       this.recentre();
       return;
     }
 
-    // Padding so the outermost commits are not flush against the edge, and so
-    // the refs and subjects to the right have somewhere to go.
-    const width = Math.max(1, bounds.maxX - bounds.minX) + 420;
-    const height = Math.max(1, bounds.maxY - bounds.minY) + 120;
-
-    this.zoom = clampZoom(Math.min(app.screen.width / width, app.screen.height / height));
-
-    const centreY = (bounds.minY + bounds.maxY) / 2;
-    this.world.scale.set(this.zoom);
-    this.world.position.set(this.centredX(), app.screen.height / 2 - centreY * this.zoom);
-
-    this.release();
+    const width = Math.max(1, bounds.maxX - bounds.minX) + FRAME_PADDING;
+    const fitted = app.screen.width / width;
+    this.zoom = clampZoom(subjects ? Math.max(LABEL_ZOOM, fitted) : fitted);
+    this.following = true;
+    this.focusY = null;
+    this.publish();
   }
 
   // --- the maths ------------------------------------------------------------
