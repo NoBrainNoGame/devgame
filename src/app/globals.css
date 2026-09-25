@@ -922,3 +922,30 @@ h3,
     animation: none;
   }
 }
+
+/*
+  A VIP of the player's that nobody is working on: its tab blinks in the VIP
+  yellow until it is checked out. Reduced motion keeps it lit, still.
+*/
+.ticket-vip-waiting {
+  border-color: var(--color-energy);
+  color: var(--color-energy);
+  animation: ticket-vip-blink 0.9s steps(1, end) infinite;
+}
+@keyframes ticket-vip-blink {
+  0%,
+  100% {
+    background-color: color-mix(in oklab, var(--color-energy) 22%, transparent);
+    box-shadow: 0 0 10px color-mix(in oklab, var(--color-energy) 55%, transparent);
+  }
+  50% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket-vip-waiting {
+    animation: none;
+    background-color: color-mix(in oklab, var(--color-energy) 18%, transparent);
+  }
+}

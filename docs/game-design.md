@@ -97,7 +97,11 @@ feature, et on revient sur celle-ci. Ouvert, il bloque la PR de la feature
 (l'équipe attend, pleine). Ses points ne valent rien (ni feature, score, XP,
 revenu ni charge) ; ses bugs sont ceux de la feature (sa review le lit, un fix
 reprend le plus ancien commit bugué de l'arbre). Il n'en engendre pas d'autre et
-part avec la feature recommencée.
+part avec la feature recommencée. Une feature pleine et propre que seul son
+obstacle retient n'offre plus de commit qui remplit des points (simple, doc,
+risqué) : le panneau propose de passer sur l'obstacle, l'horloge y va. Les
+règles l'acceptent encore, pour que toute run enregistrée rejoue telle quelle
+(`offeredActions`, `src/game/bridge/snapshot.ts`).
 
 ## Le tour
 
@@ -450,7 +454,8 @@ lancement et gardé hors ligne, celui du compte sinon). Ces couleurs ignorent
 l'austérité : qui a écrit quoi reste lisible.
 
 **HUD** : ressources et tours restants ; onglets des tickets en main au-dessus
-du graphe ; panneau de droite pour la seule décision du tour ; journal repliable
+du graphe (ceux de l'équipe à droite), dont l'infobulle montre le ticket entier,
+un VIP à soi que personne ne travaille clignotant en jaune ; panneau de droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
 projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
 de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle. Infobulles de commit en DOM : next-intl, lecteur d'écran,

@@ -36,10 +36,12 @@ import {
   behindOf,
   buggedOn,
   currentTicket,
+  FILLING_DETOURS,
   isReady,
   obstaclesOf,
   sortedTickets,
   unreadAiOn,
+  waitsOnlyForObstacle,
 } from "@/game/core/rules/tickets";
 import { austerityOf } from "@/game/core/rules/tier";
 import { computeScore } from "@/game/core/score";
@@ -114,6 +116,8 @@ export interface TicketView {
   parentId?: TicketId;
   /** The obstacles still standing on it: it cannot go to review while one is. */
   blockedBy: TicketId[];
+  /** Full and clean, held back by its obstacle alone: nothing left to write on it. */
+  waitingOnObstacle: boolean;
   lane?: number;
   /** Merges landed on `dev` since it was opened. Its merge pays for each. */
   behind: number;
@@ -281,9 +285,26 @@ export interface RunSnapshot {
   tickets: TicketView[];
 }
 
+/**
+ * The moves the player is offered: the legal ones, less the commits that
+ * would fill points on a ticket that is full and waits only for its
+ * obstacle. The rules keep those legal so every recorded run replays as it
+ * was played; nothing offers them any more — neither the HUD nor the idle
+ * clock, which both read this list.
+ */
+function offeredActions(state: RunState): PlayerAction[] {
+  const actions = getAvailableActions(state);
+  const current = currentTicket(state);
+  if (current === null || !waitsOnlyForObstacle(state, current)) return actions;
+  return actions.filter(
+    (action) =>
+      action.type !== "commit" || (action.kind !== undefined && !FILLING_DETOURS.has(action.kind)),
+  );
+}
+
 export function toSnapshot(state: RunState): RunSnapshot {
   const effects = gatherEffects(state);
-  const actions = getAvailableActions(state);
+  const actions = offeredActions(state);
   const current = currentTicket(state);
 
   const nodes: RunSnapshot["nodes"] = {};
@@ -321,6 +342,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ...(ticket.assignee === undefined ? {} : { assignee: ticket.assignee }),
     ...(ticket.parentId === undefined ? {} : { parentId: ticket.parentId }),
     blockedBy: obstaclesOf(state, ticket).map((obstacle) => obstacle.id),
+    waitingOnObstacle: ticket.status === "open" && waitsOnlyForObstacle(state, ticket),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     behind: behindOf(state, ticket),
     ready: ticket.status === "open" && isReady(state, ticket),

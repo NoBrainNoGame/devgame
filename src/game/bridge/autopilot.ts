@@ -49,6 +49,11 @@ export function chooseAutopilot(
   if (resume !== undefined) return resume;
 
   const inHand = snapshot.tickets.find((ticket) => ticket.id === player.ticketId);
+  // Nothing left to write on it: the way forward is the obstacle holding it.
+  if (inHand?.waitingOnObstacle === true) {
+    const toObstacle = find((a) => a.type === "checkout" && inHand.blockedBy.includes(a.ticketId));
+    if (toObstacle !== undefined) return toObstacle;
+  }
   if (inHand !== undefined && inHand.bugs > 0) {
     const fix = find((a) => a.type === "commit" && a.mode === "craft" && a.kind === "fix");
     if (fix !== undefined) return fix;

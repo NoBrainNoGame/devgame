@@ -470,7 +470,11 @@
     "landObstacleHint": "The obstacle is done: merge it back and carry on with the feature.",
     "boardExpired": "Expired tickets: {count}",
     "boardExpiredRecent": "Most recently expired",
-    "boardExpiredMore": "and {count} more"
+    "boardExpiredMore": "and {count} more",
+    "waitingOnObstacle": "Full: only obstacle #{id} still blocks the PR.",
+    "switchToObstacle": "Go to the obstacle",
+    "switchToObstacleHint": "Nothing left to write here: land obstacle #{id} to open the PR.",
+    "vipWaiting": "VIP waiting: nobody is working on it."
   },
   "leaderboard": {
     "title": "Leaderboard",

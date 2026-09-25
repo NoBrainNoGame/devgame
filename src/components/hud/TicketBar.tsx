@@ -3,6 +3,7 @@
 import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { TicketDetails } from "@/components/hud/TicketDetails";
 import { ticketName } from "@/components/hud/ticketName";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -13,7 +14,8 @@ import { cn } from "@/lib/utils";
  * The tickets you are holding, as tabs above the graph. The one in hand is
  * lit; clicking another checks it out. Switching is free, so it lives where a
  * free thing belongs — beside the work, not among the actions that cost a
- * turn.
+ * turn. Hovering any tab, yours or the team's, shows the whole ticket; a VIP
+ * of yours that nobody is working on blinks until you pick it up.
  */
 export function TicketBar({
   snapshot,
@@ -27,7 +29,6 @@ export function TicketBar({
   onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
-  const game = useTranslations("game");
   const open = snapshot.tickets.filter(
     (ticket) => ticket.status === "open" && ticket.assignee === undefined,
   );
@@ -60,6 +61,7 @@ export function TicketBar({
           <TicketTab
             key={ticket.id}
             ticket={ticket}
+            snapshot={snapshot}
             current={ticket.id === snapshot.player.ticketId}
             busy={busy}
             onAct={onAct}
@@ -97,15 +99,8 @@ export function TicketBar({
                     </span>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  {dev === undefined
-                    ? null
-                    : `${dev.name} · ${game(`ranks.${dev.rank}.name` as never)}`}
-                  {ticket.parentId === undefined ? null : (
-                    <p className="text-branch-obstacle">
-                      {t("obstacleOn", { id: ticket.parentId.slice(1) })}
-                    </p>
-                  )}
+                <TooltipContent side="bottom" className={DETAILS_TOOLTIP}>
+                  <TicketDetails ticket={ticket} snapshot={snapshot} compact />
                 </TooltipContent>
               </Tooltip>
             );
@@ -116,13 +111,18 @@ export function TicketBar({
   );
 }
 
+/** A tooltip wide enough for a whole ticket, and hoverable so its commit list scrolls. */
+const DETAILS_TOOLTIP = "w-[22rem] max-w-[calc(100vw-2rem)] items-stretch";
+
 function TicketTab({
   ticket,
+  snapshot,
   current,
   busy,
   onAct,
 }: {
   ticket: TicketView;
+  snapshot: RunSnapshot;
   current: boolean;
   busy: boolean;
   onAct: (action: PlayerAction) => void;
@@ -133,16 +133,23 @@ function TicketTab({
     ticket.skillId === undefined
       ? ticketName(game, ticket)
       : game(`skills.${ticket.skillId}.name` as never);
+  // Double revenue and a deadline, and nobody on it: it asks to be picked up.
+  const vipWaiting = ticket.kind === "vip" && !current;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
           type="button"
-          disabled={busy || current}
-          onClick={() => onAct({ type: "checkout", ticketId: ticket.id })}
+          // Not `disabled`: a disabled button takes no hover, and the tab in
+          // hand is the one whose tooltip matters most.
+          aria-disabled={busy || current}
+          onClick={() => {
+            if (!busy && !current) onAct({ type: "checkout", ticketId: ticket.id });
+          }}
           className={cn(
             "flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
+            vipWaiting && "ticket-vip-waiting",
             current
               ? "border-branch-feature bg-branch-feature/10 text-foreground"
               : "border-line text-muted-foreground hover:border-foreground/40 hover:text-foreground",
@@ -183,33 +190,13 @@ function TicketTab({
           {ticket.ready ? <span className="text-branch-main text-xs">✓</span> : null}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-64">
-        <p>{t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}</p>
-        {ticket.bugs > 0 ? (
-          <p className="text-branch-hotfix">{t("bugsOn", { count: ticket.bugs })}</p>
-        ) : null}
-        {ticket.unread > 0 ? (
-          <p className="text-debt">{t("unreadOn", { count: ticket.unread })}</p>
-        ) : null}
-        {ticket.behind > 0 ? (
-          <p className="text-muted-foreground">{t("behindDev", { count: ticket.behind })}</p>
-        ) : null}
-        {ticket.parentId === undefined ? null : (
-          <p className="text-branch-obstacle">
-            {t("obstacleOn", { id: ticket.parentId.slice(1) })}
+      <TooltipContent side="bottom" className={DETAILS_TOOLTIP}>
+        <TicketDetails ticket={ticket} snapshot={snapshot} compact />
+        {current && !vipWaiting ? null : (
+          <p className={cn("text-xs", vipWaiting ? "text-energy" : "text-muted-foreground")}>
+            {vipWaiting ? `${t("vipWaiting")} ` : ""}
+            {current ? "" : t("clickToSwitch")}
           </p>
-        )}
-        {ticket.blockedBy.length > 0 ? (
-          <p className="text-branch-obstacle">
-            {t("blockedBy", { count: ticket.blockedBy.length })}
-          </p>
-        ) : null}
-        {ticket.ready ? (
-          <p className="text-branch-main">
-            {ticket.parentId === undefined ? t("readyToSubmit") : t("readyToLand")}
-          </p>
-        ) : (
-          <p className="text-muted-foreground">{current ? t("inHand") : t("clickToSwitch")}</p>
         )}
       </TooltipContent>
     </Tooltip>

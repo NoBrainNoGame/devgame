@@ -108,6 +108,23 @@ export function isReady(state: RunState, ticket: Ticket): boolean {
   );
 }
 
+/**
+ * Points full, nothing flagged, and only an obstacle standing between the
+ * ticket and its review. Writing more on it fills nothing — the points are
+ * capped. The rules still allow it, so every recorded run replays as it was
+ * played; the HUD and the idle clock stop offering it (`bridge/snapshot.ts`).
+ */
+export function waitsOnlyForObstacle(state: RunState, ticket: Ticket): boolean {
+  return (
+    ticket.filled >= ticket.points &&
+    buggedOn(state, ticket).length === 0 &&
+    obstaclesOf(state, ticket).length > 0
+  );
+}
+
+/** Detours that only fill points: pointless on a ticket already full. */
+export const FILLING_DETOURS: ReadonlySet<DetourKind> = new Set(["docs", "risky"]);
+
 export function isOnHotfix(state: RunState): boolean {
   return currentTicket(state)?.mustWrite === "hotfix";
 }

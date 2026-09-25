@@ -470,7 +470,11 @@
     "landObstacleHint": "L'obstacle est réglé : le merger dans la feature et continuer.",
     "boardExpired": "Tickets expirés : {count}",
     "boardExpiredRecent": "Derniers expirés",
-    "boardExpiredMore": "et {count, plural, one {# autre} other {# autres}}"
+    "boardExpiredMore": "et {count, plural, one {# autre} other {# autres}}",
+    "waitingOnObstacle": "Plein : seul l'obstacle #{id} bloque encore la PR.",
+    "switchToObstacle": "Passer sur l'obstacle",
+    "switchToObstacleHint": "Plus rien à écrire ici : ramenez l'obstacle #{id} pour ouvrir la PR.",
+    "vipWaiting": "VIP en attente : personne n'y travaille."
   },
   "leaderboard": {
     "title": "Classement",

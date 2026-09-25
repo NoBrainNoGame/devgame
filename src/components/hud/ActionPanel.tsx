@@ -53,6 +53,15 @@ export function ActionPanel({
   const land = snapshot.actions.find((action) => action.type === "merge");
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
+  // Full, and held back by its obstacle alone: no commit is offered on it any
+  // more, and the way forward is the obstacle.
+  const toObstacle =
+    current?.waitingOnObstacle === true
+      ? snapshot.actions.find(
+          (action): action is Extract<PlayerAction, { type: "checkout" }> =>
+            action.type === "checkout" && current.blockedBy.includes(action.ticketId),
+        )
+      : undefined;
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
   const firstStart = snapshot.actions.find((action) => action.type === "start");
   const hack = snapshot.actions.find((action) => action.type === "hack");
@@ -89,6 +98,18 @@ export function ActionPanel({
             emphasis
             action={submit}
             onAct={() => onAct(submit)}
+          />
+        )}
+
+        {toObstacle === undefined ? null : (
+          <ActionButton
+            label={t("switchToObstacle")}
+            hint={t("switchToObstacleHint", { id: toObstacle.ticketId.slice(1) })}
+            preview={snapshot.previews[actionKey(toObstacle)]}
+            busy={busy}
+            emphasis
+            action={toObstacle}
+            onAct={() => onAct(toObstacle)}
           />
         )}
 
