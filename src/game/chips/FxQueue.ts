@@ -51,7 +51,19 @@ export class FxQueue extends booyah.Queue {
       const payload = args[0] as AppliedPayload | undefined;
       if (payload !== undefined) this.enqueue(payload);
     });
+    document.addEventListener("visibilitychange", this.onVisibility);
   }
+
+  protected _onTerminate(): void {
+    document.removeEventListener("visibilitychange", this.onVisibility);
+    super._onTerminate?.();
+  }
+
+  // A hidden tab draws no frames, so no effect would ever end: the story is
+  // cut to its last frame, and the idle clock keeps playing behind it.
+  private readonly onVisibility = (): void => {
+    if (document.hidden && gameStore.getState().pendingAnimation) this.skip();
+  };
 
   /**
    * Cuts the rest of the sequence short. Every remaining effect ends the moment
@@ -105,6 +117,7 @@ export class FxQueue extends booyah.Queue {
         gameStore.setState({ pendingAnimation: false });
       }),
     );
+    if (document.hidden) this.skip();
   }
 
   private chipFor(step: Step, skip: SkipFlag): booyah.Chip {

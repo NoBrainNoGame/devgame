@@ -25,7 +25,8 @@ const IdleSettingsSchema = z.object({
 
 export type IdleSettings = z.infer<typeof IdleSettingsSchema>;
 
-const DEFAULT_IDLE: IdleSettings = { enabled: true, speed: 1 };
+/** Off until the player turns it on; every new run starts with it off. */
+const DEFAULT_IDLE: IdleSettings = { enabled: false, speed: 1 };
 
 export interface IdleStore {
   settings: IdleSettings;

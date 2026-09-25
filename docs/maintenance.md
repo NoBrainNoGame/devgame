@@ -291,7 +291,8 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   `play.firedBy.<source>`, `play.qualitySource.<source>`.
 - **Supervisor level**: a `chooseSupervisor` branch (`bridge/supervisor.ts`), a
   `SUPERVISOR_REASONS` entry + `hud.supervisorMove.<reason>`, a level of
-  `UPGRADES.ai_supervisor`. Level 1 must equal `chooseAutopilot`
+  `UPGRADES.ai_supervisor`. A level buys judgement, never autonomy: level 0
+  already advances every phase, and level 1 must equal `chooseAutopilot`
   (`autopilot.test.ts`). The landing demo (`bridge/demo.ts`) plays level 3 on
   today's seed: a level change changes the homepage.
 - **Showcase** (the demo run; `showcase` in `CreateRunOptions`,

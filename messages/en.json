@@ -202,8 +202,7 @@
     "column": {
       "backlog": "Backlog",
       "open": "In progress",
-      "merged": "Delivered",
-      "cancelled": "Expired"
+      "merged": "Delivered"
     },
     "columnEmpty": "Nothing here.",
     "startTicket": "Start",
@@ -468,7 +467,10 @@
     "readyToLand": "Full: land it back on its feature.",
     "you": "You",
     "landObstacle": "Land on the feature",
-    "landObstacleHint": "The obstacle is done: merge it back and carry on with the feature."
+    "landObstacleHint": "The obstacle is done: merge it back and carry on with the feature.",
+    "boardExpired": "Expired tickets: {count}",
+    "boardExpiredRecent": "Most recently expired",
+    "boardExpiredMore": "and {count} more"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -979,7 +981,7 @@
       },
       "ai_supervisor": {
         "name": "AI supervisor",
-        "desc": "When you let the run idle, it plays for you. Level 1: the obvious move. Level 2: it fixes and refactors too. Level 3: it buys too. No go-live date scheduled. Subscription."
+        "desc": "Auto mode already moves everything forward; the supervisor makes it choose better. Level 1: it reads the machine's code before it piles up. Level 2: it takes hotfixes, refactors and squashes. Level 3: it spends too. No go-live date scheduled. Subscription."
       },
       "datacenter": {
         "name": "Datacenter",

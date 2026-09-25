@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { setIdleSettings } from "@/components/hud/idleStore";
 import { Button } from "@/components/ui/button";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
 import { gameStore, useGameStore } from "@/game";
@@ -151,6 +152,8 @@ export function PlayClient(props: PlayClientProps) {
       setSubmitted(false);
       awardedRef.current = null;
       startedAtRef.current = Date.now();
+      // Every run starts in the player's hands; the clock is theirs to turn on.
+      setIdleSettings({ enabled: false });
 
       setStage({
         kind: "running",

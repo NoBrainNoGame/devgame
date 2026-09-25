@@ -29,7 +29,7 @@ import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
-import { idleTarget, useGameStore } from "@/game";
+import { useGameStore } from "@/game";
 
 /**
  * A run in progress: the canvas, the HUD around it, and the dialogs the game
@@ -94,17 +94,14 @@ export function RunStage({
   const [boardOpen, setBoardOpen] = useState(false);
   const [companyOpen, setCompanyOpen] = useState(false);
   const [treeOpen, setTreeOpen] = useState(false);
-  // The idle clock waits while a dialog you opened has the floor, and while
-  // the review is still being read. The board is the exception when the
-  // clock's own move is to start a ticket: that board is the clock's, and the
-  // bar sits on the card it will press.
+  // Once on, the idle clock stops for nothing the player opens: a dialog
+  // left open is not a decision, and the switch is the way to stop it. It
+  // only waits for the review's verdict to be read, as it waits for an
+  // animation to end.
   const readingReview = useIdleStore((state) => state.readingReview);
-  const target = snapshot === null ? undefined : idleTarget(snapshot);
   const openShop = useCallback(() => setCompanyOpen(true), []);
   useGameAlerts(openShop);
   useAusterity();
-  const dialogOpen =
-    companyOpen || treeOpen || readingReview || (boardOpen && target?.type !== "start");
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -158,7 +155,7 @@ export function RunStage({
               />
               <SupervisorLine snapshot={snapshot} />
               {idle ? <IdleControls /> : null}
-              {idle ? <IdleDriver paused={dialogOpen} onAct={onAct} /> : null}
+              {idle ? <IdleDriver paused={readingReview} onAct={onAct} /> : null}
             </>
           )}
         </aside>

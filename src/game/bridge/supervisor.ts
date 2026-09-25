@@ -5,14 +5,15 @@ import { actionKey } from "@/game/core/rules/preview";
 import type { PlayerAction } from "@/game/core/types";
 
 /**
- * The supervisor's three levels. The first is the autopilot as it was: the
- * obvious move. The second also keeps the code in shape — checks out a
- * hotfix that is waiting, refactors when production or the debt say so,
- * squashes and reads the machine's work sooner. The third also spends: the
- * rung the game advises, the best rank the payroll can carry, a skill point
- * when the money is plentiful. Every move comes with the reason the HUD
- * prints under the panel. Nothing here touches the engine, and the hack is
- * never taken: that choice stays yours.
+ * The supervisor's levels buy judgement, not autonomy: level 0, bought or
+ * not, already moves everything (`chooseAutopilot`). The first reads the
+ * machine's work before it piles up. The second also keeps the code in
+ * shape — checks out a hotfix that is waiting, refactors when production or
+ * the debt say so, squashes and reads the machine's work sooner. The third
+ * also spends: the rung the game advises, the best rank the payroll can
+ * carry, a skill point when the money is plentiful. Every move comes with the
+ * reason the HUD prints under the panel. Nothing here touches the engine, and
+ * the hack is never taken: that choice stays yours.
  */
 
 export const SUPERVISOR_REASONS = [

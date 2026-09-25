@@ -41,11 +41,14 @@ function DialogOverlay({
 
 function DialogContent({
   className,
+  frameClassName,
   children,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /** Classes for the framed box inside, where the children lay out. */
+  frameClassName?: string;
 }) {
   return (
     <DialogPortal>
@@ -61,7 +64,12 @@ function DialogContent({
         {...props}
       >
         <span aria-hidden="true" className="cyber-sidebar" />
-        <div className="cyber-frame grid gap-4 p-4 *:min-w-0 [--cyber-corner:14px] [--cyber-fill:color-mix(in_oklab,var(--color-popover)_88%,transparent)]">
+        <div
+          className={cn(
+            "cyber-frame grid gap-4 p-4 *:min-w-0 [--cyber-corner:14px] [--cyber-fill:color-mix(in_oklab,var(--color-popover)_88%,transparent)]",
+            frameClassName,
+          )}
+        >
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close data-slot="dialog-close" asChild>

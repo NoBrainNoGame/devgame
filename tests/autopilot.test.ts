@@ -8,7 +8,17 @@ import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction } from "@/game/core/types";
 
-import { findSeed, inHand, isType, makeReady, newRun, play, policy, settle } from "./helpers";
+import {
+  findSeed,
+  inHand,
+  isType,
+  makeReady,
+  newRun,
+  plantAiCommit,
+  play,
+  policy,
+  settle,
+} from "./helpers";
 
 /**
  * The idle clock's move is a legal move in every phase, so a run left alone
@@ -28,12 +38,26 @@ describe("the idle clock's target", () => {
     legal(state);
   });
 
-  test("a ticket in hand and no supervisor: it rests only when the energy is too low to write", () => {
+  test("a ticket in hand and no supervisor: it writes by hand while the energy holds, rests when it does not", () => {
     const state = inHand("idle-rest");
-    expect(idleTarget(toSnapshot(state))).toBeUndefined();
+    const writes = idleTarget(toSnapshot(state));
+    expect(writes).toEqual({ type: "commit", mode: "craft" });
+    legal(state);
     state.player.energy = 2;
     expect(idleTarget(toSnapshot(state))?.type).toBe("rest");
     legal(state);
+  });
+
+  test("the supervisor buys judgement, not autonomy: only its first level reads the machine's work", () => {
+    const state = inHand("idle-judgement");
+    plantAiCommit(state);
+    plantAiCommit(state);
+    state.player.energy = state.player.energyMax;
+    const free = idleTarget(toSnapshot(state));
+    expect(free).toBeDefined();
+    expect(free?.type).not.toBe("review");
+    state.upgrades.ai_supervisor = 1;
+    expect(idleTarget(toSnapshot(state))?.type).toBe("review");
   });
 
   test("a full ticket and no supervisor: it opens the pull request", () => {
@@ -116,8 +140,8 @@ describe("the idle clock's target", () => {
     expect(move?.action.type).toBe("buy");
   });
 
-  test("a run left to the supervisor at every level never stalls", () => {
-    for (let level = 1; level <= 3; level += 1) {
+  test("a run left to the clock never stalls, with or without a supervisor", () => {
+    for (let level = 0; level <= 3; level += 1) {
       let state = inHand(`supervisor-run-${level}`);
       state.upgrades.ai_supervisor = level;
       state.money = 2_000;

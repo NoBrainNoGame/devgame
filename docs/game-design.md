@@ -308,24 +308,26 @@ de patience, énergie pleine ou barreau offert. Perdu : incident, ou fin de run
 
 ## Le jeu tourne sans vous
 
-Une horloge désactivable (`src/game/bridge/idle.ts`,
-`src/components/hud/IdleDriver.tsx`) désigne le coup prévu et le presse après
-dix secondes à ×1 (×10, ×100 avec Avance rapide). Toute action la relance ; elle
-attend l'animation, une fenêtre ouverte à la main, un verdict de review.
+Le mode Auto (`src/game/bridge/idle.ts`, `src/components/hud/IdleDriver.tsx`),
+éteint au début de chaque run, désigne le coup prévu et le presse après dix
+secondes à ×1 (×10, ×100 avec Avance rapide). Toute action le relance. Allumé,
+rien ne l'arrête : fenêtres ouvertes comprises, il n'attend que la fin d'une
+animation (un onglet caché n'en joue aucune) et la lecture d'un verdict de
+review. Seul l'interrupteur le coupe.
 
-- **Tour ordinaire sans superviseur**, les seuls coups à réponse unique : PR
-  d'un ticket plein, démarrer le plus ancien si rien n'est en main, souffler si
-  l'énergie ne permet plus d'écrire (et n'est pas pleine). Sinon rien : écrire
-  est votre coup.
+- **Tour ordinaire**, dès le départ il fait tout avancer (`chooseAutopilot`) :
+  merger, continuer après refus, corriger ce que la review a signalé, ouvrir la
+  PR d'un ticket plein, démarrer le plus ancien si rien n'est en main, coder à la
+  main tant que l'énergie garde sa marge, souffler sinon.
 - **Autres phases** : l'évident (merger l'accepté, continuer après refus,
   conflit à la main, premier bonus, première réponse), pour qu'une run seule ne
   cale jamais.
-- **Superviseur IA** : joue, et annonce son coup sous le panneau. N1 :
-  l'évident, et coder à la main tant que l'énergie a de la marge, sinon
-  souffler. N2 : prend le hotfix en attente, refactorise quand prod ou dette le
-  disent, squashe à trois IA non relus, relit dès un. N3 : barreau conseillé,
-  meilleur grade payable avec deux mois de factures d'avance, point de
-  compétence si l'argent abonde.
+- **Superviseur IA** : s'achète pour de meilleurs choix, jamais pour plus
+  d'autonomie, et annonce son coup sous le panneau. N1 : relit les commits IA
+  dès deux non relus. N2 : prend le hotfix en attente, refactorise quand prod
+  ou dette le disent, squashe à trois IA non relus, relit dès un. N3 : barreau
+  conseillé, meilleur grade payable avec deux mois de factures d'avance, point
+  de compétence si l'argent abonde.
 
 Aucun ne hacke. Actions ordinaires, au journal de la run ; le moteur ne lit pas
 l'horloge.
@@ -447,7 +449,8 @@ l'austérité : qui a écrit quoi reste lisible.
 **HUD** : ressources et tours restants ; onglets des tickets en main au-dessus
 du graphe ; panneau de droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
-projet, pas un coup). Infobulles de commit en DOM : next-intl, lecteur d'écran,
+projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
+de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle. Infobulles de commit en DOM : next-intl, lecteur d'écran,
 nettes à tout zoom.
 
 **Caméra** : verticale seulement, arbre toujours centré (rien sur les côtés) ;

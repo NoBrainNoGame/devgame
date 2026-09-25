@@ -202,8 +202,7 @@
     "column": {
       "backlog": "Backlog",
       "open": "En cours",
-      "merged": "Livrés",
-      "cancelled": "Expirés"
+      "merged": "Livrés"
     },
     "columnEmpty": "Rien ici.",
     "startTicket": "Démarrer",
@@ -468,7 +467,10 @@
     "readyToLand": "Plein : le ramener sur sa feature.",
     "you": "Vous",
     "landObstacle": "Ramener sur la feature",
-    "landObstacleHint": "L'obstacle est réglé : le merger dans la feature et continuer."
+    "landObstacleHint": "L'obstacle est réglé : le merger dans la feature et continuer.",
+    "boardExpired": "Tickets expirés : {count}",
+    "boardExpiredRecent": "Derniers expirés",
+    "boardExpiredMore": "et {count, plural, one {# autre} other {# autres}}"
   },
   "leaderboard": {
     "title": "Classement",
@@ -979,7 +981,7 @@
       },
       "ai_supervisor": {
         "name": "Superviseur IA",
-        "desc": "Quand vous laissez tourner, il joue à votre place. Niveau 1 : le coup évident. Niveau 2 : il corrige et refactorise aussi. Niveau 3 : il achète aussi. Pas de date de mise en ligne prévue. Abonnement."
+        "desc": "Le mode Auto fait déjà tout avancer ; le superviseur lui fait faire de meilleurs choix. Niveau 1 : il relit le code de la machine avant qu'il s'entasse. Niveau 2 : il prend les hotfix, refactorise et squashe. Niveau 3 : il dépense aussi. Pas de date de mise en ligne prévue. Abonnement."
       },
       "datacenter": {
         "name": "Datacenter",

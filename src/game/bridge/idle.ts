@@ -1,4 +1,3 @@
-import { ENERGY_MARGIN } from "@/game/bridge/autopilot";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { actionKey } from "@/game/core/rules/preview";
@@ -7,13 +6,11 @@ import type { PlayerAction } from "@/game/core/types";
 /**
  * What the idle clock presses when it runs out, in every phase the run can
  * be in: the merge an accepted review is waiting for, the answer to a
- * refusal, the manual fix of a conflict, the first bonus on offer — and, in
- * an ordinary turn, the supervisor's move if one is bought, else the moves
- * with one answer: the pull request of a full ticket, a start when nothing
- * is in hand, a rest when the energy is too low to write. With energy to
- * spare and a ticket in hand, it presses nothing: writing is your move, and
- * a rest there is a turn thrown away. Pure over the snapshot, so the bar
- * under a button and the driver that presses it can never disagree.
+ * refusal, the manual fix of a conflict, the first bonus on offer, the first
+ * answer to a question — and, in an ordinary turn, the move of the
+ * supervisor at the level bought, level 0 included: turned on, the clock
+ * always has something to press. Pure over the snapshot, so the bar under a
+ * button and the driver that presses it can never disagree.
  */
 export function idleTarget(snapshot: RunSnapshot): PlayerAction | undefined {
   const { actions, previews, phase } = snapshot;
@@ -35,23 +32,8 @@ export function idleTarget(snapshot: RunSnapshot): PlayerAction | undefined {
       return find((a) => a.type === "answer");
     case "game_over":
       return undefined;
-    case "choose_action": {
-      if (snapshot.autopilot > 0) return legal(chooseSupervisor(snapshot)?.action);
-      const submit = find((a) => a.type === "submit");
-      if (submit !== undefined) return submit;
-      const inHand = snapshot.tickets.some((ticket) => ticket.id === snapshot.player.ticketId);
-      if (!inHand) {
-        const start = find((a) => a.type === "start");
-        if (start !== undefined) return start;
-      }
-      const craft = find((a) => a.type === "commit" && a.mode === "craft" && a.kind === undefined);
-      const { energy, energyMax } = snapshot.player;
-      const canWrite =
-        craft !== undefined &&
-        energy - (previews[actionKey(craft)]?.energyCost ?? 0) > ENERGY_MARGIN;
-      if (canWrite || energy >= energyMax) return undefined;
-      return find((a) => a.type === "rest");
-    }
+    case "choose_action":
+      return legal(chooseSupervisor(snapshot)?.action) ?? find((a) => a.type === "rest");
   }
 }
 
