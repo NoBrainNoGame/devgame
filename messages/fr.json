@@ -135,8 +135,12 @@
     "resumeStarted": "commencée le {date}",
     "resumeActions": "{count, plural, one {# action} other {# actions}}",
     "confirmNewTitle": "Vous êtes sûr ?",
-    "confirmNewBody": "Une run est en cours. En commencer une nouvelle l'abandonne : elle ne pourra plus être reprise.",
-    "confirmNewAction": "Abandonner et commencer"
+    "confirmNewBody": "Une run est en cours. En commencer une nouvelle l'abandonne : elle ne pourra plus être reprise. Ses commits et son expérience vous sont crédités.",
+    "confirmNewAction": "Abandonner et commencer",
+    "profileLore": "Dossier",
+    "ally": "Doit quelque chose à",
+    "rival": "Garde une rancune contre",
+    "abandonedCredited": "Run abandonnée : {commits, plural, one {# commit} other {# commits}} et {xp} XP crédités."
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -496,7 +500,15 @@
       "deadline": "Échéance au sprint {sprint} : personne n'y travaille.",
       "obstacle": "Le ticket #{id} n'attend plus que celui-ci."
     },
-    "zoomFitWidth": "Adapter à la largeur"
+    "zoomFitWidth": "Adapter à la largeur",
+    "affinity": {
+      "ally": "Allié",
+      "rival": "Rival"
+    },
+    "affinityHint": {
+      "ally": "Votre profil lui doit quelque chose.",
+      "rival": "Votre profil lui garde une rancune."
+    }
   },
   "leaderboard": {
     "title": "Classement",
@@ -1084,19 +1096,23 @@
     "profiles": {
       "junior": {
         "name": "Junior",
-        "desc": "Beaucoup d'énergie, aucun instinct pour savoir quand la machine ment."
+        "desc": "Plus d'énergie que quiconque, aucun instinct pour savoir quand la machine ment : les commits IA ratent plus souvent.",
+        "lore": "Onze semaines de bootcamp, un certificat signé par personne en particulier, et un premier CDI chez Relève. Le stage de fin de formation, chez Sept, s'est arrêté la semaine où Sept a choisi ses sept. Votre grand-père figure toujours dans les statuts de Brume & Fils ; personne ne les a mis à jour."
       },
       "senior": {
         "name": "Senior",
-        "desc": "Commits artisanaux solides et bonne tenue dans les conflits ; se méfie de l'IA."
+        "desc": "Solide à la main et calme dans les conflits ; un jet raté a droit à une seconde chance par sprint, et une PR refusée ne fait rien perdre. Se méfie de l'IA.",
+        "lore": "Onze ans chez Quorum, jusqu'au conseil qui a voté votre départ un mardi, à l'unanimité, en quatre minutes. Avant, les palettes de Fenwick, du temps où l'entreprise faisait des chariots. Vous relisez encore tout, y compris ce que la machine assure avoir relu."
       },
       "vibe_coder": {
         "name": "Vibe coder",
-        "desc": "Tout à l'IA, la main hésitante, et une santé du code plus floue que jamais."
+        "desc": "Tout à l'IA, la main hésitante, et une santé du code plus floue que jamais.",
+        "lore": "Trois startups en un an, toutes écrites en conversation. La dernière a été rachetée par Volute, qui avait publié son post-mortem la veille. Vous ne relisez pas : vous reformulez. Lisière lit vos fils publics avant vous."
       },
       "devops": {
         "name": "DevOps",
-        "desc": "Démarre avec de la CI déjà en place."
+        "desc": "Démarre avec la CI, et un pipeline qui relit les commits de la machine tous les quelques tours.",
+        "lore": "Six ans d'astreinte chez Ostium, où la page de tarifs n'a pas de prix et le runbook un seul bouton. Vous avez automatisé votre propre astreinte ; elle a continué sans vous. Votre ancien binôme est l'un des sept que Sept a gardés."
       }
     },
     "nodes": {
@@ -1917,6 +1933,70 @@
         "choices": {
           "take_money": "Prendre le chèque",
           "stay_lean": "Rester indépendant"
+        }
+      },
+      "junior_brume_statutes": {
+        "title": "Les statuts de {competitor}",
+        "text": "{competitor} vous écrit. Ses statuts, jamais mis à jour, désignent encore votre grand-père comme associé ; la part vous revient. Ils proposent de la racheter. La lettre est signée « les fils ».",
+        "choices": {
+          "sell_share": "Vendre la part",
+          "keep_share": "Garder la part"
+        }
+      },
+      "junior_sept_internship": {
+        "title": "{competitor} rappelle",
+        "text": "{competitor} a publié la liste des sept. Votre stage y figure encore, en huitième position, avec la mention « à confirmer ». On vous demande de confirmer.",
+        "choices": {
+          "confirm": "Confirmer",
+          "leave_unanswered": "Ne pas répondre"
+        }
+      },
+      "senior_quorum_minutes": {
+        "title": "Le procès-verbal de {competitor}",
+        "text": "{competitor} vous adresse le procès-verbal du conseil qui a voté votre départ, il y a onze ans. Il est daté de ce matin. La décision reste unanime.",
+        "choices": {
+          "read_it": "Le relire ligne à ligne",
+          "file_it": "Le classer sans le lire"
+        }
+      },
+      "senior_fenwick_pallets": {
+        "title": "Un ancien de {competitor}",
+        "text": "Un ancien collègue de {competitor} vous demande de relire un module. Vous l'aviez écrit pour lever des palettes. Il lève autre chose maintenant ; le commentaire en tête n'a pas changé.",
+        "choices": {
+          "review_it": "Le relire pour lui",
+          "decline": "Décliner poliment"
+        }
+      },
+      "vibe_lisiere_thread": {
+        "title": "{competitor} a lu votre fil",
+        "text": "{competitor} a livré ce matin la feature que vous décriviez hier soir dans un fil public, prompt compris. Même nom, même faute de frappe.",
+        "choices": {
+          "delete_thread": "Supprimer le fil",
+          "post_sequel": "Publier la suite"
+        }
+      },
+      "vibe_volute_earnout": {
+        "title": "Le complément de prix de {competitor}",
+        "text": "{competitor} vous doit la dernière tranche du rachat de votre ancienne startup. Le virement est prêt. Il suffit de signer son post-mortem, daté de la semaine prochaine.",
+        "choices": {
+          "sign": "Signer",
+          "dont_sign": "Ne pas signer"
+        }
+      },
+      "devops_ostium_pager": {
+        "title": "Un pager d'avant",
+        "text": "Votre ancien pager de chez {competitor} sonne encore. L'alerte tient en un mot : « Continuer ». Personne d'autre ne l'a reçue.",
+        "choices": {
+          "acknowledge": "Acquitter l'alerte",
+          "let_it_ring": "Le laisser sonner"
+        }
+      },
+      "devops_sept_runbooks": {
+        "title": "Un des sept",
+        "text": "Parmi les sept que {competitor} garde, il y a votre ancien binôme d'astreinte. Il propose d'échanger vos runbooks. Les siens n'ont plus d'étape « prévenir quelqu'un ».",
+        "choices": {
+          "swap": "Échanger",
+          "keep_yours": "Garder les vôtres"
         }
       }
     },

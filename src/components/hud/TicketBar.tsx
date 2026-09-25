@@ -4,7 +4,7 @@ import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { TicketDetails } from "@/components/hud/TicketDetails";
-import { blinks, type Urgency, urgencies } from "@/components/hud/ticketFocus";
+import { blinkingTabs, type Urgency } from "@/components/hud/ticketFocus";
 import { ticketName } from "@/components/hud/ticketName";
 import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,8 @@ import { cn } from "@/lib/utils";
  * free thing belongs — beside the work, not among the actions that cost a
  * turn. Hovering any tab, yours or the team's, shows the whole ticket. A tab
  * that asks for you blinks until you pick it up: a VIP or a ticket with a
- * deadline that nobody is on — or, once one has nothing left but its
- * obstacle, that obstacle.
+ * deadline — or, once one has nothing left but its obstacle, that obstacle —
+ * and none blinks while you are on one of them.
  */
 export function TicketBar({
   snapshot,
@@ -38,7 +38,7 @@ export function TicketBar({
     (ticket) => ticket.status === "open" && ticket.assignee !== undefined,
   );
   const waiting = snapshot.tickets.filter((ticket) => ticket.status === "backlog").length;
-  const urgent = urgencies(open);
+  const blinking = blinkingTabs(snapshot, open);
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto border-line border-b bg-panel/40 px-3 py-2">
@@ -66,7 +66,7 @@ export function TicketBar({
             ticket={ticket}
             snapshot={snapshot}
             current={ticket.id === snapshot.player.ticketId}
-            urgency={urgent.get(ticket.id)}
+            urgency={blinking.get(ticket.id)}
             onAct={onAct}
           />
         ))
@@ -120,6 +120,7 @@ function TicketTab({
   ticket: TicketView;
   snapshot: RunSnapshot;
   current: boolean;
+  /** Why this tab blinks; absent when it does not. */
   urgency: Urgency | undefined;
   onAct: (action: PlayerAction) => void;
 }) {
@@ -129,7 +130,7 @@ function TicketTab({
     ticket.skillId === undefined
       ? ticketName(game, ticket)
       : game(`skills.${ticket.skillId}.name` as never);
-  const waitingForYou = urgency !== undefined && blinks(snapshot, ticket, urgency);
+  const waitingForYou = urgency !== undefined;
 
   return (
     <Tooltip>

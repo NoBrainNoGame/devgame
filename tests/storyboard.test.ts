@@ -139,6 +139,14 @@ describe("the storyboard", () => {
         // A merge that closes the sprint is followed by the release's own rest,
         // which lands elsewhere; the rest under test is the merge's.
         if (batch.events.some((e) => e.type === "sprint_ended")) continue;
+        // Only a merge that gives a rest: one landed by a commit gives none, and
+        // the next turn's energy, later in the batch, lands on the head.
+        const at = batch.events.indexOf(merged);
+        const nextTurn = batch.events.findIndex((e, i) => i > at && e.type === "turn_started");
+        const rest = batch.events
+          .slice(at, nextTurn === -1 ? undefined : nextTurn)
+          .some((e) => e.type === "energy" && e.delta > 0);
+        if (!rest) continue;
         merges += 1;
 
         const reveal = new RevealSet();

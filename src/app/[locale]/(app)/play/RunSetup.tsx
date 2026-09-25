@@ -106,8 +106,8 @@ export function RunSetup({
                 onClick={() => setProfileId(id)}
                 className={cn(
                   "rounded-md border border-line bg-panel/40 p-3 text-left transition-colors",
-                  unlocked ? "hover:border-branch-feature" : "opacity-50",
-                  selected && "border-branch-feature bg-panel",
+                  unlocked ? "hover:border-cyber" : "opacity-50",
+                  selected && "border-cyber bg-panel",
                 )}
               >
                 <span className="flex items-baseline justify-between gap-2">
@@ -125,6 +125,7 @@ export function RunSetup({
             );
           })}
         </div>
+        <ProfileFile profileId={profileId} />
       </section>
 
       <section className="mb-8">
@@ -232,8 +233,8 @@ function ModeButton({
       onClick={onSelect}
       className={cn(
         "rounded-md border border-line bg-panel/40 p-3 text-left transition-colors",
-        disabled ? "opacity-50" : "hover:border-branch-feature",
-        selected && "border-branch-feature bg-panel",
+        disabled ? "opacity-50" : "hover:border-cyber",
+        selected && "border-cyber bg-panel",
       )}
     >
       <span className="block">{label}</span>
@@ -241,5 +242,39 @@ function ModeButton({
         <span className="mt-1 block text-muted-foreground text-xs">{hint}</span>
       )}
     </button>
+  );
+}
+
+/**
+ * Who the selected starter is: where they come from, the company they owe
+ * something to and the one they hold a grudge against — the two a personal
+ * question of theirs will name during a run.
+ */
+function ProfileFile({ profileId }: { profileId: MetaProgressDto["unlockedProfiles"][number] }) {
+  const t = useTranslations("play");
+  const game = useTranslations("game");
+  const def = PROFILES[profileId];
+
+  return (
+    <div className="mt-3 border border-line bg-panel/40 p-3 text-sm">
+      <p className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {t("profileLore")} · {game(`profiles.${profileId}.name` as never)}
+      </p>
+      <p className="mt-1.5 text-muted-foreground leading-relaxed">
+        {game(`profiles.${profileId}.lore` as never)}
+      </p>
+      <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+        <span>
+          <span className="text-muted-foreground">{t("ally")} </span>
+          <span className="text-cyber">{game(`competitors.${def.ally}.name` as never)}</span>
+        </span>
+        <span>
+          <span className="text-muted-foreground">{t("rival")} </span>
+          <span className="text-branch-hotfix">
+            {game(`competitors.${def.rival}.name` as never)}
+          </span>
+        </span>
+      </p>
+    </div>
   );
 }

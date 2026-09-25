@@ -135,8 +135,12 @@
     "resumeStarted": "started {date}",
     "resumeActions": "{count, plural, one {# action} other {# actions}}",
     "confirmNewTitle": "Are you sure?",
-    "confirmNewBody": "A run is in progress. Starting a new one abandons it: it cannot be resumed afterwards.",
-    "confirmNewAction": "Abandon and start"
+    "confirmNewBody": "A run is in progress. Starting a new one abandons it: it cannot be resumed afterwards. Its commits and experience are credited to you.",
+    "confirmNewAction": "Abandon and start",
+    "profileLore": "File",
+    "ally": "Owes something to",
+    "rival": "Holds a grudge against",
+    "abandonedCredited": "Run abandoned: {commits, plural, one {# commit} other {# commits}} and {xp} XP credited."
   },
   "hud": {
     "resourcesTitle": "Resources",
@@ -496,7 +500,15 @@
       "deadline": "Due by sprint {sprint}: nobody is working on it.",
       "obstacle": "Ticket #{id} is waiting on nothing but this one."
     },
-    "zoomFitWidth": "Fit to width"
+    "zoomFitWidth": "Fit to width",
+    "affinity": {
+      "ally": "Ally",
+      "rival": "Rival"
+    },
+    "affinityHint": {
+      "ally": "Your starter owes it something.",
+      "rival": "Your starter holds a grudge against it."
+    }
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -1084,19 +1096,23 @@
     "profiles": {
       "junior": {
         "name": "Junior",
-        "desc": "Boundless energy, no instinct for when the machine is lying."
+        "desc": "More energy than anyone, no instinct for when the machine is lying: AI commits fail more often.",
+        "lore": "Eleven weeks of bootcamp, a certificate signed by nobody in particular, and a first permanent job at Relève. The final internship, at Sept, ended the week Sept chose its seven. Your grandfather is still in Brume & Fils's articles; nobody has updated them."
       },
       "senior": {
         "name": "Senior",
-        "desc": "Solid craft commits and steady in a conflict; wary of the AI."
+        "desc": "Solid by hand and steady in a conflict; a failed roll gets a second chance each sprint, and a rejected PR costs no ground. Wary of the AI.",
+        "lore": "Eleven years at Quorum, until the board voted you out one Tuesday, unanimously, in four minutes. Before that, Fenwick's pallets, back when it made forklifts. You still read everything, including what the machine says it has read."
       },
       "vibe_coder": {
         "name": "Vibe coder",
-        "desc": "All in on the AI, unsure by hand, and the debt is blurrier than ever."
+        "desc": "All in on the AI, unsure by hand, and the debt is blurrier than ever.",
+        "lore": "Three startups in a year, all written in conversation. Volute bought the last one, having published its post-mortem the day before. You don't review: you rephrase. Lisière reads your public threads before you do."
       },
       "devops": {
         "name": "DevOps",
-        "desc": "Starts with CI already in place."
+        "desc": "Starts with CI, and a pipeline that reads the machine's commits every few turns.",
+        "lore": "Six years on call at Ostium, where the pricing page has no prices and the runbook one button. You automated your own on-call; it carried on without you. Your old partner is one of the seven Sept kept."
       }
     },
     "nodes": {
@@ -1917,6 +1933,70 @@
         "choices": {
           "take_money": "Take the cheque",
           "stay_lean": "Stay independent"
+        }
+      },
+      "junior_brume_statutes": {
+        "title": "{competitor}'s articles",
+        "text": "{competitor} writes to you. Its articles, never updated, still name your grandfather as a partner; the share is yours now. They offer to buy it back. The letter is signed “the sons”.",
+        "choices": {
+          "sell_share": "Sell the share",
+          "keep_share": "Keep the share"
+        }
+      },
+      "junior_sept_internship": {
+        "title": "{competitor} calls back",
+        "text": "{competitor} has published the list of the seven. Your internship is still on it, eighth, marked “to be confirmed”. You are asked to confirm.",
+        "choices": {
+          "confirm": "Confirm",
+          "leave_unanswered": "Leave it unanswered"
+        }
+      },
+      "senior_quorum_minutes": {
+        "title": "{competitor}'s minutes",
+        "text": "{competitor} sends you the minutes of the board meeting that voted you out, eleven years ago. They are dated this morning. The decision is still unanimous.",
+        "choices": {
+          "read_it": "Read it line by line",
+          "file_it": "File it unread"
+        }
+      },
+      "senior_fenwick_pallets": {
+        "title": "An old hand from {competitor}",
+        "text": "A former colleague from {competitor} asks you to review a module. You wrote it to lift pallets. It lifts something else now; the header comment has not changed.",
+        "choices": {
+          "review_it": "Review it for him",
+          "decline": "Decline politely"
+        }
+      },
+      "vibe_lisiere_thread": {
+        "title": "{competitor} read your thread",
+        "text": "{competitor} shipped this morning the feature you described last night in a public thread, prompt included. Same name, same typo.",
+        "choices": {
+          "delete_thread": "Delete the thread",
+          "post_sequel": "Post the sequel"
+        }
+      },
+      "vibe_volute_earnout": {
+        "title": "{competitor}'s earn-out",
+        "text": "{competitor} owes you the last tranche for your old startup. The transfer is ready. You only have to sign its post-mortem, dated next week.",
+        "choices": {
+          "sign": "Sign",
+          "dont_sign": "Don't sign"
+        }
+      },
+      "devops_ostium_pager": {
+        "title": "A pager from before",
+        "text": "Your old pager from {competitor} still goes off. The alert is one word: “Continue”. Nobody else got it.",
+        "choices": {
+          "acknowledge": "Acknowledge it",
+          "let_it_ring": "Let it ring"
+        }
+      },
+      "devops_sept_runbooks": {
+        "title": "One of the seven",
+        "text": "Among the seven {competitor} is keeping is your old on-call partner. He offers to swap runbooks. His no longer have a “tell someone” step.",
+        "choices": {
+          "swap": "Swap",
+          "keep_yours": "Keep yours"
         }
       }
     },

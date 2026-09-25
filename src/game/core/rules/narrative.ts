@@ -47,6 +47,13 @@ function eligible(state: RunState, trigger: NarrativeTrigger): NarrativeEventDef
     if (def.once === true && state.narrative.fired.includes(def.id)) return false;
     if (def.needsDev === true && state.devs.length === 0) return false;
     if (def.needsCompetitor === true && competitorsAlive(state).length === 0) return false;
+    if (def.profile !== undefined && state.profileId !== def.profile) return false;
+    if (
+      def.competitor !== undefined &&
+      state.market.competitors[def.competitor].status !== "alive"
+    ) {
+      return false;
+    }
     return true;
   });
 }
@@ -84,7 +91,10 @@ export function maybeNarrative(context: RuleContext, trigger: NarrativeTrigger):
   }
   if (chosen === undefined) return;
 
-  const competitorId = chosen.needsCompetitor === true ? strongestCompetitor(state) : undefined;
+  // A personal question names the company from the starter's past; any other
+  // that wants a company names the strongest on the market.
+  const competitorId =
+    chosen.competitor ?? (chosen.needsCompetitor === true ? strongestCompetitor(state) : undefined);
   const dev = chosen.needsDev === true ? state.devs[state.devs.length - 1] : undefined;
   state.narrative.lastTurn = state.turn;
   if (chosen.once === true) state.narrative.fired.push(chosen.id);

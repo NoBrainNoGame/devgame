@@ -64,14 +64,37 @@ export function urgencies(tickets: readonly FocusTicket[]): Map<string, Urgency>
 }
 
 /**
- * Whether a tab blinks: it asks for the player, it is not merely waiting on
- * its obstacle (the obstacle blinks instead), and nobody is on it or on any
- * of its subs.
+ * The tabs that blink: every urgent ticket that is not merely waiting on its
+ * obstacle (the obstacle blinks instead) and that nobody is on. While the
+ * player answers one urgent ticket — holding it or one of its subs — the
+ * others hold still: two VIPs at once, one in hand, and the other blinking
+ * would only repeat what the player chose to put second. The one in hand
+ * still points at its own obstacle when that is all it waits on.
  */
-export function blinks(
+export function blinkingTabs(
   snapshot: Parameters<typeof workingOn>[0],
-  ticket: FocusTicket,
-  urgency: Urgency | undefined,
-): boolean {
-  return urgency !== undefined && !ticket.waitingOnObstacle && !workingOn(snapshot, ticket.id);
+  tickets: readonly FocusTicket[],
+): Map<string, Urgency> {
+  const urgent = urgencies(tickets);
+  // The urgent ticket an obstacle serves, up the chain: the one it belongs to.
+  const rootOf = (id: string): string => {
+    let at = id;
+    for (let hops = 0; hops <= tickets.length; hops += 1) {
+      const urgency = urgent.get(at);
+      if (urgency?.reason !== "obstacle") return at;
+      at = urgency.parentId;
+    }
+    return at;
+  };
+  const answering = new Set([...urgent.keys()].filter((id) => workingOn(snapshot, id)).map(rootOf));
+
+  const blinking = new Map<string, Urgency>();
+  for (const ticket of tickets) {
+    const urgency = urgent.get(ticket.id);
+    if (urgency === undefined || ticket.waitingOnObstacle) continue;
+    if (workingOn(snapshot, ticket.id)) continue;
+    if (answering.size > 0 && !answering.has(rootOf(ticket.id))) continue;
+    blinking.set(ticket.id, urgency);
+  }
+  return blinking;
 }

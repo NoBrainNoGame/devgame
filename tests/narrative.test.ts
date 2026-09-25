@@ -37,9 +37,13 @@ function open(
   wanted: string,
   tier: number,
 ): RunState {
+  const def = NARRATIVE_EVENTS[wanted as (typeof NARRATIVE_EVENT_IDS)[number]];
   for (let i = 0; i < 400; i += 1) {
     const state = ready(`${wanted}-${i}`, tier);
-    if (NARRATIVE_EVENTS[wanted as (typeof NARRATIVE_EVENT_IDS)[number]].needsDev === true) {
+    // A personal question: the starter it is asked of, and its company on the market.
+    if (def.profile !== undefined) state.profileId = def.profile;
+    if (def.competitor !== undefined) state.market.competitors[def.competitor].status = "alive";
+    if (def.needsDev === true) {
       state.devs.push({
         id: "d1",
         name: "Test",
@@ -82,6 +86,7 @@ describe("when a question opens", () => {
       const state = open(def.trigger, id, def.minTier);
       if (state.phase.kind !== "event") throw new Error("expected an event");
       if (def.needsCompetitor === true) expect(state.phase.competitorId).toBeDefined();
+      if (def.competitor !== undefined) expect(state.phase.competitorId).toBe(def.competitor);
       if (def.needsDev === true) expect(state.phase.devId).toBe("d1");
       const offered = getAvailableActions(state);
       expect(offered.length).toBeGreaterThan(0);
@@ -90,6 +95,30 @@ describe("when a question opens", () => {
       const target = idleTarget(toSnapshot(state));
       expect(target).toBeDefined();
       if (target !== undefined) expect(offered.some((a) => isSameAction(a, target))).toBe(true);
+    }
+  });
+
+  test("a personal question is asked of its starter only, and waits for its company", () => {
+    const personal = NARRATIVE_EVENT_IDS.filter((id) => NARRATIVE_EVENTS[id].profile !== undefined);
+    expect(personal.length).toBeGreaterThan(0);
+    for (const id of personal) {
+      const def = NARRATIVE_EVENTS[id];
+      for (let i = 0; i < 200; i += 1) {
+        // Any other starter, with the company on the market: never.
+        const other = ready(`${id}-other-${i}`, def.minTier);
+        other.profileId = def.profile === "junior" ? "senior" : "junior";
+        if (def.competitor !== undefined) other.market.competitors[def.competitor].status = "alive";
+        maybeNarrative(createContext(other), def.trigger);
+        if (other.phase.kind === "event") expect(other.phase.eventId).not.toBe(id);
+
+        // The right starter, with the company not on the market yet: never either.
+        if (def.competitor === undefined) continue;
+        const early = ready(`${id}-early-${i}`, def.minTier);
+        if (def.profile !== undefined) early.profileId = def.profile;
+        early.market.competitors[def.competitor].status = "waiting";
+        maybeNarrative(createContext(early), def.trigger);
+        if (early.phase.kind === "event") expect(early.phase.eventId).not.toBe(id);
+      }
     }
   });
 

@@ -37,7 +37,7 @@ export function ResumePanel({ save, onResume }: { save: RunSaveDto; onResume: ()
   }, [save]);
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 self-start border border-branch-feature/40 bg-panel/60 p-4">
+    <section className="flex min-w-0 flex-col gap-4 self-start border border-cyber/40 bg-panel/60 p-4">
       <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="hud-title font-medium text-lg">{t("resumeTitle")}</h2>
         <p className="text-muted-foreground text-xs">

@@ -170,7 +170,10 @@ never the HUD.
 `NARRATIVE_EVENTS` (`content/narrative.ts`): `source`, `trigger`, `weight`,
 `minTier`/`maxTier`, `minSprint` (≥ 2), `once`, `needsDev`/`needsCompetitor`,
 exactly two `choices`; `game.narrative.<id>.{title,text,choices.<choice>}` in
-the voice of `docs/lore.md`. New effect field: an `answerEvent` branch
+the voice of `docs/lore.md`. A personal question: `profile` (asked of that
+starter only, so every other starter's draws are untouched) and `competitor`
+(named instead of the strongest, eligible only while it is `alive`) — the
+starter's `ally` or `rival`, appended after the others. New effect field: an `answerEvent` branch
 (`rules/narrative.ts`) + a preview note. `maybeNarrative` always draws twice per
 trigger; a draw only when an event opens breaks replay of every run that saw
 none (`narrative.test.ts`).
@@ -353,11 +356,19 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
 2. `unlockCost` **> 0** except `junior` (tested).
 3. `startingSkills`: `SkillId`s granted by `createRun`; `startingTree`: partial
    tree levels.
-4. No wiring: `RunSetup.tsx` renders `PROFILE_IDS`, `RunSaveSchema` checks
+4. A past: `game.profiles.<id>.lore` and a row in `docs/lore.md`, "Les
+   profils"; an `ally` and a `rival` among the house companies (shown in the
+   setup's file and as badges on the market), and a personal question for
+   each (see "A narrative event").
+5. No wiring: `RunSetup.tsx` renders `PROFILE_IDS`, `RunSaveSchema` checks
    `z.enum(PROFILE_IDS)`, `applyRunToMeta` unlocks by banked commits,
    `overclaims` (`lib/run/claims.ts`) refuses a locked profile. No randomness.
+6. Profile effects are not in `RULES_FINGERPRINT` (only the ids are): a change
+   to one replays that starter's runs differently, which is an epoch bump
+   once the game is published.
 
-Check: +claims; the sim plays only `junior`: play the new one by hand.
+Check: +claims; `bun run sim --profile <id>` against `junior` on the same
+seeds, AI-heavy (`--policy mixed`) as well as by hand.
 
 ### When no effect field fits
 

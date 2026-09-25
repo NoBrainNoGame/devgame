@@ -77,6 +77,23 @@ d'une phrase qui dit ce qu'elle est en disant autre chose :
 Elles entrent au palier `entersAtTier`, dans cet ordre, et leur force croît de
 `aggression` pour cent par mois.
 
+## Les profils
+
+Le joueur reste « vous ». Le profil dit d'où vous venez, jamais qui vous
+êtes : un passé chez deux des entreprises maison, l'une à qui vous devez
+quelque chose, l'autre contre qui vous gardez une rancune
+(`src/game/content/profiles.ts`, `ally` et `rival`). Chacune vous pose une
+question personnelle pendant la run, une fois, quand elle est sur le marché
+(`game.narrative.<profil>_<entreprise>_…`). Même règle de ton : ce qui
+inquiète est ce qui manque.
+
+| Profil | D'où il vient | Doit à | Rancune | Ce qui manque |
+| --- | --- | --- | --- | --- |
+| Junior | onze semaines de bootcamp, un stage chez Sept | Brume & Fils (le grand-père toujours dans les statuts) | Sept (le stage arrêté la semaine des sept) | la place de huitième |
+| Senior | onze ans chez Quorum, avant cela Fenwick | Fenwick (le module qui levait des palettes) | Quorum (le conseil qui l'a voté dehors en quatre minutes) | quelqu'un qui relise encore |
+| Vibe coder | trois startups écrites en conversation | Volute (le complément de prix, contre un post-mortem daté) | Lisière (qui lit les fils publics avant vous) | la relecture |
+| DevOps | six ans d'astreinte chez Ostium | Sept (un ancien binôme parmi les sept) | Ostium (le pager qui sonne encore) | l'étape « prévenir quelqu'un » |
+
 ## Les clins d'œil
 
 Seize concurrents de plus viennent d'histoires d'entreprises qui ont fini comme

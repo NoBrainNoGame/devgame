@@ -409,11 +409,22 @@ non, pour garder la trame. Une question s'ouvre en tour ordinaire, après
 événements système (politique de relecture au palier 4, canal opérateur au 6)
 mènent au même endroit quelle que soit la réponse : c'est leur propos.
 
+**Questions personnelles** : chaque profil a un passé (`docs/lore.md`, « Les
+profils ») et deux entreprises maison dans ce passé, l'une à qui il doit
+quelque chose, l'autre contre qui il garde une rancune. Chacune lui pose une
+question, une fois par run, à lui seul, et seulement quand elle est sur le
+marché ; ailleurs, le marché les marque « Allié » et « Rival ».
+
 ## Méta-progression
 
-- **Commits accumulés** : débloquent profils et compétences. Junior (d'emblée ;
-  plus d'énergie, IA plus risquée), Senior (lent et sûr), Vibe Coder (tout IA,
-  fourchette de dette plus large), DevOps (démarre avec la CI).
+- **Commits accumulés** : débloquent profils et compétences, crédités à la fin
+  d'une run comme à son abandon (une run qui ne meurt pas débloquerait sinon
+  rien). Junior (d'emblée ; plus d'énergie, IA plus risquée), Senior (300 ;
+  un jet raté rejouable par sprint, une PR refusée qui ne coûte rien), Vibe
+  Coder (600 ; tout IA, fourchette de santé plus large), DevOps (1000 ; la CI
+  et une review gratuite régulière). Les trois payants sont des variantes de
+  style, pas une échelle de force : à jeu égal, ils tiennent le début de run
+  aussi souvent l'un que l'autre.
 - **XP** : chaque niveau au-delà du premier donne un point de compétence en
   début de run : une décision par run, pas un bonus permanent.
 

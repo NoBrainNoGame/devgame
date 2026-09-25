@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui/notify";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
 import { gameStore, useGameStore } from "@/game";
+import { snapshotOfSave } from "@/game/bridge/rebuild";
 import { Link } from "@/i18n/navigation";
 import { applyRunToMeta } from "@/lib/profile/progression";
 import { submitRun } from "@/lib/run/actions";
@@ -124,6 +125,37 @@ export function PlayClient(props: PlayClientProps) {
     setResumable(pickLongerRun(readLocalRun(), props.serverRun));
   }, [hydrated, props.serverRun]);
 
+  /**
+   * A run given up is credited like a run that ended: its commits, its
+   * experience, its tickets. A player whose runs never die would otherwise
+   * never bank a commit, and never unlock anything. It is never submitted,
+   * so the server — which credits a run only when it replays a finished one —
+   * never counts it twice.
+   */
+  const creditAbandoned = useCallback(
+    (save: RunSaveDto) => {
+      const snapshot = snapshotOfSave(save);
+      if (snapshot.phase.kind === "game_over") return;
+      const reward = applyRunToMeta(
+        useMetaStore.getState().meta,
+        {
+          xp: snapshot.xpEarned,
+          commits: snapshot.player.totalCommits,
+          ticketsDelivered: snapshot.ticketsDelivered,
+          sprints: Math.max(0, snapshot.sprint - 1),
+        },
+        new Date().toISOString(),
+      );
+      setMeta(reward.meta);
+      notify.info(
+        t("abandonedCredited", { commits: snapshot.player.totalCommits, xp: snapshot.xpEarned }),
+      );
+      if (reward.levelsGained > 0) notify.success(t("levelUp", { level: reward.meta.level }));
+      for (const id of reward.unlocked) notify.success(t("unlocked", { name: id }));
+    },
+    [setMeta, t],
+  );
+
   const start = useCallback(
     (choice: {
       profileId: MetaProgressDto["unlockedProfiles"][number];
@@ -145,9 +177,12 @@ export function PlayClient(props: PlayClientProps) {
           : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
 
       // A run left behind is worth knowing about: where players stop.
-      const left = readLocalRun();
-      if (props.online && left !== null && left.actions.length > 0) {
-        sendRunSample(left, "abandoned", locale, Date.now() - startedAtRef.current);
+      const left = pickLongerRun(readLocalRun(), resumable);
+      if (left !== null && left.actions.length > 0) {
+        if (props.online) {
+          sendRunSample(left, "abandoned", locale, Date.now() - startedAtRef.current);
+        }
+        creditAbandoned(left);
       }
       clearLocalRun();
       setSubmitted(false);
@@ -166,7 +201,7 @@ export function PlayClient(props: PlayClientProps) {
         createdAt: new Date().toISOString(),
       });
     },
-    [props.dailySeed, props.online, locale, setMeta],
+    [props.dailySeed, props.online, locale, setMeta, resumable, creditAbandoned],
   );
 
   const resume = useCallback(() => {

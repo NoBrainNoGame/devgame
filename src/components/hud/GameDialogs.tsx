@@ -179,7 +179,8 @@ export function EventDialog({
       phase.competitorId === undefined
         ? ""
         : game(`competitors.${phase.competitorId}.name` as never),
-    dev: phase.devId ?? "",
+    // The id names the developer to the rules; the dialog names them to the player.
+    dev: snapshot.devs.find((dev) => dev.id === phase.devId)?.name ?? "",
   };
 
   return (

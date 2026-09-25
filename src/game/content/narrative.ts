@@ -1,3 +1,5 @@
+import type { CompetitorId } from "@/game/content/competitors";
+import type { ProfileId } from "@/game/content/profiles";
 import type { TicketKind } from "@/game/content/tickets";
 
 /**
@@ -11,6 +13,11 @@ import type { TicketKind } from "@/game/content/tickets";
  * The strings are in `messages/*.json` under `game.narrative.<id>`, in the
  * voice of `docs/lore.md`: the two system events are where the run comes
  * closest to saying what it is, and never does.
+ *
+ * The personal ones, last, are asked of one starter only and name the
+ * company from its past (`ally` and `rival` in `profiles.ts`). They are only
+ * eligible for that starter, so every other starter's draws stay exactly as
+ * they were.
  */
 
 export const NARRATIVE_EVENT_IDS = [
@@ -28,6 +35,14 @@ export const NARRATIVE_EVENT_IDS = [
   "hackathon",
   "heated_retro",
   "angel_call",
+  "junior_brume_statutes",
+  "junior_sept_internship",
+  "senior_quorum_minutes",
+  "senior_fenwick_pallets",
+  "vibe_lisiere_thread",
+  "vibe_volute_earnout",
+  "devops_ostium_pager",
+  "devops_sept_runbooks",
 ] as const;
 
 export type NarrativeEventId = (typeof NARRATIVE_EVENT_IDS)[number];
@@ -81,6 +96,10 @@ export interface NarrativeEventDef {
   once?: boolean;
   needsDev?: boolean;
   needsCompetitor?: boolean;
+  /** Asked of this starter only. */
+  profile?: ProfileId;
+  /** Names this company rather than the strongest, and waits until it is on the market. */
+  competitor?: CompetitorId;
   choices: [NarrativeChoice, NarrativeChoice];
 }
 
@@ -262,6 +281,138 @@ export const NARRATIVE_EVENTS: Record<NarrativeEventId, NarrativeEventDef> = {
     choices: [
       { id: "take_money", effect: { money: 400, quality: 10 } },
       { id: "stay_lean", effect: { share: 1 } },
+    ],
+  },
+
+  // The Junior: a grandfather still in Brume & Fils's articles, an
+  // internship Sept ended the week it chose its seven.
+  junior_brume_statutes: {
+    id: "junior_brume_statutes",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 0,
+    minSprint: 2,
+    once: true,
+    profile: "junior",
+    competitor: "brume",
+    choices: [
+      { id: "sell_share", effect: { money: 300, competitor: 10 } },
+      { id: "keep_share", effect: { share: 2, competitor: -5 } },
+    ],
+  },
+  junior_sept_internship: {
+    id: "junior_sept_internship",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 4,
+    minSprint: 3,
+    once: true,
+    profile: "junior",
+    competitor: "sept",
+    choices: [
+      { id: "confirm", effect: { skillPoints: 2, quality: 10 } },
+      { id: "leave_unanswered", effect: { share: 1, competitor: -10 } },
+    ],
+  },
+
+  // The Senior: voted out of Quorum in four minutes, and before that the
+  // pallets at Fenwick, when it still made forklifts.
+  senior_quorum_minutes: {
+    id: "senior_quorum_minutes",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 0,
+    minSprint: 3,
+    once: true,
+    profile: "senior",
+    competitor: "quorum",
+    choices: [
+      { id: "read_it", effect: { energy: -4, share: 1, competitor: -15 } },
+      { id: "file_it", effect: { quality: -5 } },
+    ],
+  },
+  senior_fenwick_pallets: {
+    id: "senior_fenwick_pallets",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 2,
+    minSprint: 3,
+    once: true,
+    profile: "senior",
+    competitor: "fenwick",
+    choices: [
+      { id: "review_it", effect: { energy: -4, skillPoints: 1, competitor: 10 } },
+      { id: "decline", effect: { energy: 2 } },
+    ],
+  },
+
+  // The Vibe coder: Lisière reads the public threads, Volute owes the last
+  // tranche of a startup it bought the day after its post-mortem.
+  vibe_lisiere_thread: {
+    id: "vibe_lisiere_thread",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 1,
+    minSprint: 3,
+    once: true,
+    profile: "vibe_coder",
+    competitor: "lisiere",
+    choices: [
+      { id: "delete_thread", effect: { share: -1, competitor: -10 } },
+      { id: "post_sequel", effect: { share: 2, competitor: 15 } },
+    ],
+  },
+  vibe_volute_earnout: {
+    id: "vibe_volute_earnout",
+    source: "competitor",
+    trigger: "payday",
+    weight: 4,
+    minTier: 3,
+    minSprint: 3,
+    once: true,
+    profile: "vibe_coder",
+    competitor: "volute",
+    choices: [
+      { id: "sign", effect: { money: 500, quality: 5 } },
+      { id: "dont_sign", effect: { share: 1, competitor: -10 } },
+    ],
+  },
+
+  // The DevOps: six years on call at Ostium, and an old partner among the
+  // seven Sept kept.
+  devops_ostium_pager: {
+    id: "devops_ostium_pager",
+    source: "competitor",
+    trigger: "incident",
+    weight: 4,
+    minTier: 3,
+    minSprint: 3,
+    once: true,
+    profile: "devops",
+    competitor: "ostium",
+    choices: [
+      { id: "acknowledge", effect: { energy: -3, competitor: 10 } },
+      { id: "let_it_ring", effect: { share: 2, competitor: -15 } },
+    ],
+  },
+  devops_sept_runbooks: {
+    id: "devops_sept_runbooks",
+    source: "competitor",
+    trigger: "sprint_start",
+    weight: 4,
+    minTier: 4,
+    minSprint: 3,
+    once: true,
+    profile: "devops",
+    competitor: "sept",
+    choices: [
+      { id: "swap", effect: { debt: -15, competitor: 10 } },
+      { id: "keep_yours", effect: { quality: -5 } },
     ],
   },
 };

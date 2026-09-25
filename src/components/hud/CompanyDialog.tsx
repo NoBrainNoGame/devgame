@@ -28,6 +28,7 @@ import {
   type AcquisitionId,
   DEV_RANK,
   DEV_RANKS,
+  PROFILES,
 } from "@/game/content";
 import { cn } from "@/lib/utils";
 
@@ -271,8 +272,11 @@ function Market({ snapshot }: { snapshot: RunSnapshot }) {
               )}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="truncate font-medium">
-                  {game(`competitors.${competitor.id}.name` as never)}
+                <span className="flex min-w-0 items-baseline gap-1.5">
+                  <span className="truncate font-medium">
+                    {game(`competitors.${competitor.id}.name` as never)}
+                  </span>
+                  <Affinity profileId={snapshot.profileId} competitorId={competitor.id} />
                 </span>
                 <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
                   {competitor.status === "alive"
@@ -547,5 +551,36 @@ function DevCard({ dev, snapshot }: { dev: DevView; snapshot: RunSnapshot }) {
         </div>
       ))}
     </article>
+  );
+}
+
+/** Whether the run's starter has a past with this company: the one it owes, the one it resents. */
+function Affinity({
+  profileId,
+  competitorId,
+}: {
+  profileId: RunSnapshot["profileId"];
+  competitorId: string;
+}) {
+  const t = useTranslations("hud");
+  const def = PROFILES[profileId];
+  const kind = def.ally === competitorId ? "ally" : def.rival === competitorId ? "rival" : null;
+  if (kind === null) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          className={cn(
+            "shrink-0 rounded-full border px-1.5 text-[0.65rem] uppercase tracking-wider",
+            kind === "ally"
+              ? "border-cyber/50 text-cyber"
+              : "border-branch-hotfix/50 text-branch-hotfix",
+          )}
+        >
+          {t(`affinity.${kind}`)}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{t(`affinityHint.${kind}`)}</TooltipContent>
+    </Tooltip>
   );
 }

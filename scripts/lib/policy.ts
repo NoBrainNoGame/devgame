@@ -19,8 +19,10 @@ import {
   buggedOn,
   currentTicket,
   getTicket,
+  obstaclesOf,
   playerTickets,
   unreadAiOn,
+  waitsOnlyForObstacle,
 } from "@/game/core/rules/tickets";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
 
@@ -95,18 +97,33 @@ function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | u
   );
 }
 
-/** The open ticket closest to landing, if it is not the one in hand. */
+/**
+ * The open ticket closest to landing, if it is not the one in hand. A ticket
+ * waiting on nothing but its obstacle is not close to anything: full, it has
+ * nothing left to write, and only the obstacle moves it — so the obstacle is
+ * where the player goes. Policies written before obstacles kept committing on
+ * the full ticket and died of it, which made every sim figure wrong.
+ */
 function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
   const current = currentTicket(state);
-  const open = playerTickets(state);
-  if (current === null || open.length < 2) return undefined;
+  if (current === null) return undefined;
+  const checkout = (ticket: Ticket): PlayerAction | undefined =>
+    actions.find((a) => a.type === "checkout" && a.ticketId === ticket.id);
 
+  if (waitsOnlyForObstacle(state, current)) {
+    for (const obstacle of obstaclesOf(state, current)) {
+      const go = checkout(obstacle);
+      if (go !== undefined) return go;
+    }
+  }
+
+  const open = playerTickets(state).filter((ticket) => !waitsOnlyForObstacle(state, ticket));
+  if (open.length === 0) return undefined;
   const remaining = (ticket: Ticket): number =>
     ticket.points - ticket.filled + (ticket.mustWrite ? -5 : 0);
   const best = open.reduce((a, b) => (remaining(b) < remaining(a) ? b : a));
   if (best.id === current.id) return undefined;
-
-  return actions.find((a) => a.type === "checkout" && a.ticketId === best.id);
+  return checkout(best);
 }
 
 /** Tree nodes in the order the manager buys them. */

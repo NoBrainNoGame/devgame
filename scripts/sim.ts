@@ -4,6 +4,7 @@
  *   bun run sim                       200 runs, every policy
  *   bun run sim --runs 500 --policy ai
  *   bun run sim --seed 42 --verbose   one run, printed turn by turn
+ *   bun run sim --profile vibe_coder  every run played as that starter (default junior)
  *
  * The numbers in `balance.ts` are guesses until this says otherwise. What it is
  * looking for: runs that never end, runs that end instantly, a failure that
@@ -13,6 +14,7 @@
  * fixtures loader.
  */
 
+import { isProfileId, PROFILE_IDS, type ProfileId } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { capacityOf, loadOf, monthlyReport, mrrOf } from "@/game/core/rules/economy";
@@ -81,6 +83,7 @@ function parseArgs(argv: string[]): {
   seed: number;
   turns: number;
   verbose: boolean;
+  profileId: ProfileId;
 } {
   const get = (flag: string): string | undefined => {
     const index = argv.indexOf(flag);
@@ -93,14 +96,28 @@ function parseArgs(argv: string[]): {
     seed: Number(get("--seed") ?? 1),
     turns: Number(get("--turns") ?? DEFAULT_MAX_TURNS),
     verbose: argv.includes("--verbose"),
+    profileId: profileArg(get("--profile")),
   };
 }
 
-function playOne(seed: string, policy: PolicyName, maxTurns: number, verbose: boolean): Outcome {
+function profileArg(value: string | undefined): ProfileId {
+  if (value === undefined) return "junior";
+  if (isProfileId(value)) return value;
+  console.error(`Unknown profile "${value}". Pick one of: ${PROFILE_IDS.join(", ")}.`);
+  process.exit(1);
+}
+
+function playOne(
+  seed: string,
+  policy: PolicyName,
+  maxTurns: number,
+  verbose: boolean,
+  profileId: ProfileId,
+): Outcome {
   let state = createRun({
     seed,
     mode: "classic",
-    profileId: "junior",
+    profileId,
     version: SAVE_VERSION,
   });
 
@@ -445,7 +462,7 @@ const args = parseArgs(Bun.argv.slice(2));
 
 if (args.verbose) {
   const policy: PolicyName = args.policy === "all" ? "mixed" : args.policy;
-  const outcome = playOne(`sim-${args.seed}`, policy, args.turns, true);
+  const outcome = playOne(`sim-${args.seed}`, policy, args.turns, true, args.profileId);
   console.log("\n", outcome);
 } else {
   checkGeneration(Math.min(500, args.runs * 2));
@@ -455,7 +472,7 @@ if (args.verbose) {
   for (const policy of policies) {
     const outcomes: Outcome[] = [];
     for (let i = 0; i < args.runs; i++) {
-      outcomes.push(playOne(`sim-${args.seed + i}`, policy, args.turns, false));
+      outcomes.push(playOne(`sim-${args.seed + i}`, policy, args.turns, false, args.profileId));
     }
     report(policy, outcomes);
   }
