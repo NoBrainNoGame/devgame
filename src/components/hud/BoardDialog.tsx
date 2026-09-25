@@ -37,13 +37,11 @@ export function BoardDialog({
   open,
   onOpenChange,
   snapshot,
-  busy,
   onAct,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -102,7 +100,6 @@ export function BoardDialog({
                       ticket={ticket}
                       devs={snapshot.devs}
                       current={ticket.id === snapshot.player.ticketId}
-                      busy={busy}
                       onOpen={() => setSelectedId(ticket.id)}
                       onAct={act}
                     />
@@ -118,7 +115,6 @@ export function BoardDialog({
         <TicketDialog
           ticket={selected}
           snapshot={snapshot}
-          busy={busy}
           onClose={() => setSelectedId(null)}
           onAct={act}
         />
@@ -186,14 +182,12 @@ function TicketCard({
   ticket,
   devs,
   current,
-  busy,
   onOpen,
   onAct,
 }: {
   ticket: TicketView;
   devs: DevView[];
   current: boolean;
-  busy: boolean;
   onOpen: () => void;
   onAct: (action: PlayerAction) => void;
 }) {
@@ -284,7 +278,6 @@ function TicketCard({
           <Button
             size="sm"
             className="w-full"
-            disabled={busy}
             onClick={() => onAct({ type: "start", ticketId: ticket.id })}
           >
             {t("startTicket")}
@@ -296,7 +289,6 @@ function TicketCard({
           size="sm"
           variant="outline"
           className="w-full"
-          disabled={busy}
           onClick={() => onAct({ type: "checkout", ticketId: ticket.id })}
         >
           {t("checkout")}

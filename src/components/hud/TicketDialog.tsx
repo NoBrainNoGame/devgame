@@ -23,13 +23,11 @@ import { cn } from "@/lib/utils";
 export function TicketDialog({
   ticket,
   snapshot,
-  busy,
   onClose,
   onAct,
 }: {
   ticket: TicketView | null;
   snapshot: RunSnapshot;
-  busy: boolean;
   onClose: () => void;
   onAct: (action: PlayerAction) => void;
 }) {
@@ -56,18 +54,13 @@ export function TicketDialog({
         <TicketDetails ticket={ticket} snapshot={snapshot} header={false} />
 
         {ticket.status === "backlog" ? (
-          <Button
-            className="w-full"
-            disabled={busy}
-            onClick={() => onAct({ type: "start", ticketId: ticket.id })}
-          >
+          <Button className="w-full" onClick={() => onAct({ type: "start", ticketId: ticket.id })}>
             {t("startTicket")}
           </Button>
         ) : ticket.status === "open" && !current ? (
           <Button
             variant="outline"
             className="w-full"
-            disabled={busy}
             onClick={() => onAct({ type: "checkout", ticketId: ticket.id })}
           >
             {t("checkout")}

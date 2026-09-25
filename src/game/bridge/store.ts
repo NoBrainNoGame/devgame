@@ -44,6 +44,11 @@ export interface GameStore {
    * often, or nothing at all (`sceneGuard.ts`).
    */
   renderMode: RenderMode;
+  /**
+   * A modal is open over the run: the canvas holds its story still until it
+   * closes. Written by the page, read by the effect queue.
+   */
+  scenePaused: boolean;
 }
 
 export const INITIAL_STORE: GameStore = {
@@ -59,6 +64,7 @@ export const INITIAL_STORE: GameStore = {
   pendingReview: null,
   lastError: null,
   renderMode: "webgl",
+  scenePaused: false,
 };
 
 export const gameStore = createStore<GameStore>()(() => ({ ...INITIAL_STORE }));

@@ -27,13 +27,11 @@ export function SkillTreeDialog({
   open,
   onOpenChange,
   snapshot,
-  busy,
   onAct,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -61,7 +59,7 @@ export function SkillTreeDialog({
               </h3>
               <div className="space-y-2">
                 {treeBranch(branch).map((id) => (
-                  <TreeNodeCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+                  <TreeNodeCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
                 ))}
               </div>
             </section>
@@ -75,12 +73,10 @@ export function SkillTreeDialog({
 function TreeNodeCard({
   id,
   snapshot,
-  busy,
   onAct,
 }: {
   id: TreeNodeId;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -139,7 +135,7 @@ function TreeNodeCard({
           size="sm"
           variant={offered ? "default" : "outline"}
           className={cn("w-full", short && "text-muted-foreground")}
-          disabled={busy || !offered}
+          disabled={!offered}
           onClick={() => onAct(action)}
         >
           {maxed ? t("treeMaxed") : t("treeBuy", { level: level + 1, points: cost ?? 0 })}

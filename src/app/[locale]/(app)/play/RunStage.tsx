@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { BoardDialog } from "@/components/hud/BoardDialog";
@@ -29,7 +29,8 @@ import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto } from "@/game";
-import { useGameStore } from "@/game";
+import { gameStore, useGameStore } from "@/game";
+import { useModalsOpen } from "@/lib/ui/modals";
 import { cn } from "@/lib/utils";
 
 /**
@@ -95,6 +96,11 @@ export function RunStage({
 }: RunStageProps) {
   const t = useTranslations("play");
   const renderMode = useGameStore((state) => state.renderMode);
+  // Any modal over the run holds the canvas's story still until it closes.
+  const modalsOpen = useModalsOpen();
+  useEffect(() => {
+    gameStore.setState({ scenePaused: modalsOpen > 0 });
+  }, [modalsOpen]);
 
   const snapshot = useGameStore((state) => state.snapshot);
   const log = useGameStore((state) => state.log);
@@ -121,12 +127,7 @@ export function RunStage({
         />
       )}
       {snapshot === null ? null : (
-        <TicketBar
-          snapshot={snapshot}
-          busy={busy}
-          onAct={onAct}
-          onOpenBoard={() => setBoardOpen(true)}
-        />
+        <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
       )}
 
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
@@ -170,7 +171,6 @@ export function RunStage({
             <>
               <ActionPanel
                 snapshot={snapshot}
-                busy={busy}
                 onAct={onAct}
                 onOpenBoard={() => setBoardOpen(true)}
               />
@@ -188,21 +188,18 @@ export function RunStage({
             open={boardOpen}
             onOpenChange={setBoardOpen}
             snapshot={snapshot}
-            busy={busy}
             onAct={onAct}
           />
           <CompanyDialog
             open={companyOpen}
             onOpenChange={setCompanyOpen}
             snapshot={snapshot}
-            busy={busy}
             onAct={onAct}
           />
           <SkillTreeDialog
             open={treeOpen}
             onOpenChange={setTreeOpen}
             snapshot={snapshot}
-            busy={busy}
             onAct={onAct}
           />
           <ReviewDialog snapshot={snapshot} onAct={onAct} />

@@ -4,8 +4,10 @@ import { cn } from "cn";
 import { XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type * as React from "react";
+import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
+import { modalOpened } from "@/lib/ui/modals";
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -50,6 +52,8 @@ function DialogContent({
   /** Classes for the framed box inside, where the children lay out. */
   frameClassName?: string;
 }) {
+  // Counted while it is on screen: the run pauses its canvas under any modal.
+  useEffect(() => modalOpened(), []);
   return (
     <DialogPortal>
       <DialogOverlay />

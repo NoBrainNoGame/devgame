@@ -33,7 +33,10 @@ export function IdleDriver({
   useEffect(hydrateIdleSettings, []);
 
   const target = snapshot === null ? undefined : idleTarget(snapshot);
-  const running = settings.enabled && !busy && !paused && target !== undefined;
+  // It waits for the story to end — unless a modal is holding the story
+  // still, which must not hold the clock: pressing cuts the story short.
+  const scenePaused = useGameStore((state) => state.scenePaused);
+  const running = settings.enabled && (!busy || scenePaused) && !paused && target !== undefined;
 
   // A new snapshot is a new clock: the effect re-runs on every dispatch,
   // free or not, and starts from zero.

@@ -85,11 +85,20 @@ export class FxQueue extends booyah.Queue {
     const batch: Batch = { serial: this.serial, skip: { value: false } };
     this.current = batch;
     const { signal, audio } = sceneContext(this.chipContext);
-    const watchdog = setTimeout(() => {
-      if (signal.aborted) return;
-      if (batch.serial !== this.serial || !gameStore.getState().pendingAnimation) return;
-      this.skip();
-    }, WATCHDOG_MS);
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
+    const arm = (): void => {
+      watchdog = setTimeout(() => {
+        if (signal.aborted) return;
+        if (batch.serial !== this.serial || !gameStore.getState().pendingAnimation) return;
+        // Held still under a modal is not stuck: wait for it to close.
+        if (gameStore.getState().scenePaused) {
+          arm();
+          return;
+        }
+        this.skip();
+      }, WATCHDOG_MS);
+    };
+    arm();
 
     if (reducedMotion) {
       reveal.showAll(payload.state);
@@ -123,6 +132,12 @@ export class FxQueue extends booyah.Queue {
       }),
     );
     if (document.hidden) this.skip();
+  }
+
+  /** Under a modal, the story holds still: nothing advances until it closes. */
+  tick(tickInfo: booyah.TickInfo): void {
+    if (gameStore.getState().scenePaused) return;
+    super.tick(tickInfo);
   }
 
   private chipFor(step: Step, skip: SkipFlag): booyah.Chip {

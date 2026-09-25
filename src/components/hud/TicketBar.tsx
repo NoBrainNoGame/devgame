@@ -19,12 +19,10 @@ import { cn } from "@/lib/utils";
  */
 export function TicketBar({
   snapshot,
-  busy,
   onAct,
   onOpenBoard,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
   onOpenBoard: () => void;
 }) {
@@ -63,7 +61,6 @@ export function TicketBar({
             ticket={ticket}
             snapshot={snapshot}
             current={ticket.id === snapshot.player.ticketId}
-            busy={busy}
             onAct={onAct}
           />
         ))
@@ -118,13 +115,11 @@ function TicketTab({
   ticket,
   snapshot,
   current,
-  busy,
   onAct,
 }: {
   ticket: TicketView;
   snapshot: RunSnapshot;
   current: boolean;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -142,10 +137,11 @@ function TicketTab({
         <button
           type="button"
           // Not `disabled`: a disabled button takes no hover, and the tab in
-          // hand is the one whose tooltip matters most.
-          aria-disabled={busy || current}
+          // hand is the one whose tooltip matters most. Never blocked by an
+          // animation either: acting cuts the story short (`PlayClient.act`).
+          aria-disabled={current}
           onClick={() => {
-            if (!busy && !current) onAct({ type: "checkout", ticketId: ticket.id });
+            if (!current) onAct({ type: "checkout", ticketId: ticket.id });
           }}
           className={cn(
             "flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",

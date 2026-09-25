@@ -26,12 +26,10 @@ import { cn } from "@/lib/utils";
  */
 export function ActionPanel({
   snapshot,
-  busy,
   onAct,
   onOpenBoard,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
   /** Nothing in hand: the panel's first offer is the board. */
   onOpenBoard: () => void;
@@ -79,7 +77,6 @@ export function ActionPanel({
             label={t("hack.title")}
             hint={t(`hack.${snapshot.hack}`)}
             preview={snapshot.previews[actionKey(hack)]}
-            busy={busy}
             danger
             action={hack}
             onAct={() => onAct(hack)}
@@ -95,7 +92,6 @@ export function ActionPanel({
             label={t("submit")}
             hint={t("submitHint")}
             preview={snapshot.previews[actionKey(submit)]}
-            busy={busy}
             emphasis
             action={submit}
             onAct={() => onAct(submit)}
@@ -107,7 +103,6 @@ export function ActionPanel({
             label={t("switchToObstacle")}
             hint={t("switchToObstacleHint", { id: toObstacle.ticketId.slice(1) })}
             preview={snapshot.previews[actionKey(toObstacle)]}
-            busy={busy}
             emphasis
             action={toObstacle}
             onAct={() => onAct(toObstacle)}
@@ -119,7 +114,6 @@ export function ActionPanel({
             label={t("landObstacle")}
             hint={t("landObstacleHint")}
             preview={snapshot.previews[actionKey(land)]}
-            busy={busy}
             emphasis
             action={land}
             onAct={() => onAct(land)}
@@ -132,7 +126,6 @@ export function ActionPanel({
             label={action.mode === "craft" ? t("craftCommit") : t("aiCommit")}
             hint={action.mode === "craft" ? t("craftCommitHint") : t("aiCommitHint")}
             preview={snapshot.previews[actionKey(action)]}
-            busy={busy}
             action={action}
             onAct={() => onAct(action)}
           />
@@ -143,7 +136,6 @@ export function ActionPanel({
             label={t("review")}
             hint={t("reviewHint")}
             preview={snapshot.previews[actionKey(review)]}
-            busy={busy}
             action={review}
             onAct={() => onAct(review)}
           />
@@ -153,7 +145,6 @@ export function ActionPanel({
           <div className="relative">
             <Button
               className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
-              disabled={busy}
               onClick={onOpenBoard}
             >
               <span className="flex min-w-0 flex-col items-start gap-0.5">
@@ -173,7 +164,6 @@ export function ActionPanel({
             label={tiered("rest")}
             hint={snapshot.autopilot > 0 ? tiered("restHintAutopilot") : tiered("restHint")}
             preview={snapshot.previews[actionKey(rest)]}
-            busy={busy}
             action={rest}
             onAct={() => onAct(rest)}
           />
@@ -189,7 +179,6 @@ export function ActionPanel({
                 key={actionKey(action)}
                 action={action}
                 snapshot={snapshot}
-                busy={busy}
                 onAct={onAct}
               />
             ))}
@@ -237,12 +226,10 @@ function ReviewPolicySwitch({ snapshot }: { snapshot: RunSnapshot }) {
 function WrittenAsButton({
   action,
   snapshot,
-  busy,
   onAct,
 }: {
   action: Extract<PlayerAction, { type: "commit" }>;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -259,7 +246,6 @@ function WrittenAsButton({
       {...(action.mode === "craft" ? { subtitle: t("byHand") } : {})}
       hint={game(`nodes.${action.kind}.desc` as never)}
       preview={snapshot.previews[actionKey(action)]}
-      busy={busy}
       compact
       action={action}
       onAct={() => onAct(action)}
@@ -272,7 +258,6 @@ function ActionButton({
   subtitle,
   hint,
   preview,
-  busy,
   emphasis = false,
   compact = false,
   danger = false,
@@ -284,7 +269,6 @@ function ActionButton({
   subtitle?: string;
   hint: string;
   preview: ActionPreview | undefined;
-  busy: boolean;
   emphasis?: boolean;
   /** The one red card: a coin flip with the run on the other side. */
   danger?: boolean;
@@ -307,7 +291,7 @@ function ActionButton({
               compact ? "py-1.5" : "py-2",
               danger && "border-branch-hotfix/60",
             )}
-            disabled={busy || preview === undefined || preview.blocked !== undefined}
+            disabled={preview === undefined || preview.blocked !== undefined}
             onClick={onAct}
           >
             <span className="flex min-w-0 flex-col items-start gap-0.5">

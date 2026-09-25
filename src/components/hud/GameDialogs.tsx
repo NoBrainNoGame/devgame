@@ -61,7 +61,6 @@ export function ConflictDialog({
             <Button
               variant="outline"
               className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-              disabled={busy}
               onClick={() => onAct({ type: "resolve_conflict", how: "manual" })}
             >
               <span>
@@ -80,7 +79,6 @@ export function ConflictDialog({
           <Button
             variant="outline"
             className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-            disabled={busy}
             onClick={() => onAct({ type: "resolve_conflict", how: "ai" })}
           >
             <span>
@@ -129,7 +127,6 @@ export function RelicDialog({
               <Button
                 variant="outline"
                 className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-                disabled={busy}
                 onClick={() => onAct({ type: "choose_relic", relicId })}
               >
                 <span className="flex w-full items-center justify-between gap-2">
@@ -213,7 +210,7 @@ export function EventDialog({
                 <Button
                   variant="outline"
                   className="h-auto w-full flex-col items-start gap-1 whitespace-normal px-3 py-2 text-left"
-                  disabled={busy || !offered}
+                  disabled={!offered}
                   onClick={() => onAct(action)}
                 >
                   <span>

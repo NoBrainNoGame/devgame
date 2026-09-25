@@ -54,13 +54,11 @@ export function CompanyDialog({
   open,
   onOpenChange,
   snapshot,
-  busy,
   onAct,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -106,7 +104,7 @@ export function CompanyDialog({
           </TabsList>
 
           <TabsContent value="finances" className="pt-3">
-            <Finances snapshot={snapshot} busy={busy} onAct={onAct} />
+            <Finances snapshot={snapshot} onAct={onAct} />
           </TabsContent>
           <TabsContent value="market" className="pt-3">
             <Market snapshot={snapshot} />
@@ -117,11 +115,11 @@ export function CompanyDialog({
                 {t("shopDiscount", { pct: snapshot.boosts.shopDiscountPct })}
               </Badge>
             ) : null}
-            <Shop snapshot={snapshot} busy={busy} onAct={onAct} />
+            <Shop snapshot={snapshot} onAct={onAct} />
           </TabsContent>
           <TabsContent value="team" className="pt-3">
             {snapshot.boosts.freeHire ? <Badge className="mb-3">{t("freeHire")}</Badge> : null}
-            <Team snapshot={snapshot} busy={busy} onAct={onAct} />
+            <Team snapshot={snapshot} onAct={onAct} />
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -135,11 +133,9 @@ export function CompanyDialog({
  */
 function Advice({
   snapshot,
-  busy,
   onAct,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -160,7 +156,7 @@ function Advice({
           ? t("adviceBuy", { upgrade: name, money: money(economy.advice.cost) })
           : t("adviceUnaffordable", { upgrade: name, money: money(economy.advice.cost) })}
       </span>
-      <Button size="sm" variant="default" disabled={busy || !offered} onClick={() => onAct(action)}>
+      <Button size="sm" variant="default" disabled={!offered} onClick={() => onAct(action)}>
         {t("buyFor", { money: money(economy.advice.cost) })}
       </Button>
     </div>
@@ -169,11 +165,9 @@ function Advice({
 
 function Finances({
   snapshot,
-  busy,
   onAct,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -237,7 +231,7 @@ function Finances({
         <p className={cn("text-xs", saturated ? "text-branch-hotfix" : "text-muted-foreground")}>
           {saturated ? t("saturated") : t("capacityHint")}
         </p>
-        {economy.alert === "ok" ? null : <Advice snapshot={snapshot} busy={busy} onAct={onAct} />}
+        {economy.alert === "ok" ? null : <Advice snapshot={snapshot} onAct={onAct} />}
         <p className="text-muted-foreground text-xs">
           {t("moneyEarned", { money: money(economy.moneyEarned) })}
           {economy.nextTierAt === null
@@ -335,11 +329,9 @@ function Line({ label, value, tone }: { label: string; value: number; tone?: str
 
 function Shop({
   snapshot,
-  busy,
   onAct,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -357,7 +349,7 @@ function Shop({
         <Button
           size="sm"
           variant={pointOffered ? "default" : "outline"}
-          disabled={busy || !pointOffered}
+          disabled={!pointOffered}
           onClick={() => onAct(point)}
         >
           {t("buyFor", { money: money(snapshot.economy.skillPointPrice) })}
@@ -371,7 +363,7 @@ function Shop({
               {t(`category.${category}`)}
             </h3>
             <div className="space-y-2">
-              <Ladder category={category} snapshot={snapshot} busy={busy} onAct={onAct} />
+              <Ladder category={category} snapshot={snapshot} onAct={onAct} />
             </div>
           </section>
         ))}
@@ -387,12 +379,10 @@ function Shop({
 function Ladder({
   category,
   snapshot,
-  busy,
   onAct,
 }: {
   category: UpgradeCategory;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const tier = snapshot.economy.tier;
@@ -400,7 +390,7 @@ function Ladder({
   return (
     <div className="contents">
       {shown.map((id) => (
-        <UpgradeCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+        <UpgradeCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
       ))}
     </div>
   );
@@ -409,12 +399,10 @@ function Ladder({
 function UpgradeCard({
   id,
   snapshot,
-  busy,
   onAct,
 }: {
   id: UpgradeId;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -475,7 +463,7 @@ function UpgradeCard({
               size="sm"
               variant={offered ? "default" : "outline"}
               className="w-full"
-              disabled={busy || !offered}
+              disabled={!offered}
               onClick={() => onAct(action)}
             >
               {maxed ? t("treeMaxed") : t("buyFor", { money: money(cost) })}
@@ -496,11 +484,9 @@ function UpgradeCard({
 
 function Team({
   snapshot,
-  busy,
   onAct,
 }: {
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -563,7 +549,7 @@ function Team({
                         size="sm"
                         variant={offered ? "default" : "outline"}
                         className="w-full"
-                        disabled={busy || !offered}
+                        disabled={!offered}
                         onClick={() => onAct(action)}
                       >
                         {t("buyFor", { money: money(snapshot.economy.hireCosts[rank]) })}
@@ -590,7 +576,7 @@ function Team({
         </h3>
         <p className="text-muted-foreground text-xs">{t("sitesHint")}</p>
         <div className="grid gap-2 sm:grid-cols-3">
-          <Ladder category="org" snapshot={snapshot} busy={busy} onAct={onAct} />
+          <Ladder category="org" snapshot={snapshot} onAct={onAct} />
         </div>
       </section>
 
@@ -602,7 +588,7 @@ function Team({
           <p className="text-muted-foreground text-xs">{t("acquisitionsHint")}</p>
           <div className="grid gap-2 sm:grid-cols-3">
             {ACQUISITION_IDS.filter((id) => ACQUISITIONS[id].tier <= tier + 1).map((id) => (
-              <AcquisitionCard key={id} id={id} snapshot={snapshot} busy={busy} onAct={onAct} />
+              <AcquisitionCard key={id} id={id} snapshot={snapshot} onAct={onAct} />
             ))}
           </div>
         </section>
@@ -629,12 +615,10 @@ function Team({
 function AcquisitionCard({
   id,
   snapshot,
-  busy,
   onAct,
 }: {
   id: AcquisitionId;
   snapshot: RunSnapshot;
-  busy: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -674,7 +658,7 @@ function AcquisitionCard({
               size="sm"
               variant={offered ? "default" : "outline"}
               className="w-full"
-              disabled={busy || !offered}
+              disabled={!offered}
               onClick={() => onAct(action)}
             >
               {bought ? t("acquired") : t("buyFor", { money: money(def.cost) })}
