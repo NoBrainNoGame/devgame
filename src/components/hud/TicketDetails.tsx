@@ -9,15 +9,6 @@ import type { RunSnapshot, TicketView } from "@/game";
 import { labelledKind } from "@/game";
 import { cn } from "@/lib/utils";
 
-/** The colour a kind's line takes: the same family as its tab and card. */
-const KIND_TONE: Record<string, string> = {
-  client_bug: "text-branch-hotfix",
-  vip: "text-energy",
-  debt: "text-debt",
-  migration: "text-debt",
-  obstacle: "text-branch-obstacle",
-};
-
 /**
  * One ticket, in full: what it asks for and gives, where it stands, who
  * holds it, what was written on it and what each commit cost. The ticket
@@ -41,7 +32,7 @@ export function TicketDetails({
   const money = useMoney();
   const current = ticket.id === snapshot.player.ticketId;
   const dev = snapshot.devs.find((d) => d.id === ticket.assignee);
-  // Features, hotfixes and refactors say what they are by their colour alone.
+  // Features, hotfixes and refactors say what they are by their name alone.
   const hintKind =
     ticket.kind === "feature" || ticket.kind === "hotfix" || ticket.kind === "refactor"
       ? null
@@ -51,14 +42,7 @@ export function TicketDetails({
     <div className={cn("grid gap-2 text-left", compact ? "text-xs" : "gap-3 text-sm")}>
       {header ? (
         <header className="space-y-0.5">
-          <p
-            className={cn(
-              "font-medium",
-              compact ? "text-sm" : "text-base",
-              ticket.kind === "hotfix" && "text-branch-hotfix",
-              ticket.parentId !== undefined && "text-branch-obstacle",
-            )}
-          >
+          <p className={cn("font-medium", compact ? "text-sm" : "text-base")}>
             {ticket.parentId === undefined ? "" : "↳ "}#{ticket.id.slice(1)}{" "}
             {ticketName(game, ticket)}
           </p>
@@ -74,12 +58,12 @@ export function TicketDetails({
       ) : null}
 
       {hintKind === null ? null : (
-        <p className={cn("text-xs", KIND_TONE[hintKind])}>
+        <p className="text-muted-foreground text-xs">
           {game(`tickets.${hintKind}.name` as never)} · {t(`kindHint.${hintKind}`)}
         </p>
       )}
       {ticket.deadlineSprint === undefined ? null : (
-        <p className="text-energy text-xs">{t("deadline", { sprint: ticket.deadlineSprint })}</p>
+        <p className="text-time text-xs">{t("deadline", { sprint: ticket.deadlineSprint })}</p>
       )}
       {ticket.late === undefined ? null : <p className="text-branch-hotfix text-xs">{t("late")}</p>}
 
@@ -107,18 +91,18 @@ export function TicketDetails({
           <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
         )}
         {ticket.mrr > 0 ? (
-          <p className="text-muted-foreground text-xs tabular-nums">
+          <p className="text-money text-xs tabular-nums">
             {t("ticketMrr", { money: money(ticket.mrr) })}
             {ticket.origin === "acquired" ? ` · ${t("acquired")}` : ""}
           </p>
         ) : null}
         {ticket.parentId === undefined ? null : (
-          <p className="text-branch-obstacle text-xs">
+          <p className="text-muted-foreground text-xs">
             {t("obstacleOn", { id: ticket.parentId.slice(1) })}
           </p>
         )}
         {ticket.blockedBy.length > 0 ? (
-          <p className="text-branch-obstacle text-xs">
+          <p className="text-foreground text-xs">
             {ticket.waitingOnObstacle
               ? t("waitingOnObstacle", { id: ticket.blockedBy[0]?.slice(1) ?? "" })
               : t("blockedBy", { count: ticket.blockedBy.length })}
@@ -127,15 +111,15 @@ export function TicketDetails({
       </section>
 
       {ticket.skillId === undefined ? null : (
-        <section className="rounded-md border border-branch-feature/40 bg-branch-feature/5 p-2">
-          <p className="text-branch-feature">
+        <section className="rounded-md border border-line bg-panel/60 p-2">
+          <p className="text-foreground">
             {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
           </p>
           <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
             {game(`skills.${ticket.skillId}.desc` as never)}
           </p>
           {ticket.status === "backlog" ? (
-            <p className="mt-1 text-debt text-xs">{t("expiresAtSprintEnd")}</p>
+            <p className="mt-1 text-time text-xs">{t("expiresAtSprintEnd")}</p>
           ) : null}
         </section>
       )}

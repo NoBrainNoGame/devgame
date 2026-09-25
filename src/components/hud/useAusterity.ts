@@ -41,6 +41,9 @@ export function useAusterity(): void {
       set("--color-branch-hotfix", p.lane.hotfix);
       set("--color-debt", p.debt);
       set("--color-energy", p.energy);
+      set("--color-money", p.money);
+      set("--color-patience", p.patience);
+      set("--color-time", p.time);
       set("--color-ai", p.node.ai);
       set("--background", p.background);
       set("--card", p.panel);

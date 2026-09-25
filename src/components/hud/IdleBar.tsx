@@ -26,7 +26,8 @@ export function IdleBar({ action }: { action: PlayerAction }): React.JSX.Element
       <div
         className={cn(
           "h-full transition-[width] duration-100 ease-linear",
-          snapshot.autopilot > 0 ? "bg-branch-feature" : "bg-energy",
+          // The clock is time: blue; the supervisor's hand on it is the HUD's accent.
+          snapshot.autopilot > 0 ? "bg-cyber" : "bg-time",
           !running && "opacity-40",
         )}
         style={{ width: `${pct}%` }}

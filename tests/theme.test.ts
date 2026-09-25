@@ -106,6 +106,9 @@ describe("theme", () => {
     ...DEV_COLOURS.map((value, index): [string, number] => [`dev-${index}`, value]),
     ["debt", THEME.debt],
     ["energy", THEME.energy],
+    ["money", THEME.money],
+    ["patience", THEME.patience],
+    ["time", THEME.time],
     ["ai", THEME.node.ai],
   ])("%s matches the canvas palette", (name, value) => {
     expect(cssColour(name)).toBe(hex(value));

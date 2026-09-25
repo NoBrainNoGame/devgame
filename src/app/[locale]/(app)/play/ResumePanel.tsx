@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { RunSaveDto, RunSnapshot } from "@/game";
 import { HEALTH_MAX, healthOf, healthText, patienceOf } from "@/game/bridge/gauges";
 import { snapshotOfSave } from "@/game/bridge/rebuild";
+import { cn } from "@/lib/utils";
 
 /**
  * The run left in progress, as it stands: its paydays drawn as the finances
@@ -97,16 +98,16 @@ function Figures({ snapshot }: { snapshot: RunSnapshot }) {
     <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <Figure label={common("sprint")}>
-          {snapshot.sprint}
-          <span className="ml-1 text-muted-foreground text-xs">
+          <span className="text-time">{snapshot.sprint}</span>
+          <span className="ml-1 text-time/70 text-xs">
             {hud("sprintTurn", { turn: snapshot.sprintTurn, max: snapshot.sprintTurns })}
           </span>
         </Figure>
         <Figure label={hud("finances")}>
-          {money(economy.money)}
+          <span className="text-money">{money(economy.money)}</span>
           <span
             className={
-              economy.net < 0 ? "ml-1 text-branch-hotfix text-xs" : "ml-1 text-branch-main text-xs"
+              economy.net < 0 ? "ml-1 text-branch-hotfix text-xs" : "ml-1 text-money/80 text-xs"
             }
           >
             {money(economy.net, { signed: true })}/{hud("monthShort")}
@@ -115,7 +116,7 @@ function Figures({ snapshot }: { snapshot: RunSnapshot }) {
         <Figure label={hud("marketShare")}>
           {Math.round(economy.share * 100)}%
           {economy.tier > 0 ? (
-            <span className="ml-1 text-branch-feature text-xs">
+            <span className="ml-1 text-cyber text-xs">
               {hud("tierBadge", { tier: economy.tier })}
             </span>
           ) : null}
@@ -130,19 +131,22 @@ function Figures({ snapshot }: { snapshot: RunSnapshot }) {
           label={tiered("energyLabel")}
           value={`${player.energy}/${player.energyMax}`}
           pct={player.energyMax === 0 ? 0 : (player.energy / player.energyMax) * 100}
-          barClassName="[&>*]:bg-primary"
+          tone="text-energy"
+          barClassName="[&>*]:bg-energy"
         />
         <Meter
           label={common("codeHealth")}
           value={healthText(health)}
           pct={(health.range[0] / HEALTH_MAX) * 100}
+          tone="text-debt"
           barClassName="[&>*]:bg-debt"
         />
         <Meter
           label={tiered("patience")}
           value={`${patience}/${snapshot.qualityMax}`}
           pct={(patience / snapshot.qualityMax) * 100}
-          barClassName="[&>*]:bg-branch-main"
+          tone="text-patience"
+          barClassName="[&>*]:bg-patience"
         />
       </div>
     </div>
@@ -162,18 +166,21 @@ function Meter({
   label,
   value,
   pct,
+  tone,
   barClassName,
 }: {
   label: string;
   value: string;
   pct: number;
+  /** The figure's own colour, for its number. */
+  tone: string;
   barClassName: string;
 }) {
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
-        <span className="tabular-nums">{value}</span>
+        <span className={cn(tone, "tabular-nums")}>{value}</span>
       </div>
       <Progress value={pct} className={barClassName} />
     </div>

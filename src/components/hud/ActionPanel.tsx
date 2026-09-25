@@ -368,7 +368,7 @@ function PreviewFace({
   );
   const gained =
     points > 0 ? (
-      <span className={cn(!emphasis && "text-branch-feature")}>{t("chipPoints", { points })}</span>
+      <span className={cn(!emphasis && "text-cyber")}>{t("chipPoints", { points })}</span>
     ) : null;
   // Debt costs the code's health: the chip speaks the gauge's language.
   const debt =
@@ -379,7 +379,7 @@ function PreviewFace({
         })}
       </span>
     ) : debtMin < 0 ? (
-      <span className={cn(!emphasis && "text-branch-main")}>
+      <span className={cn(!emphasis && "text-debt")}>
         {t("chipHealth", { delta: `+${-debtMin}` })}
       </span>
     ) : null;

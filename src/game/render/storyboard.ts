@@ -210,7 +210,8 @@ export function planBatch(
           event.delta,
           event.value,
           translate(text("fx.points", { delta: signedAmount(event.delta) })),
-          palette.lane.feature,
+          // The ticket's points are the HUD's own figure: the accent.
+          palette.lane.trunk,
           { ticketId: event.ticketId },
         );
         break;
@@ -221,7 +222,7 @@ export function planBatch(
           -event.delta,
           event.max - event.value,
           translate(text("fx.patience", { delta: signedAmount(-event.delta) })),
-          palette.lane.trunk,
+          palette.patience,
         );
         break;
 
@@ -238,7 +239,7 @@ export function planBatch(
           translate(
             text(delta >= 0 ? "fx.moneyGain" : "fx.moneyLoss", { amount: money(Math.abs(delta)) }),
           ),
-          palette.lane.dev,
+          palette.money,
         );
         break;
       }
@@ -250,7 +251,7 @@ export function planBatch(
           event.delta,
           event.value,
           translate(text("fx.skills", { delta: signedAmount(event.delta) })),
-          palette.node.ai,
+          palette.lane.trunk,
         );
         break;
 

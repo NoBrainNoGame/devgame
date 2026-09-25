@@ -169,15 +169,6 @@ function ExpiredFooter({ expired }: { expired: TicketView[] }) {
   );
 }
 
-/** The colour a kind's line on the card takes: the same family as its column. */
-const KIND_TONE: Record<string, string> = {
-  client_bug: "text-branch-hotfix",
-  vip: "text-energy",
-  debt: "text-debt",
-  migration: "text-debt",
-  obstacle: "text-branch-obstacle",
-};
-
 function TicketCard({
   ticket,
   devs,
@@ -203,8 +194,8 @@ function TicketCard({
     <article
       className={cn(
         "space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm",
-        current && "border-branch-feature",
-        ticket.kind === "hotfix" && "border-branch-hotfix/60",
+        // Every card looks alike: the kind is in the name, the colours are the branches'.
+        current && "border-cyber",
         ticket.status === "cancelled" && "opacity-60",
       )}
     >
@@ -215,7 +206,7 @@ function TicketCard({
         onClick={onOpen}
       >
         <div className="flex items-baseline justify-between gap-2">
-          <span className={cn("font-medium", ticket.kind === "hotfix" && "text-branch-hotfix")}>
+          <span className="font-medium">
             #{ticket.id.slice(1)} {ticketName(game, ticket)}
           </span>
           <span className="text-muted-foreground text-xs tabular-nums">
@@ -226,26 +217,26 @@ function TicketCard({
         {ticket.kind === "feature" ||
         ticket.kind === "hotfix" ||
         ticket.kind === "refactor" ? null : (
-          <p className={cn("text-xs", KIND_TONE[ticket.kind])}>
+          <p className="text-muted-foreground text-xs">
             {game(`tickets.${ticket.kind}.name` as never)} · {t(`kindHint.${ticket.kind}`)}
           </p>
         )}
         {ticket.deadlineSprint === undefined ? null : (
-          <p className="text-energy text-xs">{t("deadline", { sprint: ticket.deadlineSprint })}</p>
+          <p className="text-time text-xs">{t("deadline", { sprint: ticket.deadlineSprint })}</p>
         )}
         {ticket.late === undefined ? null : (
           <p className="text-branch-hotfix text-xs">{t("late")}</p>
         )}
         {ticket.skillId === undefined ? null : (
-          <p className="text-branch-feature text-xs">
+          <p className="text-foreground text-xs">
             {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
           </p>
         )}
         {ticket.skillId !== undefined && ticket.status === "backlog" ? (
-          <p className="text-debt text-xs">{t("expiresAtSprintEnd")}</p>
+          <p className="text-time text-xs">{t("expiresAtSprintEnd")}</p>
         ) : null}
         {ticket.mrr > 0 ? (
-          <p className="text-muted-foreground text-xs tabular-nums">
+          <p className="text-money text-xs tabular-nums">
             {t("ticketMrr", { money: money(ticket.mrr) })}
             {ticket.origin === "acquired" ? ` · ${t("acquired")}` : ""}
           </p>

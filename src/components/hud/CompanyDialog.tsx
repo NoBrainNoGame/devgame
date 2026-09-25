@@ -64,14 +64,14 @@ export function CompanyDialog({
         <DialogHeader>
           <DialogTitle>{tiered("company", { seed: snapshot.seed })}</DialogTitle>
           <DialogDescription>
-            <span className="text-foreground tabular-nums">
+            <span className="text-money tabular-nums">
               {t("money", { money: money(economy.money) })}
             </span>
             {economy.tier > 0 ? ` · ${t("tierBadge", { tier: economy.tier })}` : ""}
             {" · "}
-            {t("mrr", { money: money(economy.mrr) })}
+            <span className="text-money">{t("mrr", { money: money(economy.mrr) })}</span>
             {" · "}
-            {t("paydayIn", { count: economy.paydayIn })}
+            <span className="text-time">{t("paydayIn", { count: economy.paydayIn })}</span>
           </DialogDescription>
         </DialogHeader>
 
@@ -131,7 +131,7 @@ function Advice({
   const name = game(`upgrades.${economy.advice.id}.name` as never);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-energy/40 bg-energy/10 p-2 text-xs">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-cyber/40 bg-cyber/10 p-2 text-xs">
       <span>
         {t("capacityProjected", { projected: economy.projectedLoad })}
         {" · "}
@@ -173,7 +173,7 @@ function Finances({
           {t("nextPayday")}
         </h3>
         <dl className="space-y-1">
-          <Line label={t("lineRevenue")} value={economy.revenue} tone="text-branch-main" />
+          <Line label={t("lineRevenue")} value={economy.revenue} tone="text-money" />
           {economy.mrr > economy.revenue ? (
             <Line
               label={t("lineLost")}
@@ -186,16 +186,13 @@ function Finances({
           <div className="flex items-baseline justify-between border-line border-t pt-1 font-medium">
             <dt>{t("lineNet")}</dt>
             <dd
-              className={cn(
-                "tabular-nums",
-                economy.net < 0 ? "text-branch-hotfix" : "text-branch-main",
-              )}
+              className={cn("tabular-nums", economy.net < 0 ? "text-branch-hotfix" : "text-money")}
             >
               {money(economy.net, { signed: true })}
             </dd>
           </div>
         </dl>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-time text-xs">
           {t("monthCount", { month: economy.month })} · {t("paydayIn", { count: economy.paydayIn })}
         </p>
       </section>
@@ -253,7 +250,7 @@ function Market({ snapshot }: { snapshot: RunSnapshot }) {
             {pct}% · {t("marketMultiplier", { pct: multiplier })}
           </span>
         </div>
-        <Progress value={pct} className="[&>*]:bg-branch-feature" />
+        <Progress value={pct} className="[&>*]:bg-cyber" />
         <p className="text-muted-foreground text-xs">{t("marketHint")}</p>
         {economy.priceWarMonths > 0 ? (
           <p className="rounded-md border border-branch-hotfix/40 bg-branch-hotfix/10 p-2 text-branch-hotfix text-xs">

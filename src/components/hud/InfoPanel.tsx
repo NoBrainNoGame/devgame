@@ -8,7 +8,6 @@ import { useMoney } from "@/components/hud/useGameText";
 import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Badge } from "@/components/ui/badge";
 import type { RunSnapshot, TicketView } from "@/game";
-import { cn } from "@/lib/utils";
 
 /**
  * The left column: what you are holding and what the run has become.
@@ -125,7 +124,7 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
   return (
     <div className="space-y-1.5 rounded-md border border-line bg-panel/60 px-3 py-2">
       <div className="flex items-baseline justify-between gap-2">
-        <span className={cn("truncate", ticket.kind === "hotfix" && "text-branch-hotfix")}>
+        <span className="truncate">
           #{ticket.id.slice(1)}{" "}
           {ticket.skillId === undefined
             ? ticketName(game, ticket)
@@ -145,7 +144,7 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
         <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
       )}
       {ticket.mrr > 0 ? (
-        <p className="text-muted-foreground text-xs tabular-nums">
+        <p className="text-money text-xs tabular-nums">
           {t("ticketMrr", { money: money(ticket.mrr) })}
         </p>
       ) : null}

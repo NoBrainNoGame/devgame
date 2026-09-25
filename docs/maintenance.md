@@ -302,8 +302,11 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   (`render/storyboard.ts`, `gaugePop`: delta and value in the gauge's own
   terms), its value in `readout`/`holdFor` (`bridge/gauges.ts`), a `data-gauge`
   on the element that shows it (`AnimatedGauge` or `AnimatedCounter`), a
-  `game.fx.<gauge>` caption. Check: `tests/storyboard.test.ts`,
-  `tests/gauges.test.ts`.
+  `game.fx.<gauge>` caption. A figure of its own gets a colour of its own: a
+  key in `THEME` and in the three other key palettes (`render/palette.ts`, and
+  `lerpPalette`), `--color-<name>` in `globals.css`, written by `useAusterity`
+  (`tests/theme.test.ts` compares the CSS with `THEME`). Check:
+  `tests/storyboard.test.ts`, `tests/gauges.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
   (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the
   Pixi tree is tied to `sceneContext.signal`: a scene that threw in a frame

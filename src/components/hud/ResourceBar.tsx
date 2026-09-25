@@ -72,15 +72,15 @@ export function ResourceBar({
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-muted-foreground">
                   {common("sprint")}{" "}
-                  <span className="text-foreground tabular-nums">{snapshot.sprint}</span>
+                  <span className="text-time tabular-nums">{snapshot.sprint}</span>
                 </span>
-                <span className="tabular-nums text-xs">
+                <span className="text-time tabular-nums text-xs">
                   {t("sprintTurn", { turn: snapshot.sprintTurn, max: snapshot.sprintTurns })}
                 </span>
               </div>
               <Progress
                 value={(snapshot.sprintTurn / snapshot.sprintTurns) * 100}
-                className="[&>*]:bg-branch-dev"
+                className="[&>*]:bg-time"
               />
               <p className="mt-1 text-muted-foreground text-xs">
                 {t("releaseIn", { count: Math.max(0, snapshot.sprintTurns - snapshot.sprintTurn) })}
@@ -125,19 +125,22 @@ export function ResourceBar({
       <div className="flex flex-wrap items-center justify-center gap-4">
         <div className="w-56 shrink-0">
           <div className="mb-1 flex items-baseline justify-between">
-            <span className={cn("text-muted-foreground", player.crunch && "text-energy")}>
+            <span className={cn("text-muted-foreground", player.crunch && "text-branch-hotfix")}>
               {tiered("energyLabel")}
             </span>
-            <span className="tabular-nums">
+            <span className="text-energy tabular-nums">
               {shown.energy}/{player.energyMax}
             </span>
           </div>
           <AnimatedGauge
             gauge="energy"
             value={energyPct}
-            barClassName={player.crunch ? "bg-energy" : "bg-primary"}
+            // Energy is yellow; the crunch, energy run dry, is a problem's red.
+            barClassName={player.crunch ? "bg-branch-hotfix" : "bg-energy"}
           />
-          {player.crunch ? <p className="mt-1 text-energy text-xs">{t("crunchHint")}</p> : null}
+          {player.crunch ? (
+            <p className="mt-1 text-branch-hotfix text-xs">{t("crunchHint")}</p>
+          ) : null}
         </div>
 
         <Tooltip>
@@ -167,7 +170,7 @@ export function ResourceBar({
                 <span className="text-muted-foreground">{tiered("patience")}</span>
                 <span
                   className={cn(
-                    "tabular-nums",
+                    "text-patience tabular-nums",
                     patience <= snapshot.qualityMax / 2 && "text-branch-hotfix",
                   )}
                 >
@@ -177,7 +180,7 @@ export function ResourceBar({
               <AnimatedGauge
                 gauge="patience"
                 value={(patience / snapshot.qualityMax) * 100}
-                barClassName="bg-branch-main"
+                barClassName="bg-patience"
               />
             </div>
           </TooltipTrigger>
@@ -190,20 +193,24 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenCompany}>
               <Building2 className="size-4" />
-              <AnimatedCounter gauge="money" value={shown.money} className="tabular-nums">
+              <AnimatedCounter
+                gauge="money"
+                value={shown.money}
+                className="text-money tabular-nums"
+              >
                 {t("money", { money: money(shown.money) })}
               </AnimatedCounter>
               <span
                 className={cn(
                   "text-xs tabular-nums",
-                  economy.net < 0 ? "text-branch-hotfix" : "text-branch-main",
+                  economy.net < 0 ? "text-branch-hotfix" : "text-money",
                 )}
               >
                 {economy.net >= 0 ? "+" : ""}
                 {money(economy.net)}/{t("monthShort")}
               </span>
               {economy.tier > 0 ? (
-                <span className="rounded-full bg-branch-feature/20 px-1.5 text-branch-feature text-xs tabular-nums">
+                <span className="rounded-full bg-cyber/15 px-1.5 text-cyber text-xs tabular-nums">
                   {t("tierBadge", { tier: economy.tier })}
                 </span>
               ) : null}
@@ -215,7 +222,7 @@ export function ResourceBar({
                   {t("saturatedShort")}
                 </span>
               ) : economy.alert === "warning" ? (
-                <span className="rounded-full bg-energy/20 px-1.5 text-energy text-xs">
+                <span className="rounded-full border border-branch-hotfix/50 px-1.5 text-branch-hotfix text-xs">
                   {t("capacityWarning")}
                 </span>
               ) : null}

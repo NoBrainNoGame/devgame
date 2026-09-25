@@ -44,8 +44,21 @@ export const THEME = {
   },
 
   player: 0xffffff,
+
+  /*
+    The run's figures, each in its own colour wherever it is shown — the
+    HUD, the charts, the numbers that rise off a commit, the balls that fly
+    to a gauge. The code's health is the debt's colour; the ticket points,
+    the skill points and the rest of the HUD are the accent.
+  */
+  /** The code's health (the debt, turned over): orange, the colour of what breaks. */
   debt: 0xffb347,
   energy: 0xf5e663,
+  money: 0x4ade80,
+  /** Production's patience. */
+  patience: 0xff5ec4,
+  /** The sprint clock, turns and months: anything counted in time. */
+  time: 0x5ab8ff,
 } as const;
 
 /**

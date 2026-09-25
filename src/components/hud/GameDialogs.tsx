@@ -302,7 +302,9 @@ export function RunOverDialog({
           <dt className="text-muted-foreground">{t("ticketsDelivered")}</dt>
           <dd className="text-right tabular-nums">{snapshot.ticketsDelivered}</dd>
           <dt className="text-muted-foreground">{t("moneyEarned")}</dt>
-          <dd className="text-right tabular-nums">{money(snapshot.economy.moneyEarned)}</dd>
+          <dd className="text-right text-money tabular-nums">
+            {money(snapshot.economy.moneyEarned)}
+          </dd>
         </dl>
 
         {breakdown.length === 0 ? null : (

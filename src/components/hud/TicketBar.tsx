@@ -4,6 +4,7 @@ import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { TicketDetails } from "@/components/hud/TicketDetails";
+import { workingOn } from "@/components/hud/ticketFocus";
 import { ticketName } from "@/components/hud/ticketName";
 import { useShownFilled } from "@/components/hud/useShownGauges";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,7 @@ export function TicketBar({
         <KanbanSquare className="size-4" />
         {t("board")}
         {waiting > 0 ? (
-          <span className="rounded-full bg-branch-feature/20 px-1.5 text-branch-feature text-xs tabular-nums">
+          <span className="rounded-full bg-cyber/15 px-1.5 text-cyber text-xs tabular-nums">
             {waiting}
           </span>
         ) : null}
@@ -75,12 +76,7 @@ export function TicketBar({
             return (
               <Tooltip key={ticket.id}>
                 <TooltipTrigger asChild>
-                  <span
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5 rounded-md border border-line/60 border-dashed px-2 py-1 text-muted-foreground text-xs",
-                      ticket.parentId !== undefined && "border-branch-obstacle/60",
-                    )}
-                  >
+                  <span className="flex shrink-0 items-center gap-1.5 rounded-md border border-line/60 border-dashed px-2 py-1 text-muted-foreground text-xs">
                     {dev === undefined ? null : (
                       <span
                         className="font-medium"
@@ -127,8 +123,9 @@ function TicketTab({
     ticket.skillId === undefined
       ? ticketName(game, ticket)
       : game(`skills.${ticket.skillId}.name` as never);
-  // Double revenue and a deadline, and nobody on it: it asks to be picked up.
-  const vipWaiting = ticket.kind === "vip" && !current;
+  // Double revenue and a deadline, and nobody on it — not even on one of its
+  // obstacles: it asks to be picked up.
+  const vipWaiting = ticket.kind === "vip" && !workingOn(snapshot, ticket.id);
 
   return (
     <Tooltip>
@@ -145,29 +142,20 @@ function TicketTab({
           className={cn(
             "flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
             vipWaiting && "ticket-vip-waiting",
+            // Every ticket looks alike: the kind is in the name, the colours are the branches'.
             current
-              ? "border-branch-feature bg-branch-feature/10 text-foreground"
+              ? "border-cyber bg-cyber/10 text-foreground"
               : "border-line text-muted-foreground hover:border-foreground/40 hover:text-foreground",
-            ticket.kind === "hotfix" && "border-branch-hotfix/60",
-            ticket.parentId !== undefined && "border-branch-obstacle/60",
-            ticket.ready && "border-branch-main",
+            ticket.ready && "border-cyber",
           )}
         >
           <span className="tabular-nums text-xs opacity-70">
             {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
           </span>
-          <span
-            className={cn(
-              "max-w-40 truncate",
-              ticket.kind === "hotfix" && "text-branch-hotfix",
-              ticket.parentId !== undefined && "text-branch-obstacle",
-            )}
-          >
-            {name}
-          </span>
+          <span className="max-w-40 truncate">{name}</span>
           <ShownPoints ticket={ticket} className="text-xs" />
           {ticket.blockedBy.length > 0 ? (
-            <span className="rounded-full bg-branch-obstacle/20 px-1.5 text-branch-obstacle text-xs tabular-nums">
+            <span className="rounded-full bg-muted px-1.5 text-foreground text-xs tabular-nums">
               ⛔ {ticket.blockedBy.length}
             </span>
           ) : null}
@@ -180,13 +168,13 @@ function TicketTab({
               {ticket.unread}
             </span>
           ) : null}
-          {ticket.ready ? <span className="text-branch-main text-xs">✓</span> : null}
+          {ticket.ready ? <span className="text-cyber text-xs">✓</span> : null}
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className={DETAILS_TOOLTIP}>
         <TicketDetails ticket={ticket} snapshot={snapshot} compact />
         {current && !vipWaiting ? null : (
-          <p className={cn("text-xs", vipWaiting ? "text-energy" : "text-muted-foreground")}>
+          <p className={cn("text-xs", vipWaiting ? "text-cyber" : "text-muted-foreground")}>
             {vipWaiting ? `${t("vipWaiting")} ` : ""}
             {current ? "" : t("clickToSwitch")}
           </p>

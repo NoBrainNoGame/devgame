@@ -484,7 +484,8 @@ l'austérité : qui a écrit quoi reste lisible.
 
 **HUD** : ressources et tours restants ; onglets des tickets en main au-dessus
 du graphe (ceux de l'équipe à droite), dont l'infobulle montre le ticket entier,
-un VIP à soi que personne ne travaille clignotant en jaune ; panneau de droite pour la seule décision du tour ; journal repliable
+un VIP à soi clignotant tant que ni lui ni un de ses sous-tickets n'est en
+main ; panneau de droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
 projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
 de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.
@@ -508,6 +509,14 @@ chiffre sur le canvas. **Aucun bouton n'attend une animation** : agir coupe
 l'histoire en cours et joue la suivante ; seules les modales de phase attendent
 la fin de l'histoire pour s'ouvrir. **Toute modale ouverte met l'histoire du
 canvas en pause.** Mouvement réduit : ni boules, ni clignotement, ni étincelles.
+
+**Codes couleur**, les mêmes sur la page et le canvas (`THEME`, interpolés par
+l'austérité comme le reste) : argent vert, énergie jaune, santé du code orange,
+patience de la production rose, temps bleu (sprint, tours, mois, échéances) ;
+le reste du HUD (points des tickets, points de compétence, part de marché) est
+turquoise, l'accent. Le rouge ne dit que le problème : une perte, le crunch,
+la saturation. Les tickets n'ont pas de couleur à eux : leur type est dans
+leur nom, les couleurs sont celles des branches du graphe.
 
 **Perte du contexte WebGL.** La run vit dans la session, pas dans l'image :
 une perte de contexte, un démarrage raté ou une erreur dans une image

@@ -43,11 +43,11 @@ export function UpgradesDialog({
         <DialogHeader>
           <DialogTitle>{t("upgradesTitle")}</DialogTitle>
           <DialogDescription>
-            <span className="text-foreground tabular-nums">
+            <span className="text-money tabular-nums">
               {t("money", { money: money(snapshot.economy.money) })}
             </span>
             {" · "}
-            <span className="text-foreground tabular-nums">
+            <span className="text-cyber tabular-nums">
               {t("treePoints", { count: snapshot.skillPoints })}
             </span>
             {" · "}

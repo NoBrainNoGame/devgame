@@ -198,8 +198,12 @@
   --color-dev-6: #b57bee;
   --color-dev-7: #f472b6;
 
+  /* The run's figures: see THEME in render/theme.ts. The code's health is `debt`. */
   --color-debt: #ffb347;
   --color-energy: #f5e663;
+  --color-money: #4ade80;
+  --color-patience: #ff5ec4;
+  --color-time: #5ab8ff;
   --color-ai: #b48cff;
 }
 
@@ -924,19 +928,20 @@ h3,
 }
 
 /*
-  A VIP of the player's that nobody is working on: its tab blinks in the VIP
-  yellow until it is checked out. Reduced motion keeps it lit, still.
+  A VIP of the player's that nobody is working on: its tab blinks in the
+  HUD's accent until it — or one of its obstacles — is checked out. Reduced
+  motion keeps it lit, still.
 */
 .ticket-vip-waiting {
-  border-color: var(--color-energy);
-  color: var(--color-energy);
+  border-color: var(--color-cyber);
+  color: var(--color-cyber);
   animation: ticket-vip-blink 0.9s steps(1, end) infinite;
 }
 @keyframes ticket-vip-blink {
   0%,
   100% {
-    background-color: color-mix(in oklab, var(--color-energy) 22%, transparent);
-    box-shadow: 0 0 10px color-mix(in oklab, var(--color-energy) 55%, transparent);
+    background-color: color-mix(in oklab, var(--color-cyber) 22%, transparent);
+    box-shadow: 0 0 10px color-mix(in oklab, var(--color-cyber) 55%, transparent);
   }
   50% {
     background-color: transparent;
@@ -946,7 +951,7 @@ h3,
 @media (prefers-reduced-motion: reduce) {
   .ticket-vip-waiting {
     animation: none;
-    background-color: color-mix(in oklab, var(--color-energy) 18%, transparent);
+    background-color: color-mix(in oklab, var(--color-cyber) 18%, transparent);
   }
 }
 

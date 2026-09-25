@@ -39,6 +39,9 @@ export const KEY_PALETTES: Record<(typeof KEY_AUSTERITIES)[number], Palette> = {
     player: 0xe8e8e8,
     debt: 0xc4a36f,
     energy: 0xd9c98a,
+    money: 0x86b08f,
+    patience: 0xb98fb2,
+    time: 0x7c9fc0,
   },
   // Monochrome: greys with the faintest memory of what the colours were.
   4: {
@@ -59,6 +62,9 @@ export const KEY_PALETTES: Record<(typeof KEY_AUSTERITIES)[number], Palette> = {
     player: 0xdddddd,
     debt: 0xa9a49a,
     energy: 0xbdb9a6,
+    money: 0xa2aaa4,
+    patience: 0xa89aa5,
+    time: 0xa3a8ad,
   },
   // Matrix: green on near-black, the terminal nobody is reading.
   6: {
@@ -79,6 +85,9 @@ export const KEY_PALETTES: Record<(typeof KEY_AUSTERITIES)[number], Palette> = {
     player: 0xc8ffd2,
     debt: 0x22a33a,
     energy: 0xb6ffc4,
+    money: 0x4fe86a,
+    patience: 0x63e07f,
+    time: 0x2fb948,
   },
 };
 
@@ -152,6 +161,9 @@ export function lerpPalette(from: Palette, to: Palette, t: number): Palette {
     player: lerpColour(from.player, to.player, t),
     debt: lerpColour(from.debt, to.debt, t),
     energy: lerpColour(from.energy, to.energy, t),
+    money: lerpColour(from.money, to.money, t),
+    patience: lerpColour(from.patience, to.patience, t),
+    time: lerpColour(from.time, to.time, t),
   };
 }
 

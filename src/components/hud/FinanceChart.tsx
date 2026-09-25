@@ -103,7 +103,7 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
             key={tick}
             x={WIDTH - PAD.right + 4}
             y={yShare(tick) + 3}
-            className="fill-branch-feature"
+            className="fill-cyber"
             fontSize={8}
           >
             {Math.round(tick * 100)}%
@@ -132,17 +132,23 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
             </text>
           </g>
         ))}
-        <path d={area} className="fill-branch-main/20" />
+        <path d={area} className="fill-money/15" />
         <path
           d={`M${moneyLine.join(" L")}`}
-          className="stroke-branch-main"
+          className="stroke-money"
           fill="none"
           strokeWidth={1.25}
         />
-        <path d={`M${mrrLine}`} className="stroke-energy" fill="none" strokeWidth={1} />
+        {/* Revenue is money too: the same green, lighter and thinner than the cash. */}
+        <path
+          d={`M${mrrLine}`}
+          className="stroke-[color-mix(in_oklab,var(--color-money)_55%,white)]"
+          fill="none"
+          strokeWidth={1}
+        />
         <path
           d={`M${shareLine}`}
-          className="stroke-branch-feature"
+          className="stroke-cyber"
           fill="none"
           strokeWidth={1}
           strokeDasharray="4 2"
@@ -166,9 +172,11 @@ export function FinanceChart({ history }: { history: FinanceMonth[] }) {
         </text>
       </svg>
       <figcaption className="flex flex-wrap gap-x-3 text-muted-foreground text-xs">
-        <span className="text-branch-main">▬ {t("chartMoney")}</span>
-        <span className="text-energy">— {t("chartMrr")}</span>
-        <span className="text-branch-feature">╌ {t("chartShare")}</span>
+        <span className="text-money">▬ {t("chartMoney")}</span>
+        <span className="text-[color-mix(in_oklab,var(--color-money)_55%,white)]">
+          — {t("chartMrr")}
+        </span>
+        <span className="text-cyber">╌ {t("chartShare")}</span>
         <span className="text-branch-hotfix">● {t("chartOutage")}</span>
         <span>┆ {t("chartTier")}</span>
       </figcaption>

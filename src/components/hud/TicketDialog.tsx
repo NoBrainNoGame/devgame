@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot, TicketView } from "@/game";
-import { cn } from "@/lib/utils";
 
 /**
  * One ticket, in full (`TicketDetails`), with the one move the board allows
@@ -41,7 +40,7 @@ export function TicketDialog({
     <Dialog open onOpenChange={(open) => (open ? undefined : onClose())}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className={cn(ticket.kind === "hotfix" && "text-branch-hotfix")}>
+          <DialogTitle>
             #{ticket.id.slice(1)} {ticketName(game, ticket)}
           </DialogTitle>
           <DialogDescription>
