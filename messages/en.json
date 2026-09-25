@@ -515,7 +515,10 @@
       "purchases": "Purchases"
     },
     "upgradesTabNews": "New",
-    "treeIntro": "Placing a point costs no turn."
+    "treeIntro": "Placing a point costs no turn.",
+    "catalogPick": "Pick a card to see what it does and buy it.",
+    "catalogShort": "You are {money} short.",
+    "catalogNoSeat": "No free seat: open a site."
   },
   "leaderboard": {
     "title": "Leaderboard",

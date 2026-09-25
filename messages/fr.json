@@ -515,7 +515,10 @@
       "purchases": "Achats"
     },
     "upgradesTabNews": "Nouveau",
-    "treeIntro": "Placer un point ne coûte pas de tour."
+    "treeIntro": "Placer un point ne coûte pas de tour.",
+    "catalogPick": "Choisissez une carte pour voir ce qu'elle fait et l'acheter.",
+    "catalogShort": "Il vous manque {money}.",
+    "catalogNoSeat": "Aucun poste libre : ouvrez un site."
   },
   "leaderboard": {
     "title": "Classement",

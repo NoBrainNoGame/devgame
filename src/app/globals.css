@@ -1004,6 +1004,11 @@ h3,
   color: var(--tree-accent);
   border-bottom: 1px solid color-mix(in oklab, var(--tree-accent) 30%, transparent);
 }
+/* The catalog's panel: the picked offer in full, beside its tiles. */
+.catalog-detail {
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+}
 .tree-card {
   border: 1px solid var(--color-line);
   background: var(--color-panel);

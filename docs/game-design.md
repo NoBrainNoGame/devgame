@@ -508,7 +508,9 @@ de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.
 L'entreprise se lit dans une modale (Finances, Marché, Équipe : qui y
 travaille) et se renforce dans une autre, **Améliorations**, un onglet par
 dépense : Compétences (l'arbre, et l'achat de points), Recrutement (les rangs,
-les sites qui font la place), Achats (la boutique, les rachats). Son bouton
+les sites qui font la place), Achats (la boutique, les rachats),
+en cartes de même taille : un clic en ouvre le détail dans l'encart de droite
+(effet, entretien, ce qui bloque, le bouton d'achat). Son bouton
 brille quand une offre est apparue qu'on n'a pas encore vue dans son onglet
 (un point que l'arbre peut prendre, une embauche ou un achat devenus
 abordables) : pas tant que quelque chose est abordable, un barreau de serveurs
