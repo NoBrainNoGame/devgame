@@ -9,6 +9,7 @@ import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { type ActionPreview, actionKey, type PlayerAction, type RunSnapshot } from "@/game";
+import { signed } from "@/game/core/i18n";
 import { cn } from "@/lib/utils";
 
 /**
@@ -364,6 +365,7 @@ function PreviewFace({
   emphasis: boolean;
   compact: boolean;
 }) {
+  const t = useTranslations("hud");
   const debtMin = preview.debtDelta?.[0] ?? 0;
   const debtMax = preview.debtDelta?.[1] ?? 0;
   const points = preview.points?.[1] ?? 0;
@@ -382,15 +384,20 @@ function PreviewFace({
   );
   const gained =
     points > 0 ? (
-      <span className={cn(!emphasis && "text-branch-feature")}>+{points} pts</span>
+      <span className={cn(!emphasis && "text-branch-feature")}>{t("chipPoints", { points })}</span>
     ) : null;
+  // Debt costs the code's health: the chip speaks the gauge's language.
   const debt =
     debtMax > 0 ? (
       <span className={cn(!emphasis && "text-debt")}>
-        +{debtMin === debtMax ? debtMax : `${debtMin}–${debtMax}`} dette
+        {t("chipHealth", {
+          delta: `\u2212${debtMin === debtMax ? debtMax : `${debtMin}\u2013${debtMax}`}`,
+        })}
       </span>
     ) : debtMin < 0 ? (
-      <span className={cn(!emphasis && "text-branch-main")}>{debtMin} dette</span>
+      <span className={cn(!emphasis && "text-branch-main")}>
+        {t("chipHealth", { delta: `+${-debtMin}` })}
+      </span>
     ) : null;
 
   // Compact cards get two lines: the roll and its price, then what it does.
@@ -444,7 +451,12 @@ function PreviewDetail({ preview }: { preview: ActionPreview }) {
         <p>{t("previewPoints", { min: preview.points[0], max: preview.points[1] })}</p>
       )}
       {preview.debtDelta === undefined ? null : (
-        <p>{t("previewDebt", { min: preview.debtDelta[0], max: preview.debtDelta[1] })}</p>
+        <p>
+          {t("previewHealth", {
+            min: signed(-preview.debtDelta[1]),
+            max: signed(-preview.debtDelta[0]),
+          })}
+        </p>
       )}
       {preview.blocked === undefined ? null : (
         <p className="text-debt">

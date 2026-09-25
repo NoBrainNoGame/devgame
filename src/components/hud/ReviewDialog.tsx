@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
 import { gameStore, useGameStore } from "@/game";
+import { HEALTH_MAX } from "@/game/bridge/gauges";
 import { cn } from "@/lib/utils";
 
 /**
@@ -106,7 +107,10 @@ export function ReviewDialog({
                   : t("reviewAllRead")}
               </Line>
               <Line shown={step >= 3} tone={pending.debt > pending.maxDebt ? "warn" : "ok"}>
-                {t("reviewDebt", { debt: pending.debt, max: pending.maxDebt })}
+                {t("reviewHealth", {
+                  health: HEALTH_MAX - pending.debt,
+                  floor: HEALTH_MAX - pending.maxDebt,
+                })}
               </Line>
             </>
           )}

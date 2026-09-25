@@ -9,7 +9,7 @@ import {
   upgradeUnlocked,
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
-import { type I18nText, money, ref, text } from "@/game/core/i18n";
+import { type I18nText, money, ref, signed, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
 import { hackOffer } from "@/game/core/rules/hack";
 import {
@@ -146,7 +146,9 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
         const unread = unreadAiOn(state, ticket).length;
         if (unread > 0) notes.push(text("notes.unread_risk", { count: unread }));
         if (state.debt > BALANCE.acceptance.maxDebt) {
-          notes.push(text("notes.debt_refusal", { max: BALANCE.acceptance.maxDebt }));
+          notes.push(
+            text("notes.health_refusal", { floor: BALANCE.debt.max - BALANCE.acceptance.maxDebt }),
+          );
         }
       }
       // The review itself is free; the merge that follows an acceptance is
@@ -352,8 +354,12 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       if (e.money !== undefined)
         notes.push(text("notes.event_money", { money: money(e.money * scale) }));
       if (e.energy !== undefined) notes.push(text("notes.event_energy", { delta: e.energy }));
-      if (e.debt !== undefined) notes.push(text("notes.event_debt", { delta: e.debt }));
-      if (e.quality !== undefined) notes.push(text("notes.event_quality", { delta: e.quality }));
+      // As the gauges show them: debt costs the code's health, impatience
+      // costs production's patience.
+      if (e.debt !== undefined) notes.push(text("notes.event_health", { delta: signed(-e.debt) }));
+      if (e.quality !== undefined) {
+        notes.push(text("notes.event_patience", { delta: signed(-e.quality) }));
+      }
       if (e.share !== undefined) notes.push(text("notes.event_share", { delta: e.share }));
       if (e.competitor !== undefined)
         notes.push(text("notes.event_competitor", { pct: e.competitor }));

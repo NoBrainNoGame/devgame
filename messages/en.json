@@ -10,11 +10,11 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "energy": "Energy",
-    "debt": "Debt",
     "commits": "Commits",
     "sprint": "Sprint",
     "turn": "Turn",
-    "score": "Score"
+    "score": "Score",
+    "codeHealth": "Code health"
   },
   "nav": {
     "play": "Play",
@@ -45,7 +45,7 @@
     "howItWorks2": "Review, refactor what cost debt, fix what the review flagged, then merge. A refused ticket opens the next one from the backlog beside it: the sprint does not wait.",
     "howItWorks3": "Hold on for as many sprints as you can. The backlog grows, customers' bugs have a deadline, competitors grow, someone asks questions, and the run ends in burnout or when production fires you.",
     "endingsTitle": "Two ways to lose",
-    "endings": "Burnout is the end of the player holding too much at once: no energy left, and a board too crowded to take a breath. Getting fired is the end of the player too slow or too dirty: bugs in production, refused pull requests and tickets left waiting fill production's patience. A clean sprint brings it down. Nothing is hidden: both gauges are on screen the whole time.",
+    "endings": "Burnout is the end of the player holding too much at once: no energy left, and a board too crowded to take a breath. Getting fired is the end of the player too slow or too dirty: bugs in production, refused pull requests and tickets left waiting wear production's patience down. A clean sprint brings it back up. Nothing is hidden: both gauges are on screen the whole time.",
     "dailyTitle": "Daily seed",
     "dailySeed": "In daily seed mode everyone plays the same map, every UTC day. A run is its seed and the list of its actions, and the server replays it to verify the score.",
     "dailyCta": "Today's board",
@@ -102,7 +102,7 @@
       "event": "Fired: one wrong answer too many.",
       "objective": "Fired: one missed objective too many."
     },
-    "qualityBreakdown": "What filled production's patience",
+    "qualityBreakdown": "What wore production's patience down",
     "qualitySource": {
       "incident": "Incidents",
       "rejection": "Refused pull requests",
@@ -139,7 +139,6 @@
     "energyValue": "{value} / {max}",
     "debt": "Debt",
     "debtRange": "between {min} and {max}",
-    "debtHint": "Debt is only shown exactly once a linter is watching.",
     "commits": "Commits",
     "sprint": "Sprint {sprint}",
     "turn": "Turn {turn}",
@@ -169,7 +168,6 @@
     "conflictAiHint": "Always works, adds debt, and may hide a bug.",
     "previewSuccess": "Success: {percent} %",
     "previewEnergy": "Energy: {cost}",
-    "previewDebt": "Debt: {min} to {max}",
     "previewTakesTurn": "Takes a turn",
     "previewFreeMove": "Free move",
     "previewBlocked": "Unavailable",
@@ -194,8 +192,6 @@
     "noTicket": "Nothing in hand: open the project and start a ticket.",
     "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
     "previewPoints": "Points: {min} to {max}",
-    "quality": "Prod",
-    "qualityHint": "Production's patience: a bug in production, a refused pull request or a backlog ticket left waiting fill it. Full is the sack. A clean sprint brings it down.",
     "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}",
     "board": "Project",
     "boardTitle": "Project board",
@@ -229,7 +225,6 @@
     "reviewTitle": "Reviewing PR #{id}",
     "reviewReading": "Reading {count, plural, one {# commit} other {# commits}}…",
     "reviewAllRead": "Everything was read, no bug.",
-    "reviewDebt": "Technical debt: {debt} (ceiling {max})",
     "reviewAccepted": "Accepted. Ready to merge on dev.",
     "reviewRejected": "Rejected.",
     "reviewMerge": "Merge",
@@ -253,15 +248,15 @@
     },
     "ticketArrived": "arrived in sprint {sprint}",
     "ticketRework": "{count, plural, one {# fix point} other {# fix points}} added by {rejections, plural, one {# refused review} other {# refused reviews}}",
-    "ticketDebtLabel": "Debt added",
-    "ticketDebtAdded": "{debt}",
+    "ticketDebtLabel": "Code health spent",
+    "ticketDebtAdded": "−{debt}",
     "ticketBugsLabel": "Flagged bugs",
     "ticketUnreadLabel": "Unread machine commits",
     "ticketBehindLabel": "Behind dev",
     "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
     "ticketNoCommits": "No commit yet. The first one forks off dev.",
     "ticketBugged": "bugged",
-    "ticketCost": "+{debt} debt",
+    "ticketCost": "−{debt} health",
     "reviewMergeHint": "The merge costs the turn; the review did not.",
     "rest": "Take a breath",
     "restHint": "A turn without code: energy comes back, minus one per extra open ticket.",
@@ -382,7 +377,7 @@
     "kindHint": {
       "client_bug": "due this sprint, production breathes when it goes",
       "vip": "double revenue, a bonus if on time, the team will not take it",
-      "debt": "a refactor the code asks for, never forced, repays 20 debt",
+      "debt": "a refactor the code asks for, never forced, gives back 20 code health",
       "migration": "every commit costs debt; landed, it buys a level of servers",
       "obstacle": "turned up by a commit, holds the feature until it lands back on it"
     },
@@ -412,7 +407,7 @@
       "deliver_n": "{progress}/{target} landed",
       "zero_incident": "{progress} incident(s)",
       "review_all": "{progress} unread",
-      "debt_under": "debt {progress} < {target}",
+      "debt_under": "health {progress} > {target}",
       "deliver_vip": "{progress}/{target} landed",
       "no_rest": "{progress} rest(s)",
       "by_hand": "{progress} AI commit(s)",
@@ -434,14 +429,14 @@
       },
       "t2": {
         "idleAuto": "Delegated",
-        "qualityHint": "Production's patience. Debt is a reviewer's notion; production counts."
+        "patienceHint": "Production's patience. Debt is a reviewer's notion; production counts."
       },
       "t3": {
         "restHintAutopilot": "The supervisor plays the obvious move. It rests only when nothing else holds."
       },
       "t4": {
-        "quality": "Tolerance",
-        "restHint": "A turn without coding. Energy comes back; the operator is invited to use it."
+        "restHint": "A turn without coding. Energy comes back; the operator is invited to use it.",
+        "patience": "Tolerance"
       },
       "t5": {
         "energyLabel": "Cycles",
@@ -475,7 +470,15 @@
     "waitingOnObstacle": "Full: only obstacle #{id} still blocks the PR.",
     "switchToObstacle": "Go to the obstacle",
     "switchToObstacleHint": "Nothing left to write here: land obstacle #{id} to open the PR.",
-    "vipWaiting": "VIP waiting: nobody is working on it."
+    "vipWaiting": "VIP waiting: nobody is working on it.",
+    "patience": "Patience",
+    "patienceHint": "Production's patience: a bug in production, a refused pull request or a backlog ticket left waiting wear it down. Empty is the sack. A clean sprint brings it back up.",
+    "codeHealthHint": "Code health is technical debt turned upside down. It is only shown exactly once a linter is watching.",
+    "previewHealth": "Code health: {min} to {max}",
+    "reviewHealth": "Code health: {health} (floor {floor})",
+    "chipHealth": "{delta} health",
+    "chipPoints": "+{points} pts",
+    "conflictAiCost": " — −{delta} health"
   },
   "leaderboard": {
     "title": "Leaderboard",
@@ -714,7 +717,7 @@
       },
       "linter": {
         "name": "Linter",
-        "desc": "Shows the exact debt and repays a little of it every turn."
+        "desc": "Shows the exact code health and repays a little debt every turn."
       },
       "pair_programming": {
         "name": "Pair programming",
@@ -758,7 +761,7 @@
       },
       "lynx_eye": {
         "name": "Lynx eye",
-        "desc": "Technical debt is shown exactly."
+        "desc": "Code health is shown exactly."
       },
       "code_owners": {
         "name": "Code owners",
@@ -792,11 +795,11 @@
       },
       "clean_slate": {
         "name": "Clean slate",
-        "desc": "Technical debt drops to zero."
+        "desc": "Technical debt is wiped: code health back to full."
       },
       "postmortem": {
         "name": "Honest post-mortem",
-        "desc": "Production breathes: its gauge drops by 30."
+        "desc": "Production breathes: +30 patience."
       },
       "intern": {
         "name": "Promising intern",
@@ -864,7 +867,7 @@
       },
       "sla_renegotiated": {
         "name": "SLA renegotiated",
-        "desc": "Permanent: production tolerates 20 more points before firing you."
+        "desc": "Permanent: +20 maximum patience."
       }
     },
     "tree": {
@@ -878,7 +881,7 @@
       },
       "auto_linter": {
         "name": "Auto linter",
-        "desc": "Makes debt exact and lets it decay on its own."
+        "desc": "Makes code health exact and lets it recover on its own."
       },
       "dependabot": {
         "name": "Dependabot",
@@ -1255,20 +1258,20 @@
       "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
       "pr_rejected_debt": "PR rejected, the debt is too high",
       "bug_fixed": "bugged commit redone, the bug is gone",
-      "debt_refactored": "commit redone, {debt} debt taken back",
+      "debt_refactored": "commit redone: +{debt} code health",
       "rested": "a turn to breathe, +{energy} energy",
       "quality": {
-        "incident": "production loses patience: +{delta} for the incident ({value}/{max})",
-        "rejection": "production loses patience: +{delta} for the refused pull request ({value}/{max})",
-        "stale": "production loses patience: +{delta} for the ticket left in the backlog ({value}/{max})",
-        "outage": "production loses patience: +{delta} for the saturated servers ({value}/{max})",
-        "idle_sprint": "production loses patience: +{delta}, nothing landed by your hand this sprint ({value}/{max})",
-        "clean_sprint": "clean sprint: production breathes, −{delta} ({value}/{max})",
-        "hack": "someone erased incident tickets: production breathes, −{delta} ({value}/{max})",
-        "deadline": "production loses patience: +{delta} for the abandoned customer bug ({value}/{max})",
-        "client_bug": "customer bug fixed: production breathes, −{delta} ({value}/{max})",
-        "event": "production: {delta} patience ({value}/{max})",
-        "objective": "production loses patience: +{delta} for the missed objective ({value}/{max})"
+        "incident": "production loses patience: {change} for the incident ({left}/{max})",
+        "rejection": "production loses patience: {change} for the refused pull request ({left}/{max})",
+        "stale": "production loses patience: {change} for the ticket left in the backlog ({left}/{max})",
+        "outage": "production loses patience: {change} for the saturated servers ({left}/{max})",
+        "idle_sprint": "production loses patience: {change}, nothing landed by your hand this sprint ({left}/{max})",
+        "clean_sprint": "clean sprint: production breathes, {change} patience ({left}/{max})",
+        "hack": "someone erased incident tickets: production breathes, {change} patience ({left}/{max})",
+        "deadline": "production loses patience: {change} for the abandoned customer bug ({left}/{max})",
+        "client_bug": "customer bug fixed: production breathes, {change} patience ({left}/{max})",
+        "event": "production: {change} patience ({left}/{max})",
+        "objective": "production loses patience: {change} for the missed objective ({left}/{max})"
       },
       "ticket_cancelled": "{skill}: nobody took the ticket, the skill goes back in the pool",
       "tier_reached": "tier {tier} reached: the scale changes, and so does the shop",
@@ -1320,10 +1323,10 @@
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
-      "rebase_risk": "If the rebase fails: +{debt} debt",
+      "rebase_risk": "If the rebase fails: −{debt} code health",
       "build": "Build {points}",
       "automation": "Automation {points}",
-      "debt": "Debt {points}",
+      "debt": "Technical debt {points}",
       "crunch": "Crunch {points}",
       "free_refactor": "Refactor free, courtesy of the last craft commit",
       "pair_programming": "Review made cheaper by pair programming",
@@ -1348,8 +1351,7 @@
       "merge_regen": "Gives back {energy} ⚡",
       "merge_risk": "{percent} % risk of something at the merge",
       "unread_risk": "{count, plural, one {# unread AI commit} other {# unread AI commits}}: the review may find bugs",
-      "debt_refusal": "Debt above the ceiling ({max}): the review will refuse",
-      "refactor_target": "Redoes the commit that cost {debt} debt",
+      "refactor_target": "Redoes the commit that cost {debt} code health",
       "fix_bug": "Redoes the ticket's oldest bugged commit",
       "rest_regen": "+{energy} energy",
       "rest_wip": "{count, plural, one {# extra ticket: less rest} other {# extra tickets: less rest}}",
@@ -1359,11 +1361,11 @@
       "seats": "{count, plural, one {# seat} other {# seats}}",
       "brings_team": "Comes with {count} × {rank}",
       "brings_features": "{count, plural, one {# shipped feature} other {# shipped features}} of {points} points",
-      "brings_debt": "+{debt} debt",
+      "brings_debt": "Code health −{debt}",
       "brings_incident": "A production incident on arrival",
       "already_acquired": "Already bought",
       "hack_win": {
-        "patience": "Won: −40 patience lost",
+        "patience": "Won: +40 patience",
         "energy": "Won: full energy",
         "capacity": "Won: the advised rung, for free"
       },
@@ -1375,8 +1377,6 @@
       "hack_unavailable": "Nothing to hack right now",
       "event_money": "{money}",
       "event_energy": "Energy {delta}",
-      "event_debt": "Debt {delta}",
-      "event_quality": "Production's patience {delta}",
       "event_share": "Market share {delta}",
       "event_competitor": "Competitor {pct}%",
       "event_ticket": "A ticket arrives: {kind}",
@@ -1387,7 +1387,10 @@
         "humanReviewOptional": "Human review becomes optional",
         "operatorChannelClosed": "The operator channel closes",
         "vipForTeam": "The team takes VIP requests"
-      }
+      },
+      "event_health": "Code health {delta}",
+      "event_patience": "Production's patience {delta}",
+      "health_refusal": "Code health under the floor ({floor}): the review will refuse"
     },
     "tickets": {
       "feature": {
@@ -1909,8 +1912,8 @@
         "desc": "Nothing the machine wrote ships unread."
       },
       "debt_under": {
-        "name": "Debt contained",
-        "desc": "Debt under {target} when the release ships."
+        "name": "Healthy code",
+        "desc": "Code health above {target} when the release ships."
       },
       "deliver_vip": {
         "name": "Deliver the VIP",

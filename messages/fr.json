@@ -10,11 +10,11 @@
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "energy": "Énergie",
-    "debt": "Dette",
     "commits": "Commits",
     "sprint": "Sprint",
     "turn": "Tour",
-    "score": "Score"
+    "score": "Score",
+    "codeHealth": "Santé du code"
   },
   "nav": {
     "play": "Jouer",
@@ -45,7 +45,7 @@
     "howItWorks2": "Relisez, refactorez ce qui a coûté de la dette, corrigez ce que la review a marqué, puis mergez. Un ticket refusé fait ouvrir le prochain du backlog en parallèle : le sprint n'attend pas.",
     "howItWorks3": "Tenez le plus de sprints possible. Le backlog grossit, les bugs clients ont une date, les concurrents grandissent, quelqu'un pose des questions, et la run s'arrête en burnout ou quand la production vous vire.",
     "endingsTitle": "Deux façons de perdre",
-    "endings": "Le burnout est la fin du joueur qui tient trop de choses à la fois : plus d'énergie, et un tableau trop chargé pour souffler. Le licenciement est celle du joueur trop lent ou trop sale : bugs en production, PR refusées et tickets laissés à traîner remplissent la patience de la prod. Un sprint propre la fait baisser. Rien n'est caché : les deux jauges sont à l'écran en permanence.",
+    "endings": "Le burnout est la fin du joueur qui tient trop de choses à la fois : plus d'énergie, et un tableau trop chargé pour souffler. Le licenciement est celle du joueur trop lent ou trop sale : bugs en production, PR refusées et tickets laissés à traîner usent la patience de la prod. Un sprint propre la fait remonter. Rien n'est caché : les deux jauges sont à l'écran en permanence.",
     "dailyTitle": "Graine du jour",
     "dailySeed": "En mode graine du jour, tout le monde joue la même carte, chaque jour UTC. Une run est sa graine et la liste de ses actions, et le serveur la rejoue pour vérifier le score.",
     "dailyCta": "Classement du jour",
@@ -102,7 +102,7 @@
       "event": "Licenciement : une mauvaise réponse de trop.",
       "objective": "Licenciement : un objectif manqué de trop."
     },
-    "qualityBreakdown": "Ce qui a rempli la prod",
+    "qualityBreakdown": "Ce qui a coûté de la patience",
     "qualitySource": {
       "incident": "Incidents",
       "rejection": "PR refusées",
@@ -139,7 +139,6 @@
     "energyValue": "{value} / {max}",
     "debt": "Dette",
     "debtRange": "entre {min} et {max}",
-    "debtHint": "La dette n'est affichée précisément qu'avec un linter.",
     "commits": "Commits",
     "sprint": "Sprint {sprint}",
     "turn": "Tour {turn}",
@@ -169,7 +168,6 @@
     "conflictAiHint": "Passe toujours, ajoute de la dette et peut cacher un bug.",
     "previewSuccess": "Réussite : {percent} %",
     "previewEnergy": "Énergie : {cost}",
-    "previewDebt": "Dette : {min} à {max}",
     "previewTakesTurn": "Consomme un tour",
     "previewFreeMove": "Coup gratuit",
     "previewBlocked": "Indisponible",
@@ -194,8 +192,6 @@
     "noTicket": "Aucun ticket en main : ouvrez le projet et démarrez-en un.",
     "behindDev": "{count, plural, one {# merge a atterri sur dev depuis} other {# merges ont atterri sur dev depuis}}",
     "previewPoints": "Points : {min} à {max}",
-    "quality": "Prod",
-    "qualityHint": "La patience de la prod : un bug en production, une PR refusée ou un ticket du backlog qui a traîné la remplissent. Pleine, c'est le licenciement. Un sprint propre la fait baisser.",
     "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}",
     "board": "Projet",
     "boardTitle": "Tableau du projet",
@@ -229,7 +225,6 @@
     "reviewTitle": "Review de la PR #{id}",
     "reviewReading": "Lecture de {count, plural, one {# commit} other {# commits}}…",
     "reviewAllRead": "Tout a été relu, aucun bug.",
-    "reviewDebt": "Dette technique : {debt} (plafond {max})",
     "reviewAccepted": "Acceptée. Prête à merger sur dev.",
     "reviewRejected": "Refusée.",
     "reviewMerge": "Merger",
@@ -253,15 +248,15 @@
     },
     "ticketArrived": "arrivé au sprint {sprint}",
     "ticketRework": "{count, plural, one {# point de correctif} other {# points de correctif}} ajouté par {rejections, plural, one {# review refusée} other {# reviews refusées}}",
-    "ticketDebtLabel": "Dette ajoutée",
-    "ticketDebtAdded": "{debt}",
+    "ticketDebtLabel": "Santé du code coûtée",
+    "ticketDebtAdded": "−{debt}",
     "ticketBugsLabel": "Bugs marqués",
     "ticketUnreadLabel": "Commits IA non relus",
     "ticketBehindLabel": "Retard sur dev",
     "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
     "ticketNoCommits": "Aucun commit encore. Le premier bifurque de dev.",
     "ticketBugged": "bugué",
-    "ticketCost": "+{debt} dette",
+    "ticketCost": "−{debt} santé",
     "reviewMergeHint": "Le merge coûte le tour ; la review, non.",
     "rest": "Souffler",
     "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus.",
@@ -382,7 +377,7 @@
     "kindHint": {
       "client_bug": "à livrer dans le sprint, la prod respire quand il part",
       "vip": "double revenu, prime si livré à temps, l'équipe ne le prend pas",
-      "debt": "un refacto que le code réclame, jamais imposé, rembourse 20 de dette",
+      "debt": "un refacto que le code réclame, jamais imposé, rend 20 de santé du code",
       "migration": "chaque commit coûte de la dette, livré il offre un niveau de serveurs",
       "obstacle": "surgi d'un commit, bloque la feature tant qu'il n'y est pas revenu"
     },
@@ -412,7 +407,7 @@
       "deliver_n": "{progress}/{target} livrés",
       "zero_incident": "{progress} incident(s)",
       "review_all": "{progress} non relu(s)",
-      "debt_under": "dette {progress} < {target}",
+      "debt_under": "santé {progress} > {target}",
       "deliver_vip": "{progress}/{target} livré",
       "no_rest": "{progress} repos",
       "by_hand": "{progress} commit(s) IA",
@@ -434,14 +429,14 @@
       },
       "t2": {
         "idleAuto": "Délégué",
-        "qualityHint": "La patience de la prod. La dette est une notion de relecteur ; la prod, elle, compte."
+        "patienceHint": "La patience de la prod. La dette est une notion de relecteur ; la prod, elle, compte."
       },
       "t3": {
         "restHintAutopilot": "Le superviseur joue le coup évident. Il ne souffle que si rien d'autre ne tient."
       },
       "t4": {
-        "quality": "Tolérance",
-        "restHint": "Un tour sans coder. L'énergie revient ; l'opérateur est invité à s'en servir."
+        "restHint": "Un tour sans coder. L'énergie revient ; l'opérateur est invité à s'en servir.",
+        "patience": "Tolérance"
       },
       "t5": {
         "energyLabel": "Cycles",
@@ -475,7 +470,15 @@
     "waitingOnObstacle": "Plein : seul l'obstacle #{id} bloque encore la PR.",
     "switchToObstacle": "Passer sur l'obstacle",
     "switchToObstacleHint": "Plus rien à écrire ici : ramenez l'obstacle #{id} pour ouvrir la PR.",
-    "vipWaiting": "VIP en attente : personne n'y travaille."
+    "vipWaiting": "VIP en attente : personne n'y travaille.",
+    "patience": "Patience",
+    "patienceHint": "La patience de la prod : un bug en production, une PR refusée ou un ticket du backlog qui a traîné la font baisser. Vide, c'est le licenciement. Un sprint propre la fait remonter.",
+    "codeHealthHint": "La santé du code, c'est la dette technique à l'envers. Elle n'est affichée précisément qu'avec un linter.",
+    "previewHealth": "Santé du code : {min} à {max}",
+    "reviewHealth": "Santé du code : {health} (plancher {floor})",
+    "chipHealth": "{delta} santé",
+    "chipPoints": "+{points} pts",
+    "conflictAiCost": " — −{delta} santé"
   },
   "leaderboard": {
     "title": "Classement",
@@ -714,7 +717,7 @@
       },
       "linter": {
         "name": "Linter",
-        "desc": "Affiche la dette exacte et en rembourse un peu à chaque tour."
+        "desc": "Affiche la santé du code exacte et rembourse un peu de dette à chaque tour."
       },
       "pair_programming": {
         "name": "Pair programming",
@@ -758,7 +761,7 @@
       },
       "lynx_eye": {
         "name": "Œil de lynx",
-        "desc": "La dette technique s'affiche au point près."
+        "desc": "La santé du code s'affiche au point près."
       },
       "code_owners": {
         "name": "Code owners",
@@ -792,11 +795,11 @@
       },
       "clean_slate": {
         "name": "Table rase",
-        "desc": "La dette technique retombe à zéro."
+        "desc": "La dette technique est effacée : santé du code au maximum."
       },
       "postmortem": {
         "name": "Post-mortem sincère",
-        "desc": "La prod respire : sa jauge redescend de 30."
+        "desc": "La prod respire : +30 de patience."
       },
       "intern": {
         "name": "Stagiaire prometteur",
@@ -864,7 +867,7 @@
       },
       "sla_renegotiated": {
         "name": "SLA renégocié",
-        "desc": "Permanent : la prod tolère 20 points de plus avant de vous virer."
+        "desc": "Permanent : +20 de patience maximale."
       }
     },
     "tree": {
@@ -878,7 +881,7 @@
       },
       "auto_linter": {
         "name": "Linter automatique",
-        "desc": "Rend la dette exacte et la fait décroître toute seule."
+        "desc": "Rend la santé du code exacte et la fait remonter toute seule."
       },
       "dependabot": {
         "name": "Dependabot",
@@ -1071,7 +1074,7 @@
       },
       "vibe_coder": {
         "name": "Vibe coder",
-        "desc": "Tout à l'IA, la main hésitante, et une dette plus floue que jamais."
+        "desc": "Tout à l'IA, la main hésitante, et une santé du code plus floue que jamais."
       },
       "devops": {
         "name": "DevOps",
@@ -1255,20 +1258,20 @@
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
       "pr_rejected_debt": "PR refusée, la dette est trop haute",
       "bug_fixed": "commit bugué repris, le bug est parti",
-      "debt_refactored": "commit repris, {debt} de dette en moins",
+      "debt_refactored": "commit repris : +{{debt}} de santé du code",
       "rested": "un tour pour souffler, +{energy} énergie",
       "quality": {
-        "incident": "la prod perd patience : +{delta} pour l'incident ({value}/{max})",
-        "rejection": "la prod perd patience : +{delta} pour la PR refusée ({value}/{max})",
-        "stale": "la prod perd patience : +{delta} pour le ticket laissé au backlog ({value}/{max})",
-        "outage": "la prod perd patience : +{delta} pour les serveurs saturés ({value}/{max})",
-        "idle_sprint": "la prod perd patience : +{delta}, rien livré de votre main ce sprint ({value}/{max})",
-        "clean_sprint": "sprint propre : la prod respire, −{delta} ({value}/{max})",
-        "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, −{delta} ({value}/{max})",
-        "deadline": "la prod perd patience : +{delta} pour le bug client abandonné ({value}/{max})",
-        "client_bug": "bug client corrigé : la prod respire, −{delta} ({value}/{max})",
-        "event": "la prod : {delta} de patience ({value}/{max})",
-        "objective": "la prod perd patience : +{delta} pour l'objectif manqué ({value}/{max})"
+        "incident": "la prod perd patience : {change} pour l'incident ({left}/{max})",
+        "rejection": "la prod perd patience : {change} pour la PR refusée ({left}/{max})",
+        "stale": "la prod perd patience : {change} pour le ticket laissé au backlog ({left}/{max})",
+        "outage": "la prod perd patience : {change} pour les serveurs saturés ({left}/{max})",
+        "idle_sprint": "la prod perd patience : {change}, rien livré de votre main ce sprint ({left}/{max})",
+        "clean_sprint": "sprint propre : la prod respire, {change} de patience ({left}/{max})",
+        "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, {change} de patience ({left}/{max})",
+        "deadline": "la prod perd patience : {change} pour le bug client abandonné ({left}/{max})",
+        "client_bug": "bug client corrigé : la prod respire, {change} de patience ({left}/{max})",
+        "event": "la prod : {change} de patience ({left}/{max})",
+        "objective": "la prod perd patience : {change} pour l'objectif manqué ({left}/{max})"
       },
       "ticket_cancelled": "{skill} : personne n'a pris le ticket, la compétence retourne au pool",
       "tier_reached": "palier {tier} atteint : l'échelle change, la boutique aussi",
@@ -1320,10 +1323,10 @@
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
-      "rebase_risk": "Si le rebase rate : +{debt} de dette",
+      "rebase_risk": "Si le rebase rate : −{debt} de santé du code",
       "build": "Build {points}",
       "automation": "Automatisation {points}",
-      "debt": "Dette {points}",
+      "debt": "Dette technique {points}",
       "crunch": "Crunch {points}",
       "free_refactor": "Refacto offerte par le dernier commit artisanal",
       "pair_programming": "Review allégée par le pair programming",
@@ -1348,8 +1351,7 @@
       "merge_regen": "Rend {energy} ⚡",
       "merge_risk": "{percent} % de risque d'incident au merge",
       "unread_risk": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}} : la review peut y trouver des bugs",
-      "debt_refusal": "Dette au-dessus du plafond ({max}) : la review refusera",
-      "refactor_target": "Reprend le commit qui a coûté {debt} de dette",
+      "refactor_target": "Reprend le commit qui a coûté {debt} de santé du code",
       "fix_bug": "Reprend le plus ancien commit bugué du ticket",
       "rest_regen": "+{energy} énergie",
       "rest_wip": "{count, plural, one {# ticket en plus : on souffle moins} other {# tickets en plus : on souffle moins}}",
@@ -1359,11 +1361,11 @@
       "seats": "{count, plural, one {# poste} other {# postes}}",
       "brings_team": "Arrive avec {count} × {rank}",
       "brings_features": "{count, plural, one {# feature livrée} other {# features livrées}} de {points} points",
-      "brings_debt": "+{debt} de dette",
+      "brings_debt": "Santé du code −{debt}",
       "brings_incident": "Un incident en prod à l'arrivée",
       "already_acquired": "Déjà rachetée",
       "hack_win": {
-        "patience": "Réussi : −40 de patience perdue",
+        "patience": "Réussi : +40 de patience",
         "energy": "Réussi : énergie pleine",
         "capacity": "Réussi : le barreau conseillé, offert"
       },
@@ -1375,8 +1377,6 @@
       "hack_unavailable": "Rien à hacker pour l'instant",
       "event_money": "{money}",
       "event_energy": "Énergie {delta}",
-      "event_debt": "Dette {delta}",
-      "event_quality": "Patience de la prod {delta}",
       "event_share": "Part de marché {delta}",
       "event_competitor": "Concurrent {pct} %",
       "event_ticket": "Un ticket arrive : {kind}",
@@ -1387,7 +1387,10 @@
         "humanReviewOptional": "La relecture humaine devient optionnelle",
         "operatorChannelClosed": "Le canal opérateur se ferme",
         "vipForTeam": "L'équipe prend les demandes VIP"
-      }
+      },
+      "event_health": "Santé du code {delta}",
+      "event_patience": "Patience de la prod {delta}",
+      "health_refusal": "Santé du code sous le plancher ({floor}) : la review refusera"
     },
     "tickets": {
       "feature": {
@@ -1909,8 +1912,8 @@
         "desc": "Rien de ce que la machine a écrit ne part en prod sans relecture."
       },
       "debt_under": {
-        "name": "Dette contenue",
-        "desc": "La dette sous {target} quand la release part."
+        "name": "Code sain",
+        "desc": "La santé du code au-dessus de {target} quand la release part."
       },
       "deliver_vip": {
         "name": "Livrer le VIP",

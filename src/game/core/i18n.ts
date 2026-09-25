@@ -28,6 +28,13 @@ export function money(value: number): { money: number } {
   return { money: value };
 }
 
+/** A signed amount as the page writes it: "+5", "−5" with a true minus, "0". */
+export function signed(value: number): string {
+  if (value > 0) return `+${value}`;
+  if (value < 0) return `\u2212${-value}`;
+  return "0";
+}
+
 export function renderText(
   translate: (key: string, params?: Record<string, string | number>) => string,
   value: I18nText,

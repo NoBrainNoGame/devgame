@@ -1,4 +1,4 @@
-import { money, ref, text } from "@/game/core/i18n";
+import { money, ref, signed, text } from "@/game/core/i18n";
 import type { DevId, GameEvent, LogLine, MapNode, NodeId, RunState } from "@/game/core/types";
 
 /**
@@ -475,9 +475,11 @@ export function toLogLine(
         seq,
         turn,
         kind: event.delta < 0 ? "feat" : "revert",
+        // Told as the HUD shows it: production's patience, full when all is
+        // well, so a rise of the engine's impatience is a loss of patience.
         text: text(`log.quality.${event.source}`, {
-          delta: Math.abs(event.delta),
-          value: event.value,
+          change: signed(-event.delta),
+          left: event.max - event.value,
           max: event.max,
         }),
       };

@@ -85,7 +85,9 @@ export function ConflictDialog({
           >
             <span>
               {t("conflictAi")}
-              {machine?.debtDelta === undefined ? "" : `\u00a0— +${machine.debtDelta[1]} dette`}
+              {machine?.debtDelta === undefined
+                ? ""
+                : t("conflictAiCost", { delta: machine.debtDelta[1] })}
             </span>
             <span className="whitespace-normal font-normal text-muted-foreground text-xs">
               {t("conflictAiHint")}
@@ -314,7 +316,9 @@ export function RunOverDialog({
                   <dt className="text-muted-foreground">
                     {t(`qualitySource.${entry.source}` as never)}
                   </dt>
-                  <dd className="text-right text-branch-hotfix tabular-nums">+{entry.points}</dd>
+                  <dd className="text-right text-branch-hotfix tabular-nums">
+                    {`\u2212${entry.points}`}
+                  </dd>
                 </Fragment>
               ))}
             </dl>

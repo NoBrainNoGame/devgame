@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RunSnapshot } from "@/game";
+import { HEALTH_MAX, healthOf, healthText, patienceOf } from "@/game/bridge/gauges";
 import { OBJECTIVES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +37,17 @@ export function ResourceBar({
   const tiered = useTiered(displayTier(snapshot));
 
   const { player, debt, economy } = snapshot;
+  // Full when all is well: the code's health is the debt turned over, and
+  // production's patience is its impatience turned over.
+  const health = healthOf(debt);
+  const patience = patienceOf(snapshot.quality, snapshot.qualityMax);
+  // The debt objective reads in the same terms as the gauge it watches.
+  const objectiveParams =
+    snapshot.objective?.id === "debt_under"
+      ? { progress: healthText(health), target: HEALTH_MAX - snapshot.objective.target }
+      : snapshot.objective === null
+        ? null
+        : { progress: snapshot.objective.progress, target: snapshot.objective.target };
   const saturated = economy.load > economy.capacity;
   const energyPct = player.energyMax === 0 ? 0 : (player.energy / player.energyMax) * 100;
 
@@ -81,10 +93,7 @@ export function ResourceBar({
                   {game(`objectives.${snapshot.objective.id}.name` as never)}
                 </span>
                 <span className="tabular-nums">
-                  {t(`objectiveProgress.${snapshot.objective.id}`, {
-                    progress: snapshot.objective.progress,
-                    target: snapshot.objective.target,
-                  })}
+                  {t(`objectiveProgress.${snapshot.objective.id}`, objectiveParams ?? {})}
                 </span>
               </div>
             </TooltipTrigger>
@@ -92,7 +101,7 @@ export function ResourceBar({
               {game(
                 `objectives.${snapshot.objective.id}.desc` as never,
                 {
-                  target: snapshot.objective.target,
+                  target: objectiveParams?.target ?? snapshot.objective.target,
                 } as never,
               )}
               {" · "}
@@ -120,38 +129,37 @@ export function ResourceBar({
           <TooltipTrigger asChild>
             <div className="w-44 shrink-0">
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-muted-foreground">{common("debt")}</span>
-                <span className="tabular-nums text-debt">
-                  {debt.exact === null ? `${debt.range[0]}–${debt.range[1]}` : debt.exact}
-                </span>
+                <span className="text-muted-foreground">{common("codeHealth")}</span>
+                <span className="tabular-nums text-debt">{healthText(health)}</span>
               </div>
-              <Progress value={debt.range[1]} className="[&>*]:bg-debt" />
+              {/* The worst the blur allows: a gauge that promises more than it knows is a lie. */}
+              <Progress value={(health.range[0] / HEALTH_MAX) * 100} className="[&>*]:bg-debt" />
             </div>
           </TooltipTrigger>
-          <TooltipContent>{t("debtHint")}</TooltipContent>
+          <TooltipContent>{t("codeHealthHint")}</TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="w-44 shrink-0">
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-muted-foreground">{tiered("quality")}</span>
+                <span className="text-muted-foreground">{tiered("patience")}</span>
                 <span
                   className={cn(
                     "tabular-nums",
-                    snapshot.quality >= snapshot.qualityMax / 2 && "text-branch-hotfix",
+                    patience <= snapshot.qualityMax / 2 && "text-branch-hotfix",
                   )}
                 >
-                  {snapshot.quality}/{snapshot.qualityMax}
+                  {patience}/{snapshot.qualityMax}
                 </span>
               </div>
               <Progress
-                value={(snapshot.quality / snapshot.qualityMax) * 100}
-                className="[&>*]:bg-branch-hotfix"
+                value={(patience / snapshot.qualityMax) * 100}
+                className="[&>*]:bg-branch-main"
               />
             </div>
           </TooltipTrigger>
-          <TooltipContent>{t("qualityHint")}</TooltipContent>
+          <TooltipContent>{tiered("patienceHint")}</TooltipContent>
         </Tooltip>
       </div>
 

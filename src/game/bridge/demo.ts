@@ -87,7 +87,7 @@ export function chooseDemo(snapshot: RunSnapshot, played: number): PlayerAction 
   if (choice?.type === "submit") {
     const notes = previews[actionKey(choice)]?.notes ?? [];
     const inHand = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
-    if (notes.some((note) => note.key === "notes.debt_refusal")) {
+    if (notes.some((note) => note.key === "notes.health_refusal")) {
       choice =
         find((a) => a.type === "commit" && a.mode === "craft" && a.kind === "refactor") ??
         find((a) => a.type === "rest") ??
