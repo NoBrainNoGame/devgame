@@ -154,7 +154,13 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
   };
 
   const supervisor = new SceneSupervisor<PixiScene>({
-    build: (mode, report) => buildPixiScene(element, session, sceneOptions, mode, report),
+    build: (mode, report) =>
+      buildPixiScene(element, session, sceneOptions, mode, report).catch((error: unknown) => {
+        // The supervisor only counts failures: without this, a scene that
+        // never starts shows as a lost WebGL context with nothing in the console.
+        console.error("The scene failed to start and is being rebuilt:", error);
+        throw error;
+      }),
     onChange: (mode, scene) => {
       // Only a WebGL scene animates. Without one — between two builds, in
       // Canvas2D, with no picture at all — nothing is ever waited for.

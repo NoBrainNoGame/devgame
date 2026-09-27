@@ -499,8 +499,8 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   /** Every revealed node's position, for the camera's framing. */
   bounds(): { minX: number; maxX: number; minY: number; maxY: number } | null {
-    // The camera is a sibling in the same `Parallel` and may be activated
-    // first, so it can ask before there is anything to answer with.
+    // Asked before activation there is nothing to answer with. `RunScene`
+    // activates the graph before the camera, so this is only a safety net.
     if (this.sprites === undefined) return null;
 
     const all = this.revealed();

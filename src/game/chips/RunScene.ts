@@ -39,11 +39,13 @@ export class RunScene extends ContainerChip {
     controls.camera = camera;
     controls.skip = () => fx.skip();
 
+    // Activated in this order: the camera's first snap asks the graph which
+    // row the head is on, so the graph has to be up before it.
     this._activateChildChip(
       new booyah.Parallel(
         [
-          camera,
           graph,
+          camera,
           refs,
           marker,
           new Austerity(graph, refs, marker),
