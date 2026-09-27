@@ -524,7 +524,10 @@ de la lecture.
    Poussés ensemble, les commits locaux n'en font plus qu'un (« ×N » à son
    sujet) : leurs rangées se referment, le plus récent descend à la place du
    plus ancien et l'historique au-dessus descend avec lui, sans laisser de
-   trou (`render/rows.ts`). Les commits des collègues, les troncs et les merges naissent
+   trou (`render/rows.ts`). Celui qui reste porte les marques de tous ceux
+   qu'il absorbe (`marksOf`) : un bug squashé reste un anneau rouge jusqu'à
+   son fix, une écriture machine non relue reste signalée, car le moteur, lui,
+   les garde. Les commits des collègues, les troncs et les merges naissent
    poussés. Présentation seule : le moteur n'a pas de remote,
    `bridge/pushes.ts` le déduit des événements et le rejoue au chargement.
 

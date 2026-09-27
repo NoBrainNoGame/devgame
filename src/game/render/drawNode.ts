@@ -1,5 +1,6 @@
 import type { Graphics } from "pixi.js";
 
+import type { CommitMarks } from "@/game/bridge/pushes";
 import { devColourIndex } from "@/game/content";
 import type { MapNode } from "@/game/core/types";
 import { palette } from "@/game/render/palette";
@@ -25,12 +26,12 @@ const LOCAL_DASH_SHARE = 0.55;
  * the rings (unread, bug, hover), the disc, and the dashed disc of a commit
  * not pushed yet (`bridge/pushes.ts`).
  */
-export function drawRings(graphics: Graphics, node: MapNode, hovered: boolean): void {
+export function drawRings(graphics: Graphics, marks: CommitMarks, hovered: boolean): void {
   graphics.clear();
 
-  if (node.commit.bugged === true) {
+  if (marks.bugged) {
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 2, color: palette.lane.hotfix });
-  } else if (node.commit.mode === "ai" && node.commit.reviewed === false) {
+  } else if (marks.unread) {
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: palette.node.unreviewed });
   }
 

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { labelledKind, nodePrefix, useGameStore } from "@/game";
+import { labelledKind, marksOf, nodePrefix, useGameStore } from "@/game";
 import { cn } from "@/lib/utils";
 
 /**
@@ -30,7 +30,9 @@ export function GraphTooltip(): React.JSX.Element | null {
 
   const kind = labelledKind(node.kind);
   const mode = node.commit?.mode;
-  const unread = node.commit?.mode === "ai" && node.commit.reviewed === false;
+  // Read like the rings: a squashed commit is unread if any commit in it is.
+  const folded = (push?.folded ?? []).flatMap((id) => snapshot.nodes[id] ?? []);
+  const unread = marksOf([node, ...folded]).unread;
 
   return (
     <div
@@ -78,8 +80,8 @@ export function GraphTooltip(): React.JSX.Element | null {
               <span className="text-muted-foreground">
                 {push.local
                   ? t("tooltipLocal")
-                  : push.squashed > 1
-                    ? t("tooltipSquashed", { count: push.squashed })
+                  : push.folded.length > 0
+                    ? t("tooltipSquashed", { count: push.folded.length + 1 })
                     : t("tooltipPushed")}
               </span>
             </Row>

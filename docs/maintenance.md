@@ -353,7 +353,10 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   or commits stay drawn local forever. A broken commit (`node_done.broken`)
   stays local until the next commit on its branch lands. A squash closes its
   rows up (`render/rows.ts`): every y on the graph goes through a row, never
-  a depth (`nodeY` takes a row), or the squashed rows come back as holes. Presentation only:
+  a depth (`nodeY` takes a row), or the squashed rows come back as holes.
+  A mark drawn on a commit (a ring, a tooltip line) is read with `marksOf`
+  over the survivor and every commit squashed into it, or a squash hides a
+  bug the engine still holds. Presentation only:
   no epoch. Check:
   `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is

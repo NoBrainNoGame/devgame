@@ -57,6 +57,26 @@ export function isBornLocal(node: MapNode): boolean {
   );
 }
 
+/** What a commit drawn on the graph carries, for its rings and its tooltip. */
+export interface CommitMarks {
+  bugged: boolean;
+  unread: boolean;
+}
+
+/**
+ * The marks of commits drawn as one: the commit that stays and every commit
+ * squashed into it. The squash is only how the screen shows a push: a broken
+ * commit pushed with the next one is still bugged on its branch, blocking the
+ * pull request until a fix redoes it, and unread machine work is still
+ * suspect at the release. Drawn from the survivor alone, both would vanish.
+ */
+export function marksOf(commits: readonly Pick<MapNode, "commit">[]): CommitMarks {
+  return {
+    bugged: commits.some((node) => node.commit.bugged === true),
+    unread: commits.some((node) => node.commit.mode === "ai" && !node.commit.reviewed),
+  };
+}
+
 /** Commits squashed into this one, itself included; 1 for an ordinary commit. */
 export function squashedInto(ledger: PushLedger, id: NodeId): number {
   let count = 1;

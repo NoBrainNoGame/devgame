@@ -1,10 +1,23 @@
 import { describe, expect, test } from "bun:test";
 
-import { advancePushes, emptyPushes, isBornLocal, type PushLedger } from "@/game/bridge/pushes";
+import {
+  advancePushes,
+  emptyPushes,
+  isBornLocal,
+  marksOf,
+  type PushLedger,
+} from "@/game/bridge/pushes";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
+import type {
+  GameEvent,
+  MapNode,
+  NodeCommit,
+  NodeId,
+  PlayerAction,
+  RunState,
+} from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 import { newRun, policy } from "./helpers";
@@ -113,6 +126,35 @@ describe("the push ledger", () => {
     expect(seen).toBeGreaterThan(0);
   });
 
+  test("a squash is drawn with the bugs of every commit it took in", () => {
+    // A broken commit, a fix that missed too, then one that landed: the fix
+    // redid the oldest, and the missed fix is still bugged under the squash.
+    let carried = 0;
+    let hidden = 0;
+    for (const run of runs) {
+      for (const step of run.steps) {
+        const folded = new Map<NodeId, MapNode[]>();
+        for (const [id, into] of Object.entries(step.after.absorbed)) {
+          const node = step.state.nodes[id];
+          if (node !== undefined) folded.set(into, [...(folded.get(into) ?? []), node]);
+        }
+        for (const [into, commits] of folded) {
+          const survivor = step.state.nodes[into];
+          expect(survivor).toBeDefined();
+          if (survivor === undefined || !commits.some((node) => node.commit.bugged === true)) {
+            continue;
+          }
+          carried += 1;
+          // Drawn from the survivor alone, this bug would not be on screen.
+          if (survivor.commit.bugged !== true) hidden += 1;
+          expect(marksOf([survivor, ...commits]).bugged).toBe(true);
+        }
+      }
+    }
+    expect(carried).toBeGreaterThan(0);
+    expect(hidden).toBeGreaterThan(0);
+  });
+
   test("replaying the log gives the ledger the batches built", () => {
     for (const run of runs.slice(0, 10)) {
       let replayed = emptyPushes();
@@ -125,5 +167,24 @@ describe("the push ledger", () => {
       );
       expect(replayed).toEqual(run.ledger);
     }
+  });
+});
+
+describe("the marks of a squash", () => {
+  const commit = (fields: Partial<NodeCommit>): Pick<MapNode, "commit"> => ({
+    commit: { mode: "craft", reviewed: true, ...fields },
+  });
+
+  test("a clean commit carries nothing", () => {
+    expect(marksOf([commit({})])).toEqual({ bugged: false, unread: false });
+  });
+
+  test("the survivor carries a bug from any commit folded into it", () => {
+    expect(marksOf([commit({}), commit({ bugged: true })]).bugged).toBe(true);
+  });
+
+  test("the survivor carries unread machine work from any commit folded into it", () => {
+    expect(marksOf([commit({}), commit({ mode: "ai", reviewed: false })]).unread).toBe(true);
+    expect(marksOf([commit({}), commit({ mode: "ai", reviewed: true })]).unread).toBe(false);
   });
 });

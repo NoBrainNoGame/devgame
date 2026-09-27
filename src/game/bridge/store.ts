@@ -28,11 +28,11 @@ export interface GameStore {
   /** Where the hovered commit sits on screen, so the HUD can point at it. */
   hoveredAt: { x: number; y: number } | null;
   /**
-   * Whether the hovered commit is pushed as the graph draws it, and how many
-   * commits were squashed into it (1 for one on its own). The screen's, not
+   * Whether the hovered commit is pushed as the graph draws it, and the
+   * commits squashed into it (none for one on its own). The screen's, not
    * the engine's: the engine has no remote (`bridge/pushes.ts`).
    */
-  hoveredPush: { local: boolean; squashed: number } | null;
+  hoveredPush: { local: boolean; folded: NodeId[] } | null;
   /** Current scale, for the zoom readout. */
   zoom: number;
   /** False once the player has dragged or zoomed away from their head commit. */
