@@ -86,10 +86,14 @@ guérison), et une vitrine.
 - **Acceptée** : soumettre ne coûte rien ; Merger (bouton ou
   [horloge](#le-jeu-tourne-sans-vous)) coûte le tour, pose le ticket sur `dev`
   et livre la compétence. Le moteur ne merge jamais seul.
-- **Refusée** : coûte le tour. Les non-relus deviennent lus, les attrapés
-  bugués, en points de correctif. Recommencer (`git reset --hard` : commits et
-  obstacles jetés, colonne rendue, départ de `dev`) ou continuer (un fix par
-  commit bugué avant de resoumettre). Et le plus ancien ticket du backlog
+- **Refusée** : ne coûte rien, la réponse paie. Les non-relus deviennent
+  lus, les attrapés bugués, en points de correctif. **Corriger** (un fix par
+  commit bugué avant de resoumettre) coûte le tour. **Livrer avec un ticket de
+  suivi** : la PR passe telle quelle, le merge coûte le tour, les points de
+  correctif repartent, et chaque bug ouvre au backlog un ticket de suivi (un
+  bug client, daté, que l'équipe peut prendre) qui, livré, retire le bug ; à
+  la release, un bug encore connu casse à `release.bugPerKnownPct` (plus qu'un
+  non-relu). Et le plus ancien ticket du backlog
   s'ouvre en parallèle ; backlog vide, rien : la pression est celle prévue, pas
   un ticket inventé pour punir.
 
@@ -152,9 +156,9 @@ livré non relu : seule relecture du code mergé avant la release.
 
 ### Ce qui coûte un tour
 
-Commit, review, souffler, merge (ticket ou obstacle), soumission refusée, hack ;
+Commit, review, souffler, merge (ticket ou obstacle), corriger après refus, hack ;
 un conflit suspend le tour, sa résolution le termine. Gratuits : démarrer,
-basculer, recommencer, continuer, arbre, boutique, embauche, rachat, réponse,
+basculer, soumettre, livrer avec suivi, arbre, boutique, embauche, rachat, réponse,
 bonus.
 
 Souffler rend `energy.restRegen` moins un par ticket en trop (au moins un) : la

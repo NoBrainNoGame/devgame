@@ -262,25 +262,6 @@ export function writeCommit(
   return node;
 }
 
-/**
- * Throws a ticket's commits away, the way `git reset --hard` does. The rows
- * they took stay empty: history has a hole where the work was, which is
- * exactly what a reset leaves behind.
- */
-export function discardCommits(context: RuleContext, ticket: Ticket): NodeId[] {
-  const { state } = context;
-  // The obstacles it turned up were built on it: they go with it.
-  const dropped = treeNodeIds(state, ticket);
-  for (const id of dropped) delete state.nodes[id];
-  state.player.totalCommits = Math.max(0, state.player.totalCommits - dropped.length);
-  ticket.nodeIds = [];
-  for (const child of childrenOf(state, ticket)) {
-    child.nodeIds = [];
-    delete child.mergeNodeId;
-  }
-  return dropped;
-}
-
 /** Moves the ticket along, never past full. Negative to take points back. */
 export function fillPoints(context: RuleContext, ticket: Ticket, delta: number): void {
   const before = ticket.filled;
@@ -378,6 +359,10 @@ export function completeObstacle(
   ticket.mergeNodeId = node.id;
   ticket.lane = undefined;
   delete ticket.assignee;
+
+  // A follow-up landed: the bug it was opened for is out before the release.
+  const fixed = ticket.fixesNodeId === undefined ? undefined : state.nodes[ticket.fixesNodeId];
+  if (fixed !== undefined) delete fixed.commit.bugged;
   if (state.player.ticketId === ticket.id) state.player.ticketId = parent.id;
 
   emit(context, {
@@ -439,6 +424,10 @@ export function completeMerge(
   ticket.mergeNodeId = node.id;
   ticket.lane = undefined;
   delete ticket.assignee;
+
+  // A follow-up landed: the bug it was opened for is out before the release.
+  const fixed = ticket.fixesNodeId === undefined ? undefined : state.nodes[ticket.fixesNodeId];
+  if (fixed !== undefined) delete fixed.commit.bugged;
 
   if (byTeam === undefined) {
     state.player.totalCommits += 1;

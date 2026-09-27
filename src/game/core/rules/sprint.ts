@@ -137,11 +137,18 @@ function shipBugs(context: RuleContext): void {
     const node = state.nodes[id];
     if (node === undefined || hotfixNodes.has(id)) continue;
 
+    // A bug the review found and the player shipped anyway breaks more often
+    // than one nobody looked at; either way it is rolled once.
+    const known = node.commit.bugged === true;
     const suspect =
-      node.commit.hiddenBug === true || (node.commit.mode === "ai" && !node.commit.reviewed);
+      known ||
+      node.commit.hiddenBug === true ||
+      (node.commit.mode === "ai" && !node.commit.reviewed);
     if (!suspect) continue;
+    delete node.commit.bugged;
 
-    if (!context.rng.chance(BALANCE.release.bugPerUnreadPct)) continue;
+    const chance = known ? BALANCE.release.bugPerKnownPct : BALANCE.release.bugPerUnreadPct;
+    if (!context.rng.chance(chance)) continue;
     recordIncident(context, "release", id);
     if (isOver(context)) return;
   }

@@ -131,16 +131,4 @@ describe("the push ledger", () => {
       expect(replayed).toEqual(run.ledger);
     }
   });
-
-  test("a restarted ticket's commits are forgotten", () => {
-    const state = newRun("push-restart");
-    const ledger: PushLedger = { local: { t1: ["1:5", "1:7"] }, absorbed: { "1:3": "1:4" } };
-    const { ledger: after } = advancePushes(
-      ledger,
-      [{ type: "ticket_restarted", ticketId: "t1", nodeIds: ["1:5", "1:7", "1:3"] }],
-      state,
-    );
-    expect(after.local).toEqual({});
-    expect(after.absorbed).toEqual({});
-  });
 });

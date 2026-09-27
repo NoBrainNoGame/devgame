@@ -386,11 +386,6 @@ export function planBatch(
         steps.push({ kind: "beat", hold: reviewHold ? STORY.review : STORY.boundary });
         break;
 
-      case "ticket_restarted":
-        flush();
-        steps.push({ kind: "beat", hold: STORY.boundary });
-        break;
-
       case "ambient_event":
         held.push({
           caption: translate({ key: `events.${event.eventId}.title` }),

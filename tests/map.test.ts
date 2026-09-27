@@ -174,15 +174,6 @@ describe("the written graph", () => {
     expect(checkInvariants(onThird)).toEqual([]);
   });
 
-  test("a restart hands the column back with the commits", () => {
-    const state = makeRefusable(inHand("restart-column"));
-    const rejected = applyAction(state, { type: "submit" }).state;
-    if (rejected.phase.kind !== "ticket_rejected") return;
-    const restarted = applyAction(rejected, { type: "restart" }).state;
-    expect(ticketInHand(restarted).lane).toBeUndefined();
-    expect(checkInvariants(restarted)).toEqual([]);
-  });
-
   test("node ids stay unique once later sprints are appended", () => {
     const { state } = play(newRun("append"), {
       pick: policy("ai"),

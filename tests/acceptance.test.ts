@@ -150,22 +150,26 @@ describe("the pull request review", () => {
     }
   });
 
-  test("restarting throws the commits away and the ticket starts from dev", () => {
-    const state = makeRefusable(inHand("pr-restart"));
+  test("shipping a refused ticket anyway opens a dated follow-up per bug, and the bug ships", () => {
+    const state = makeRefusable(inHand("pr-followup"));
     const rejected = applyAction(state, { type: "submit" }).state;
     const ticket = ticketInHand(rejected);
-    const commits = [...ticket.nodeIds];
-    expect(commits.length).toBeGreaterThan(0);
+    const bugged = buggedOn(rejected, ticket);
+    expect(bugged.length).toBe(1);
 
-    const restarted = applyAction(rejected, { type: "restart" });
-    const fresh = restarted.state.tickets[ticket.id];
-    expect(fresh?.nodeIds).toEqual([]);
-    expect(fresh?.filled).toBe(0);
-    expect(fresh?.rework).toBe(0);
-    for (const id of commits) expect(restarted.state.nodes[id]).toBeUndefined();
-    expect(eventsOfType(restarted.events, "ticket_restarted")[0]?.nodeIds).toEqual(commits);
-    expect(restarted.state.turn).toBe(rejected.turn);
-    expect(restarted.state.phase.kind).toBe("choose_action");
+    const shipped = applyAction(rejected, { type: "followup" });
+    expect(shipped.state.phase).toEqual({ kind: "pr_accepted", ticketId: ticket.id });
+    // The fix points come off again; the commit stays flagged for the release.
+    expect(shipped.state.tickets[ticket.id]?.points).toBe(ticket.points - ticket.rework);
+    expect(shipped.state.nodes[bugged[0] ?? ""]?.commit.bugged).toBe(true);
+    const followups = eventsOfType(shipped.events, "followup")[0]?.ticketIds ?? [];
+    expect(followups.length).toBe(1);
+    const followup = shipped.state.tickets[followups[0] ?? ""];
+    expect(followup?.kind).toBe("client_bug");
+    expect(followup?.status).toBe("backlog");
+    expect(followup?.fixesNodeId).toBe(bugged[0]);
+    expect(followup?.deadlineSprint).toBeDefined();
+    expect(shipped.state.stats.followups).toBe(1);
   });
 
   test("carrying on keeps the commits and the fix points", () => {
@@ -273,10 +277,11 @@ describe("the pull request review", () => {
     throw new Error("no machine commit landed in 30 tries");
   });
 
-  test("a submitted ticket costs a turn; answering a rejection does not", () => {
+  test("a refusal costs nothing; fixing it costs the turn, shipping it pays at the merge", () => {
     const state = makeRefusable(inHand("pr-turn"));
     const rejected = applyAction(state, { type: "submit" }).state;
-    expect(rejected.turn).toBe(state.turn + 1);
-    expect(applyAction(rejected, { type: "resume" }).state.turn).toBe(rejected.turn);
+    expect(rejected.turn).toBe(state.turn);
+    expect(applyAction(rejected, { type: "resume" }).state.turn).toBe(rejected.turn + 1);
+    expect(applyAction(rejected, { type: "followup" }).state.turn).toBe(rejected.turn);
   });
 });

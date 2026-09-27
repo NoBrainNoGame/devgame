@@ -112,8 +112,8 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
   // Questions with one answer, or a question to answer: nobody dithers here.
   if (state.phase.kind === "pr_accepted") return { type: "merge" };
   if (state.phase.kind === "ticket_rejected") {
-    // Starting over reads as the safe choice to somebody who did not do the sums.
-    return chance(0.25 * (1 - persona.attention)) ? { type: "restart" } : { type: "resume" };
+    // Shipping the bugs anyway is the greedy way out; the rest fix them.
+    return chance(persona.greed * 0.5) ? { type: "followup" } : { type: "resume" };
   }
   if (state.phase.kind === "resolve_conflict") {
     const tired = state.player.energy <= BALANCE.failure.conflictManualEnergy;

@@ -281,12 +281,10 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (answer !== undefined) return answer;
   }
 
-  // A rejection: start over when the fixes would cost more than the work
-  // already done, carry on otherwise.
+  // A rejection: the reckless hand ships the bugs and lets the follow-ups
+  // pile up, the others fix them first.
   if (state.phase.kind === "ticket_rejected") {
-    return state.phase.bugs * 2 > (currentTicket(state)?.filled ?? 0)
-      ? { type: "restart" }
-      : { type: "resume" };
+    return policy === "ai" ? { type: "followup" } : { type: "resume" };
   }
 
   // The review flagged a commit: nothing else on this ticket goes anywhere

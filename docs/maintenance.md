@@ -243,7 +243,12 @@ de PR*). `maxDebt` is not a refusal but a gate: `healthLetsOpen`
 kind with `opensUnderFloor` (`content/tickets.ts`), and
 `waitsOnlyForHealth` tells the HUD, the idle clock and the sim to refactor. A
 certain refusal belongs there, never in `performSubmit`. A new refusal: the
-rule there, a `pr_reviewed` field for the dialog, a line in `ReviewDialog.tsx`. Keep the rejection force-opening the
+rule there, a `pr_reviewed` field for the dialog, a line in `ReviewDialog.tsx`.
+A refusal costs no turn; its answers do (`reducer.ts`): `resume` there,
+`followup` (`followupTicket`: a `client_bug` per bug with `fixesNodeId`,
+cleared by its merge in `write.ts`, rolled at `release.bugPerKnownPct` in
+`shipBugs`) at the merge. A new answer needs the same: a turn somewhere, or
+the sprint can close on an open question. Keep the rejection force-opening the
 oldest backlog ticket (`openTicket(context, backlogTickets(state)[0], true)`):
 without it a rejection is cheap.
 

@@ -179,9 +179,23 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return { action, energyCost: cost.value, consumesTurn: true, notes };
     }
 
-    case "restart":
+    // Fixing is the review's round trip: it costs the turn the refusal did
+    // not. Shipping anyway is free here, and its merge pays.
     case "resume":
-      return { action, energyCost: 0, consumesTurn: false, notes: [] };
+      return { action, energyCost: 0, consumesTurn: true, notes: [] };
+
+    case "followup": {
+      const bugs = state.phase.kind === "ticket_rejected" ? state.phase.bugs : 0;
+      return {
+        action,
+        energyCost: 0,
+        consumesTurn: false,
+        notes: [
+          text("notes.followup_tickets", { count: bugs }),
+          text("notes.followup_risk", { percent: BALANCE.release.bugPerKnownPct }),
+        ],
+      };
+    }
 
     case "rest": {
       const regen = restRegen(state);
@@ -477,8 +491,8 @@ export function actionKey(action: PlayerAction): string {
     case "rest":
     case "submit":
     case "merge":
-    case "restart":
     case "resume":
+    case "followup":
     case "buy_point":
     case "hack":
       return action.type;

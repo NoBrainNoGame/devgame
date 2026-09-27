@@ -171,6 +171,7 @@ export function createRun(options: CreateRunOptions): RunState {
       commitsLanded: { craft: 0, ai: 0 },
       reviews: 0,
       rests: 0,
+      followups: 0,
       hacks: { tried: 0, won: 0 },
       answers: {},
       objectives: {},

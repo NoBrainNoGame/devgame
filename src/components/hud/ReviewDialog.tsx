@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
 import { gameStore, useGameStore } from "@/game";
+import { BALANCE } from "@/game/core/balance";
 import { cn } from "@/lib/utils";
 
 /**
@@ -23,8 +24,8 @@ import { cn } from "@/lib/utils";
  *
  * Accepted, the merge waits for the button: it is the player's move, costs
  * the turn, and is what the canvas animates next. Refused, the same dialog
- * asks the one question a rejection leaves: start over, or fix it and carry
- * on. A run reloaded in either phase gets the verdict without the reading —
+ * asks the one question a rejection leaves: fix it here, or ship it with a
+ * follow-up ticket per bug. A run reloaded in either phase gets the verdict without the reading —
  * the event that carried the details is gone, the decision is not.
  */
 
@@ -63,11 +64,10 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
     };
   }, [ticketId, reading]);
 
-  // A refusal costs the turn, and that turn can be the sprint's last or the
-  // one that gets you fired: the engine has moved on to the release or the
-  // end, and the question the refusal asked went with it. The verdict is
-  // still worth reading, but its only answer is to close it — the dialogs
-  // for whatever came next wait behind it.
+  // A refusal can be the one that gets you fired: the engine has moved on to
+  // the end, and the question the refusal asked went with it. The verdict is
+  // still worth reading, but its only answer is to close it — the run-over
+  // dialog waits behind it.
   const decided = phase.kind === "pr_accepted" || phase.kind === "ticket_rejected";
   const movedOn = pending !== null && !decided;
   const done = step >= VERDICT_STEP;
@@ -125,11 +125,7 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
         ) : movedOn ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-muted-foreground text-xs">
-              {phase.kind === "game_over"
-                ? ""
-                : `${t("reviewSprintClosed")}${
-                    verdict.bugs > 0 ? ` ${t("reviewBugsToFix", { count: verdict.bugs })}` : ""
-                  }`}
+              {phase.kind === "game_over" ? "" : t("reviewSprintClosed")}
             </p>
             <Button onClick={() => gameStore.setState({ pendingReview: null })}>
               {common("close")}
@@ -147,31 +143,33 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
           </div>
         ) : (
           <div className="space-y-3">
-            <p className="text-muted-foreground text-xs">
-              {verdict.bugs > 0 ? `${t("reviewBugsToFix", { count: verdict.bugs })} ` : ""}
-              {t("reviewParallel")}
-            </p>
+            <p className="text-muted-foreground text-xs">{t("reviewParallel")}</p>
             <div className="grid gap-2 sm:grid-cols-2">
-              <Button
-                variant="outline"
-                className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                onClick={(event) => answer({ type: "restart" }, originOf(event))}
-              >
-                <span>{t("reviewRestart")}</span>
-                <span className="font-normal text-muted-foreground text-xs">
-                  {t("reviewRestartHint")}
-                </span>
-              </Button>
               <div className="relative">
                 <Button
                   className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left"
                   onClick={(event) => answer({ type: "resume" }, originOf(event))}
                 >
                   <span>{t("reviewResume")}</span>
-                  <span className="font-normal text-xs opacity-80">{t("reviewResumeHint")}</span>
+                  <span className="font-normal text-xs opacity-80">
+                    {t("reviewResumeHint", { count: verdict.bugs })}
+                  </span>
                 </Button>
                 <IdleBar action={{ type: "resume" }} />
               </div>
+              <Button
+                variant="outline"
+                className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
+                onClick={(event) => answer({ type: "followup" }, originOf(event))}
+              >
+                <span>{t("reviewFollowup")}</span>
+                <span className="font-normal text-muted-foreground text-xs">
+                  {t("reviewFollowupHint", {
+                    count: verdict.bugs,
+                    percent: BALANCE.release.bugPerKnownPct,
+                  })}
+                </span>
+              </Button>
             </div>
           </div>
         )}

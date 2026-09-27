@@ -127,19 +127,6 @@ export function advancePushes(
         flush(event.parentId, at);
         break;
 
-      case "ticket_restarted": {
-        const gone = new Set(event.nodeIds);
-        for (const [ticketId, ids] of Object.entries(local)) {
-          const kept = ids.filter((id) => !gone.has(id));
-          if (kept.length > 0) local[ticketId] = kept;
-          else delete local[ticketId];
-        }
-        for (const [id, into] of Object.entries(absorbed)) {
-          if (gone.has(id) || gone.has(into)) delete absorbed[id];
-        }
-        break;
-      }
-
       default:
         break;
     }

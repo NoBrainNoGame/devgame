@@ -169,6 +169,8 @@ export interface Ticket {
   nameKey?: string;
   /** The sprint by whose end it must have landed, when its kind has one. */
   deadlineSprint?: number;
+  /** A follow-up: the shipped commit whose known bug its landing takes out. */
+  fixesNodeId?: NodeId;
   /** Its deadline passed: the reward is gone, or halved. */
   late?: true;
 }
@@ -291,6 +293,8 @@ export interface RunStats {
   commitsLanded: Record<CommitMode, number>;
   reviews: number;
   rests: number;
+  /** Follow-up tickets opened by shipping refused work anyway. */
+  followups: number;
   hacks: { tried: number; won: number };
   /** Answers given, keyed `eventId:choice`. */
   answers: Record<string, number>;
@@ -343,7 +347,7 @@ export type Phase =
   | { kind: "resolve_conflict"; source: "merge"; ticketId: TicketId }
   /** The review said yes. The merge waits for the player to press the button. */
   | { kind: "pr_accepted"; ticketId: TicketId }
-  /** The review said no. Start the ticket over, or fix it and carry on. */
+  /** The review said no. Fix it, or ship it with a follow-up per bug. */
   | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number }
   | { kind: "choose_relic"; offer: RelicId[] }
   /** Something happened to the company and asks it a question. */
@@ -487,10 +491,14 @@ export type PlayerAction =
   | { type: "submit" }
   /** Lands an accepted pull request. Costs the turn the review did not. */
   | { type: "merge" }
-  /** After a rejection: throw the ticket's commits away and start again. */
-  | { type: "restart" }
-  /** After a rejection: keep the commits and fix what was found. */
+  /** After a rejection: keep the commits and fix what was found. Costs the turn. */
   | { type: "resume" }
+  /**
+   * After a rejection: ship it anyway. The bugs go to production as they
+   * are, each with a dated follow-up ticket; the merge that follows costs
+   * the turn.
+   */
+  | { type: "followup" }
   | { type: "tree"; id: TreeNodeId }
   /** Shop purchases and hiring. Free in time, paid in money. */
   | { type: "buy"; id: UpgradeId }
@@ -586,7 +594,8 @@ export type GameEvent =
       /** Rework points added, when rejected. */
       rework: number;
     }
-  | { type: "ticket_restarted"; ticketId: TicketId; nodeIds: NodeId[] }
+  /** A refused ticket shipped with its bugs, a follow-up ticket for each. */
+  | { type: "followup"; ticketId: TicketId; bugs: number; ticketIds: TicketId[] }
   /** A commit on a feature turned something up: a sub-ticket, open and in hand, forked off it. */
   | {
       type: "obstacle_spawned";

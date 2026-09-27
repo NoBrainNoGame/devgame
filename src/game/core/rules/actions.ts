@@ -107,7 +107,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       return [{ type: "merge" }];
 
     case "ticket_rejected":
-      return [{ type: "restart" }, { type: "resume" }];
+      return [{ type: "resume" }, { type: "followup" }];
 
     case "choose_relic":
       return state.phase.offer.map((relicId) => ({ type: "choose_relic", relicId }) as const);
@@ -155,8 +155,8 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
     case "rest":
     case "submit":
     case "merge":
-    case "restart":
     case "resume":
+    case "followup":
     case "buy_point":
     case "hack":
       return true;

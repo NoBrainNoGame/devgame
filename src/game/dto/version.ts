@@ -64,7 +64,9 @@ export const SAVE_VERSION = 3;
  * `main`, so every node id moved, and a hire that draws a name. And epoch 6:
  * no pull request opens under the health floor, where the review used to
  * refuse it, so a log that submitted there no longer replays. And epoch 7:
- * a rest costs patience while work waits, and gives less energy back.
+ * a rest costs patience while work waits, and gives less energy back. And
+ * epoch 8: a refusal is answered by fixing or by shipping with follow-ups,
+ * the answer paying the turn; starting over is gone.
  */
 export const RULES_EPOCH = 1;
 

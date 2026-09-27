@@ -1,9 +1,9 @@
 import { BALANCE } from "@/game/core/balance";
 import { appendLog } from "@/game/core/log";
 import {
+  followupTicket,
   performMerge,
   performSubmit,
-  restartTicket,
   resumeTicket,
 } from "@/game/core/rules/acceptance";
 import { acquire } from "@/game/core/rules/acquisitions";
@@ -44,11 +44,12 @@ import { InvalidActionError } from "@/game/core/types";
  * a submitted action log and get the byte-identical game the player played.
  *
  * Which actions cost a turn is a design decision, not an implementation one:
- * committing, reviewing and merging end the turn, and so does a submit that
- * comes back refused; starting a ticket, switching to one, answering a
- * rejection and spending skill points do not. A submit that is accepted
- * hands its turn to the merge that follows, and a merge conflict defers it
- * again to the choice that resolves it, so one review never costs two turns.
+ * committing, reviewing and merging end the turn, and so does fixing a
+ * refused ticket; starting a ticket, switching to one, submitting one and
+ * spending skill points do not. A submit that is accepted hands its turn to
+ * the merge that follows, a refusal hands it to its answer, and a merge
+ * conflict defers it again to the choice that resolves it, so one review
+ * never costs two turns.
  */
 export function applyAction(state: RunState, action: PlayerAction): ApplyResult {
   if (state.phase.kind === "game_over") {
@@ -118,18 +119,21 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
 
     case "submit":
       performSubmit(context);
-      return state.phase.kind === "ticket_rejected";
+      return false;
 
     case "merge":
       performMerge(context);
       return state.phase.kind !== "resolve_conflict";
 
-    case "restart":
-      restartTicket(context);
-      return false;
-
+    // The refusal's turn is paid by its answer, so the sprint cannot close
+    // between the two and leave the question behind: fixing pays it here,
+    // shipping anyway pays it at the merge.
     case "resume":
       resumeTicket(context);
+      return true;
+
+    case "followup":
+      followupTicket(context);
       return false;
 
     case "tree":

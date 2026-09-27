@@ -100,12 +100,12 @@ export function toLogLine(
             : text("log.obstacle_cleared_by", { dev: nameOf(event.devId) }),
       };
 
-    case "ticket_restarted":
+    case "followup":
       return {
         seq,
         turn,
-        kind: "revert",
-        text: text("log.ticket_restarted", { count: event.nodeIds.length }),
+        kind: "note",
+        text: text("log.followup", { count: event.bugs }),
       };
 
     case "ticket_merged":

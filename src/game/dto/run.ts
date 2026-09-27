@@ -63,7 +63,7 @@ export const PlayerActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("rest") }),
   z.object({ type: z.literal("submit") }),
   z.object({ type: z.literal("merge") }),
-  z.object({ type: z.literal("restart") }),
+  z.object({ type: z.literal("followup") }),
   z.object({ type: z.literal("resume") }),
   z.object({ type: z.literal("tree"), id: z.enum(TREE_IDS) }),
   z.object({ type: z.literal("buy"), id: z.enum(UPGRADE_IDS) }),

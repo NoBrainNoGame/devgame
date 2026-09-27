@@ -339,6 +339,12 @@ export const BALANCE = {
   release: {
     /** Chance in percent that each unread machine-written commit shipped breaks. */
     bugPerUnreadPct: 20,
+    /**
+     * The same for a bug the review found and the player shipped anyway,
+     * its follow-up ticket not landed by the release. Higher: it is a bug,
+     * not a suspicion.
+     */
+    bugPerKnownPct: 40,
   },
 
   xp: {

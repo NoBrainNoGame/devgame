@@ -87,8 +87,8 @@ export function sfxFor(event: GameEvent): SfxId | null {
     case "ticket_arrived":
     case "ticket_started":
     case "checkout":
-    case "ticket_restarted":
     case "ticket_cancelled":
+    case "followup":
     case "bug_fixed":
     case "debt_refactored":
     case "docs_written":

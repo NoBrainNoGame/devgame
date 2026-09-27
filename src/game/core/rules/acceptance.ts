@@ -1,18 +1,20 @@
 import { BALANCE } from "@/game/core/balance";
+import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { drawMergeEvent } from "@/game/core/rules/events";
 import { mergeEventChance } from "@/game/core/rules/modifiers";
 import { raiseQuality } from "@/game/core/rules/quality";
 import {
   backlogTickets,
+  buggedOn,
   currentTicket,
   getTicket,
   isReady,
   openTicket,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
-import { completeMerge, completeObstacle, discardCommits } from "@/game/core/rules/write";
-import type { Ticket } from "@/game/core/types";
+import { completeMerge, completeObstacle } from "@/game/core/rules/write";
+import type { Ticket, TicketId } from "@/game/core/types";
 
 /**
  * The pull request.
@@ -26,8 +28,9 @@ import type { Ticket } from "@/game/core/types";
  * waits for the player to press merge — the verdict is read out first, and a
  * merge that lands before the button is pressed reads as the game playing
  * itself — and the merge costs the turn. Refused, it comes back with the bugs
- * to fix as extra points, the refusal costs the turn, and the board hands you
- * another ticket meanwhile, because the sprint does not wait.
+ * to fix as extra points, the board hands you another ticket meanwhile,
+ * because the sprint does not wait, and the answer pays the turn: fix it
+ * here, or ship it with a follow-up ticket per bug and pay at the merge.
  */
 
 export function performSubmit(context: RuleContext): void {
@@ -131,28 +134,36 @@ function land(context: RuleContext, ticket: Ticket): void {
   state.phase = { kind: "choose_action" };
 }
 
-/** `git reset --hard`: the commits go, the ticket starts from today's `dev`. */
-export function restartTicket(context: RuleContext): void {
+/**
+ * Ship it anyway. The commits the review flagged go to production as they
+ * are, and each gets a follow-up ticket in the backlog, dated like a
+ * customer's bug: land it and the bug is out before the release rolls on
+ * it, miss it and production remembers. The fix points come off again — the
+ * work is somebody else's now — and the pull request stands accepted, its
+ * merge the next move.
+ */
+export function followupTicket(context: RuleContext): void {
   const { state } = context;
   const phase = state.phase;
-  if (phase.kind !== "ticket_rejected") throw new Error("restartTicket: nothing was rejected");
+  if (phase.kind !== "ticket_rejected") throw new Error("followupTicket: nothing was rejected");
 
   const ticket = getTicket(state, phase.ticketId);
-  const dropped = discardCommits(context, ticket);
-  // The column goes with the commits: the next one forks into whatever is free.
-  ticket.lane = undefined;
-
   ticket.points -= ticket.rework;
   ticket.rework = 0;
-  ticket.filled = 0;
-  ticket.debtAdded = 0;
-  ticket.devMergesAtOpen = state.devMerges;
+  ticket.filled = Math.min(ticket.filled, ticket.points);
 
-  emit(context, { type: "ticket_restarted", ticketId: ticket.id, nodeIds: dropped });
-  state.phase = { kind: "choose_action" };
+  const ticketIds: TicketId[] = [];
+  for (const nodeId of buggedOn(state, ticket)) {
+    const followup = arriveTicketOfKind(context, "client_bug");
+    followup.fixesNodeId = nodeId;
+    ticketIds.push(followup.id);
+  }
+  state.stats.followups += ticketIds.length;
+  emit(context, { type: "followup", ticketId: ticket.id, bugs: ticketIds.length, ticketIds });
+  state.phase = { kind: "pr_accepted", ticketId: ticket.id };
 }
 
-/** Keep the commits, fix what was found. The rework is already on the ticket. */
+/** Keep the commits, fix what was found. The rework is already on the ticket; the turn is this one's. */
 export function resumeTicket(context: RuleContext): void {
   const { state } = context;
   if (state.phase.kind !== "ticket_rejected") throw new Error("resumeTicket: nothing was rejected");
