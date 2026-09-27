@@ -27,6 +27,8 @@ import {
 } from "@/game/core/rules/tickets";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
 
+import { chooseHuman } from "./human";
+
 /**
  * The headless players: four fixed ways of pressing the buttons, one
  * manager shared by all of them. `bun run sim` measures the balance with
@@ -37,7 +39,7 @@ import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
  * actions the rules offer, and the log it leaves replays like a human's.
  */
 
-export const POLICY_NAMES = ["ai", "craft", "mixed", "careful"] as const;
+export const POLICY_NAMES = ["ai", "craft", "mixed", "careful", "human"] as const;
 export type PolicyName = (typeof POLICY_NAMES)[number];
 
 /** Boosts, most wanted first: what is missing now before what pays later. */
@@ -131,7 +133,7 @@ function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction 
 }
 
 /** Tree nodes in the order the manager buys them. */
-const TREE_ORDER: TreeNodeId[] = [
+export const TREE_ORDER: TreeNodeId[] = [
   "ci",
   "stamina",
   "luck",
@@ -155,7 +157,7 @@ const TREE_ORDER: TreeNodeId[] = [
  * skill point when the money is plentiful, otherwise the cheapest upgrade
  * going. Naive on purpose — it is the same for every policy.
  */
-function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
+export function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
   const effects = gatherEffects(state);
   const report = monthlyReport(state, effects);
   const purchases = actions.filter(
@@ -218,6 +220,9 @@ function manage(state: RunState, actions: PlayerAction[]): PlayerAction | undefi
 }
 
 export function choose(policy: PolicyName, state: RunState, actions: PlayerAction[]): PlayerAction {
+  // The person, not a strategy: their own file, their own dice.
+  if (policy === "human") return chooseHuman(state, actions);
+
   const isAi = (a: PlayerAction) => a.type === "commit" && a.mode === "ai" && a.kind === undefined;
   const isCraft = (a: PlayerAction) =>
     a.type === "commit" && a.mode === "craft" && a.kind === undefined;

@@ -240,7 +240,7 @@ Check: `bun test tests/achievements.test.ts tests/messages.test.ts`.
 `BALANCE.acceptance` (`bugDetectPct`, `pointsPerBug`; game-design, *La review
 de PR*). `maxDebt` is not a refusal but a gate: `healthLetsOpen`
 (`rules/tickets.ts`) keeps `submit` out of `getAvailableActions`, except on a
-kind with `repaysDebt` (`content/tickets.ts`), and
+kind with `opensUnderFloor` (`content/tickets.ts`), and
 `waitsOnlyForHealth` tells the HUD, the idle clock and the sim to refactor. A
 certain refusal belongs there, never in `performSubmit`. A new refusal: the
 rule there, a `pr_reviewed` field for the dialog, a line in `ReviewDialog.tsx`. Keep the rejection force-opening the
@@ -432,9 +432,9 @@ correct: add a `BALANCE` knob in its section, commented in game terms.
 ### Re-measuring with the simulator
 
 ```bash
-bun run sim                        # 200 runs, all four policies
+bun run sim                        # 200 runs, the four policies and the human
 bun run sim --runs 500             # more runs, tighter quantiles
-bun run sim --policy careful       # one policy: ai | craft | mixed | careful
+bun run sim --policy careful       # one policy: ai | craft | mixed | careful | human
 bun run sim --seed 42              # move the seed window
 bun run sim --seed 42 --verbose    # one run, printed turn by turn
 ```
@@ -445,7 +445,14 @@ checks the graphs of `min(500, runs * 2)` seeds after 40 actions. It plays
 `junior`, no unlocks, taking a keep at a sprint bonus else the top
 `BOOST_PREFERENCE` boost: nothing about other starters. Policies
 (`scripts/lib/policy.ts`) are shared with `bun run fixtures` (the local
-database's runs): changing one moves both. Fixtures add `chooseQuit`, burning
+database's runs): changing one moves both. The fixed four each press the
+buttons one way without a slip; `human` (`scripts/lib/human.ts`) draws a
+persona per seed — taste for the machine, review discipline, energy and debt
+care, greed, attention, share of turns left to the idle clock — and plays it
+with that player's mistakes. Its report adds a block per bucket (careless,
+average, careful): **the balance is judged there** — careless should die
+within a few sprints and rarely reach `capped`, careful should last several
+times longer — and the fixed policies say what perfect play does. Fixtures add `chooseQuit`, burning
 runs out on purpose (patient policies never lose under current numbers; boards
 need finished runs).
 

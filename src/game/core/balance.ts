@@ -61,7 +61,7 @@ export const BALANCE = {
     sprintEndRegenRatio: 0.5,
     /** At or below this, every roll takes the crunch malus. */
     crunchThreshold: 4,
-    crunchMalusPoints: 15,
+    crunchMalusPoints: 20,
     /** Turns finished at zero energy before the run ends in burnout. */
     burnoutStreak: 2,
     /**
@@ -83,7 +83,7 @@ export const BALANCE = {
      */
     rebaseBase: 95,
     /** Success chance is reduced by `debt / debtRiskDivisor` points. */
-    debtRiskDivisor: 4,
+    debtRiskDivisor: 3,
     /**
      * A rebase is priced by how clean the history is, not by luck: debt bites
      * roughly three times harder here than on an ordinary commit. At zero debt
@@ -206,7 +206,7 @@ export const BALANCE = {
      * the gap between the two hands stays what the base rates say it is.
      * Hotfix tickets do not count: the forced ticket is the punishment.
      */
-    malusPctPerExtra: 12,
+    malusPctPerExtra: 15,
   },
 
   sprint: {
@@ -302,7 +302,7 @@ export const BALANCE = {
    */
   acceptance: {
     /** Chance in percent that each unread machine-written commit is caught as a bug. */
-    bugDetectPct: 55,
+    bugDetectPct: 65,
     /**
      * Debt above which no pull request may be opened: the reviewer would
      * refuse it whatever the code, so the button waits for a refactor.
@@ -318,7 +318,7 @@ export const BALANCE = {
    */
   quality: {
     max: 100,
-    perIncident: 25,
+    perIncident: 30,
     /** Production's patience lost for every backlog ticket the sprint had to force on you. */
     perStaleTicket: 10,
     /** Patience lost when a review sends a pull request back. */
@@ -333,12 +333,12 @@ export const BALANCE = {
      * backlog. Production sees the turn off, whatever the team did with it.
      */
     perRest: 4,
-    decayPerCleanSprint: 20,
+    decayPerCleanSprint: 15,
   },
 
   release: {
     /** Chance in percent that each unread machine-written commit shipped breaks. */
-    bugPerUnreadPct: 12,
+    bugPerUnreadPct: 20,
   },
 
   xp: {
@@ -466,14 +466,14 @@ export const BALANCE = {
   },
 
   /**
-   * Hacking the outside world: a coin flip, offered once a sprint and only
+   * Hacking the outside world: a bad coin, offered once a sprint and only
    * in a very tight spot — production's patience nearly gone, no energy
    * under a pile of tickets, or servers saturated with no rung affordable.
    * Winning buys the thing that was missing; losing, with the patience
    * gone, is the end of the run, and otherwise an incident.
    */
   hack: {
-    chancePct: 50,
+    chancePct: 40,
     /** Patience bought back on a win of the `patience` kind. */
     patienceRelief: 40,
     /** Share of production's patience past which the offer appears. */

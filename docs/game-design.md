@@ -79,8 +79,9 @@ Dette au-delà de `acceptance.maxDebt` (santé sous le plancher) : la PR ne
 s'ouvre pas, le bouton dit de refactorer. Ce refus-là serait certain, et un
 refus certain est un piège, pas un risque. Plein et propre, le ticket attend
 qu'un refacto, ici ou sur le ticket qui porte la dette, repasse le plancher.
-Ouvrent toujours : le ticket de dette et la refacto imposée (leur livraison
-rembourse, le remède n'attend pas la guérison), et une vitrine.
+Ouvrent toujours : le hotfix (l'urgence de la prod), le ticket de dette et la
+refacto imposée (leur livraison rembourse, le remède n'attend pas la
+guérison), et une vitrine.
 
 - **Acceptée** : soumettre ne coûte rien ; Merger (bouton ou
   [horloge](#le-jeu-tourne-sans-vous)) coûte le tour, pose le ticket sur `dev`

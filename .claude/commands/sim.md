@@ -7,8 +7,8 @@ Run the balance simulator and interpret it. `$ARGUMENTS` may name a run count
 and a policy; default to `bun run sim --runs 300` (the script alone plays 200).
 
 ```bash
-bun run sim --runs 300             # all four policies
-bun run sim --policy careful       # one of: ai | craft | mixed | careful
+bun run sim --runs 300             # the four policies and the human
+bun run sim --policy careful       # one of: ai | craft | mixed | careful | human
 bun run sim --seed 42              # move the seed window
 bun run sim --turns 3000           # turn ceiling (default 1500)
 bun run sim --seed 42 --verbose    # one run, turn by turn
@@ -16,7 +16,8 @@ bun run sim --seed 42 --verbose    # one run, turn by turn
 
 `--verbose` plays one run, ignores `--runs`, and defaults to `mixed`.
 Otherwise the output opens with a graph check over `min(500, runs * 2)` seeds
-of 40 actions, then one block per policy. Healthy means:
+of 40 actions, then one block per policy, and for `human` one more per bucket
+(careless, average, careful; `scripts/lib/human.ts`). Healthy means:
 
 - `generation → invariant failures 0`. Otherwise the graph breaks
   `checkInvariants` (`src/game/core/map/graph.ts`): a bug in the rules that
@@ -34,6 +35,9 @@ of 40 actions, then one block per policy. Healthy means:
 - `score med` against `max`: one huge `max` is one lucky run; compare medians.
 - **No policy dominates.** A median score double every other's means the
   trade-off it avoids costs too little.
+- **Carelessness costs.** The `human · careless` bucket dies within a few
+  sprints and rarely reaches `capped`; `human · careful` lasts several times
+  longer. Buckets alike means attention is not what the game rewards.
 - `failures`: raw counts over all runs. An id missing from the line can never
   fire; check its `requiresUnreviewedAi` and `forbiddenOnHotfix` flags in
   `src/game/content/events.ts`.

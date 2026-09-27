@@ -149,8 +149,9 @@ describe("the storyboard", () => {
 
   test("a merge's rest lands on the merge, and a release is never the head", () => {
     let merges = 0;
+    // A hand that lands tickets: the machine-only one dies before it merges much.
     for (const seed of SEEDS) {
-      for (const batch of batchesOf(seed, "ai")) {
+      for (const batch of batchesOf(seed, "craft")) {
         const merged = batch.events.find((e) => e.type === "ticket_merged");
         if (merged?.type !== "ticket_merged") continue;
         // A merge that closes the sprint is followed by the release's own rest,

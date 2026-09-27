@@ -156,7 +156,8 @@ describe("commit", () => {
     indebted.debt = 40;
     const dirty = commitChance(indebted, "ai", "commit").value;
 
-    expect(dirty).toBe(clean - 40 / BALANCE.commit.debtRiskDivisor);
+    // The chance is a whole number: the malus is rounded with it.
+    expect(dirty).toBe(Math.round(clean - 40 / BALANCE.commit.debtRiskDivisor));
   });
 
   test("success chance is clamped at both ends", () => {

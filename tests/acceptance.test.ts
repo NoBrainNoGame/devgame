@@ -60,8 +60,8 @@ describe("the pull request review", () => {
     throw new Error("no refactor landed in 20 tries");
   });
 
-  test("a ticket whose landing pays debt back opens under the floor", () => {
-    for (const kind of ["debt", "refactor"] as const) {
+  test("a hotfix, a debt ticket and a forced refactor open under the floor", () => {
+    for (const kind of ["hotfix", "debt", "refactor"] as const) {
       const state = makeReady(inHand(`pr-debt-${kind}`));
       ticketInHand(state).kind = kind;
       state.debt = BALANCE.acceptance.maxDebt + 25;

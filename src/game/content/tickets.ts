@@ -56,11 +56,12 @@ export interface TicketKindDef {
   /** Whether a commit on it may turn an obstacle up. */
   spawnsObstacles: boolean;
   /**
-   * Whether landing it pays debt back. Its pull request opens under the
-   * health floor: holding the remedy until the disease is gone would leave a
-   * run nothing but the wait.
+   * Whether its pull request opens under the health floor. Landing a debt
+   * ticket or a forced refactor pays debt back, and a hotfix is production's
+   * emergency: holding either until the codebase is clean would leave a run
+   * nothing but the wait.
    */
-  repaysDebt: boolean;
+  opensUnderFloor: boolean;
 }
 
 export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
@@ -74,7 +75,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: true,
     forcedWhenStale: true,
     spawnsObstacles: true,
-    repaysDebt: false,
+    opensUnderFloor: false,
   },
   hotfix: {
     id: "hotfix",
@@ -87,7 +88,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     mustWrite: "hotfix",
     forcedWhenStale: true,
     spawnsObstacles: false,
-    repaysDebt: false,
+    opensUnderFloor: true,
   },
   refactor: {
     id: "refactor",
@@ -100,7 +101,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     mustWrite: "refactor",
     forcedWhenStale: true,
     spawnsObstacles: false,
-    repaysDebt: true,
+    opensUnderFloor: true,
   },
   /** A customer found it. Small, urgent, and production is grateful when it goes. */
   client_bug: {
@@ -114,7 +115,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     deadlineSprints: 1,
     forcedWhenStale: true,
     spawnsObstacles: false,
-    repaysDebt: false,
+    opensUnderFloor: false,
   },
   /** A big customer wants it, twice the revenue, and wants it now. */
   vip: {
@@ -129,7 +130,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     // Gone with its deadline, so it is never around to be forced.
     forcedWhenStale: false,
     spawnsObstacles: true,
-    repaysDebt: false,
+    opensUnderFloor: false,
   },
   /** The codebase asking for a refactor of its own accord. Never forced. */
   debt: {
@@ -143,7 +144,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     mustWrite: "refactor",
     forcedWhenStale: false,
     spawnsObstacles: false,
-    repaysDebt: true,
+    opensUnderFloor: true,
   },
   /** A library to move off. Every commit costs debt; landing it buys servers. */
   migration: {
@@ -156,7 +157,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     forcedWhenStale: true,
     spawnsObstacles: true,
-    repaysDebt: false,
+    opensUnderFloor: false,
   },
   /**
    * What a commit turned up on the way: a bug found, a piece missing, a
@@ -175,7 +176,7 @@ export const TICKET_KIND: Record<TicketKind, TicketKindDef> = {
     grantsSkill: false,
     forcedWhenStale: false,
     spawnsObstacles: false,
-    repaysDebt: false,
+    opensUnderFloor: false,
   },
 };
 

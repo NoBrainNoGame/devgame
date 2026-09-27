@@ -126,15 +126,15 @@ export function waitsOnlyForObstacle(state: RunState, ticket: Ticket): boolean {
  * Whether the codebase's health lets this ticket's pull request open. Under
  * the floor the reviewer would refuse it whatever the code, and a review that
  * can only refuse costs a turn and production's patience and teaches
- * nothing, so none is offered — except on a ticket whose landing pays the
- * debt back, or the remedy would wait on the disease. A showcase's reviewer
- * refuses nothing.
+ * nothing, so none is offered — except on a ticket that must land whatever
+ * the health: a hotfix, or one whose landing pays the debt back. A
+ * showcase's reviewer refuses nothing.
  */
 export function healthLetsOpen(state: RunState, ticket: Ticket): boolean {
   return (
     state.showcase !== null ||
     state.debt <= BALANCE.acceptance.maxDebt ||
-    TICKET_KIND[ticket.kind].repaysDebt
+    TICKET_KIND[ticket.kind].opensUnderFloor
   );
 }
 

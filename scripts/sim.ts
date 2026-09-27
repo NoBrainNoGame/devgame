@@ -26,6 +26,7 @@ import { computeScore } from "@/game/core/score";
 import type { RunState } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
+import { bucketOf, personaOf } from "./lib/human";
 import { choose, POLICY_NAMES, type PolicyName } from "./lib/policy";
 
 /** Turn-consuming actions before a run is declared unending, unless `--turns` says otherwise. */
@@ -470,6 +471,24 @@ if (args.verbose) {
   const policies: PolicyName[] = args.policy === "all" ? [...POLICY_NAMES] : [args.policy];
 
   for (const policy of policies) {
+    if (policy === "human") {
+      // Three hundred seeds are three hundred players: the report splits
+      // them by how much they pay attention, since that is what the balance
+      // is meant to reward and punish.
+      const outcomes: Outcome[] = [];
+      const buckets: Record<string, Outcome[]> = { careless: [], average: [], careful: [] };
+      for (let i = 0; i < args.runs; i += 1) {
+        const seed = `sim-${args.seed + i}`;
+        const outcome = playOne(seed, policy, args.turns, false, args.profileId);
+        outcomes.push(outcome);
+        buckets[bucketOf(personaOf(seed))]?.push(outcome);
+      }
+      report(policy, outcomes);
+      for (const [name, subset] of Object.entries(buckets)) {
+        if (subset.length > 0) report(`human · ${name}`, subset);
+      }
+      continue;
+    }
     const outcomes: Outcome[] = [];
     for (let i = 0; i < args.runs; i++) {
       outcomes.push(playOne(`sim-${args.seed + i}`, policy, args.turns, false, args.profileId));
