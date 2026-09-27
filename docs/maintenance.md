@@ -117,6 +117,11 @@ Check: +actions +rules.
    as tier and money allow; `buyUpgrade` (`rules/shop.ts`) refreshes effects
    and energy ceiling and hires a site's team via `addDev`. No randomness.
 
+5. A model in `UPGRADE_MODELS` (`components/hud/wireframe/models.ts`), a
+   few primitives from `mesh.ts`, lines only: the record is exhaustive, so a
+   new id does not compile without one. Same for `ACQUISITION_MODELS` and
+   `RANK_MODELS`.
+
 Check: +economy; sim `money` line `upgrades avg`: does the manager buy it?
 
 ### A developer's name and colour

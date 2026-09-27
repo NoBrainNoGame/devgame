@@ -4,6 +4,9 @@ import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useGameText, useMoney } from "@/components/hud/useGameText";
+import type { Mesh } from "@/components/hud/wireframe/mesh";
+import { acquisitionModel, rankModel, upgradeModel } from "@/components/hud/wireframe/models";
+import { Wireframe } from "@/components/hud/wireframe/Wireframe";
 import { Button } from "@/components/ui/button";
 import type { PlayerAction, RunSnapshot } from "@/game";
 import { actionKey } from "@/game";
@@ -42,6 +45,18 @@ export interface CatalogSection {
 
 function keyOf(item: CatalogItem): string {
   return item.kind === "hire" ? `hire:${item.rank}` : `${item.kind}:${item.id}`;
+}
+
+function modelOf(item: CatalogItem): Mesh {
+  if (item.kind === "hire") return rankModel(item.rank);
+  return item.kind === "upgrade" ? upgradeModel(item.id) : acquisitionModel(item.id);
+}
+
+/** The model's tone: what can be bought glows, what is had settles, the rest waits. */
+function toneOf(facts: Facts): string {
+  if (facts.done) return "text-branch-main/70";
+  if (facts.locked) return "text-muted-foreground/60";
+  return facts.offered ? "text-cyber" : "text-cyber/45";
 }
 
 export function Catalog({
@@ -234,7 +249,7 @@ function Tile({
       aria-pressed={selected}
       onClick={onSelect}
       className={cn(
-        "flex h-24 min-w-0 flex-col justify-between border bg-panel/60 p-2.5 text-left text-sm transition-colors",
+        "relative flex h-28 min-w-0 flex-col justify-between overflow-hidden border bg-panel/60 p-2.5 text-left text-sm transition-colors",
         "hover:border-foreground/40 focus-visible:outline-2 focus-visible:outline-ring",
         facts.offered ? "border-cyber/40" : "border-line",
         facts.done && "border-branch-main/40",
@@ -242,8 +257,14 @@ function Tile({
         selected && "border-foreground bg-panel",
       )}
     >
-      <span className="flex min-w-0 items-start justify-between gap-2">
-        <span className="line-clamp-2 font-medium leading-tight">{facts.name}</span>
+      <Wireframe
+        mesh={modelOf(item)}
+        anchor={0.72}
+        zoom={0.34}
+        className={cn("absolute inset-0 size-full", toneOf(facts))}
+      />
+      <span className="relative flex min-w-0 items-start justify-between gap-2">
+        <span className="line-clamp-2 max-w-[62%] font-medium leading-tight">{facts.name}</span>
         {facts.status === null ? null : (
           <span className="shrink-0 text-muted-foreground text-xs tabular-nums">
             {facts.status}
@@ -252,7 +273,7 @@ function Tile({
       </span>
       <span
         className={cn(
-          "text-xs tabular-nums",
+          "relative text-xs tabular-nums",
           facts.done ? "text-branch-main" : facts.offered ? "text-money" : "text-muted-foreground",
         )}
       >
@@ -302,6 +323,14 @@ function DetailOf({
       className="catalog-detail space-y-3 self-start p-4 text-sm lg:sticky lg:top-0"
       aria-live="polite"
     >
+      <div className="relative -mx-4 -mt-4 h-36 border-line border-b">
+        <Wireframe
+          mesh={modelOf(item)}
+          zoom={0.4}
+          speed={0.4}
+          className={cn("absolute inset-0 size-full", toneOf(facts))}
+        />
+      </div>
       <div className="space-y-0.5">
         <p className="text-muted-foreground text-xs uppercase tracking-wider">{facts.group}</p>
         <h4 className="font-medium text-base">{facts.name}</h4>
