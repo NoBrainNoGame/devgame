@@ -3,7 +3,7 @@
 import { type MetaProgressDto, type RunSaveDto, RunSaveSchema } from "@/game";
 import { getMyProfile, syncMeta } from "@/lib/profile/actions";
 import { mergeMeta } from "@/lib/profile/merge";
-import { saveRun } from "@/lib/run/actions";
+import { discardRun, saveRun } from "@/lib/run/actions";
 import { STORAGE_KEYS } from "@/lib/storage/keys";
 import { readJson, remove, writeJson } from "@/lib/storage/local";
 import type { SyncState } from "@/lib/storage/useMetaStore";
@@ -101,6 +101,18 @@ export function writePendingSubmit(save: RunSaveDto): void {
 
 export function clearPendingSubmit(): void {
   remove(STORAGE_KEYS.pendingSubmit);
+}
+
+/**
+ * Tells the server a run is over and not to be resumed, quietly. A failure
+ * leaves a bookmark behind, which the next run of that mode abandons on its
+ * first push anyway.
+ */
+export async function dropRun(clientRunId: string): Promise<void> {
+  const result = await discardRun(clientRunId);
+  if (!result.ok && result.error.code !== "unauthorized") {
+    console.warn("Could not drop the cloud copy of the run:", result.error.message);
+  }
 }
 
 /** Pushes the run in progress up, quietly. Failure is not worth a toast. */

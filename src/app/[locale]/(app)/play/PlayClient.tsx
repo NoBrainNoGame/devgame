@@ -16,6 +16,7 @@ import { submitRun } from "@/lib/run/actions";
 import {
   clearLocalRun,
   clearPendingSubmit,
+  dropRun,
   pickLongerRun,
   pushRun,
   readLocalRun,
@@ -223,6 +224,20 @@ export function PlayClient(props: PlayClientProps) {
     });
   }, [resumable]);
 
+  /**
+   * The run is over, credited and sampled: nothing in it is worth going back
+   * to. Playing again forgets it everywhere it was kept, without asking, so
+   * the setup screen offers no resume and starting needs no confirmation. The
+   * score it could still submit is held apart (`writePendingSubmit`).
+   */
+  const playAgain = useCallback(() => {
+    const save = handleRef.current?.save();
+    clearLocalRun();
+    setResumable(null);
+    if (props.signedIn && save !== undefined) void dropRun(save.clientRunId);
+    setStage({ kind: "setup" });
+  }, [props.signedIn]);
+
   const act = useCallback((action: PlayerAction, origin?: PagePoint) => {
     const handle = handleRef.current;
     if (handle === null) return;
@@ -251,6 +266,9 @@ export function PlayClient(props: PlayClientProps) {
 
       clearTimeout(localTimer);
       localTimer = setTimeout(() => {
+        // A run that is over is no longer a save: the ending clears it, and a
+        // write landing after that would bring it back to be resumed.
+        if (gameStore.getState().status === "game_over") return;
         const save = handleRef.current?.save();
         if (save === undefined) return;
 
@@ -311,6 +329,7 @@ export function PlayClient(props: PlayClientProps) {
 
       setMeta(reward.meta);
       clearLocalRun();
+      if (props.signedIn) void dropRun(save.clientRunId);
       if (props.online) sendRunSample(save, "final", locale, Date.now() - startedAtRef.current);
 
       if (reward.levelsGained > 0) notify.success(t("levelUp", { level: reward.meta.level }));
@@ -372,7 +391,7 @@ export function PlayClient(props: PlayClientProps) {
       }}
       onReady={onReady}
       onAct={act}
-      onPlayAgain={() => setStage({ kind: "setup" })}
+      onPlayAgain={playAgain}
       runOverFooter={
         status === "game_over" ? (
           <SubmitFooter

@@ -3,6 +3,7 @@
 import "@/lib/server-only";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import {
   isCurrentRules,
@@ -107,6 +108,36 @@ export async function saveRun(input: unknown): Promise<ActionResult<{ runId: str
     });
 
     return ok({ runId: created.id });
+  });
+}
+
+/**
+ * Forgets the bookmark of a run that is over, so no device offers to resume
+ * it. Marked abandoned rather than deleted, like a run another one replaced;
+ * a finished run is left alone, and a later `submitRun` of the same game still
+ * ranks it, since it writes whatever the row says.
+ */
+export async function discardRun(clientRunId: unknown): Promise<ActionResult<null>> {
+  return guard(async () => {
+    const userId = await getCurrentUserId();
+    if (userId === null) return fail("unauthorized", "Sign in first");
+
+    const parsed = z.uuid().safeParse(clientRunId);
+    if (!parsed.success) return fail("invalid", "Pass the run's clientRunId", parsed.error.issues);
+
+    if (!hit(`saveRun:${userId}`, LIMITS.saveRun).allowed) {
+      return fail("rate-limited", "Too many saves");
+    }
+
+    const profile = await prisma.profile.findUnique({ where: { userId } });
+    if (profile === null) return ok(null);
+
+    // Scoped to the caller's profile: somebody else's run matches nothing.
+    await prisma.run.updateMany({
+      where: { clientRunId: parsed.data, profileId: profile.id, status: "in_progress" },
+      data: { status: "abandoned" },
+    });
+    return ok(null);
   });
 }
 
