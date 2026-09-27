@@ -33,6 +33,7 @@ export {
   type SupervisorReason,
 } from "@/game/bridge/supervisor";
 export { nodePrefix } from "@/game/content/subjects";
+export { type AccountProgress, achievementsOfAccount } from "@/game/core/achievements";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { money, ref, renderText, text } from "@/game/core/i18n";
 export type { DevSheet } from "@/game/core/rules/dev";
@@ -59,7 +60,7 @@ export type {
   TicketId,
 } from "@/game/core/types";
 export { DETOUR_KINDS } from "@/game/core/types";
-export type { MetaProgressDto, SettingsDto } from "@/game/dto/meta";
+export type { AchievementRecord, MetaProgressDto, SettingsDto } from "@/game/dto/meta";
 export { emptyMeta, META_VERSION, MetaProgressSchema } from "@/game/dto/meta";
 export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
 export { editedByDev, isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";

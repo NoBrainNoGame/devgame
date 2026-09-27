@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Sparkles } from "lucide-react";
+import { Building2, Sparkles, Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { AnimatedCounter } from "@/components/hud/AnimatedCounter";
@@ -15,7 +15,8 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { RunSnapshot } from "@/game";
 import { HEALTH_MAX, healthOf, healthText } from "@/game/bridge/gauges";
-import { OBJECTIVES } from "@/game/content";
+import { ACHIEVEMENT_IDS, OBJECTIVES } from "@/game/content";
+import { useMetaStore } from "@/lib/storage/useMetaStore";
 import { cn } from "@/lib/utils";
 
 /**
@@ -30,13 +31,18 @@ export function ResourceBar({
   onOpenCompany,
   onOpenUpgrades,
   upgradesNews,
+  onOpenAchievements,
 }: {
   snapshot: RunSnapshot;
   onOpenCompany: () => void;
   onOpenUpgrades: () => void;
   /** Something on offer in the upgrades dialog the player has not seen yet. */
   upgradesNews: boolean;
+  /** Absent where the run is not the player's own: the debugger's. */
+  onOpenAchievements?: () => void;
 }) {
+  const achievements = useMetaStore((state) => state.meta.achievements.length);
+  const trophies = useTranslations("achievements");
   const t = useTranslations("hud");
   const game = useTranslations("game");
   const money = useMoney();
@@ -254,6 +260,16 @@ export function ResourceBar({
             {upgradesNews ? t("upgradesReadyHint") : t("upgradesButtonHint")}
           </TooltipContent>
         </Tooltip>
+
+        {onOpenAchievements === undefined ? null : (
+          <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenAchievements}>
+            <Trophy className="size-4" />
+            <span className="sr-only">{trophies("button")}</span>
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {trophies("count", { count: achievements, total: ACHIEVEMENT_IDS.length })}
+            </span>
+          </Button>
+        )}
 
         <GameSettingsButton />
       </div>

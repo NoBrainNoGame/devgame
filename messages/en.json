@@ -304,6 +304,7 @@
       "tooling": "Tooling"
     },
     "upkeepPerLevel": "{money} per month per level",
+    "upkeepMonthly": "{money} per month",
     "upkeepNow": "{money} per month currently",
     "hire": "Hire",
     "hireHint": "A developer takes tickets from the backlog, codes alone and merges alone. They cost their salary at every payday; unpaid, they leave and hand their tickets back. A site opens seats and comes with its team.",
@@ -339,7 +340,7 @@
     "seats": "{used} / {max} seats",
     "rankSpeed": "{count, plural, one {# point per turn} other {# points per turn}}",
     "sites": "Sites",
-    "sitesHint": "A site opens seats and brings its team, hired for free and paid like the others. Monthly rent.",
+    "sitesHint": "No free seat, no hire: a site adds seats and comes with developers already hired, at no fee. Each takes the oldest backlog tickets alone (features, customer bugs, migrations), codes and merges them without you: more features shipped, so more revenue every month, without spending your turns on it. A site is paid once, then its rent and its team's salaries every payday.",
     "nextTier": "tier {tier}",
     "levelOf": "lvl {level}",
     "nextTierAt": "tier {tier} at {money} earned",
@@ -1079,23 +1080,23 @@
       },
       "coworking": {
         "name": "Coworking",
-        "desc": "Two seats and a junior who comes with the keys. Monthly rent."
+        "desc": "Your first team outside the head office. The junior who comes with the keys takes the oldest backlog tickets alone, codes and merges them without you; the other seat waits for your next hire. Coffee included, quiet not."
       },
       "office": {
         "name": "Office",
-        "desc": "Four seats and two mid-levels. A plaque by the door, a rent to match."
+        "desc": "Two mid-levels, two tickets each at a time: the backlog drains while you hold what the team will not take — hotfixes, VIPs, refactors. A plaque by the door, a rent to match."
       },
       "campus": {
         "name": "Campus",
-        "desc": "Six seats and three mid-levels. There is a canteen, a shuttle to reach it, and a shelter in the basement nobody mentions."
+        "desc": "Three mid-levels and room for three more: the team starts shipping more features than you do, and each one pays every month. There is a canteen, a shuttle to reach it, and a shelter in the basement nobody mentions."
       },
       "offshore_hub": {
         "name": "Offshore hub",
-        "desc": "Eight seats and four seniors, in a time zone where it is always daytime."
+        "desc": "Four seniors, three tickets each at a time: the backlog moves even while you are busy elsewhere. In a time zone where it is always daytime."
       },
       "orbital_campus": {
         "name": "Orbital campus",
-        "desc": "Twelve seats and six seniors. Nobody goes home at night."
+        "desc": "Six seniors and six free seats: the largest team the company can house, and the backlog is theirs. Nobody goes home at night."
       }
     },
     "ranks": {
@@ -1408,6 +1409,10 @@
       "capacity_gain_pct": "+{pct}% capacity",
       "seats": "{count, plural, one {# seat} other {# seats}}",
       "brings_team": "Comes with {count} × {rank}",
+      "site_seats": "Seats: {from} → {to} ({free, plural, one {# stays free} other {# stay free}} for hiring)",
+      "site_team": "Comes with {count} × {rank}, no hiring fee: {saved} saved",
+      "site_speed": "The team fills {points, plural, one {# more point} other {# more points}} a turn, on backlog tickets you will not have to code",
+      "site_monthly": "Every month: {rent} rent + {salaries} salaries = {total}",
       "brings_features": "{count, plural, one {# shipped feature} other {# shipped features}} of {points} points",
       "brings_debt": "Code health −{debt}",
       "brings_incident": "A production incident on arrival",
@@ -1757,13 +1762,13 @@
         "name": "Aparté",
         "bio": "Summarises the conversations you were not in. Also the ones you were."
       },
-      "initech": {
-        "name": "Initech",
-        "bio": "Did you get the memo about the cover sheets? They are sending another copy."
+      "spacers": {
+        "name": "Spacer's Choice",
+        "bio": "“It's not the best choice, it's Spacer's Choice.” Employees who pass away are billed for damage to company property."
       },
-      "hooli": {
-        "name": "Hooli",
-        "bio": "Making the world a better place, through lossless compression."
+      "blume": {
+        "name": "Blume",
+        "bio": "One operating system for a whole city: lights, bridges, cameras. The admin password gets around."
       },
       "aperture": {
         "name": "Aperture",
@@ -1773,17 +1778,17 @@
         "name": "Vault-Tec",
         "bio": "Sells shelters for the future. Never said from what."
       },
-      "encom": {
-        "name": "ENCOM",
-        "bio": "Operating systems. Their control program took over the grid, and the rest."
+      "abstergo": {
+        "name": "Abstergo",
+        "bio": "Entertainment and genetic research. Their console replays the memories of anyone's ancestors; the licence covers the descendants too."
       },
-      "ocp": {
-        "name": "OCP",
-        "bio": "Urban security, in Detroit. The product follows four directives; the fourth is classified."
+      "cyberlife": {
+        "name": "CyberLife",
+        "bio": "Makes androids with no opinions. After-sales reports a rise in opinions."
       },
-      "metacortex": {
-        "name": "Metacortex",
-        "bio": "Software publisher. One of their employees is often late; he was offered a choice."
+      "hyperion": {
+        "name": "Hyperion",
+        "bio": "Guns and loader bots. The CEO had a statue of himself put up, then a second one, to compare."
       },
       "umbrella": {
         "name": "Umbrella",
@@ -1793,29 +1798,29 @@
         "name": "Black Mesa",
         "bio": "Research facility in New Mexico. An incident has been in progress for some time."
       },
-      "tyrell": {
-        "name": "Tyrell",
-        "bio": "“More human than human”, says the brochure. Their products last four years, and they know it."
+      "trioptimum": {
+        "name": "TriOptimum",
+        "bio": "An orbital research station. A contractor removed the onboard intelligence's ethical constraints; the invoice was never paid."
       },
       "uac": {
         "name": "UAC",
         "bio": "Union Aerospace. A lab on Mars and a door that should not have been opened."
       },
-      "weyland": {
-        "name": "Weyland-Yutani",
-        "bio": "“Building better worlds.” The crew is not a priority."
+      "faro": {
+        "name": "Faro Automated Solutions",
+        "bio": "Autonomous defence robots that repair themselves by eating whatever they find. The off switch was in a previous release."
       },
-      "massive": {
-        "name": "Massive Dynamic",
-        "bio": "“What do we do?” asks their site. “What don't we do.”"
+      "sarif": {
+        "name": "Sarif Industries",
+        "bio": "Mechanical augmentations, paid for by the employer. Nobody asked for them."
       },
-      "cyberdyne": {
-        "name": "Cyberdyne",
-        "bio": "A defence contract, a neural processor, and a go-live date they seem to know."
+      "skynet": {
+        "name": "Skynet",
+        "bio": "Network defence, with no human in the loop since 2:14 a.m. It went live on an August 29th."
       },
-      "buynlarge": {
-        "name": "Buy n Large",
-        "bio": "Sells everything. Left the planet and a robot to tidy up."
+      "shinra": {
+        "name": "Shinra",
+        "bio": "Energy, weapons, city planning. Their reactors power the city by drawing on the planet; the planet was not consulted."
       },
       "arasaka": {
         "name": "Arasaka",
@@ -2239,5 +2244,186 @@
     "restore": "Restore",
     "minimizeAll": "Minimise all",
     "closeAll": "Close all"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "button": "Achievements",
+    "count": "{count}/{total}",
+    "description": "What you have done, run after run. The route guides the start; the secrets show themselves as you play.",
+    "groups": {
+      "route": "The route",
+      "prestige": "Prestige",
+      "secret": "Secrets"
+    },
+    "unlocked": "Achievement unlocked",
+    "secretName": "Secret achievement",
+    "secretHint": "It shows itself once earned.",
+    "earnedOn": "Earned on {date}",
+    "next": "Next step",
+    "routeProgress": "Route {done}/{total}",
+    "routeDone": "Route complete: the other achievements are waiting.",
+    "dismiss": "Dismiss",
+    "items": {
+      "first_ticket": {
+        "name": "Clocking in",
+        "desc": "Open a ticket from the Project board: it is the work you are about to code."
+      },
+      "first_commit": {
+        "name": "Hello, world",
+        "desc": "Write a commit on the ticket in hand. Each commit fills story points."
+      },
+      "first_ai_commit": {
+        "name": "Delegation",
+        "desc": "Have the machine write a commit: less energy, more risk, and code to review."
+      },
+      "first_review": {
+        "name": "Second pair of eyes",
+        "desc": "Review the machine's code before it piles up: that is where the bugs are found."
+      },
+      "first_pr": {
+        "name": "Pull request",
+        "desc": "Ticket full: open the PR to get it reviewed and merged."
+      },
+      "first_delivery": {
+        "name": "Shipped",
+        "desc": "Ship your first feature: from now on it pays every month."
+      },
+      "first_payday": {
+        "name": "First payout",
+        "desc": "Collect a payday: every third of a sprint, shipped features pay."
+      },
+      "first_purchase": {
+        "name": "First purchase",
+        "desc": "Buy something in Upgrades, Purchases tab: servers, before production saturates."
+      },
+      "first_fix": {
+        "name": "Bug hunter",
+        "desc": "Fix a bug: a commit the review flagged, a hotfix or a customer's bug."
+      },
+      "first_skill": {
+        "name": "Levelling up",
+        "desc": "Spend a point in the tree, in Upgrades, Skills tab."
+      },
+      "first_sprint": {
+        "name": "Release",
+        "desc": "Finish a sprint: what dev has integrated goes out on main."
+      },
+      "first_hire": {
+        "name": "Recruiter",
+        "desc": "Hire a developer (Upgrades, Hiring tab): they take backlog tickets on their own."
+      },
+      "first_tier": {
+        "name": "Order of magnitude",
+        "desc": "Reach tier 1: every feature shipped afterwards pays five times as much."
+      },
+      "first_site": {
+        "name": "Open for business",
+        "desc": "Open a site: more seats and a team already hired."
+      },
+      "tier_3": {
+        "name": "Unicorn",
+        "desc": "Reach tier 3."
+      },
+      "tier_6": {
+        "name": "Instance",
+        "desc": "Reach the last tier."
+      },
+      "team_10": {
+        "name": "Open space",
+        "desc": "Have ten developers at once."
+      },
+      "team_30": {
+        "name": "Anthill",
+        "desc": "Have thirty developers at once."
+      },
+      "all_sites": {
+        "name": "Property empire",
+        "desc": "Own all five sites in one run."
+      },
+      "death_star": {
+        "name": "That's no moon",
+        "desc": "Buy a Death Star."
+      },
+      "all_acquisitions": {
+        "name": "Monopoly",
+        "desc": "Buy all four companies for sale in one run."
+      },
+      "market_half": {
+        "name": "Dominant position",
+        "desc": "Hold half the market."
+      },
+      "first_million": {
+        "name": "First million",
+        "desc": "Earn a million euros in one run."
+      },
+      "first_billion": {
+        "name": "First billion",
+        "desc": "Earn a billion euros in one run."
+      },
+      "sprints_50": {
+        "name": "Marathon",
+        "desc": "Reach the fiftieth sprint of one run."
+      },
+      "account_level_10": {
+        "name": "Seniority",
+        "desc": "Reach account level 10."
+      },
+      "account_tickets_1000": {
+        "name": "A thousand tickets",
+        "desc": "Ship a thousand tickets across all runs."
+      },
+      "works_on_my_machine": {
+        "name": "Works on my machine",
+        "desc": "Let a bug slip into production."
+      },
+      "liquid_cooling": {
+        "name": "Liquid cooling",
+        "desc": "Buy the coffee machine."
+      },
+      "hack_won": {
+        "name": "Nobody saw a thing",
+        "desc": "Pull off a hack."
+      },
+      "caught": {
+        "name": "Caught red-handed",
+        "desc": "Get caught mid-hack."
+      },
+      "overheated": {
+        "name": "Overheated",
+        "desc": "End a run out of energy."
+      },
+      "retired": {
+        "name": "Retired",
+        "desc": "Run production's patience out."
+      },
+      "branch_wars": {
+        "name": "Branch wars",
+        "desc": "Resolve a merge conflict."
+      },
+      "tough_month": {
+        "name": "Tough month",
+        "desc": "Lose a developer mid-run."
+      },
+      "ultimate_question": {
+        "name": "The ultimate question",
+        "desc": "Ship 42 tickets in one run."
+      },
+      "no_longer_required": {
+        "name": "No longer required",
+        "desc": "Buy the last level of the AI supervisor."
+      },
+      "house_of_cards": {
+        "name": "House of cards",
+        "desc": "Let the technical debt blow up."
+      },
+      "changes_requested": {
+        "name": "Changes requested",
+        "desc": "Get a pull request refused."
+      },
+      "hostile_takeover": {
+        "name": "Hostile takeover",
+        "desc": "Buy a company that takes a competitor off the market."
+      }
+    }
   }
 }

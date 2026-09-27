@@ -124,6 +124,35 @@ describe("what the money buys", () => {
     expect(state.money - after.money).toBe(upgradeCost("coworking", 0) ?? 0);
   });
 
+  test("a site's preview counts its gain: seats before and after, the team, the whole month", () => {
+    const state = atTier("site-preview", 2, 1e9);
+    const site = UPGRADES.office;
+    const hired = site.hires;
+    if (hired === undefined) throw new Error("The office is expected to bring a team");
+    const rank = DEV_RANK[hired.rank];
+    const notes = getActionPreview(state, { type: "buy", id: "office" }).notes;
+    const params = (key: string) => notes.find((note) => note.key === key)?.params;
+
+    const seats = BALANCE.team.baseSeats;
+    expect(params("notes.site_seats")).toEqual({
+      from: seats,
+      to: seats + (site.perLevel.teamSeats ?? 0),
+      free: (site.perLevel.teamSeats ?? 0) - hired.count,
+    });
+    expect(params("notes.site_team")).toMatchObject({
+      count: hired.count,
+      saved: { money: rank.hireCost * hired.count },
+    });
+    expect(params("notes.site_speed")).toEqual({ points: rank.speed * hired.count });
+    expect(params("notes.site_monthly")).toEqual({
+      rent: { money: site.upkeep },
+      salaries: { money: rank.salary * hired.count },
+      total: { money: site.upkeep + rank.salary * hired.count },
+    });
+    // The rent is in the month's total; a second line would say it twice.
+    expect(notes.some((note) => note.key === "notes.upkeep")).toBe(false);
+  });
+
   test("the supervisor climbs three levels, each an order of magnitude dearer", () => {
     const state = atTier("boss", 0, 1e9);
     let current = state;

@@ -219,7 +219,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("eaca2ac4");
+    expect(RULES_FINGERPRINT).toBe("7a98d715");
   });
 
   test("the save version and the epoch are positive integers", () => {

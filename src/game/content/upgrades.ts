@@ -210,17 +210,17 @@ export const UPGRADES: Record<UpgradeId, UpgradeDef> = {
     perLevel: { autopilot: 1 },
   },
 
-  coworking: site("coworking", 1, 1_500, 2, { rank: "junior", count: 1 }, 100),
-  office: site("office", 2, 15_000, 4, { rank: "mid", count: 2 }, 1_000),
-  campus: site("campus", 3, 150_000, 6, { rank: "mid", count: 3 }, 10_000),
-  offshore_hub: site("offshore_hub", 4, 1_500_000, 8, { rank: "senior", count: 4 }, 100_000),
+  coworking: site("coworking", 1, 3_000, 2, { rank: "junior", count: 1 }, 300),
+  office: site("office", 2, 30_000, 4, { rank: "mid", count: 2 }, 3_000),
+  campus: site("campus", 3, 300_000, 6, { rank: "mid", count: 3 }, 30_000),
+  offshore_hub: site("offshore_hub", 4, 3_000_000, 8, { rank: "senior", count: 4 }, 300_000),
   orbital_campus: site(
     "orbital_campus",
     5,
-    15_000_000,
+    30_000_000,
     12,
     { rank: "senior", count: 6 },
-    1_000_000,
+    3_000_000,
   ),
 };
 

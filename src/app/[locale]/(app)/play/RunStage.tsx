@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useTranslations } from "next-intl";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
+import { RouteCard } from "@/components/achievements/RouteCard";
 import { ActionPanel } from "@/components/hud/ActionPanel";
 import { useAusterityOverride } from "@/components/hud/austerityOverride";
 import { BoardDialog } from "@/components/hud/BoardDialog";
@@ -91,6 +92,8 @@ export interface RunStageProps {
    * autosave to promise, so it says less.
    */
   fallbackNote?: string;
+  /** The player's own run: the achievements button and the tutorial's road. */
+  onOpenAchievements?: () => void;
 }
 
 export function RunStage({
@@ -102,6 +105,7 @@ export function RunStage({
   onPlayAgain,
   runOverFooter,
   fallbackNote,
+  onOpenAchievements,
   idle = true,
   devPanel = false,
 }: RunStageProps) {
@@ -152,6 +156,7 @@ export function RunStage({
               onOpenCompany={() => setCompanyOpen(true)}
               onOpenUpgrades={openUpgrades}
               upgradesNews={upgradesNews.any}
+              {...(onOpenAchievements === undefined ? {} : { onOpenAchievements })}
             />
           )}
           {snapshot === null ? null : (
@@ -161,6 +166,9 @@ export function RunStage({
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <aside className="order-2 w-full min-w-0 shrink-0 space-y-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
+            {snapshot === null || onOpenAchievements === undefined ? null : (
+              <RouteCard onOpen={onOpenAchievements} />
+            )}
             {snapshot === null ? null : <InfoPanel snapshot={snapshot} />}
             {snapshot === null || !devPanel ? null : <DevPanel handle={handle} onAct={onAct} />}
           </aside>

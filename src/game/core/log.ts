@@ -17,7 +17,7 @@ export function toLogLine(
   turn: number,
   seq: number,
   nodes: Readonly<Record<NodeId, MapNode>> = {},
-  /** The roster's names: a line says "Nora", not "d3". */
+  /** The roster's names: a line says "Hopper", not "d3". */
   nameOf: (id: DevId) => string = (id) => id,
 ): LogLine | null {
   switch (event.type) {

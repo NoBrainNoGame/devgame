@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { CompanyLogo } from "@/components/hud/CompanyLogo";
 import { displayTier } from "@/components/hud/displayTier";
 import { FinanceChart } from "@/components/hud/FinanceChart";
 import { ticketName } from "@/components/hud/ticketName";
@@ -259,8 +260,14 @@ function Market({ snapshot }: { snapshot: RunSnapshot }) {
                 competitor.status !== "alive" && "opacity-60",
               )}
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="flex min-w-0 items-baseline gap-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex min-w-0 items-center gap-2">
+                  <CompanyLogo
+                    id={competitor.id}
+                    className={
+                      competitor.status === "alive" ? "text-cyber" : "text-muted-foreground"
+                    }
+                  />
                   <span className="truncate font-medium">
                     {game(`competitors.${competitor.id}.name` as never)}
                   </span>

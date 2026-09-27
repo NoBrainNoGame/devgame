@@ -117,6 +117,11 @@ Check: +actions +rules.
    as tier and money allow; `buyUpgrade` (`rules/shop.ts`) refreshes effects
    and energy ceiling and hires a site's team via `addDev`. No randomness.
 
+5. A model in `UPGRADE_MODELS` (`components/hud/wireframe/models.ts`), a
+   few primitives from `mesh.ts`, lines only: the record is exhaustive, so a
+   new id does not compile without one. Same for `ACQUISITION_MODELS` and
+   `RANK_MODELS`.
+
 Check: +economy; sim `money` line `upgrades avg`: does the manager buy it?
 
 ### A developer's name and colour
@@ -203,10 +208,31 @@ if it means the tree.
 
 `COMPETITORS` (`content/competitors.ts`): `baseStrength` (scaled by entry tier),
 `aggression` (% growth a month), `entersAtTier`;
-`game.competitors.<id>.{name,bio}` in the voice of `docs/lore.md`. The monthly
+`game.competitors.<id>.{name,bio}` in the voice of `docs/lore.md`; an emblem in
+`MARKS` (`components/hud/CompanyLogo.tsx`, exhaustive): an original mark in
+lines, never a real logo. The monthly
 drift (`rules/market.ts`) draws once per competitor, standing or not, and once
 for the merger, so the count ignores the board (a new competitor adds one);
 `market.test.ts` replays a run.
+
+### An achievement
+
+1. `ACHIEVEMENT_IDS` + `ACHIEVEMENTS` (`content/achievements.ts`): its
+   `group` — `route` (the tutorial: its place in the ids is its place on the
+   road), `prestige` or `secret` (hidden until earned).
+2. Its check in `CHECKS` (`core/achievements.ts`, exhaustive): `run` reads
+   the state an action left, its events and the action; `account` reads the
+   profile's totals. Read-only: never write to the state, never draw.
+3. `achievements.items.<id>.{name,desc}` in both catalogues (tested); a
+   route step's `desc` says what to do and where the button is.
+4. An icon in `ACHIEVEMENT_ICONS` (`components/achievements/icons.ts`).
+
+No DTO change: the profile keeps `achievements` as `{ id, at }` in the
+`unlocks` JSON column, and drops an id it does not know rather than the
+profile. Removing an id is therefore safe; renaming one takes the trophy
+away from whoever had it. Nothing is hashed into `RULES_FINGERPRINT`.
+
+Check: `bun test tests/achievements.test.ts tests/messages.test.ts`.
 
 ### The pull request review
 

@@ -1,6 +1,13 @@
 import { z } from "zod";
 
-import { freeFeatureSkills, PROFILE_IDS, SKILL_IDS } from "@/game/content";
+import {
+  ACHIEVEMENT_IDS,
+  type AchievementId,
+  freeFeatureSkills,
+  isAchievementId,
+  PROFILE_IDS,
+  SKILL_IDS,
+} from "@/game/content";
 
 /**
  * Meta-progression: what survives a run. It lives in `localStorage` while
@@ -22,6 +29,22 @@ export const SettingsSchema = z.object({
   playerName: z.string().trim().max(24).default(""),
 });
 
+/**
+ * The achievements held, each with the moment it was first earned. An id this
+ * build does not know — one a later build retired — is dropped rather than
+ * failing the whole profile: losing a trophy is better than losing a level.
+ */
+export const AchievementsSchema = z
+  .array(z.object({ id: z.string().max(40), at: z.iso.datetime() }))
+  .max(ACHIEVEMENT_IDS.length * 2)
+  .transform((records) => {
+    const kept = new Map<AchievementId, string>();
+    for (const { id, at } of records) {
+      if (isAchievementId(id) && !kept.has(id)) kept.set(id, at);
+    }
+    return [...kept].map(([id, at]) => ({ id, at }));
+  });
+
 export const MetaProgressSchema = z.object({
   version: z.number().int().positive(),
   level: z.number().int().min(1).max(999),
@@ -34,6 +57,8 @@ export const MetaProgressSchema = z.object({
   ticketsDelivered: z.number().int().min(0).default(0),
   unlockedProfiles: z.array(z.enum(PROFILE_IDS)).max(PROFILE_IDS.length),
   unlockedSkills: z.array(z.enum(SKILL_IDS)).max(SKILL_IDS.length),
+  // Defaulted: a profile from before achievements parses with none.
+  achievements: AchievementsSchema.default([]),
   settings: SettingsSchema,
   /** Optimistic lock shared with the `Profile` row. */
   metaVersion: z.number().int().min(0),
@@ -42,6 +67,7 @@ export const MetaProgressSchema = z.object({
 
 export type SettingsDto = z.infer<typeof SettingsSchema>;
 export type MetaProgressDto = z.infer<typeof MetaProgressSchema>;
+export type AchievementRecord = MetaProgressDto["achievements"][number];
 
 export const META_VERSION = 1;
 
@@ -56,6 +82,7 @@ export function emptyMeta(now: string): MetaProgressDto {
     ticketsDelivered: 0,
     unlockedProfiles: ["junior"],
     unlockedSkills: freeFeatureSkills(),
+    achievements: [],
     settings: {
       sound: true,
       musicVolume: DEFAULT_VOLUMES.music,

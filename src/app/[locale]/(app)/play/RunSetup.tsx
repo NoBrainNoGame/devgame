@@ -1,5 +1,6 @@
 "use client";
 
+import { Trophy } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -16,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { accountSkillPoints, type MetaProgressDto, type RunMode, type RunSaveDto } from "@/game";
-import { PROFILE_IDS, PROFILES } from "@/game/content";
+import { ACHIEVEMENT_IDS, PROFILE_IDS, PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
 import { ResumePanel } from "./ResumePanel";
@@ -45,6 +46,7 @@ export interface RunSetupProps {
     playerName: string;
   }) => void;
   onResume: () => void;
+  onOpenAchievements: () => void;
 }
 
 /** The longest name the settings keep, as `SettingsSchema` bounds it. */
@@ -57,8 +59,10 @@ export function RunSetup({
   signedIn,
   onStart,
   onResume,
+  onOpenAchievements,
 }: RunSetupProps) {
   const t = useTranslations("play");
+  const trophies = useTranslations("achievements");
   const game = useTranslations("game");
   const common = useTranslations("common");
 
@@ -80,7 +84,19 @@ export function RunSetup({
     <div className="min-w-0">
       <div className="mb-1 flex items-center justify-between gap-3">
         <h1 className="font-medium text-xl">{t("title")}</h1>
-        <GameSettingsButton />
+        <span className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={onOpenAchievements}>
+            <Trophy className="size-4" />
+            {trophies("button")}
+            <span className="text-muted-foreground text-xs tabular-nums">
+              {trophies("count", {
+                count: meta.achievements.length,
+                total: ACHIEVEMENT_IDS.length,
+              })}
+            </span>
+          </Button>
+          <GameSettingsButton />
+        </span>
       </div>
       <p className="mb-8 text-muted-foreground text-sm">
         {common("commits")} {meta.commitsBank}

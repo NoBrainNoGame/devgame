@@ -1,4 +1,15 @@
 export {
+  ACHIEVEMENT_GROUPS,
+  ACHIEVEMENT_IDS,
+  ACHIEVEMENT_ROUTE,
+  ACHIEVEMENTS,
+  type AchievementDef,
+  type AchievementGroup,
+  type AchievementId,
+  isAchievementId,
+  nextOnRoute,
+} from "@/game/content/achievements";
+export {
   ACQUISITION_IDS,
   ACQUISITIONS,
   type AcquisitionDef,

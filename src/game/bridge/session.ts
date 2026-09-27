@@ -4,6 +4,7 @@ import { advancePushes, emptyPushes, type PushLedger, type PushOp } from "@/game
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
+import { achievementsInRun } from "@/game/core/achievements";
 import { isActionAvailable } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { ShowcaseOptions } from "@/game/core/run";
@@ -196,6 +197,9 @@ export class GameSession extends Emitter {
       pendingAnimation: this.presentation.animated && events.length > 0,
       log: [...this.state.log],
       lastEvents: events,
+      // Only for an action taken now: a replayed log earns nothing twice.
+      lastAchievements:
+        action === undefined ? [] : achievementsInRun({ state: this.state, events, action }),
       lastError: null,
     });
   }

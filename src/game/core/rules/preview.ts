@@ -1,6 +1,8 @@
 import {
   ACQUISITIONS,
   DEV_RANK,
+  type DevRank,
+  type Effects,
   NARRATIVE_EVENTS,
   TREE,
   treeCost,
@@ -223,23 +225,19 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const level = state.upgrades[action.id] ?? 0;
       const cost = upgradeCost(action.id, level);
       const notes: I18nText[] = [text("notes.price", { money: money(cost ?? 0) })];
-      if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: money(def.upkeep) }));
+      if (def.hires !== undefined) {
+        notes.push(...siteNotes(effects, def.upkeep, def.perLevel.teamSeats ?? 0, def.hires));
+      } else {
+        if (def.upkeep > 0) notes.push(text("notes.upkeep", { money: money(def.upkeep) }));
+        if (def.perLevel.teamSeats !== undefined) {
+          notes.push(text("notes.seats", { count: def.perLevel.teamSeats }));
+        }
+      }
       if (def.perLevel.infraCapacity !== undefined) {
         notes.push(text("notes.capacity_gain", { users: def.perLevel.infraCapacity }));
       }
       if (def.perLevel.infraCapacityPct !== undefined) {
         notes.push(text("notes.capacity_gain_pct", { pct: def.perLevel.infraCapacityPct }));
-      }
-      if (def.perLevel.teamSeats !== undefined) {
-        notes.push(text("notes.seats", { count: def.perLevel.teamSeats }));
-      }
-      if (def.hires !== undefined) {
-        notes.push(
-          text("notes.brings_team", {
-            count: def.hires.count,
-            rank: ref(`ranks.${def.hires.rank}.name`),
-          }),
-        );
       }
 
       return {
@@ -415,6 +413,37 @@ export function previewAll(
   const out: Record<string, ActionPreview> = {};
   for (const action of actions) out[actionKey(action)] = getActionPreview(state, action);
   return out;
+}
+
+/**
+ * A site in the numbers a player decides on: the seats before and after, the
+ * team it brings and the points a turn that team fills without the player's
+ * turns, and the whole month it costs once the salaries join the rent. "Two
+ * seats and a junior" says none of that; players could not tell a gain.
+ */
+function siteNotes(
+  effects: Effects,
+  rent: number,
+  seats: number,
+  hires: { rank: DevRank; count: number },
+): I18nText[] {
+  const before = maxSeats(effects);
+  const rank = DEV_RANK[hires.rank];
+  const salaries = rank.salary * hires.count;
+  return [
+    text("notes.site_seats", { from: before, to: before + seats, free: seats - hires.count }),
+    text("notes.site_team", {
+      count: hires.count,
+      rank: ref(`ranks.${hires.rank}.name`),
+      saved: money(hireCostFor(effects, hires.rank) * hires.count),
+    }),
+    text("notes.site_speed", { points: (rank.speed + effects.devSpeedBonus) * hires.count }),
+    text("notes.site_monthly", {
+      rent: money(rent),
+      salaries: money(salaries),
+      total: money(rent + salaries),
+    }),
+  ];
 }
 
 /** A stable string for an action, so React can key on it. */
