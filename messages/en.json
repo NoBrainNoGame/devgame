@@ -296,6 +296,7 @@
       "tooling": "Tooling"
     },
     "upkeepPerLevel": "{money} per month per level",
+    "upkeepMonthly": "{money} per month",
     "upkeepNow": "{money} per month currently",
     "hire": "Hire",
     "hireHint": "A developer takes tickets from the backlog, codes alone and merges alone. They cost their salary at every payday; unpaid, they leave and hand their tickets back. A site opens seats and comes with its team.",
@@ -331,7 +332,7 @@
     "seats": "{used} / {max} seats",
     "rankSpeed": "{count, plural, one {# point per turn} other {# points per turn}}",
     "sites": "Sites",
-    "sitesHint": "A site opens seats and brings its team, hired for free and paid like the others. Monthly rent.",
+    "sitesHint": "No free seat, no hire: a site adds seats and comes with developers already hired, at no fee. Each takes the oldest backlog tickets alone (features, customer bugs, migrations), codes and merges them without you: more features shipped, so more revenue every month, without spending your turns on it. A site is paid once, then its rent and its team's salaries every payday.",
     "nextTier": "tier {tier}",
     "levelOf": "lvl {level}",
     "nextTierAt": "tier {tier} at {money} earned",
@@ -1073,23 +1074,23 @@
       },
       "coworking": {
         "name": "Coworking",
-        "desc": "Two seats and a junior who comes with the keys. Monthly rent."
+        "desc": "Your first team outside the head office. The junior who comes with the keys takes the oldest backlog tickets alone, codes and merges them without you; the other seat waits for your next hire. Coffee included, quiet not."
       },
       "office": {
         "name": "Office",
-        "desc": "Four seats and two mid-levels. A plaque by the door, a rent to match."
+        "desc": "Two mid-levels, two tickets each at a time: the backlog drains while you hold what the team will not take — hotfixes, VIPs, refactors. A plaque by the door, a rent to match."
       },
       "campus": {
         "name": "Campus",
-        "desc": "Six seats and three mid-levels. There is a canteen, a shuttle to reach it, and a shelter in the basement nobody mentions."
+        "desc": "Three mid-levels and room for three more: the team starts shipping more features than you do, and each one pays every month. There is a canteen, a shuttle to reach it, and a shelter in the basement nobody mentions."
       },
       "offshore_hub": {
         "name": "Offshore hub",
-        "desc": "Eight seats and four seniors, in a time zone where it is always daytime."
+        "desc": "Four seniors, three tickets each at a time: the backlog moves even while you are busy elsewhere. In a time zone where it is always daytime."
       },
       "orbital_campus": {
         "name": "Orbital campus",
-        "desc": "Twelve seats and six seniors. Nobody goes home at night."
+        "desc": "Six seniors and six free seats: the largest team the company can house, and the backlog is theirs. Nobody goes home at night."
       }
     },
     "ranks": {
@@ -1407,6 +1408,10 @@
       "capacity_gain_pct": "+{pct}% capacity",
       "seats": "{count, plural, one {# seat} other {# seats}}",
       "brings_team": "Comes with {count} × {rank}",
+      "site_seats": "Seats: {from} → {to} ({free, plural, one {# stays free} other {# stay free}} for hiring)",
+      "site_team": "Comes with {count} × {rank}, no hiring fee: {saved} saved",
+      "site_speed": "The team fills {points, plural, one {# more point} other {# more points}} a turn, on backlog tickets you will not have to code",
+      "site_monthly": "Every month: {rent} rent + {salaries} salaries = {total}",
       "brings_features": "{count, plural, one {# shipped feature} other {# shipped features}} of {points} points",
       "brings_debt": "Code health −{debt}",
       "brings_incident": "A production incident on arrival",

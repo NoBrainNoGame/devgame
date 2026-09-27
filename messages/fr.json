@@ -296,6 +296,7 @@
       "tooling": "Outillage"
     },
     "upkeepPerLevel": "{money} par mois et par niveau",
+    "upkeepMonthly": "{money} par mois",
     "upkeepNow": "{money} par mois actuellement",
     "hire": "Embaucher",
     "hireHint": "Un développeur prend les tickets du backlog, code seul et merge seul. Il coûte son salaire à chaque paie ; impayé, il s'en va et vous rend ses tickets. Un site ouvre des postes et arrive avec son équipe.",
@@ -331,7 +332,7 @@
     "seats": "{used} / {max} postes",
     "rankSpeed": "{count, plural, one {# point par tour} other {# points par tour}}",
     "sites": "Sites",
-    "sitesHint": "Un site ouvre des postes et amène son équipe, embauchée sans frais et payée comme les autres. Loyer mensuel.",
+    "sitesHint": "Sans poste libre, pas d'embauche : un site en ajoute et arrive avec des développeurs déjà embauchés, sans frais. Chacun prend seul les plus anciens tickets du backlog (features, bugs client, migrations), les code et les merge sans vous : plus de features livrées, donc plus de revenu chaque mois, sans y passer vos tours. Un site se paie une fois, puis son loyer et les salaires de son équipe à chaque paie.",
     "nextTier": "palier {tier}",
     "levelOf": "niv. {level}",
     "nextTierAt": "palier {tier} à {money} gagnés",
@@ -1073,23 +1074,23 @@
       },
       "coworking": {
         "name": "Coworking",
-        "desc": "Deux postes et un junior qui arrive avec les clés. Loyer mensuel."
+        "desc": "Votre première équipe hors du siège. Le junior qui arrive avec les clés prend seul les plus anciens tickets du backlog, les code et les merge sans vous ; l'autre poste attend votre prochaine embauche. Le café est inclus, le calme non."
       },
       "office": {
         "name": "Bureaux",
-        "desc": "Quatre postes et deux confirmés. Une plaque à l'entrée, un loyer à la hauteur."
+        "desc": "Deux confirmés, deux tickets chacun à la fois : le backlog se vide pendant que vous tenez ce que l'équipe ne prend pas, hotfix, VIP et refactos. Une plaque à l'entrée, un loyer à la hauteur."
       },
       "campus": {
         "name": "Campus",
-        "desc": "Six postes et trois confirmés. Il y a une cantine, une navette pour y aller, et un abri au sous-sol dont personne ne parle."
+        "desc": "Trois confirmés et de la place pour trois de plus : l'équipe commence à livrer plus de features que vous, et chacune rapporte tous les mois. Il y a une cantine, une navette pour y aller, et un abri au sous-sol dont personne ne parle."
       },
       "offshore_hub": {
         "name": "Hub offshore",
-        "desc": "Huit postes et quatre seniors, dans un fuseau horaire où il fait toujours jour."
+        "desc": "Quatre seniors, trois tickets chacun à la fois : le backlog avance même quand vous êtes pris ailleurs. Dans un fuseau horaire où il fait toujours jour."
       },
       "orbital_campus": {
         "name": "Campus orbital",
-        "desc": "Douze postes et six seniors. Personne ne rentre chez soi le soir."
+        "desc": "Six seniors et six postes libres : la plus grande équipe que l'entreprise puisse loger, et le backlog est à elle. Personne ne rentre chez soi le soir."
       }
     },
     "ranks": {
@@ -1407,6 +1408,10 @@
       "capacity_gain_pct": "+{pct} % de capacité",
       "seats": "{count, plural, one {# poste} other {# postes}}",
       "brings_team": "Arrive avec {count} × {rank}",
+      "site_seats": "Postes : {from} → {to} ({free, plural, one {# reste libre} other {# restent libres}} pour embaucher)",
+      "site_team": "Arrive avec {count} × {rank}, sans frais d'embauche : {saved} épargnés",
+      "site_speed": "L'équipe remplit {points, plural, one {# point} other {# points}} de plus par tour, sur des tickets du backlog que vous n'aurez pas à coder",
+      "site_monthly": "Chaque mois : {rent} de loyer + {salaries} de salaires = {total}",
       "brings_features": "{count, plural, one {# feature livrée} other {# features livrées}} de {points} points",
       "brings_debt": "Santé du code −{debt}",
       "brings_incident": "Un incident en prod à l'arrivée",

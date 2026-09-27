@@ -22,9 +22,12 @@ export interface DevRankDef {
 }
 
 export const DEV_RANK: Record<DevRank, DevRankDef> = {
-  junior: { id: "junior", capacity: 1, speed: 1, hireCost: 200, salary: 30, tier: 0 },
-  mid: { id: "mid", capacity: 2, speed: 2, hireCost: 2_000, salary: 150, tier: 1 },
-  senior: { id: "senior", capacity: 3, speed: 3, hireCost: 20_000, salary: 800, tier: 2 },
+  // Below the ladder on purpose: the junior is all a tier-0 run can hire, and
+  // at a mid's tenth the first hire came so late that a player carrying tier 1
+  // alone burnt out in one careful run out of six (sim, 2026-09-27).
+  junior: { id: "junior", capacity: 1, speed: 1, hireCost: 400, salary: 60, tier: 0 },
+  mid: { id: "mid", capacity: 2, speed: 2, hireCost: 6_000, salary: 450, tier: 1 },
+  senior: { id: "senior", capacity: 3, speed: 3, hireCost: 60_000, salary: 2_400, tier: 2 },
 };
 
 /**

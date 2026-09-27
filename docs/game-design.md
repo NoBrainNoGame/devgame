@@ -282,7 +282,9 @@ débloqué, un barreau grisé pour le palier suivant, rien au-delà. Prix
   d'équipe, superviseur IA (trois niveaux, ×10 chacun).
 - **Sites** (coworking, bureaux, campus, hub offshore, campus orbital) : un par
   palier, uniques ; 32 postes en plus des 3 du siège, équipe incluse sans frais
-  d'embauche.
+  d'embauche. Prix ×10 par palier, loyer d'un dixième du prix. Leur fiche
+  chiffre le gain : postes avant et après, équipe amenée et points par tour
+  qu'elle remplit sans vous, et le mois complet (loyer + salaires).
 - **Points de compétence**, de plus en plus chers.
 
 **Rachats** : startup, scale-up, concurrent, conglomérat ; les deux derniers

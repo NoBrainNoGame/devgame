@@ -132,9 +132,15 @@ function useFacts(item: CatalogItem, snapshot: RunSnapshot): Facts {
     const action: PlayerAction = { type: "buy", id: item.id };
     const offered = offeredFor(action);
     const lines: string[] = [];
-    if (def.upkeep > 0) {
-      lines.push(t("upkeepPerLevel", { money: money(def.upkeep) }));
-      if (level > 0) lines.push(t("upkeepNow", { money: money(def.upkeep * level) }));
+    // A site's rent is in its notes, beside the salaries it brings: one
+    // monthly figure. "Per level" only means something where there are levels.
+    if (def.upkeep > 0 && def.hires === undefined) {
+      if (def.maxLevel === 1) {
+        lines.push(t("upkeepMonthly", { money: money(def.upkeep) }));
+      } else {
+        lines.push(t("upkeepPerLevel", { money: money(def.upkeep) }));
+        if (level > 0) lines.push(t("upkeepNow", { money: money(def.upkeep * level) }));
+      }
     }
     return {
       name: game(`upgrades.${item.id}.name` as never),
