@@ -66,7 +66,9 @@ export const SAVE_VERSION = 3;
  * refuse it, so a log that submitted there no longer replays. And epoch 7:
  * a rest costs patience while work waits, and gives less energy back. And
  * epoch 8: a refusal is answered by fixing or by shipping with follow-ups,
- * the answer paying the turn; starting over is gone.
+ * the answer paying the turn; starting over is gone. And epoch 9: the
+ * rebase is gone, with the lag behind `dev`, the conflict on a missed roll,
+ * the Auto-rebase node and the Feature flags skill.
  */
 export const RULES_EPOCH = 1;
 

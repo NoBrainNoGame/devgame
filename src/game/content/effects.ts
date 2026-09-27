@@ -45,8 +45,6 @@ export interface Effects {
   rerollFailedRoll: boolean;
   /** A rejected pull request costs no story points. */
   counterPrRejection: boolean;
-  /** A rebase that misses adds no debt. */
-  absorbRebase: boolean;
   /** The "obsolete dependency" event never fires. */
   cancelObsoleteLib: boolean;
   /** Warned once ahead of a production bug; hotfix tickets are shorter. */
@@ -115,7 +113,6 @@ export const NO_EFFECTS: Effects = {
 
   rerollFailedRoll: false,
   counterPrRejection: false,
-  absorbRebase: false,
   cancelObsoleteLib: false,
   monitoring: false,
   freeReviewEvery: 0,

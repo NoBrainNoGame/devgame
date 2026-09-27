@@ -15,7 +15,6 @@ import {
 } from "@/game/core/rules/modifiers";
 import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
-import { behindOf, offersOf } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
 import { SAVE_VERSION } from "@/game/dto/version";
 
@@ -33,7 +32,6 @@ import {
   play,
   policy,
   prefer,
-  standingOn,
   ticketInHand,
   withReviewSkill,
   writingACommit,
@@ -278,7 +276,6 @@ describe("energy and crunch", () => {
     expect(node?.kind).toBe("feature_merge");
     expect(node?.lane).toBe(1);
     expect(node?.parents.length).toBe(2);
-    expect(result.state.devMerges).toBe(state.devMerges + 1);
     expect(result.state.ticketsDelivered).toBe(state.ticketsDelivered + 1);
     expect(result.state.xpEarned).toBeGreaterThan(state.xpEarned);
   });
@@ -528,44 +525,5 @@ describe("documentation", () => {
     const { after: written } = committedAs("docs");
     const preview = getActionPreview(written, { type: "commit", mode: "ai" });
     expect(preview.debtDelta).toEqual([0, 0]);
-  });
-});
-
-describe("rebase", () => {
-  test("is offered only once dev has moved under the ticket", () => {
-    const state = inHand("rebase-gate");
-    const ticket = ticketInHand(state);
-    expect(behindOf(state, ticket)).toBe(0);
-    expect(offersOf(state, ticket)).not.toContain("rebase");
-
-    state.devMerges += 1;
-    expect(behindOf(state, ticket)).toBe(1);
-    expect(offersOf(state, ticket)).toContain("rebase");
-  });
-
-  test("a clean history rebases far better than a dirty one", () => {
-    const state = standingOn("rebase");
-
-    const clean = structuredClone(state);
-    clean.debt = 0;
-    const dirty = structuredClone(state);
-    dirty.debt = 60;
-
-    const cleanChance = commitChance(clean, "craft", "rebase").value;
-    const dirtyChance = commitChance(dirty, "craft", "rebase").value;
-
-    expect(cleanChance).toBeGreaterThan(dirtyChance + 20);
-  });
-
-  test("landing it erases the lag, so the merge no longer pays for it", () => {
-    const { before, after, events } = committedAs("rebase");
-    const ticket = ticketInHand(before);
-    expect(behindOf(before, ticket)).toBeGreaterThan(0);
-
-    expect(eventsOfType(events, "rebased").length).toBe(1);
-    const rebased = after.tickets[ticket.id];
-    expect(rebased).toBeDefined();
-    if (rebased === undefined) return;
-    expect(behindOf(after, rebased)).toBe(0);
   });
 });

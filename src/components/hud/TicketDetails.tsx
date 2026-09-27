@@ -142,13 +142,6 @@ export function TicketDetails({
             value={String(ticket.unread)}
             tone={ticket.unread > 0 ? "text-debt" : undefined}
           />
-          {ticket.behind > 0 ? (
-            <Stat
-              label={t("ticketBehindLabel")}
-              value={t("behindDev", { count: ticket.behind })}
-              tone="text-debt"
-            />
-          ) : null}
         </dl>
       )}
 

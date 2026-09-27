@@ -223,7 +223,7 @@ function ReviewPolicySwitch({ snapshot }: { snapshot: RunSnapshot }) {
 }
 
 /**
- * Writing this commit as a refactor, a fix, a rebase.
+ * Writing this commit as a refactor, a fix, a gamble.
  *
  * It is not a fork and never was: the choice is *how to write this commit*, so
  * it sits with the other two ways of writing it and costs the same turn.
@@ -242,8 +242,8 @@ function WrittenAsButton({
 
   if (action.kind === undefined) return null;
 
-  // Five detours in two hands is ten cards: the machine's card is named as
-  // such ("Rebase IA"), the hand's says so under its name, and the
+  // Four detours in two hands is eight cards: the machine's card is named as
+  // such ("Refacto IA"), the hand's says so under its name, and the
   // description waits in the tooltip.
   return (
     <ActionButton

@@ -35,7 +35,6 @@ function shipFeature(state: RunState, mrr: number, load = 50): void {
     load,
     mrr,
     sprintArrived: state.sprint,
-    devMergesAtOpen: 0,
     nodeIds: [],
   };
 }

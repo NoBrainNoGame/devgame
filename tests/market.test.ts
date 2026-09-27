@@ -42,7 +42,6 @@ function shipped(state: RunState, mrr: number, load: number): RunState {
     load,
     mrr,
     sprintArrived: 1,
-    devMergesAtOpen: 0,
     nodeIds: [],
   };
   return state;

@@ -264,7 +264,7 @@ Tables in `content/events.ts`, drawn by `rng.weighted` in `rules/events.ts`:
 
 | Ids / table | Drawn | Fields | Wiring |
 |---|---|---|---|
-| `FAILURE_EVENT_IDS`/`FAILURE_EVENTS` | commit roll missed (`merge_conflict` on rebase only) | `weight`, `requiresUnreviewedAi`, `forbiddenOnHotfix` | A `case` in `resolveFailure` (exhaustive: the one addition the compiler catches) returning a `FailureOutcome`: `conflict` (second decision), `resolve` (written anyway), `retry` (turn lost, nothing written), `resolve_then_incident` (written, incident, hotfix ticket) |
+| `FAILURE_EVENT_IDS`/`FAILURE_EVENTS` | commit roll missed | `weight`, `requiresUnreviewedAi`, `forbiddenOnHotfix` | A `case` in `resolveFailure` (exhaustive: the one addition the compiler catches) returning a `FailureOutcome`: `resolve` (written anyway), `retry` (turn lost, nothing written), `resolve_then_incident` (written, incident, hotfix ticket) |
 | `MERGE_EVENT_IDS`/`MERGE_EVENTS` | ticket lands, `mergeEventChance` hits | `weight`, `outcome` (`conflict`: choice; `resolve`: lands), `effect`, `noRegen`, `cancelledByDependabot` | None: `drawMergeEvent` applies `effect.energy`/`.debt`; `performMerge` (`rules/acceptance.ts`) reads `outcome`, `noRegen`. New consequence: rule change there |
 | `AMBIENT_EVENT_IDS`/`AMBIENT_EVENTS` | sometimes after a landed commit (`succeed`, `rules/commit.ts`) | `weight`, `effect`, `cancelledByDependabot` | None: `drawAmbient` applies `effect.energy`/`.debt`; a third effect is a rule change there |
 
@@ -274,22 +274,22 @@ has a bad weight or a never-met flag. Merge events are counted by
 
 ### A way of writing a commit (a "detour")
 
-Refactor, fix, risky, docs, rebase are kinds a commit *becomes*, not map places.
+Refactor, fix, risky, docs are kinds a commit *becomes*, not map places.
 
 1. Add to `DETOUR_KINDS` (`core/types.ts`; `DetourKind` derives), the `NodeKind`
    union and the hard-coded `DetourKindSchema` (`dto/run.ts`), or saves using it
    fail to parse.
 2. Offer it in `offersOf` (`rules/tickets.ts`), the **one** source for actions,
-   previews and the commit rule: always, or on a condition like `rebase`, `fix`,
+   previews and the commit rule: always, or on a condition like `fix`,
    `refactor` (prefer a target on the ticket in hand; random offers get
    ignored).
 3. A `BALANCE.energy.cost` price and a `nodeGlyph` glyph (`render/theme.ts`):
    typecheck errors until done. `pointsFor` (`rules/write.ts`) sets what it
-   fills (rebase: nothing).
+   fills.
 4. Behaviour: `writeCommit` (`rules/write.ts`), or `succeed`
    (`rules/commit.ts`) on a landed roll; both read `commitKindFor`'s kind.
 5. `game.nodes.<kind>.{name,desc,aiName}`: the card shows `aiName` for the
-   machine ("Rebase IA"), `name` + `hud.byHand` for the player;
+   machine ("Refacto IA"), `name` + `hud.byHand` for the player;
    `messages.test.ts` needs `aiName` for each `DETOUR_KINDS` entry.
 6. Offered, not drawn, so no RNG itself; its rule almost always draws. Decide
    the epoch on that.
@@ -312,7 +312,7 @@ Rare; the most places to touch, the least compiler help.
    `writeRelease` for the trunk). Allow a new trunk kind in `checkInvariants`
    (`map/graph.ts`) or tests refuse it.
 5. Behaviour in `writeCommit` (special-cases `risky`, `refactor`, `fix`,
-   `docs`, `rebase`): **a new kind silently falls through** as an
+   `docs`): **a new kind silently falls through** as an
    ordinary commit, no typecheck or test failure.
 6. `game.nodes.<kind>.{name,desc}` (+ `aiName` if a detour); the log passes
    `nodes.<kind>.name` to `log.node_done`.

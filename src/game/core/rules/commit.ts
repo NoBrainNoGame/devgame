@@ -1,6 +1,5 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { addDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import {
   drawAmbient,
@@ -66,26 +65,9 @@ export function performCommit(context: RuleContext, mode: CommitMode, kind?: Det
     return;
   }
 
-  // A rebase that misses leaves half a replay behind, whatever the failure
-  // table then decides to do about it.
-  if (nodeKind === "rebase" && !context.effects.absorbRebase) {
-    addDebt(context, BALANCE.rebase.failureDebt);
-  }
-
-  const failure = resolveFailure(context, nodeKind);
+  const failure = resolveFailure(context);
 
   switch (failure.kind) {
-    case "conflict":
-      state.phase = {
-        kind: "resolve_conflict",
-        source: "commit",
-        ticketId: ticket.id,
-        mode,
-        nodeKind,
-      };
-      emit(context, { type: "conflict", ticketId: ticket.id });
-      return;
-
     case "resolve":
       succeed(context, ticket, nodeKind, mode);
       return;
@@ -125,10 +107,9 @@ function succeed(
 }
 
 /**
- * The two ways out of a conflict, and what each leads to. A merge cannot be
- * walked away from — the ticket is half-applied and the only way out is
- * through — so a failed manual fix leaves the question on the table. A rebase
- * that stays tangled is simply not landed, and the turn is gone.
+ * The two ways out of a merge conflict. A merge cannot be walked away from —
+ * the ticket is half-applied and the only way out is through — so a failed
+ * manual fix leaves the question on the table.
  */
 export function resolveConflictPhase(context: RuleContext, how: "manual" | "ai"): void {
   const { state } = context;
@@ -138,13 +119,8 @@ export function resolveConflictPhase(context: RuleContext, how: "manual" | "ai")
   const ticket = getTicket(state, phase.ticketId);
   const { resolved, hiddenBug } = resolveConflict(context, how);
 
-  if (!resolved) {
-    if (phase.source === "commit") state.phase = { kind: "choose_action" };
-    return;
-  }
+  if (!resolved) return;
 
-  if (phase.source === "merge") completeMerge(context, ticket, { hiddenBug });
-  else succeed(context, ticket, phase.nodeKind, phase.mode, hiddenBug);
-
+  completeMerge(context, ticket, { hiddenBug });
   state.phase = { kind: "choose_action" };
 }

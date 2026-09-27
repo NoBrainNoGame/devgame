@@ -8,7 +8,6 @@ import {
   Clover,
   FastForward,
   Gauge,
-  GitPullRequestArrow,
   GraduationCap,
   Lock,
   type LucideIcon,
@@ -50,7 +49,6 @@ import { cn } from "@/lib/utils";
 const ICONS: Record<TreeNodeId, LucideIcon> = {
   ci: Workflow,
   cd: Rocket,
-  auto_rebase: GitPullRequestArrow,
   review_bot: Bot,
   monitoring: Activity,
   dependabot: Package,

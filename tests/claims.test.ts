@@ -63,10 +63,10 @@ describe("overclaims", () => {
   });
 
   test("refuses skills the account has not unlocked, and names them", () => {
-    const forged = save({ unlockedSkills: ["linter", "rubber_duck", "feature_flags"] });
+    const forged = save({ unlockedSkills: ["linter", "rubber_duck", "documentation"] });
     const reason = overclaims(forged, meta());
 
-    expect(reason).toContain("feature_flags");
+    expect(reason).toContain("documentation");
     expect(reason).toContain("rubber_duck");
   });
 

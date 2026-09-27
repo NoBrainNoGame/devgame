@@ -36,7 +36,7 @@ export type RunMode = "classic" | "daily";
  * decision about *this* commit, so it costs a turn like any other and leaves
  * the graph a chain — the shape a feature branch actually has.
  */
-export const DETOUR_KINDS = ["refactor", "fix", "risky", "docs", "rebase"] as const;
+export const DETOUR_KINDS = ["refactor", "fix", "risky", "docs"] as const;
 export type DetourKind = (typeof DETOUR_KINDS)[number];
 
 export type NodeKind =
@@ -53,8 +53,6 @@ export type NodeKind =
   | "risky"
   /** Buys the next few machine-written commits out of their debt. */
   | "docs"
-  /** Replays the ticket on top of `dev`. Cheap when clean, brutal when not. */
-  | "rebase"
   /** A ticket landing on `dev`. */
   | "feature_merge"
   /** An obstacle landing back on the feature it blocked, in that feature's column. */
@@ -144,12 +142,6 @@ export interface Ticket {
   assignee?: DevId;
   /** The sprint it arrived in, so a ticket left in the backlog can be assigned. */
   sprintArrived: number;
-  /**
-   * `state.devMerges` when it was opened. Every merge on `dev` since is a
-   * history this ticket does not have, and the price of that shows at its own
-   * merge — or is paid off by a rebase.
-   */
-  devMergesAtOpen: number;
   /** The column it writes in, taken when opened and handed back when merged. */
   lane?: number;
   /** Its commits, oldest first. */
@@ -335,14 +327,6 @@ export interface Dev {
 export type Phase =
   /** On a ticket, or between tickets: commit, review, merge, start, switch. */
   | { kind: "choose_action" }
-  /** A rebase tangled. `mode` is the commit attempted; the fix finishes it. */
-  | {
-      kind: "resolve_conflict";
-      source: "commit";
-      ticketId: TicketId;
-      mode: CommitMode;
-      nodeKind: NodeKind;
-    }
   /** A merge tangled. Resolving it lands the ticket. */
   | { kind: "resolve_conflict"; source: "merge"; ticketId: TicketId }
   /** The review said yes. The merge waits for the player to press the button. */
@@ -392,7 +376,6 @@ export interface RunState {
   tickets: Record<TicketId, Ticket>;
   nextTicketSerial: number;
   /** Merges landed on `dev` this run. What a ticket compares itself against. */
-  devMerges: number;
   /** Everything merged on `dev` since the last release, for the bugs it ships. */
   shipped: NodeId[];
 
@@ -634,7 +617,6 @@ export type GameEvent =
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
   | { type: "docs_written"; charges: number }
   | { type: "docs_used"; nodeId: NodeId; remaining: number }
-  | { type: "rebased"; ticketId: TicketId }
   /** Production broke. `ticketId` is the hotfix it opened. */
   | { type: "incident"; source: IncidentSource; nodeId: NodeId; ticketId: TicketId }
   | { type: "quality"; delta: number; value: number; max: number; source: QualityChange }

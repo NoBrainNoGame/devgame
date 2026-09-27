@@ -40,7 +40,6 @@ function land(
   ticket: Ticket,
 ): { state: RunState; events: ReturnType<typeof createContext>["events"] } {
   ticket.status = "open";
-  ticket.devMergesAtOpen = state.devMerges;
   state.player.ticketId = ticket.id;
   plantCommit(state, "craft");
   const context = createContext(state);
@@ -163,7 +162,6 @@ describe("ticket kinds", () => {
   test("a migration costs debt with every commit and buys a level of servers when it lands", () => {
     const { state, ticket } = withKind("migration", "migration");
     ticket.status = "open";
-    ticket.devMergesAtOpen = state.devMerges;
     state.player.ticketId = ticket.id;
     const debt = state.debt;
     const { state: after } = applyAction(state, { type: "commit", mode: "craft" });

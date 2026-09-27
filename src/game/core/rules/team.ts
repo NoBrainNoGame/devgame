@@ -28,10 +28,8 @@ import type { Dev, DevId, DevSource, RunState, Ticket, TicketId } from "@/game/c
  * commits are craft, read, and free of debt: what you pay for is exactly the
  * work you do not have to do, and what you pay is a salary every month.
  *
- * Their tickets are not yours. They do not count in the work in progress,
- * they cannot be checked out, and their merges do not move `dev` under your
- * feet — the team rebases its own work under yours, or hiring would raise the
- * price of every merge you make and punish itself.
+ * Their tickets are not yours. They do not count in the work in progress
+ * and they cannot be checked out.
  *
  * Nothing here draws randomness. A team's turn is a pure function of the
  * board, which is what keeps a hired run replayable.
@@ -131,11 +129,9 @@ export function hireDev(context: RuleContext, rank: DevRank): Dev {
  * your hand and it is not something the board did to you.
  */
 export function assignTicket(context: RuleContext, ticket: Ticket, dev: Dev): void {
-  const { state } = context;
   if (ticket.status !== "backlog") return;
 
   ticket.status = "open";
-  ticket.devMergesAtOpen = state.devMerges;
   ticket.assignee = dev.id;
 
   emit(context, { type: "ticket_assigned", ticketId: ticket.id, devId: dev.id });

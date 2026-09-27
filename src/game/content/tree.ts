@@ -24,7 +24,6 @@ export const TREE_IDS = [
   "cd",
   "auto_linter",
   "dependabot",
-  "auto_rebase",
   "review_bot",
   "monitoring",
   "sre",
@@ -73,14 +72,6 @@ export const TREE: Record<TreeNodeId, TreeNodeDef> = {
     // See `ci_cd`: merges are mandatory now, so they pay back more rather than
     // costing nothing.
     perLevel: { mergeRegenBonus: 2 },
-    cost: [2],
-    requires: [{ id: "ci", level: 1 }],
-  },
-  auto_rebase: {
-    id: "auto_rebase",
-    branch: "cicd",
-    maxLevel: 1,
-    perLevel: { absorbRebase: true },
     cost: [2],
     requires: [{ id: "ci", level: 1 }],
   },

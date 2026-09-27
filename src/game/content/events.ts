@@ -15,12 +15,7 @@
  * after a successful commit. Their whole effect fits in the table.
  */
 
-export const FAILURE_EVENT_IDS = [
-  "merge_conflict",
-  "prod_bug",
-  "pr_rejected",
-  "broken_build",
-] as const;
+export const FAILURE_EVENT_IDS = ["prod_bug", "pr_rejected", "broken_build"] as const;
 
 export type FailureEventId = (typeof FAILURE_EVENT_IDS)[number];
 
@@ -34,13 +29,6 @@ export interface FailureEventDef {
 }
 
 export const FAILURE_EVENTS: Record<FailureEventId, FailureEventDef> = {
-  // Only ever drawn on a rebase: a conflict needs two histories to meet.
-  merge_conflict: {
-    id: "merge_conflict",
-    weight: 25,
-    requiresUnreviewedAi: false,
-    forbiddenOnHotfix: false,
-  },
   prod_bug: {
     id: "prod_bug",
     weight: 20,

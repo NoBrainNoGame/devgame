@@ -14,7 +14,6 @@ import {
   isCommit,
   isType,
   makeReady,
-  makeRefusable,
   newRun,
   plantCommit,
   play,

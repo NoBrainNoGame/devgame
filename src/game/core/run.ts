@@ -95,7 +95,6 @@ export function createRun(options: CreateRunOptions): RunState {
 
     tickets: {},
     nextTicketSerial: 1,
-    devMerges: 0,
     shipped: [],
 
     player: {

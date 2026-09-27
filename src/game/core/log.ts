@@ -171,9 +171,6 @@ export function toLogLine(
     case "docs_written":
       return { seq, turn, kind: "chore", text: text("log.docs_written", { count: event.charges }) };
 
-    case "rebased":
-      return { seq, turn, kind: "chore", text: text("log.rebased") };
-
     case "debt_explosion":
       return { seq, turn, kind: "revert", text: text("log.debt_explosion") };
 

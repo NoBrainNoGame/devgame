@@ -107,7 +107,6 @@ describe("the team's turn", () => {
       load: 0,
       mrr: 0,
       sprintArrived: 1,
-      devMergesAtOpen: 0,
       nodeIds: [],
       mustWrite: "hotfix",
     };
@@ -157,7 +156,6 @@ describe("the team's turn", () => {
     expect(after.skills).toContain("coffee");
     expect(after.pointsDelivered).toBe(first.pointsDelivered + 1);
     expect(after.ticketsDelivered).toBe(first.ticketsDelivered + 1);
-    expect(after.devMerges).toBe(first.devMerges);
     expect(after.player.totalCommits).toBe(first.player.totalCommits);
     expect(after.sprintPlayerDelivered).toBe(first.sprintPlayerDelivered);
     // One rest, worth the rest's regen, and the skill's raised ceiling — no

@@ -150,8 +150,6 @@ export function nodeGlyph(kind: NodeKind): string {
       return "⚡";
     case "docs":
       return "\u00b6";
-    case "rebase":
-      return "\u2934";
     case "commit":
       return "";
   }

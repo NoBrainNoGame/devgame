@@ -26,8 +26,6 @@ describe("getAvailableActions", () => {
     expect(actions.some((a) => a.type === "commit" && a.mode === "ai")).toBe(true);
     expect(actions.some((a) => a.type === "commit" && a.kind === "docs")).toBe(true);
     expect(actions.some(isType("submit"))).toBe(false);
-    // Nothing has landed on `dev` since it was opened: nothing to rebase onto.
-    expect(actions.some((a) => a.type === "commit" && a.kind === "rebase")).toBe(false);
   });
 
   test("a run that has learned to review is offered it, once there is something to read", () => {

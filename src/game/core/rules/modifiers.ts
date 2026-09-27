@@ -15,7 +15,6 @@ import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
 import {
   backlogTickets,
-  behindOf,
   currentTicket,
   openTickets,
   playerTickets,
@@ -135,8 +134,7 @@ export function mergeEventChance(state: RunState, ticket: Ticket): number {
   const value =
     failure.mergeEventBase +
     Math.floor(state.debt / failure.mergeEventDebtDivisor) +
-    unreadAiOn(state, ticket).length * failure.mergeEventPerUnread +
-    behindOf(state, ticket) * failure.mergeEventPerBehind;
+    unreadAiOn(state, ticket).length * failure.mergeEventPerUnread;
 
   return Math.max(0, Math.min(failure.mergeEventMax, value));
 }
@@ -155,8 +153,7 @@ export function commitChance(
   const notes: I18nText[] = [];
   const { commit } = BALANCE;
 
-  let value: number =
-    kind === "risky" ? commit.riskyBase : kind === "rebase" ? commit.rebaseBase : commit.base[mode];
+  let value: number = kind === "risky" ? commit.riskyBase : commit.base[mode];
 
   const perMode =
     kind === "risky"
@@ -175,9 +172,7 @@ export function commitChance(
     notes.push(text("notes.automation", { points: signed(effects.allSuccessPoints) }));
   }
 
-  // A rebase replays your commits on top of `dev`, so it is priced by how
-  // clean they are rather than by luck: same malus, far steeper divisor.
-  const divisor = kind === "rebase" ? commit.rebaseDebtDivisor : commit.debtRiskDivisor;
+  const divisor = commit.debtRiskDivisor;
   const debtMalus = Math.floor(state.debt / divisor);
   if (debtMalus > 0) {
     value -= debtMalus;

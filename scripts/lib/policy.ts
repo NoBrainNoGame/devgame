@@ -147,7 +147,6 @@ export const TREE_ORDER: TreeNodeId[] = [
   "review_bot",
   "auto_linter",
   "dependabot",
-  "auto_rebase",
   "mentoring",
 ];
 
@@ -329,10 +328,6 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (state.debt >= 40) {
       const refactor = actions.find(writtenAs("refactor"));
       if (refactor !== undefined) return refactor;
-    }
-    if (state.debt < 20) {
-      const rebase = actions.find(writtenAs("rebase"));
-      if (rebase !== undefined) return rebase;
     }
   }
 

@@ -19,7 +19,7 @@ import { raiseQuality } from "@/game/core/rules/quality";
 import { hasUnreviewedAi } from "@/game/core/rules/review";
 import { currentTicket, forceTicket, isOnHotfix } from "@/game/core/rules/tickets";
 import { fillPoints } from "@/game/core/rules/write";
-import type { IncidentSource, NodeId, NodeKind } from "@/game/core/types";
+import type { IncidentSource, NodeId } from "@/game/core/types";
 
 /**
  * What a missed roll costs you.
@@ -31,8 +31,6 @@ import type { IncidentSource, NodeId, NodeKind } from "@/game/core/types";
  */
 
 export type FailureOutcome =
-  /** Nothing is written and the reducer opens the conflict choice. */
-  | { kind: "conflict" }
   /** Something handled it: write the commit as if the roll had passed. */
   | { kind: "resolve" }
   /** The turn is gone; nothing was written. */
@@ -40,8 +38,8 @@ export type FailureOutcome =
   /** It shipped, and it broke production. A hotfix ticket is now open. */
   | { kind: "resolve_then_incident" };
 
-export function resolveFailure(context: RuleContext, kind: NodeKind): FailureOutcome {
-  const eventId = drawFailure(context, kind);
+export function resolveFailure(context: RuleContext): FailureOutcome {
+  const eventId = drawFailure(context);
 
   // Monitoring's first half: the bug is spotted before it ships. It costs the
   // turn anyway — you still have to go and fix it — and it only works once,
@@ -56,9 +54,6 @@ export function resolveFailure(context: RuleContext, kind: NodeKind): FailureOut
   emit(context, { type: "failure_event", eventId });
 
   switch (eventId) {
-    case "merge_conflict":
-      return { kind: "conflict" };
-
     case "prod_bug":
       return { kind: "resolve_then_incident" };
 
@@ -78,14 +73,8 @@ export function resolveFailure(context: RuleContext, kind: NodeKind): FailureOut
   }
 }
 
-/**
- * Where a merge conflict may come from.
- *
- * Two histories have to actually meet. A merge is one place that happens and a
- * rebase is the other — writing a commit is not. The merge half is rolled in
- * `performMerge`; this is the rebase half.
- */
-function drawFailure(context: RuleContext, kind: NodeKind): FailureEventId {
+/** What a missed roll turns out to be. A conflict never: two histories only meet at a merge. */
+function drawFailure(context: RuleContext): FailureEventId {
   const { state } = context;
   const onHotfix = isOnHotfix(state);
   const unreviewed = hasUnreviewedAi(state);
@@ -96,7 +85,6 @@ function drawFailure(context: RuleContext, kind: NodeKind): FailureEventId {
     const def = FAILURE_EVENTS[id];
     if (def.requiresUnreviewedAi && !unreviewed) continue;
     if (def.forbiddenOnHotfix && onHotfix) continue;
-    if (id === "merge_conflict" && kind !== "rebase") continue;
 
     entries.push({ value: id, weight: def.weight });
   }

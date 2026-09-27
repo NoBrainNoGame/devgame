@@ -395,13 +395,11 @@ export function planBatch(
         break;
 
       case "failure_event":
-        if (event.eventId !== "merge_conflict") {
-          held.push({
-            caption: translate({ key: `events.${event.eventId}.title` }),
-            colour: palette.lane.hotfix,
-            hold: STORY.popLong,
-          });
-        }
+        held.push({
+          caption: translate({ key: `events.${event.eventId}.title` }),
+          colour: palette.lane.hotfix,
+          hold: STORY.popLong,
+        });
         break;
 
       case "merge_event":
@@ -439,7 +437,6 @@ export function planBatch(
       case "rested":
       case "monitoring_warning":
       case "docs_written":
-      case "rebased":
       case "debt_explosion":
       case "relic_chosen":
       case "tree_placed":

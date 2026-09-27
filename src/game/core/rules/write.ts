@@ -13,7 +13,6 @@ import { nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality } from "@/game/core/rules/quality";
 import {
-  childrenOf,
   ensureLane,
   getTicket,
   maybeSpawnObstacle,
@@ -148,8 +147,6 @@ function forkPointOf(state: RuleContext["state"], ticket: Ticket): MapNode | nul
 export function pointsFor(ticket: Ticket, mode: CommitMode, kind: NodeKind): number {
   const { points } = BALANCE;
   if (ticket.mustWrite !== undefined) return points.mustWrite;
-  // A rebase is housekeeping: it does not move the ticket.
-  if (kind === "rebase") return 0;
   return points[mode] + (kind === "risky" ? points.riskyBonus : 0);
 }
 
@@ -244,13 +241,6 @@ export function writeCommit(
   }
 
   if (kind === "docs") writeDocs(context);
-
-  if (kind === "rebase") {
-    // The ticket now sits on today's `dev`: whatever landed there since it was
-    // opened is no longer a history its merge has to reconcile.
-    ticket.devMergesAtOpen = state.devMerges;
-    emit(context, { type: "rebased", ticketId: ticket.id });
-  }
 
   // What this commit cost the codebase, which the review will hold against
   // the ticket. Repayments are not credited: a refactor is its own reward.
@@ -431,7 +421,6 @@ export function completeMerge(
 
   if (byTeam === undefined) {
     state.player.totalCommits += 1;
-    state.devMerges += 1;
     state.sprintPlayerDelivered += 1;
     if (ticket.kind === "vip") state.sprintCounters.vipDelivered += 1;
     if (ticket.kind === "client_bug") state.sprintCounters.bugsDelivered += 1;

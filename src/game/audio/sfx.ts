@@ -93,7 +93,6 @@ export function sfxFor(event: GameEvent): SfxId | null {
     case "debt_refactored":
     case "docs_written":
     case "docs_used":
-    case "rebased":
     case "ticket_merged":
     case "skill_gained":
     case "conflict_resolved":

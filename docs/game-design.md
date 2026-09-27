@@ -139,10 +139,6 @@ rien est un commit avec un joli nom).
   le plus (chaque commit la retient) ; celle d'un autre ticket se refactore
   là-bas.
 - **Fix** : reprend le plus ancien commit bugué ; un fix IA reste attrapable.
-- **Rebase** : si un de vos merges a touché `dev` depuis l'ouverture ; efface ce
-  retard (qui aggrave le jet de livraison), sans point. Chance selon la dette
-  (quasi gratuit propre, pile ou face à soixante) ; raté, de la dette, sauf
-  Auto-rebase ou Feature flags.
 
 ### La review
 
@@ -178,7 +174,7 @@ faire.
 - **Commits et points** : score et monnaie de méta ; chaque point livré (vous ou
   l'équipe) vaut de l'XP × numéro du sprint.
 - **Dette** (jauge **Santé du code**, `debt.max` − dette) : monte (IA remisable,
-  risqué, migrations, conflits par IA, rebases ratés, événements, rachats) ;
+  risqué, migrations, conflits par IA, événements, rachats) ;
   pénalise jets et merges. À `debt.explosionThreshold` : refacto imposée, une à
   la fois, qui la fait retomber. Fourchette floue, assez pour décider, pas pour
   optimiser (plus large pour le Vibe Coder) ; exacte avec Linter, Œil de lynx ou
@@ -210,13 +206,12 @@ faire.
   avertissement (tour perdu) ; hotfix plus court.
 - **PR rejetée** : −1 point ; contrée par Tests et le bonus Blameless.
 - **Build cassé** : énergie perdue, rien d'écrit.
-- **Conflit** : seulement en rebase, où deux historiques se rencontrent.
 
-**Livrer** tire un jet plafonné (`failure.mergeEvent*`), aggravé par dette, IA
-non relue et retard sur `dev`, puis une table :
+**Livrer** tire un jet plafonné (`failure.mergeEvent*`), aggravé par dette et IA
+non relue, puis une table :
 
 - **Conflit** : branche à moitié appliquée, question posée jusqu'au choix. À la
-  main : énergie et jet ; raté, la question reste (en rebase, rien n'atterrit).
+  main : énergie et jet ; raté, la question reste.
   Par l'IA : réussit, contre dette et chance de bug caché pour la release.
 - **Migration de lib** : énergie, dette, merge ; Dependabot l'annule.
 - **CI capricieuse** : un point d'énergie.
@@ -252,7 +247,7 @@ remplie, le rang dans le coin de la tuile. Une tuile pulse quand un point peut y
 aller, grise et cadenassée tant qu'il manque un prérequis ; la choisir ouvre sa
 fiche en bas (effet, prérequis, prix), d'où le point se place.
 
-- **CI/CD** : la CI (tous les jets) ouvre CD, auto-rebase, bot de review.
+- **CI/CD** : la CI (tous les jets) ouvre CD et le bot de review.
 - **DevOps** : monitoring, Dependabot, linter automatique, SRE (capacité sans
   hébergement).
 - **Management** : coach agile (vitesse des devs), recruteur (embauche moins

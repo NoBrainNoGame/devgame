@@ -25,7 +25,6 @@ export const BALANCE = {
       fix: 2,
       risky: 1,
       docs: 2,
-      rebase: 1,
       feature_merge: 2,
       /** Landing an obstacle back on its feature: a merge like the other, at the same price. */
       obstacle_merge: 2,
@@ -77,19 +76,8 @@ export const BALANCE = {
     base: { craft: 92, ai: 72 } satisfies Record<CommitMode, number>,
     /** Replaces the base chance on a `risky` commit. */
     riskyBase: 78,
-    /**
-     * Replaces the base chance on a `rebase`, which is generous — the whole
-     * risk lives in `rebaseDebtDivisor` below.
-     */
-    rebaseBase: 95,
     /** Success chance is reduced by `debt / debtRiskDivisor` points. */
     debtRiskDivisor: 3,
-    /**
-     * A rebase is priced by how clean the history is, not by luck: debt bites
-     * roughly three times harder here than on an ordinary commit. At zero debt
-     * it is nearly free; at sixty it is a coin flip.
-     */
-    rebaseDebtDivisor: 1.4,
     /** Success is never certain and never hopeless. */
     clamp: { min: 5, max: 95 },
     /** Chance in percent that a craft success makes the next refactor free. */
@@ -159,23 +147,17 @@ export const BALANCE = {
     charges: 4,
   },
 
-  rebase: {
-    /** Debt added when a rebase does not land, from the mess of a half-applied replay. */
-    failureDebt: 6,
-  },
-
   failure: {
     /**
      * A merge is where things happen, in git and here. These are the odds
      * that *something* does when a ticket lands — a conflict, a migration, a
-     * red CI — a floor, plus what the debt, the unread machine-written work in
-     * the ticket and every merge landed on `dev` since it was opened each add.
+     * red CI — a floor, plus what the debt and the unread machine-written
+     * work in the ticket each add.
      * Which thing it is comes from `MERGE_EVENTS`.
      */
     mergeEventBase: 12,
     mergeEventDebtDivisor: 6,
     mergeEventPerUnread: 4,
-    mergeEventPerBehind: 8,
     /** However bad it gets, landing a ticket is not a coin flip. */
     mergeEventMax: 55,
     /** Energy lost resolving a merge conflict by hand. */

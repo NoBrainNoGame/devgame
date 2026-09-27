@@ -29,13 +29,7 @@ import {
 import { choiceCost } from "@/game/core/rules/narrative";
 import { canBuySkillPoint, skillPointPrice } from "@/game/core/rules/shop";
 import { devCapacity, hireCostFor, maxSeats } from "@/game/core/rules/team";
-import {
-  behindOf,
-  currentTicket,
-  getTicket,
-  mostIndebtedOn,
-  unreadAiOn,
-} from "@/game/core/rules/tickets";
+import { currentTicket, getTicket, mostIndebtedOn, unreadAiOn } from "@/game/core/rules/tickets";
 import { tierScale } from "@/game/core/rules/tier";
 import { treeUnlocked } from "@/game/core/rules/tree";
 import { pointsFor } from "@/game/core/rules/write";
@@ -101,13 +95,6 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
       if (kind === "fix") notes.push(text("notes.fix_bug"));
 
-      if (kind === "rebase") {
-        notes.push(text("notes.rebase_why", { count: behindOf(state, ticket) }));
-        if (!effects.absorbRebase) {
-          notes.push(text("notes.rebase_risk", { debt: BALANCE.rebase.failureDebt }));
-        }
-      }
-
       const points = pointsFor(ticket, action.mode, kind);
 
       return {
@@ -166,8 +153,6 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       if (ticket !== null && !obstacle) {
         const risk = mergeEventChance(state, ticket);
         if (risk > 0) notes.push(text("notes.merge_risk", { percent: risk }));
-        const behind = behindOf(state, ticket);
-        if (behind > 0) notes.push(text("notes.behind_dev", { count: behind }));
       }
       if (obstacle) {
         notes.push(text("notes.obstacle_merge"));

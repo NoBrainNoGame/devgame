@@ -66,7 +66,6 @@ export function acquire(context: RuleContext, id: AcquisitionId): void {
         economy.infra.usersPerPoint *
         tierScale(Math.min(state.tier, economy.tier.loadTierCap), economy.tier.loadGrowth),
       sprintArrived: state.sprint,
-      devMergesAtOpen: state.devMerges,
       nodeIds: [],
       nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${ticketId}`)),
     };

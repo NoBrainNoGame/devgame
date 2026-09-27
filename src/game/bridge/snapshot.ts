@@ -33,7 +33,6 @@ import { sprintTurns } from "@/game/core/rules/relics";
 import { skillPointPrice } from "@/game/core/rules/shop";
 import { devCapacity, hireCostOf, maxSeats, ticketsOf } from "@/game/core/rules/team";
 import {
-  behindOf,
   buggedOn,
   currentTicket,
   FILLING_DETOURS,
@@ -122,8 +121,6 @@ export interface TicketView {
   /** Full and clean, held back by the codebase's health alone: a refactor opens its pull request. */
   waitingOnHealth: boolean;
   lane?: number;
-  /** Merges landed on `dev` since it was opened. Its merge pays for each. */
-  behind: number;
   ready: boolean;
   commits: number;
   nodeIds: NodeId[];
@@ -353,7 +350,6 @@ export function toSnapshot(state: RunState): RunSnapshot {
     waitingOnObstacle: ticket.status === "open" && waitsOnlyForObstacle(state, ticket),
     waitingOnHealth: ticket.status === "open" && waitsOnlyForHealth(state, ticket),
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
-    behind: behindOf(state, ticket),
     // Ready means the pull request can open: one the health floor holds back is not.
     ready: ticket.status === "open" && isReady(state, ticket) && !waitsOnlyForHealth(state, ticket),
     commits: ticket.nodeIds.length,

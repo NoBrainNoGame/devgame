@@ -19,7 +19,6 @@ export interface TreeSlot {
 export const TREE_LAYOUT: Record<TreeNodeId, TreeSlot> = {
   ci: { col: 1, row: 0 },
   cd: { col: 0, row: 1 },
-  auto_rebase: { col: 2, row: 1 },
   review_bot: { col: 1, row: 2 },
 
   monitoring: { col: 0, row: 0 },

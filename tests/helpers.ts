@@ -121,9 +121,9 @@ export function makeRefusable(state: RunState): RunState {
 
 /**
  * Drives a run until the ticket in hand offers `kind`, ready to write it that
- * way. A rebase is situational, so this plays real seeds rather than stubbing
- * the board: a real seed proves the choice is reachable in a game
- * that could actually happen.
+ * way. A detour is situational, so this plays real seeds rather than stubbing
+ * the board: a real seed proves the choice is reachable in a game that could
+ * actually happen.
  */
 export function standingOn(kind: DetourKind, options: { prefix?: string } = {}): RunState {
   return offering(kind, options).state;
@@ -176,9 +176,8 @@ function offering(
         break;
       }
 
-      // Greedy about the board: every ticket started as soon as it arrives, so
-      // one landing while another is open — the situation a rebase needs —
-      // happens within a sprint or two rather than never.
+      // Greedy about the board: every ticket started as soon as it arrives,
+      // so the situations a detour needs come within a sprint or two.
       const legal = getAvailableActions(state);
       const action = prefer(
         isType("merge"),

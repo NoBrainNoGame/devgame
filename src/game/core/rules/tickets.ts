@@ -154,20 +154,14 @@ export function isOnHotfix(state: RunState): boolean {
   return currentTicket(state)?.mustWrite === "hotfix";
 }
 
-/** Merges landed on `dev` since this ticket was opened. An obstacle lands on its feature, not on `dev`: never behind. */
-export function behindOf(state: RunState, ticket: Ticket): number {
-  if (ticket.parentId !== undefined) return 0;
-  return Math.max(0, state.devMerges - ticket.devMergesAtOpen);
-}
-
 /**
  * The ways a commit on this ticket may be written, beyond plainly.
  *
  * One source of truth: the actions, the previews and the commit rule all ask
  * here. A hotfix or a forced refactor offers nothing — it is one kind of
- * commit until it is done. The situational ones each need a target: a rebase
- * needs `dev` to have moved, a fix needs a commit the review flagged, and a
- * refactor needs a commit that cost debt.
+ * commit until it is done. The situational ones each need a target: a fix
+ * needs a commit the review flagged, and a refactor needs a commit that cost
+ * debt.
  * A refactor of nothing is a commit with a nicer name.
  */
 export function offersOf(state: RunState, ticket: Ticket): DetourKind[] {
@@ -181,7 +175,6 @@ export function offersOf(state: RunState, ticket: Ticket): DetourKind[] {
   const offers: DetourKind[] = ["docs", "risky"];
   if (buggedOn(state, ticket).length > 0) offers.push("fix");
   if (mostIndebtedOn(state, ticket) !== null) offers.push("refactor");
-  if (behindOf(state, ticket) > 0) offers.push("rebase");
   return offers.sort();
 }
 
@@ -223,7 +216,6 @@ export function forceTicket(
     load: 0,
     mrr: 0,
     sprintArrived: state.sprint,
-    devMergesAtOpen: 0,
     nodeIds: [],
     mustWrite: kind,
   };
@@ -260,7 +252,6 @@ export function spawnObstacle(context: RuleContext, parent: Ticket, nodeId: Node
     load: 0,
     mrr: 0,
     sprintArrived: state.sprint,
-    devMergesAtOpen: state.devMerges,
     nodeIds: [],
     parentId: parent.id,
     nameKey: obstacleNameKey(fnv1a(`${state.seed}:${id}`)),
@@ -335,7 +326,6 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
   if (ticket.status !== "backlog") return;
 
   ticket.status = "open";
-  ticket.devMergesAtOpen = state.devMerges;
 
   // Yours if you had nothing in hand. If you did, it waits: being pulled off
   // your feature by a production bug is a punishment the WIP malus already

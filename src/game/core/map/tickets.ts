@@ -83,7 +83,6 @@ export function arriveTicketOfKind(context: RuleContext, kind: TicketKind): Tick
       : 0,
     mrr: !def.earnsMrr ? 0 : kind === "vip" ? baseMrr * tickets.kinds.vip.mrrFactor : baseMrr,
     sprintArrived: state.sprint,
-    devMergesAtOpen: 0,
     nodeIds: [],
     ...(def.mustWrite === undefined ? {} : { mustWrite: def.mustWrite }),
     ...(def.earnsMrr ? { nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${id}`)) } : {}),
@@ -126,7 +125,6 @@ function arriveDebtTicket(context: RuleContext): void {
     load: 0,
     mrr: 0,
     sprintArrived: state.sprint,
-    devMergesAtOpen: 0,
     nodeIds: [],
     mustWrite: "refactor",
   };
@@ -221,7 +219,6 @@ function drawTicket(context: RuleContext, pool: SkillId[], guaranteed: boolean):
     load,
     mrr,
     sprintArrived: state.sprint,
-    devMergesAtOpen: 0,
     nodeIds: [],
     ...(def.earnsMrr ? { nameKey: featureNameKey(state.tier, fnv1a(`${state.seed}:${id}`)) } : {}),
     ...(def.deadlineSprints === undefined

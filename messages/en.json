@@ -202,7 +202,6 @@
     "writeInstead": "Or write this commit as:",
     "byHand": "by hand",
     "noTicket": "Nothing in hand: open the project and start a ticket.",
-    "behindDev": "{count, plural, one {# merge landed on dev since} other {# merges landed on dev since}}",
     "previewPoints": "Points: {min} to {max}",
     "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}",
     "board": "Project",
@@ -265,7 +264,6 @@
     "ticketDebtAdded": "−{debt}",
     "ticketBugsLabel": "Flagged bugs",
     "ticketUnreadLabel": "Unread machine commits",
-    "ticketBehindLabel": "Behind dev",
     "ticketCommits": "{count, plural, =0 {Commits} one {# commit} other {# commits}}",
     "ticketNoCommits": "No commit yet. The first one forks off dev.",
     "ticketBugged": "bugged",
@@ -797,10 +795,6 @@
         "name": "Rubber duck",
         "desc": "Improves resolving conflicts by hand."
       },
-      "feature_flags": {
-        "name": "Feature flags",
-        "desc": "Absorbs forced rebases: no node to replay."
-      },
       "sprint_final": {
         "name": "Final sprint",
         "desc": "A successful AI commit jumps one more node."
@@ -932,10 +926,6 @@
       "dependabot": {
         "name": "Dependabot",
         "desc": "The obsolete library never comes up again."
-      },
-      "auto_rebase": {
-        "name": "Auto rebase",
-        "desc": "A forced rebase no longer costs a replayed node."
       },
       "review_bot": {
         "name": "Review bot",
@@ -1137,11 +1127,6 @@
         "desc": "The next machine-written commits add no debt at all.",
         "aiName": "AI documentation"
       },
-      "rebase": {
-        "name": "Rebase",
-        "desc": "dev moved since the ticket opened: every merge landed meanwhile makes this ticket's merge riskier. A rebase brings the ticket up to date and erases that lag. It fills no points. Nearly safe when debt is low, a coin toss when it is high.",
-        "aiName": "AI rebase"
-      },
       "sprint_start": {
         "name": "Sprint opening",
         "desc": "main merged back into dev: the sprint starts from a clean base."
@@ -1242,7 +1227,6 @@
     },
     "log": {
       "docs_written": "docs written, {count, plural, one {# AI commit covered} other {# AI commits covered}}",
-      "rebased": "ticket rebased onto dev, history is current",
       "_comment": "The node, skill, relic, node, upgrade and rank parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
       "node_done": {
         "craft": "{subject} — written by hand",
@@ -1370,7 +1354,6 @@
     },
     "notes": {
       "documented": "Docs cover {count, plural, one {# AI commit} other {# AI commits}}",
-      "rebase_risk": "If the rebase fails: −{debt} code health",
       "build": "Build {points}",
       "automation": "Automation {points}",
       "debt": "Technical debt {points}",
@@ -1393,8 +1376,6 @@
       "wip": "{count, plural, one {# extra ticket} other {# extra tickets}} {points}",
       "wip_cost": "Energy raised: {count, plural, one {# extra ticket} other {# extra tickets}}",
       "machine_flat": "The machine always costs the same",
-      "rebase_why": "Lag: {count, plural, one {# merge landed} other {# merges landed}} on dev since the ticket opened, each makes its merge dearer",
-      "behind_dev": "{count, plural, one {# merge} other {# merges}} behind dev: a rebase would erase that risk",
       "merge_regen": "Gives back {energy} ⚡",
       "merge_risk": "{percent} % risk of something at the merge",
       "unread_risk": "{count, plural, one {# unread AI commit} other {# unread AI commits}}: the review may find bugs",
@@ -1655,16 +1636,6 @@
           "3": "move the computation to the background",
           "4": "drop the index that got in the way",
           "5": "push the batch to eighty-eight miles per hour"
-        }
-      },
-      "rebase": {
-        "all": {
-          "0": "replay the branch onto dev",
-          "1": "resume the work on the current base",
-          "2": "realign the branch",
-          "3": "bring the branch up to date",
-          "4": "replace the commits on the trunk",
-          "5": "replay the branch: a black cat went by twice"
         }
       },
       "init": {

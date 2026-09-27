@@ -18,7 +18,6 @@ export const SKILL_IDS = [
   "hot_reload",
   "observability",
   "rubber_duck",
-  "feature_flags",
   "sprint_final",
   "lynx_eye",
   "code_owners",
@@ -100,11 +99,6 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   rubber_duck: {
     id: "rubber_duck",
     effects: { conflictResistancePoints: 10 },
-    unlockCost: 500,
-  },
-  feature_flags: {
-    id: "feature_flags",
-    effects: { absorbRebase: true },
     unlockCost: 500,
   },
 
