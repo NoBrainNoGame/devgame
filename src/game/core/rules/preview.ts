@@ -164,10 +164,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return { action, energyCost: cost.value, consumesTurn: true, notes };
     }
 
-    // Fixing is the review's round trip: it costs the turn the refusal did
-    // not. Shipping anyway is free here, and its merge pays.
+    // Fixing writes the first fix commit now, by hand: it is that commit's
+    // price and roll. Shipping anyway is free here, and its merge pays.
     case "resume":
-      return { action, energyCost: 0, consumesTurn: true, notes: [] };
+      return { ...getActionPreview(state, { type: "commit", mode: "craft", kind: "fix" }), action };
 
     case "followup": {
       const bugs = state.phase.kind === "ticket_rejected" ? state.phase.bugs : 0;

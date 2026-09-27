@@ -163,7 +163,7 @@ export function followupTicket(context: RuleContext): void {
   state.phase = { kind: "pr_accepted", ticketId: ticket.id };
 }
 
-/** Keep the commits, fix what was found. The rework is already on the ticket; the turn is this one's. */
+/** Keep the commits and fix what was found: the reducer writes the first fix at once. */
 export function resumeTicket(context: RuleContext): void {
   const { state } = context;
   if (state.phase.kind !== "ticket_rejected") throw new Error("resumeTicket: nothing was rejected");

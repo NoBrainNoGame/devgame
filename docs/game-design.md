@@ -87,8 +87,9 @@ guérison), et une vitrine.
   [horloge](#le-jeu-tourne-sans-vous)) coûte le tour, pose le ticket sur `dev`
   et livre la compétence. Le moteur ne merge jamais seul.
 - **Refusée** : ne coûte rien, la réponse paie. Les non-relus deviennent
-  lus, les attrapés bugués, en points de correctif. **Corriger** (un fix par
-  commit bugué avant de resoumettre) coûte le tour. **Livrer avec un ticket de
+  lus, les attrapés bugués, en points de correctif. **Corriger** écrit tout de
+  suite le premier fix à la main (son prix, son jet, son tour) ; un par commit
+  bugué avant de resoumettre. **Livrer avec un ticket de
   suivi** : la PR passe telle quelle, le merge coûte le tour, les points de
   correctif repartent, et chaque bug ouvre au backlog un ticket de suivi (un
   bug client, daté, que l'équipe peut prendre) qui, livré, retire le bug ; à

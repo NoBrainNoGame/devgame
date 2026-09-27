@@ -172,17 +172,23 @@ describe("the pull request review", () => {
     expect(shipped.state.stats.followups).toBe(1);
   });
 
-  test("carrying on keeps the commits and the fix points", () => {
+  test("fixing keeps the commits, writes the first fix, and the points stay", () => {
     const state = makeRefusable(inHand("pr-resume"));
     const rejected = applyAction(state, { type: "submit" }).state;
     const ticket = ticketInHand(rejected);
 
-    const resumed = applyAction(rejected, { type: "resume" }).state;
-    expect(resumed.tickets[ticket.id]?.nodeIds).toEqual(ticket.nodeIds);
+    const { state: resumed, events } = applyAction(rejected, { type: "resume" });
+    const after = resumed.tickets[ticket.id];
+    // The commits stay, and the first fix is written on top when its roll lands.
+    expect(after?.nodeIds.slice(0, ticket.nodeIds.length)).toEqual(ticket.nodeIds);
     expect(resumed.phase.kind).toBe("choose_action");
-    // The caught bug is flagged and its fix point added: no submit until a fix.
-    expect(resumed.tickets[ticket.id]?.points).toBe(ticket.points);
-    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(false);
+    // The caught bug's fix point is on the ticket; a fix that missed leaves
+    // the bug flagged, so no submit until one lands.
+    expect(after?.points).toBe(ticket.points);
+    const landed = eventsOfType(events, "bug_fixed").length === 1;
+    expect(after?.nodeIds.length).toBe(ticket.nodeIds.length + (landed ? 1 : 0));
+    expect(buggedOn(resumed, ticketInHand(resumed)).length).toBe(landed ? 0 : 1);
+    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(landed);
   });
 
   test("a flagged commit blocks the next submit until a fix takes the bug out", () => {
@@ -281,7 +287,15 @@ describe("the pull request review", () => {
     const state = makeRefusable(inHand("pr-turn"));
     const rejected = applyAction(state, { type: "submit" }).state;
     expect(rejected.turn).toBe(state.turn);
-    expect(applyAction(rejected, { type: "resume" }).state.turn).toBe(rejected.turn + 1);
+    const fixed = applyAction(rejected, { type: "resume" });
+    expect(fixed.state.turn).toBe(rejected.turn + 1);
+    // The turn is the first fix's: written by hand, at once.
+    const roll = eventsOfType(fixed.events, "roll")[0];
+    expect(roll?.action).toBe("commit");
+    if (roll?.success) {
+      expect(eventsOfType(fixed.events, "node_done")[0]?.kind).toBe("fix");
+      expect(eventsOfType(fixed.events, "bug_fixed").length).toBe(1);
+    }
     expect(applyAction(rejected, { type: "followup" }).state.turn).toBe(rejected.turn);
   });
 });

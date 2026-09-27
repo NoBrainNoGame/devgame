@@ -242,7 +242,7 @@
     "reviewMerge": "Merge",
     "reviewParallel": "A new ticket arrived alongside: the sprint does not wait.",
     "reviewResume": "Fix it",
-    "reviewResumeHint": "One fix per bug ({count}), then resubmit. Costs the turn.",
+    "reviewResumeHint": "Writes the first fix by hand at once: one per bug ({count}), then resubmit.",
     "reviewFollowup": "Ship it with a follow-up",
     "reviewFollowupHint": "The pull request lands as it is. {count, plural, one {# bug ships, with a dated ticket} other {# bugs ship, a dated ticket each}}: unfixed at the release, {percent}% to break.",
     "reviewSprintClosed": "This refusal closed the sprint: the release has shipped, and the pull request keeps its commits.",

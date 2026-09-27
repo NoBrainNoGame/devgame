@@ -242,7 +242,7 @@
     "reviewMerge": "Merger",
     "reviewParallel": "Un nouveau ticket est arrivé en parallèle : le sprint n'attend pas.",
     "reviewResume": "Corriger",
-    "reviewResumeHint": "Un fix par bug ({count}), puis on resoumet. Coûte le tour.",
+    "reviewResumeHint": "Écrit le premier fix à la main tout de suite : un par bug ({count}), puis on resoumet.",
     "reviewFollowup": "Livrer avec un ticket de suivi",
     "reviewFollowupHint": "La PR passe telle quelle. {count, plural, one {# bug part en prod, avec un ticket daté} other {# bugs partent en prod, un ticket daté chacun}} : non corrigé à la release, {percent} % de casser.",
     "reviewSprintClosed": "Ce refus a clos le sprint : la release est partie, la PR garde ses commits.",

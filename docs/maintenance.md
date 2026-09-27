@@ -244,7 +244,8 @@ kind with `opensUnderFloor` (`content/tickets.ts`), and
 `waitsOnlyForHealth` tells the HUD, the idle clock and the sim to refactor. A
 certain refusal belongs there, never in `performSubmit`. A new refusal: the
 rule there, a `pr_reviewed` field for the dialog, a line in `ReviewDialog.tsx`.
-A refusal costs no turn; its answers do (`reducer.ts`): `resume` there,
+A refusal costs no turn; its answers do (`reducer.ts`): `resume` writes the
+first fix commit (`performCommit`) and pays with it,
 `followup` (`followupTicket`: a `client_bug` per bug with `fixesNodeId`,
 cleared by its merge in `write.ts`, rolled at `release.bugPerKnownPct` in
 `shipBugs`) at the merge. A new answer needs the same: a turn somewhere, or

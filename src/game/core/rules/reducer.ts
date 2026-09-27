@@ -125,10 +125,12 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
       return state.phase.kind !== "resolve_conflict";
 
     // The refusal's turn is paid by its answer, so the sprint cannot close
-    // between the two and leave the question behind: fixing pays it here,
-    // shipping anyway pays it at the merge.
+    // between the two and leave the question behind: fixing writes the first
+    // fix now and pays with its turn, shipping anyway pays at the merge.
     case "resume":
       resumeTicket(context);
+      state.stats.commitsTried.craft += 1;
+      performCommit(context, "craft", "fix");
       return true;
 
     case "followup":

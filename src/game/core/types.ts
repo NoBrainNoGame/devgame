@@ -474,7 +474,7 @@ export type PlayerAction =
   | { type: "submit" }
   /** Lands an accepted pull request. Costs the turn the review did not. */
   | { type: "merge" }
-  /** After a rejection: keep the commits and fix what was found. Costs the turn. */
+  /** After a rejection: keep the commits and write the first fix now. Costs its turn. */
   | { type: "resume" }
   /**
    * After a rejection: ship it anyway. The bugs go to production as they
