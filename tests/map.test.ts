@@ -38,7 +38,9 @@ describe("the written graph", () => {
       if (failures.length > 0) broken.push(`map-${i}: ${failures[0]?.rule} ${failures[0]?.detail}`);
     }
     expect(broken).toEqual([]);
-  });
+    // Five hundred runs go past the default five seconds on CI since a missed
+    // roll stopped costing a fix turn: each run writes and lands more.
+  }, 20_000);
 
   test("300 seeds played with a hired team satisfy them too", () => {
     const broken: string[] = [];
