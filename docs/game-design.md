@@ -128,8 +128,6 @@ rien est un commit avec un joli nom).
   le plus (chaque commit la retient) ; celle d'un autre ticket se refactore
   là-bas.
 - **Fix** : reprend le plus ancien commit bugué ; un fix IA reste attrapable.
-- **Squash** : dès `squash.minUnread` commits IA non relus ; leur dette part, et
-  eux du score. Seul effacement de dette sans review.
 - **Rebase** : si un de vos merges a touché `dev` depuis l'ouverture ; efface ce
   retard (qui aggrave le jet de livraison), sans point. Chance selon la dette
   (quasi gratuit propre, pile ou face à soixante) ; raté, de la dette, sauf
@@ -350,7 +348,7 @@ review. Seul l'interrupteur le coupe.
 - **Superviseur IA** : s'achète pour de meilleurs choix, jamais pour plus
   d'autonomie, et annonce son coup sous le panneau. N1 : relit les commits IA
   dès deux non relus. N2 : prend le hotfix en attente, refactorise quand prod
-  ou dette le disent, squashe à trois IA non relus, relit dès un. N3 : barreau
+  ou dette le disent, relit dès un. N3 : barreau
   conseillé, meilleur grade payable avec deux mois de factures d'avance, point
   de compétence si l'argent abonde.
 

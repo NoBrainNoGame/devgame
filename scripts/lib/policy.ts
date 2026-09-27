@@ -297,8 +297,6 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
       if (unreviewed > 0) {
         const review = actions.find(isReview);
         if (review !== undefined) return review;
-        const squash = actions.find(writtenAs("squash"));
-        if (squash !== undefined) return squash;
       }
       if (state.debt > BALANCE.acceptance.maxDebt) {
         const refactor = actions.find(writtenAs("refactor"));
@@ -315,10 +313,6 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (state.debt >= 40) {
       const refactor = actions.find(writtenAs("refactor"));
       if (refactor !== undefined) return refactor;
-    }
-    if (unreviewed >= 3) {
-      const squash = actions.find(writtenAs("squash"));
-      if (squash !== undefined) return squash;
     }
     if (state.debt < 20) {
       const rebase = actions.find(writtenAs("rebase"));
@@ -382,7 +376,6 @@ export function chooseQuit(state: RunState, actions: PlayerAction[]): PlayerActi
   const spend =
     find(craftOf("docs")) ??
     find(craftOf("refactor")) ??
-    find(craftOf("squash")) ??
     find((a) => a.type === "commit" && a.mode === "craft") ??
     find((a) => a.type === "commit") ??
     find((a) => a.type === "review") ??

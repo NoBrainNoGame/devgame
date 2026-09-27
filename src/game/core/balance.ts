@@ -24,7 +24,6 @@ export const BALANCE = {
       refactor: 2,
       fix: 2,
       risky: 1,
-      squash: 2,
       docs: 2,
       rebase: 1,
       feature_merge: 2,
@@ -152,20 +151,6 @@ export const BALANCE = {
     repayPerCommit: 4,
     /** Automatic review cadence at one point; each further point removes one. */
     botCadence: 4,
-  },
-
-  squash: {
-    /**
-     * Debt erased per machine-written commit the squash swallows. Higher than a
-     * review's, because a squash is paid for in score and a review is not.
-     */
-    repayPerCommit: 7,
-    /** Commits the history keeps: the rest are gone, and so is their score. */
-    keptCommits: 1,
-    /** Never erases more than this, whatever the ticket holds. */
-    maxCommits: 5,
-    /** Unread machine-written commits on the ticket before a squash is offered. */
-    minUnread: 2,
   },
 
   docs: {

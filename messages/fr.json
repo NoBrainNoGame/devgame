@@ -368,7 +368,6 @@
       "rest": "souffler",
       "hotfix": "prendre le hotfix",
       "refactor": "refactoriser",
-      "squash": "squasher les commits IA",
       "buy": "acheter le barreau conseillé",
       "hire": "embaucher",
       "point": "acheter un point de compétence"
@@ -1029,7 +1028,7 @@
       },
       "ai_supervisor": {
         "name": "Superviseur IA",
-        "desc": "Le mode Auto fait déjà tout avancer ; le superviseur lui fait faire de meilleurs choix. Niveau 1 : il relit le code de la machine avant qu'il s'entasse. Niveau 2 : il prend les hotfix, refactorise et squashe. Niveau 3 : il dépense aussi. Pas de date de mise en ligne prévue. Abonnement."
+        "desc": "Le mode Auto fait déjà tout avancer ; le superviseur lui fait faire de meilleurs choix. Niveau 1 : il relit le code de la machine avant qu'il s'entasse. Niveau 2 : il prend les hotfix, refactorise et relit plus tôt. Niveau 3 : il dépense aussi. Pas de date de mise en ligne prévue. Abonnement."
       },
       "datacenter": {
         "name": "Datacenter",
@@ -1126,11 +1125,6 @@
       }
     },
     "nodes": {
-      "squash": {
-        "name": "Squash",
-        "desc": "Fusionne les derniers commits IA : la dette part avec eux, le score aussi.",
-        "aiName": "Squash IA"
-      },
       "docs": {
         "name": "Documentation",
         "desc": "Les prochains commits IA n'ajoutent aucune dette.",
@@ -1240,7 +1234,6 @@
       }
     },
     "log": {
-      "squashed": "{count, plural, one {# commit écrasé} other {# commits écrasés}}, {lost, plural, one {# de moins au compteur} other {# de moins au compteur}}",
       "docs_written": "documentation écrite, {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
       "rebased": "rebase du ticket sur dev, l'historique est à jour",
       "_comment": "Les paramètres node, skill, relic, node, upgrade et rank sont des chemins de clés (par exemple skills.unit_tests.name) que le rendu traduit avant de les substituer. Le préfixe de commit (feat:, fix:, chore:, merge:, revert:) est ajouté par l'interface : ne le répétez pas ici.",
@@ -1649,16 +1642,6 @@
           "3": "passe le calcul en tâche de fond",
           "4": "retire l'index qui gênait",
           "5": "pousse le batch à quatre-vingt-huit miles à l'heure"
-        }
-      },
-      "squash": {
-        "all": {
-          "0": "condense l'historique de la branche",
-          "1": "écrase les commits de la machine",
-          "2": "réduit six commits à un",
-          "3": "efface les allers-retours",
-          "4": "garde le résultat, pas le chemin",
-          "5": "un seul commit pour les gouverner tous"
         }
       },
       "rebase": {

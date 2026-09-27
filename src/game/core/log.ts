@@ -170,17 +170,6 @@ export function toLogLine(
         }),
       };
 
-    case "squashed":
-      return {
-        seq,
-        turn,
-        kind: "revert",
-        text: text("log.squashed", {
-          count: event.nodeIds.length,
-          lost: event.commitsLost,
-        }),
-      };
-
     case "docs_written":
       return { seq, turn, kind: "chore", text: text("log.docs_written", { count: event.charges }) };
 

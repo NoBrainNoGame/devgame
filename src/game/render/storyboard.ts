@@ -279,14 +279,6 @@ export function planBatch(
         }
         break;
 
-      case "squashed":
-        held.push({
-          caption: `⊟ ${event.nodeIds.length}`,
-          colour: palette.lane.refactor,
-          hold: STORY.pop,
-        });
-        break;
-
       case "docs_used":
         held.push({ caption: "¶", colour: palette.lane.refactor, hold: STORY.pop });
         break;

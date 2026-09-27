@@ -79,7 +79,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     // Two triggers, on purpose. The reveal set says *what* is drawn, and an
     // applied action can change *how* a commit already drawn looks — reviewed,
-    // squashed — without revealing anything.
+    // bugged — without revealing anything.
     const { session, reveal } = sceneContext(this.chipContext);
     this._subscribe(session, "applied", () => this.rebuild());
     this._subscribe(reveal, "changed", () => this.rebuild());

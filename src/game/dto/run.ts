@@ -25,7 +25,7 @@ export const MAX_ACTIONS = 5000;
 
 const TicketIdSchema = z.string().regex(/^t\d+$/);
 
-const DetourKindSchema = z.enum(["refactor", "fix", "risky", "squash", "docs", "rebase"]);
+const DetourKindSchema = z.enum(["refactor", "fix", "risky", "docs", "rebase"]);
 
 export const PlayerActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("start"), ticketId: TicketIdSchema }),

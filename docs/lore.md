@@ -53,8 +53,8 @@ dérive :
 
 Un nœud porte un sujet tiré par hachage de `seed:nodeId` dans le pool de son
 préfixe et de sa bande (`src/game/content/subjects.ts`). `feat`, `chore`, `fix`
-et `merge` ont un pool par bande ; `refactor`, `docs`, `perf`, `squash`,
-`rebase`, `init` et `release`, un seul.
+et `merge` ont un pool par bande ; `refactor`, `docs`, `perf`, `rebase`,
+`init` et `release`, un seul.
 
 - `feat` raconte Tenon d'une voix de développeur qui trouve tout normal.
 - `chore` est la machine : elle « simplifie », « unifie », « retire » — et ce
