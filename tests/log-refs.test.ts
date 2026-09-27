@@ -15,7 +15,7 @@ const catalogue: Record<string, string> = {
   "log.narrative_answered": "{title}: {choice}",
   "narrative.price_war.title": "{competitor} cuts its prices",
   "narrative.price_war.choices.fight": "fight",
-  "competitors.hooli.name": "Hooli",
+  "competitors.blume.name": "Blume",
 };
 const translate = (key: string, params?: Record<string, string | number>): string =>
   (catalogue[key] ?? key).replace(/\{(\w+)\}/g, (_, name: string) =>
@@ -25,20 +25,20 @@ const translate = (key: string, params?: Record<string, string | number>): strin
 describe("references with their own parameters", () => {
   test("resolve all the way down", () => {
     const line = text("log.narrative_opened", {
-      title: ref("narrative.price_war.title", { competitor: ref("competitors.hooli.name") }),
+      title: ref("narrative.price_war.title", { competitor: ref("competitors.blume.name") }),
     });
-    expect(renderText(translate, line)).toBe("event: Hooli cuts its prices");
+    expect(renderText(translate, line)).toBe("event: Blume cuts its prices");
   });
 
   test("an event's opening and its answer both name the competitor", () => {
     const state = newRun("log-refs");
     appendLog(state, [
-      { type: "narrative_opened", eventId: "price_war", competitorId: "hooli" },
+      { type: "narrative_opened", eventId: "price_war", competitorId: "blume" },
       { type: "narrative_answered", eventId: "price_war", choice: "fight" },
     ]);
     const [opened, answered] = state.log.slice(-2);
     if (opened === undefined || answered === undefined) throw new Error("no lines");
-    expect(renderText(translate, opened.text)).toBe("event: Hooli cuts its prices");
-    expect(renderText(translate, answered.text)).toBe("Hooli cuts its prices: fight");
+    expect(renderText(translate, opened.text)).toBe("event: Blume cuts its prices");
+    expect(renderText(translate, answered.text)).toBe("Blume cuts its prices: fight");
   });
 });

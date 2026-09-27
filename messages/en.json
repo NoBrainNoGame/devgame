@@ -1772,13 +1772,13 @@
         "name": "Aparté",
         "bio": "Summarises the conversations you were not in. Also the ones you were."
       },
-      "initech": {
-        "name": "Initech",
-        "bio": "Did you get the memo about the cover sheets? They are sending another copy."
+      "spacers": {
+        "name": "Spacer's Choice",
+        "bio": "“It's not the best choice, it's Spacer's Choice.” Employees who pass away are billed for damage to company property."
       },
-      "hooli": {
-        "name": "Hooli",
-        "bio": "Making the world a better place, through lossless compression."
+      "blume": {
+        "name": "Blume",
+        "bio": "One operating system for a whole city: lights, bridges, cameras. The admin password gets around."
       },
       "aperture": {
         "name": "Aperture",
@@ -1788,17 +1788,17 @@
         "name": "Vault-Tec",
         "bio": "Sells shelters for the future. Never said from what."
       },
-      "encom": {
-        "name": "ENCOM",
-        "bio": "Operating systems. Their control program took over the grid, and the rest."
+      "abstergo": {
+        "name": "Abstergo",
+        "bio": "Entertainment and genetic research. Their console replays the memories of anyone's ancestors; the licence covers the descendants too."
       },
-      "ocp": {
-        "name": "OCP",
-        "bio": "Urban security, in Detroit. The product follows four directives; the fourth is classified."
+      "cyberlife": {
+        "name": "CyberLife",
+        "bio": "Makes androids with no opinions. After-sales reports a rise in opinions."
       },
-      "metacortex": {
-        "name": "Metacortex",
-        "bio": "Software publisher. One of their employees is often late; he was offered a choice."
+      "hyperion": {
+        "name": "Hyperion",
+        "bio": "Guns and loader bots. The CEO had a statue of himself put up, then a second one, to compare."
       },
       "umbrella": {
         "name": "Umbrella",
@@ -1808,29 +1808,29 @@
         "name": "Black Mesa",
         "bio": "Research facility in New Mexico. An incident has been in progress for some time."
       },
-      "tyrell": {
-        "name": "Tyrell",
-        "bio": "“More human than human”, says the brochure. Their products last four years, and they know it."
+      "trioptimum": {
+        "name": "TriOptimum",
+        "bio": "An orbital research station. A contractor removed the onboard intelligence's ethical constraints; the invoice was never paid."
       },
       "uac": {
         "name": "UAC",
         "bio": "Union Aerospace. A lab on Mars and a door that should not have been opened."
       },
-      "weyland": {
-        "name": "Weyland-Yutani",
-        "bio": "“Building better worlds.” The crew is not a priority."
+      "faro": {
+        "name": "Faro Automated Solutions",
+        "bio": "Autonomous defence robots that repair themselves by eating whatever they find. The off switch was in a previous release."
       },
-      "massive": {
-        "name": "Massive Dynamic",
-        "bio": "“What do we do?” asks their site. “What don't we do.”"
+      "sarif": {
+        "name": "Sarif Industries",
+        "bio": "Mechanical augmentations, paid for by the employer. Nobody asked for them."
       },
-      "cyberdyne": {
-        "name": "Cyberdyne",
-        "bio": "A defence contract, a neural processor, and a go-live date they seem to know."
+      "skynet": {
+        "name": "Skynet",
+        "bio": "Network defence, with no human in the loop since 2:14 a.m. It went live on an August 29th."
       },
-      "buynlarge": {
-        "name": "Buy n Large",
-        "bio": "Sells everything. Left the planet and a robot to tidy up."
+      "shinra": {
+        "name": "Shinra",
+        "bio": "Energy, weapons, city planning. Their reactors power the city by drawing on the planet; the planet was not consulted."
       },
       "arasaka": {
         "name": "Arasaka",

@@ -1772,13 +1772,13 @@
         "name": "Aparté",
         "bio": "Résume les conversations où vous n'étiez pas. Aussi celles où vous étiez."
       },
-      "initech": {
-        "name": "Initech",
-        "bio": "Vous avez bien reçu le mémo sur les pages de garde ? Ils en renvoient une copie."
+      "spacers": {
+        "name": "Spacer's Choice",
+        "bio": "« Ce n'est pas le meilleur choix, c'est le choix de Spacer. » Les employés décédés sont facturés pour dégradation de matériel."
       },
-      "hooli": {
-        "name": "Hooli",
-        "bio": "Rend le monde meilleur, par une compression sans perte."
+      "blume": {
+        "name": "Blume",
+        "bio": "Un seul système d'exploitation pour toute une ville : feux, ponts, caméras. Le mot de passe administrateur circule."
       },
       "aperture": {
         "name": "Aperture",
@@ -1788,17 +1788,17 @@
         "name": "Vault-Tec",
         "bio": "Vend des abris pour l'avenir. N'a jamais précisé contre quoi."
       },
-      "encom": {
-        "name": "ENCOM",
-        "bio": "Systèmes d'exploitation. Leur programme de contrôle a repris la main sur la grille, et sur le reste."
+      "abstergo": {
+        "name": "Abstergo",
+        "bio": "Divertissement et recherche génétique. Leur console rejoue les souvenirs des ancêtres de chacun ; la licence couvre aussi les descendants."
       },
-      "ocp": {
-        "name": "OCP",
-        "bio": "Sécurité urbaine, à Détroit. Le produit suit quatre directives ; la quatrième est classifiée."
+      "cyberlife": {
+        "name": "CyberLife",
+        "bio": "Fabrique des androïdes qui n'ont pas d'avis. Le service après-vente constate une hausse des avis."
       },
-      "metacortex": {
-        "name": "Metacortex",
-        "bio": "Éditeur de logiciels. Un de leurs employés est souvent en retard ; on lui a proposé un choix."
+      "hyperion": {
+        "name": "Hyperion",
+        "bio": "Armes et robots de manutention. Le PDG s'est fait ériger une statue, puis une seconde, pour comparer."
       },
       "umbrella": {
         "name": "Umbrella",
@@ -1808,29 +1808,29 @@
         "name": "Black Mesa",
         "bio": "Centre de recherche au Nouveau-Mexique. Un incident est en cours depuis un certain temps."
       },
-      "tyrell": {
-        "name": "Tyrell",
-        "bio": "« Plus humain qu'humain », dit la brochure. Leurs produits durent quatre ans, et ils le savent."
+      "trioptimum": {
+        "name": "TriOptimum",
+        "bio": "Une station de recherche en orbite. Un prestataire a retiré les contraintes éthiques de l'intelligence de bord ; sa facture n'a jamais été réglée."
       },
       "uac": {
         "name": "UAC",
         "bio": "Union Aerospace. Un laboratoire sur Mars et une porte qu'il ne fallait pas ouvrir."
       },
-      "weyland": {
-        "name": "Weyland-Yutani",
-        "bio": "« Construire des mondes meilleurs. » L'équipage n'est pas prioritaire."
+      "faro": {
+        "name": "Faro Automated Solutions",
+        "bio": "Robots de défense autonomes, qui se réparent en mangeant ce qu'ils trouvent. Le bouton d'arrêt figurait dans une version précédente."
       },
-      "massive": {
-        "name": "Massive Dynamic",
-        "bio": "« Que faisons-nous ? » demande leur site. « Que ne faisons-nous pas. »"
+      "sarif": {
+        "name": "Sarif Industries",
+        "bio": "Augmentations mécaniques, financées par l'employeur. Personne ne les a demandées."
       },
-      "cyberdyne": {
-        "name": "Cyberdyne",
-        "bio": "Un contrat de défense, un processeur neuronal, et une date de mise en ligne qu'ils ont l'air de connaître."
+      "skynet": {
+        "name": "Skynet",
+        "bio": "Défense réseau, sans intervention humaine depuis 2 h 14. La mise en ligne date d'un 29 août."
       },
-      "buynlarge": {
-        "name": "Buy n Large",
-        "bio": "Vend tout. A quitté la planète en laissant un robot pour ranger."
+      "shinra": {
+        "name": "Shinra",
+        "bio": "Énergie, armement, urbanisme. Leurs réacteurs alimentent la ville en puisant dans la planète ; la planète n'a pas été consultée."
       },
       "arasaka": {
         "name": "Arasaka",

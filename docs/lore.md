@@ -104,14 +104,18 @@ inquiète est ce qui manque.
 
 ## Les clins d'œil
 
-Seize concurrents de plus viennent d'histoires d'entreprises qui ont fini comme
-celle-ci commence. Même règle que partout : **la bio est le clin d'œil, jamais
-le nom de l'histoire**, et elle reste plausible comme ligne de presse. Initech
-(Office Space), Hooli (Silicon Valley), Aperture (Portal), Vault-Tec
-(Fallout), ENCOM (Tron), OCP (RoboCop), Metacortex (Matrix), Umbrella
-(Resident Evil), Black Mesa (Half-Life), Tyrell (Blade Runner), UAC (Doom),
-Weyland-Yutani (Alien), Massive Dynamic (Fringe), Cyberdyne (Terminator), Buy
-n Large (WALL-E), Arasaka (Cyberpunk).
+Seize concurrents de plus sont les entreprises diaboliques du jeu vidéo (et
+un réseau), celles qui ont fini comme celle-ci commence. Même règle que
+partout : **la bio est le clin d'œil, jamais le nom de l'histoire**, et elle
+reste plausible comme ligne de presse. Spacer's Choice (The Outer Worlds),
+Blume (Watch Dogs), Aperture (Portal), Vault-Tec (Fallout), Abstergo
+(Assassin's Creed), CyberLife (Detroit: Become Human), Hyperion
+(Borderlands), Umbrella (Resident Evil), Black Mesa (Half-Life), TriOptimum
+(System Shock), UAC (Doom), Faro Automated Solutions (Horizon Zero Dawn), Sarif
+Industries (Deus Ex), Skynet (Terminator, le seul qui ne vient pas d'un jeu),
+Shinra (Final Fantasy VII), Arasaka (Cyberpunk). Chacune a un emblème
+original au trait (`CompanyLogo.tsx`), jamais le vrai logo, qui appartient à
+son éditeur.
 
 Les autres clins d'œil sont semés où une ligne peut les porter en restant un
 sujet de commit ou une feature : le gâteau et Aperture (Portal), le test de

@@ -203,7 +203,9 @@ if it means the tree.
 
 `COMPETITORS` (`content/competitors.ts`): `baseStrength` (scaled by entry tier),
 `aggression` (% growth a month), `entersAtTier`;
-`game.competitors.<id>.{name,bio}` in the voice of `docs/lore.md`. The monthly
+`game.competitors.<id>.{name,bio}` in the voice of `docs/lore.md`; an emblem in
+`MARKS` (`components/hud/CompanyLogo.tsx`, exhaustive): an original mark in
+lines, never a real logo. The monthly
 drift (`rules/market.ts`) draws once per competitor, standing or not, and once
 for the merger, so the count ignores the board (a new competitor adds one);
 `market.test.ts` replays a run.
