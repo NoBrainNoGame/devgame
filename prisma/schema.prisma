@@ -45,7 +45,7 @@ model Profile {
   commitsBank  Int      @default(0)
   totalCommits Int      @default(0)
   ticketsDelivered Int      @default(0)
-  /// { unlockedProfiles, unlockedSkills } — validated by the shared meta DTO.
+  /// { unlockedProfiles, unlockedSkills, achievements } — validated by the shared meta DTO.
   unlocks      Json     @default("{}")
   /// { settings, statPoints, unspentStatPoints, version } — same DTO.
   settings     Json     @default("{}")

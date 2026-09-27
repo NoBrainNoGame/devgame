@@ -450,6 +450,26 @@ la remplace après confirmation, puis la page se recharge ; les crédits. Tout
 s'enregistre au changement, daté pour que la synchronisation garde le plus
 récent.
 
+**Succès** (`content/achievements.ts`, `core/achievements.ts`) : une collection
+d'une run à l'autre, comme sur une console. Quarante, en trois familles :
+**la route** (quatorze premiers pas dans l'ordre où un débutant les
+rencontre : ouvrir un ticket, commiter, faire écrire la machine, relire, ouvrir
+la PR, livrer, encaisser, acheter, corriger un bug, placer un point, finir un
+sprint, embaucher, palier 1, ouvrir un site), qui sert de tutoriel : le HUD
+montre la prochaine étape et ce qu'il faut faire, jusqu'au bout de la route ;
+**le prestige** (paliers 3 et 6, équipes de dix et trente, les cinq sites,
+l'étoile de la mort, les quatre rachats, la moitié du marché, un million, un
+milliard, cinquante sprints, niveau 10 et mille tickets sur le compte) ; et
+**les secrets**, cachés jusqu'à obtention, drôles et fidèles au lore (leurs
+noms se lisent dans les deux sens, règle 6 de `docs/lore.md`). Le moteur ne
+fait que regarder : après chaque action, une fonction pure dit ce que la run
+mérite, sans toucher à l'état, au score ni au rejeu (une vitrine ne mérite
+rien) ; le profil garde chaque succès avec sa première date, la fusion prend
+l'union et la date la plus ancienne. Une bulle « Succès débloqué » monte en bas
+de l'écran quelques secondes ; la fenêtre des succès s'ouvre du HUD et de
+l'écran de lancement. Cosmétiques et déclarés par le client, ils ne classent
+personne.
+
 **Télémétrie anonyme** (`src/lib/telemetry/`) : la sauvegarde part en fin de
 run, tous les `CHECKPOINT_EVERY_SPRINTS` sprints et à l'abandon, sans rien sur
 la personne ; le serveur la rejoue dans `RunSample`.

@@ -6,6 +6,7 @@ import { createStore } from "zustand/vanilla";
 import type { HeldGauges } from "@/game/bridge/gauges";
 import type { RenderMode } from "@/game/bridge/sceneGuard";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
+import type { AchievementId } from "@/game/content";
 import type { GameEvent, LogLine, NodeId } from "@/game/core/types";
 
 export type ReviewEvent = Extract<GameEvent, { type: "pr_reviewed" }>;
@@ -33,6 +34,11 @@ export interface GameStore {
   log: LogLine[];
   /** The most recent batch, for anything that reacts to a single event. */
   lastEvents: GameEvent[];
+  /**
+   * What the run qualified for after the last action — held already or not:
+   * the profile keeps the collection and ignores what it has.
+   */
+  lastAchievements: AchievementId[];
   /**
    * A pull request just read, until the player has seen the verdict. The
    * review dialog owns it: it opens on it and clears it when dismissed.
@@ -62,6 +68,7 @@ export const INITIAL_STORE: GameStore = {
   cameraFollowing: true,
   log: [],
   lastEvents: [],
+  lastAchievements: [],
   pendingReview: null,
   lastError: null,
   renderMode: "webgl",

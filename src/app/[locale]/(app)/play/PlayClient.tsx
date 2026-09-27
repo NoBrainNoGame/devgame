@@ -3,6 +3,9 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AchievementPopup } from "@/components/achievements/AchievementPopup";
+import { AchievementsDialog } from "@/components/achievements/AchievementsDialog";
+import { useAchievementUnlocks } from "@/components/achievements/unlocks";
 import { setIdleSettings } from "@/components/hud/idleStore";
 import type { PagePoint } from "@/components/hud/origin";
 import { Button } from "@/components/ui/button";
@@ -97,6 +100,9 @@ export function PlayClient(props: PlayClientProps) {
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+  useAchievementUnlocks();
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const openAchievements = useCallback(() => setAchievementsOpen(true), []);
 
   // Merge the two copies of progress once, on arrival. Everything after that
   // is written locally first and pushed when a run ends.
@@ -342,48 +348,64 @@ export function PlayClient(props: PlayClientProps) {
     return <p className="p-8 text-muted-foreground text-sm">{t("loading")}</p>;
   }
 
+  // The collection's window and its popup, on both screens.
+  const trophies = (
+    <>
+      <AchievementPopup />
+      <AchievementsDialog open={achievementsOpen} onOpenChange={setAchievementsOpen} />
+    </>
+  );
+
   if (stage.kind === "setup") {
     return (
-      <RunSetup
-        meta={meta}
-        dailyAvailable={props.dailySeed !== null}
-        resumable={resumable}
-        signedIn={props.signedIn}
-        onStart={start}
-        onResume={resume}
-      />
+      <>
+        <RunSetup
+          meta={meta}
+          dailyAvailable={props.dailySeed !== null}
+          resumable={resumable}
+          signedIn={props.signedIn}
+          onStart={start}
+          onResume={resume}
+          onOpenAchievements={openAchievements}
+        />
+        {trophies}
+      </>
     );
   }
 
   return (
-    <RunStage
-      runKey={stage.runKey}
-      handle={handle}
-      options={{
-        seed: stage.seed,
-        mode: stage.mode,
-        profileId: stage.profileId,
-        meta,
-        clientRunId: stage.clientRunId,
-        createdAt: stage.createdAt,
-        ...(stage.resume === undefined ? {} : { resume: stage.resume }),
-        reducedMotion: meta.settings.reducedMotion,
-        playerName: props.userName ?? meta.settings.playerName,
-      }}
-      onReady={onReady}
-      onAct={act}
-      onPlayAgain={() => setStage({ kind: "setup" })}
-      runOverFooter={
-        status === "game_over" ? (
-          <SubmitFooter
-            online={props.online}
-            signedIn={props.signedIn}
-            submitted={submitted}
-            onSubmit={submit}
-          />
-        ) : null
-      }
-    />
+    <>
+      <RunStage
+        runKey={stage.runKey}
+        handle={handle}
+        options={{
+          seed: stage.seed,
+          mode: stage.mode,
+          profileId: stage.profileId,
+          meta,
+          clientRunId: stage.clientRunId,
+          createdAt: stage.createdAt,
+          ...(stage.resume === undefined ? {} : { resume: stage.resume }),
+          reducedMotion: meta.settings.reducedMotion,
+          playerName: props.userName ?? meta.settings.playerName,
+        }}
+        onReady={onReady}
+        onAct={act}
+        onOpenAchievements={openAchievements}
+        onPlayAgain={() => setStage({ kind: "setup" })}
+        runOverFooter={
+          status === "game_over" ? (
+            <SubmitFooter
+              online={props.online}
+              signedIn={props.signedIn}
+              submitted={submitted}
+              onSubmit={submit}
+            />
+          ) : null
+        }
+      />
+      {trophies}
+    </>
   );
 }
 

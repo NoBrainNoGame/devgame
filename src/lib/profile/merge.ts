@@ -1,4 +1,4 @@
-import type { MetaProgressDto } from "@/game";
+import type { AchievementRecord, MetaProgressDto } from "@/game";
 
 /**
  * Reconciling two copies of a player's progress.
@@ -28,6 +28,7 @@ export function mergeMeta(a: MetaProgressDto, b: MetaProgressDto): MetaProgressD
 
     unlockedProfiles: union(a.unlockedProfiles, b.unlockedProfiles),
     unlockedSkills: union(a.unlockedSkills, b.unlockedSkills),
+    achievements: earliest(a.achievements, b.achievements),
 
     // Settings are a preference, not an achievement: the last change wins.
     settings: { ...newer.settings },
@@ -37,6 +38,24 @@ export function mergeMeta(a: MetaProgressDto, b: MetaProgressDto): MetaProgressD
     metaVersion: Math.max(a.metaVersion, b.metaVersion),
     updatedAt: newer.updatedAt,
   };
+}
+
+/**
+ * Every achievement either copy holds, dated the first time it was earned:
+ * the trophy is the same on both devices, and the earlier day is the true one.
+ */
+function earliest(
+  a: readonly AchievementRecord[],
+  b: readonly AchievementRecord[],
+): AchievementRecord[] {
+  const held = new Map<AchievementRecord["id"], string>();
+  for (const { id, at } of [...a, ...b]) {
+    const known = held.get(id);
+    if (known === undefined || Date.parse(at) < Date.parse(known)) held.set(id, at);
+  }
+  return [...held]
+    .map(([id, at]) => ({ id, at }))
+    .sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
 }
 
 /** Sorted so the result is stable, and so two merges in any order agree. */

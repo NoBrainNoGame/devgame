@@ -2222,5 +2222,186 @@
     "restore": "Restore",
     "minimizeAll": "Minimise all",
     "closeAll": "Close all"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "button": "Achievements",
+    "count": "{count}/{total}",
+    "description": "What you have done, run after run. The route guides the start; the secrets show themselves as you play.",
+    "groups": {
+      "route": "The route",
+      "prestige": "Prestige",
+      "secret": "Secrets"
+    },
+    "unlocked": "Achievement unlocked",
+    "secretName": "Secret achievement",
+    "secretHint": "It shows itself once earned.",
+    "earnedOn": "Earned on {date}",
+    "next": "Next step",
+    "routeProgress": "Route {done}/{total}",
+    "routeDone": "Route complete: the other achievements are waiting.",
+    "dismiss": "Dismiss",
+    "items": {
+      "first_ticket": {
+        "name": "Clocking in",
+        "desc": "Open a ticket from the Project board: it is the work you are about to code."
+      },
+      "first_commit": {
+        "name": "Hello, world",
+        "desc": "Write a commit on the ticket in hand. Each commit fills story points."
+      },
+      "first_ai_commit": {
+        "name": "Delegation",
+        "desc": "Have the machine write a commit: less energy, more risk, and code to review."
+      },
+      "first_review": {
+        "name": "Second pair of eyes",
+        "desc": "Review the machine's code before it piles up: that is where the bugs are found."
+      },
+      "first_pr": {
+        "name": "Pull request",
+        "desc": "Ticket full: open the PR to get it reviewed and merged."
+      },
+      "first_delivery": {
+        "name": "Shipped",
+        "desc": "Ship your first feature: from now on it pays every month."
+      },
+      "first_payday": {
+        "name": "First payout",
+        "desc": "Collect a payday: every third of a sprint, shipped features pay."
+      },
+      "first_purchase": {
+        "name": "First purchase",
+        "desc": "Buy something in Upgrades, Purchases tab: servers, before production saturates."
+      },
+      "first_fix": {
+        "name": "Bug hunter",
+        "desc": "Fix a bug: a commit the review flagged, a hotfix or a customer's bug."
+      },
+      "first_skill": {
+        "name": "Levelling up",
+        "desc": "Spend a point in the tree, in Upgrades, Skills tab."
+      },
+      "first_sprint": {
+        "name": "Release",
+        "desc": "Finish a sprint: what dev has integrated goes out on main."
+      },
+      "first_hire": {
+        "name": "Recruiter",
+        "desc": "Hire a developer (Upgrades, Hiring tab): they take backlog tickets on their own."
+      },
+      "first_tier": {
+        "name": "Order of magnitude",
+        "desc": "Reach tier 1: every feature shipped afterwards pays five times as much."
+      },
+      "first_site": {
+        "name": "Open for business",
+        "desc": "Open a site: more seats and a team already hired."
+      },
+      "tier_3": {
+        "name": "Unicorn",
+        "desc": "Reach tier 3."
+      },
+      "tier_6": {
+        "name": "Instance",
+        "desc": "Reach the last tier."
+      },
+      "team_10": {
+        "name": "Open space",
+        "desc": "Have ten developers at once."
+      },
+      "team_30": {
+        "name": "Anthill",
+        "desc": "Have thirty developers at once."
+      },
+      "all_sites": {
+        "name": "Property empire",
+        "desc": "Own all five sites in one run."
+      },
+      "death_star": {
+        "name": "That's no moon",
+        "desc": "Buy a Death Star."
+      },
+      "all_acquisitions": {
+        "name": "Monopoly",
+        "desc": "Buy all four companies for sale in one run."
+      },
+      "market_half": {
+        "name": "Dominant position",
+        "desc": "Hold half the market."
+      },
+      "first_million": {
+        "name": "First million",
+        "desc": "Earn a million euros in one run."
+      },
+      "first_billion": {
+        "name": "First billion",
+        "desc": "Earn a billion euros in one run."
+      },
+      "sprints_50": {
+        "name": "Marathon",
+        "desc": "Reach the fiftieth sprint of one run."
+      },
+      "account_level_10": {
+        "name": "Seniority",
+        "desc": "Reach account level 10."
+      },
+      "account_tickets_1000": {
+        "name": "A thousand tickets",
+        "desc": "Ship a thousand tickets across all runs."
+      },
+      "works_on_my_machine": {
+        "name": "Works on my machine",
+        "desc": "Let a bug slip into production."
+      },
+      "liquid_cooling": {
+        "name": "Liquid cooling",
+        "desc": "Buy the coffee machine."
+      },
+      "hack_won": {
+        "name": "Nobody saw a thing",
+        "desc": "Pull off a hack."
+      },
+      "caught": {
+        "name": "Caught red-handed",
+        "desc": "Get caught mid-hack."
+      },
+      "overheated": {
+        "name": "Overheated",
+        "desc": "End a run out of energy."
+      },
+      "retired": {
+        "name": "Retired",
+        "desc": "Run production's patience out."
+      },
+      "branch_wars": {
+        "name": "Branch wars",
+        "desc": "Resolve a merge conflict."
+      },
+      "tough_month": {
+        "name": "Tough month",
+        "desc": "Lose a developer mid-run."
+      },
+      "ultimate_question": {
+        "name": "The ultimate question",
+        "desc": "Ship 42 tickets in one run."
+      },
+      "no_longer_required": {
+        "name": "No longer required",
+        "desc": "Buy the last level of the AI supervisor."
+      },
+      "house_of_cards": {
+        "name": "House of cards",
+        "desc": "Let the technical debt blow up."
+      },
+      "changes_requested": {
+        "name": "Changes requested",
+        "desc": "Get a pull request refused."
+      },
+      "hostile_takeover": {
+        "name": "Hostile takeover",
+        "desc": "Buy a company that takes a competitor off the market."
+      }
+    }
   }
 }

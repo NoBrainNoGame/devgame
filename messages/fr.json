@@ -2222,5 +2222,186 @@
     "restore": "Rouvrir",
     "minimizeAll": "Tout réduire",
     "closeAll": "Tout fermer"
+  },
+  "achievements": {
+    "title": "Succès",
+    "button": "Succès",
+    "count": "{count}/{total}",
+    "description": "Ce que vous avez accompli, d'une run à l'autre. La route guide les débuts ; les secrets se révèlent en jouant.",
+    "groups": {
+      "route": "La route",
+      "prestige": "Prestige",
+      "secret": "Secrets"
+    },
+    "unlocked": "Succès débloqué",
+    "secretName": "Succès secret",
+    "secretHint": "Il se révèle une fois obtenu.",
+    "earnedOn": "Obtenu le {date}",
+    "next": "Prochaine étape",
+    "routeProgress": "Route {done}/{total}",
+    "routeDone": "Route terminée : les autres succès vous attendent.",
+    "dismiss": "Fermer",
+    "items": {
+      "first_ticket": {
+        "name": "Prise de poste",
+        "desc": "Ouvrez un ticket depuis le Projet : c'est le travail que vous allez coder."
+      },
+      "first_commit": {
+        "name": "Hello, world",
+        "desc": "Écrivez un commit sur le ticket en main. Chaque commit remplit des points de story."
+      },
+      "first_ai_commit": {
+        "name": "Délégation",
+        "desc": "Faites écrire un commit par la machine : moins d'énergie, plus de risque, et du code à relire."
+      },
+      "first_review": {
+        "name": "Relecture",
+        "desc": "Faites une review du code de la machine avant qu'il ne s'entasse : c'est là qu'elle trouve les bugs."
+      },
+      "first_pr": {
+        "name": "Pull request",
+        "desc": "Ticket plein : ouvrez la PR pour le faire relire et merger."
+      },
+      "first_delivery": {
+        "name": "En production",
+        "desc": "Livrez votre première feature : elle rapporte désormais chaque mois."
+      },
+      "first_payday": {
+        "name": "Premier virement",
+        "desc": "Encaissez une paie : tous les tiers de sprint, les features livrées rapportent."
+      },
+      "first_purchase": {
+        "name": "Premier achat",
+        "desc": "Achetez quelque chose dans Améliorations, onglet Achats : des serveurs, avant que la prod sature."
+      },
+      "first_fix": {
+        "name": "Chasseur de bugs",
+        "desc": "Corrigez un bug : un commit que la review a marqué, un hotfix ou un bug client."
+      },
+      "first_skill": {
+        "name": "Montée en compétence",
+        "desc": "Placez un point dans l'arbre, dans Améliorations, onglet Compétences."
+      },
+      "first_sprint": {
+        "name": "Release",
+        "desc": "Terminez un sprint : ce que dev a intégré part sur main."
+      },
+      "first_hire": {
+        "name": "Recrutement",
+        "desc": "Embauchez un développeur (Améliorations, onglet Recrutement) : il prend seul les tickets du backlog."
+      },
+      "first_tier": {
+        "name": "Ordre de grandeur",
+        "desc": "Atteignez le palier 1 : chaque feature livrée ensuite rapporte cinq fois plus."
+      },
+      "first_site": {
+        "name": "Pignon sur rue",
+        "desc": "Ouvrez un site : des postes en plus et une équipe déjà embauchée."
+      },
+      "tier_3": {
+        "name": "Licorne",
+        "desc": "Atteignez le palier 3."
+      },
+      "tier_6": {
+        "name": "Instance",
+        "desc": "Atteignez le dernier palier."
+      },
+      "team_10": {
+        "name": "Open space",
+        "desc": "Ayez dix développeurs en même temps."
+      },
+      "team_30": {
+        "name": "Fourmilière",
+        "desc": "Ayez trente développeurs en même temps."
+      },
+      "all_sites": {
+        "name": "Empire immobilier",
+        "desc": "Possédez les cinq sites dans une même run."
+      },
+      "death_star": {
+        "name": "Ce n'est pas une lune",
+        "desc": "Achetez une Étoile de la mort."
+      },
+      "all_acquisitions": {
+        "name": "Monopole",
+        "desc": "Rachetez les quatre entreprises en vente dans une même run."
+      },
+      "market_half": {
+        "name": "Position dominante",
+        "desc": "Tenez la moitié du marché."
+      },
+      "first_million": {
+        "name": "Premier million",
+        "desc": "Gagnez un million d'euros dans une même run."
+      },
+      "first_billion": {
+        "name": "Premier milliard",
+        "desc": "Gagnez un milliard d'euros dans une même run."
+      },
+      "sprints_50": {
+        "name": "Marathon",
+        "desc": "Atteignez le cinquantième sprint d'une même run."
+      },
+      "account_level_10": {
+        "name": "Ancienneté",
+        "desc": "Atteignez le niveau 10 du compte."
+      },
+      "account_tickets_1000": {
+        "name": "Mille tickets",
+        "desc": "Livrez mille tickets, toutes runs confondues."
+      },
+      "works_on_my_machine": {
+        "name": "Ça marche sur ma machine",
+        "desc": "Laissez partir un bug en production."
+      },
+      "liquid_cooling": {
+        "name": "Refroidissement liquide",
+        "desc": "Achetez la machine à café."
+      },
+      "hack_won": {
+        "name": "Ni vu ni connu",
+        "desc": "Réussissez un hack."
+      },
+      "caught": {
+        "name": "La main dans le sac",
+        "desc": "Faites-vous prendre en plein hack."
+      },
+      "overheated": {
+        "name": "Surchauffe",
+        "desc": "Finissez une run à court d'énergie."
+      },
+      "retired": {
+        "name": "Retrait",
+        "desc": "Épuisez la patience de la production."
+      },
+      "branch_wars": {
+        "name": "La guerre des branches",
+        "desc": "Résolvez un conflit de merge."
+      },
+      "tough_month": {
+        "name": "Fin de mois difficile",
+        "desc": "Perdez un développeur en cours de run."
+      },
+      "ultimate_question": {
+        "name": "La grande question",
+        "desc": "Livrez 42 tickets dans une même run."
+      },
+      "no_longer_required": {
+        "name": "Plus besoin de vous",
+        "desc": "Achetez le dernier niveau du superviseur IA."
+      },
+      "house_of_cards": {
+        "name": "Château de cartes",
+        "desc": "Faites exploser la dette technique."
+      },
+      "changes_requested": {
+        "name": "Changements demandés",
+        "desc": "Faites refuser une pull request."
+      },
+      "hostile_takeover": {
+        "name": "OPA hostile",
+        "desc": "Rachetez une entreprise qui retire un concurrent du marché."
+      }
+    }
   }
 }

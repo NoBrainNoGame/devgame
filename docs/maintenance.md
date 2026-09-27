@@ -215,6 +215,25 @@ drift (`rules/market.ts`) draws once per competitor, standing or not, and once
 for the merger, so the count ignores the board (a new competitor adds one);
 `market.test.ts` replays a run.
 
+### An achievement
+
+1. `ACHIEVEMENT_IDS` + `ACHIEVEMENTS` (`content/achievements.ts`): its
+   `group` — `route` (the tutorial: its place in the ids is its place on the
+   road), `prestige` or `secret` (hidden until earned).
+2. Its check in `CHECKS` (`core/achievements.ts`, exhaustive): `run` reads
+   the state an action left, its events and the action; `account` reads the
+   profile's totals. Read-only: never write to the state, never draw.
+3. `achievements.items.<id>.{name,desc}` in both catalogues (tested); a
+   route step's `desc` says what to do and where the button is.
+4. An icon in `ACHIEVEMENT_ICONS` (`components/achievements/icons.ts`).
+
+No DTO change: the profile keeps `achievements` as `{ id, at }` in the
+`unlocks` JSON column, and drops an id it does not know rather than the
+profile. Removing an id is therefore safe; renaming one takes the trophy
+away from whoever had it. Nothing is hashed into `RULES_FINGERPRINT`.
+
+Check: `bun test tests/achievements.test.ts tests/messages.test.ts`.
+
 ### The pull request review
 
 `performSubmit` (`rules/acceptance.ts`) judges a full ticket by
