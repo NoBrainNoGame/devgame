@@ -50,15 +50,10 @@ describe("the push ledger", () => {
     let seen = 0;
     for (const run of runs) {
       for (const step of run.steps) {
-        const broke = new Set(
-          step.events.flatMap((e) =>
-            e.type === "incident" && e.source === "commit" ? [e.nodeId] : [],
-          ),
-        );
         for (const event of step.events) {
-          if (event.type !== "node_done") continue;
+          if (event.type !== "node_done" || event.broken === true) continue;
           const node = step.state.nodes[event.nodeId];
-          if (node === undefined || !isBornLocal(node) || broke.has(node.id)) continue;
+          if (node === undefined || !isBornLocal(node)) continue;
           seen += 1;
           expect(step.ops.some((op) => op.kind === "commit" && op.into === node.id)).toBe(true);
         }

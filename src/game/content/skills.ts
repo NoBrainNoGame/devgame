@@ -45,7 +45,7 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   unit_tests: {
     id: "unit_tests",
-    effects: { aiSuccessPoints: 12, counterPrRejection: true },
+    effects: { aiSuccessPoints: 12 },
     unlockCost: 0,
   },
   ci_cd: {
@@ -63,7 +63,8 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   },
   pair_programming: {
     id: "pair_programming",
-    effects: { reviewEnergyDiscount: 1, rerollFailedRoll: true },
+    // Two pairs of eyes: cheaper reviews, and every roll a little safer.
+    effects: { reviewEnergyDiscount: 1, allSuccessPoints: 4 },
     unlockCost: 0,
   },
   copilot_v2: {

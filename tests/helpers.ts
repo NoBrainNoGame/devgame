@@ -104,6 +104,8 @@ export function makeReady(state: RunState): RunState {
   const ticket = ticketInHand(next);
   if (ticket.nodeIds.length === 0) plantCommit(next, "craft");
   ticket.filled = ticket.points;
+  // A roll that missed along the way left a broken commit: redone here.
+  for (const id of ticket.nodeIds) delete next.nodes[id]?.commit.bugged;
   next.debt = Math.min(next.debt, BALANCE.acceptance.maxDebt);
   return next;
 }
@@ -290,9 +292,15 @@ export function policy(
   mode: CommitMode,
 ): (state: RunState, actions: PlayerAction[]) => PlayerAction | undefined {
   const other: CommitMode = mode === "ai" ? "craft" : "ai";
+  // A roll that missed left a broken commit: nothing lands until it is
+  // fixed, so the fix comes before the next plain commit.
+  const fixWith = (hand: CommitMode) => (action: PlayerAction) =>
+    action.type === "commit" && action.mode === hand && action.kind === "fix";
   return prefer(
     isType("merge"),
     isType("submit"),
+    fixWith(mode),
+    fixWith(other),
     isCommit(mode),
     isCommit(other),
     isType("start"),

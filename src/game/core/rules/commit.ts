@@ -1,12 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { spendEnergy } from "@/game/core/rules/energy";
-import {
-  drawAmbient,
-  recordIncident,
-  resolveConflict,
-  resolveFailure,
-} from "@/game/core/rules/events";
+import { drawAmbient, resolveConflict } from "@/game/core/rules/events";
 import { commitChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
 import { currentTicket, getTicket } from "@/game/core/rules/tickets";
 import { completeMerge, writeCommit } from "@/game/core/rules/write";
@@ -40,16 +35,7 @@ export function performCommit(context: RuleContext, mode: CommitMode, kind?: Det
   // A showcase's commits always land: the run is looked at, not played.
   const measured = commitChance(state, mode, nodeKind, context.effects);
   const chance = state.showcase !== null ? { ...measured, value: 100 } : measured;
-  let outcome = context.rng.roll(chance.value);
-  let rerolled = false;
-
-  // Pair programming: a second pair of eyes catches it before it lands. Once
-  // per sprint, and only on a failure — it is a safety net, not a bonus.
-  if (!outcome.success && context.effects.rerollFailedRoll && !state.player.rerollUsed) {
-    state.player.rerollUsed = true;
-    rerolled = true;
-    outcome = context.rng.roll(chance.value);
-  }
+  const outcome = context.rng.roll(chance.value);
 
   emit(context, {
     type: "roll",
@@ -57,50 +43,31 @@ export function performCommit(context: RuleContext, mode: CommitMode, kind?: Det
     chancePct: chance.value,
     rolled: outcome.rolled,
     success: outcome.success,
-    rerolled,
   });
 
-  if (outcome.success) {
-    succeed(context, ticket, nodeKind, mode);
-    return;
-  }
-
-  const failure = resolveFailure(context);
-
-  switch (failure.kind) {
-    case "resolve":
-      succeed(context, ticket, nodeKind, mode);
-      return;
-
-    case "resolve_then_incident": {
-      const node = succeed(context, ticket, nodeKind, mode);
-      recordIncident(context, "commit", node.id);
-      return;
-    }
-
-    case "retry":
-      // Nothing was written, and the turn is spent.
-      state.phase = { kind: "choose_action" };
-      return;
-  }
+  // The commit is written either way: a roll that misses leaves a broken
+  // commit on the branch — bugged, worth nothing, local until a fix redoes
+  // it — not a turn that vanished.
+  writeAndSettle(context, ticket, nodeKind, mode, { broken: !outcome.success });
 }
 
-function succeed(
+function writeAndSettle(
   context: RuleContext,
   ticket: Ticket,
   kind: NodeKind,
   mode: CommitMode,
-  hiddenBug = false,
+  options: { hiddenBug?: boolean; broken?: boolean },
 ): MapNode {
   const { state } = context;
-  const node = writeCommit(context, ticket, kind, mode, { hiddenBug });
+  const node = writeCommit(context, ticket, kind, mode, options);
 
-  // Writing it by hand leaves you knowing where the bodies are.
-  if (mode === "craft" && context.rng.chance(BALANCE.commit.craftFreeRefactorPct)) {
-    state.player.freeRefactor = true;
+  if (options.broken !== true) {
+    // Writing it by hand leaves you knowing where the bodies are.
+    if (mode === "craft" && context.rng.chance(BALANCE.commit.craftFreeRefactorPct)) {
+      state.player.freeRefactor = true;
+    }
+    if (context.rng.chance(BALANCE.commit.ambientOnSuccessPct)) drawAmbient(context);
   }
-
-  if (context.rng.chance(BALANCE.commit.ambientOnSuccessPct)) drawAmbient(context);
 
   state.phase = { kind: "choose_action" };
   return node;

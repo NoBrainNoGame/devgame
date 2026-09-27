@@ -79,7 +79,10 @@ export function performSubmit(context: RuleContext): void {
   }
   ticket.rejections += 1;
   state.stats.rejections += 1;
-  raiseQuality(context, BALANCE.quality.perRejection, "rejection");
+  // A blameless culture takes the refusal without a mark against you.
+  if (!context.effects.blamelessRejection) {
+    raiseQuality(context, BALANCE.quality.perRejection, "rejection");
+  }
   // The refusal that fills the gauge is the sack, not a rejection to answer.
   if (state.phase.kind === "game_over") return;
   ticket.rework += rework;

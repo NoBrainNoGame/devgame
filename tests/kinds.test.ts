@@ -164,9 +164,11 @@ describe("ticket kinds", () => {
     ticket.status = "open";
     state.player.ticketId = ticket.id;
     const debt = state.debt;
-    const { state: after } = applyAction(state, { type: "commit", mode: "craft" });
+    const { state: after, events } = applyAction(state, { type: "commit", mode: "craft" });
     const written = after.tickets[ticket.id];
-    if (written?.nodeIds.length === 1) {
+    // A roll that missed wrote a broken commit, which owes nothing.
+    const rolled = eventsOfType(events, "node_done")[0]?.broken !== true;
+    if (written?.nodeIds.length === 1 && rolled) {
       expect(after.debt).toBe(debt + BALANCE.tickets.kinds.migration.debtPerCommit);
     }
 

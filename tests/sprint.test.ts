@@ -74,7 +74,6 @@ describe("sprint boundary", () => {
     if (RELICS[relicId].kind === "keep") expect(after.relics).toContain(relicId);
     else expect(after.relics).not.toContain(relicId);
     expect(eventsOfType(result.events, "relic_chosen")[0]?.relicId).toBe(relicId);
-    expect(after.player.rerollUsed).toBe(false);
     // The board's count, plus the codebase's own request when the debt earned one.
     const arrived = eventsOfType(result.events, "ticket_arrived").filter(
       (e) => after.tickets[e.ticketId]?.kind !== "debt",

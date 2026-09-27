@@ -219,8 +219,8 @@ function playOne(
         turns += 1;
         wipSum += Math.max(0, playerTickets(state).length - 1);
       }
-      if (event.type === "failure_event") {
-        failures[event.eventId] = (failures[event.eventId] ?? 0) + 1;
+      if (event.type === "node_done" && event.broken === true) {
+        failures[`broken_${event.mode}`] = (failures[`broken_${event.mode}`] ?? 0) + 1;
       }
       if (event.type === "reviewed") reviews += 1;
       if (event.type === "rested") rests += 1;

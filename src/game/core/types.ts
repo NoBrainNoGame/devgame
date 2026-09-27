@@ -4,7 +4,6 @@ import type {
   CompetitorId,
   DevRank,
   EventId,
-  FailureEventId,
   MergeEventId,
   NarrativeEventId,
   NarrativeFlag,
@@ -177,8 +176,6 @@ export interface Player {
   zeroEnergyStreak: number;
   /** Consecutive AI commits, for the review chain bonus. */
   aiChain: number;
-  /** Pair programming rerolls once per sprint. */
-  rerollUsed: boolean;
   /** Turns since the automatic review last ran. */
   turnsSinceFreeReview: number;
   /** A craft success sometimes makes the next refactor free. */
@@ -528,7 +525,7 @@ export interface DevValues {
 
 export type PlayerActionType = PlayerAction["type"];
 
-export type IncidentSource = "commit" | "release" | "acquisition" | "hack";
+export type IncidentSource = "release" | "acquisition" | "hack";
 
 /** Where a developer came from, when not hired one by one. */
 export type DevSource = { site: UpgradeId } | { acquisition: AcquisitionId } | { relic: RelicId };
@@ -555,9 +552,9 @@ export type GameEvent =
       chancePct: number;
       rolled: number;
       success: boolean;
-      rerolled: boolean;
     }
-  | { type: "node_done"; nodeId: NodeId; mode: CommitMode; kind: NodeKind }
+  /** `broken`: the roll missed, so the commit is on the branch but bugged, fills nothing, and stays local. */
+  | { type: "node_done"; nodeId: NodeId; mode: CommitMode; kind: NodeKind; broken?: true }
   /** Story points filled on a ticket. */
   | { type: "points"; ticketId: TicketId; delta: number; value: number; max: number }
   | { type: "energy"; delta: number; value: number; reason: string }
@@ -607,9 +604,7 @@ export type GameEvent =
   | { type: "skill_gained"; skillId: SkillId }
   | { type: "conflict"; ticketId: TicketId }
   | { type: "conflict_resolved"; how: "manual" | "ai"; hiddenBug: boolean }
-  | { type: "pr_rejected"; countered: boolean }
   | { type: "debt_explosion"; ticketId: TicketId }
-  | { type: "failure_event"; eventId: FailureEventId }
   /** Something happened as the ticket landed. A conflict follows as its own event. */
   | { type: "merge_event"; eventId: MergeEventId }
   | { type: "monitoring_warning" }
@@ -712,4 +707,4 @@ export class InvalidActionError extends Error {
   }
 }
 
-export type { AmbientEventId, EventId, FailureEventId, I18nText, MergeEventId, RngState };
+export type { AmbientEventId, EventId, I18nText, MergeEventId, RngState };

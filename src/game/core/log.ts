@@ -25,11 +25,14 @@ export function toLogLine(
       return {
         seq,
         turn,
-        kind: event.mode === "ai" ? "chore" : "feat",
-        text: text(`log.node_done.${event.mode}`, {
-          node: ref(`nodes.${event.kind}.name`),
-          subject: ref(nodes[event.nodeId]?.subjectKey ?? `nodes.${event.kind}.name`),
-        }),
+        kind: event.broken === true ? "revert" : event.mode === "ai" ? "chore" : "feat",
+        text: text(
+          event.broken === true ? `log.commit_broken.${event.mode}` : `log.node_done.${event.mode}`,
+          {
+            node: ref(`nodes.${event.kind}.name`),
+            subject: ref(nodes[event.nodeId]?.subjectKey ?? `nodes.${event.kind}.name`),
+          },
+        ),
       };
 
     case "ticket_arrived":
@@ -135,9 +138,6 @@ export function toLogLine(
     case "conflict_resolved":
       return { seq, turn, kind: "fix", text: text(`log.conflict_resolved.${event.how}`) };
 
-    case "failure_event":
-      return { seq, turn, kind: "fix", text: text(`events.${event.eventId}.log`) };
-
     case "merge_event":
       return { seq, turn, kind: "fix", text: text(`events.${event.eventId}.log`) };
 
@@ -149,14 +149,6 @@ export function toLogLine(
 
     case "incident":
       return { seq, turn, kind: "revert", text: text(`log.incident.${event.source}`) };
-
-    case "pr_rejected":
-      return {
-        seq,
-        turn,
-        kind: event.countered ? "chore" : "revert",
-        text: text(event.countered ? "log.pr_countered" : "log.pr_rejected"),
-      };
 
     case "reviewed":
       return {

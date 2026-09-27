@@ -258,14 +258,15 @@ Check: `bun test tests/acceptance.test.ts`; sim `tickets delivered` vs
 
 ### An event
 
-Tables in `content/events.ts`, drawn by `rng.weighted` in `rules/events.ts`:
+Tables in `content/events.ts`, drawn by `rng.weighted` in `rules/events.ts`
+(a commit roll that misses draws nothing: it writes a broken commit,
+`writeCommit` with `broken`):
 **any addition moves the epoch**. Messages `game.events.<id>.title`/`.log`
 (**not** `name`/`desc`). `cancelledByDependabot` drops an entry once the
 `dependabot` node (`cancelObsoleteLib`) is placed.
 
 | Ids / table | Drawn | Fields | Wiring |
 |---|---|---|---|
-| `FAILURE_EVENT_IDS`/`FAILURE_EVENTS` | commit roll missed | `weight`, `requiresUnreviewedAi`, `forbiddenOnHotfix` | A `case` in `resolveFailure` (exhaustive: the one addition the compiler catches) returning a `FailureOutcome`: `resolve` (written anyway), `retry` (turn lost, nothing written), `resolve_then_incident` (written, incident, hotfix ticket) |
 | `MERGE_EVENT_IDS`/`MERGE_EVENTS` | ticket lands, `mergeEventChance` hits | `weight`, `outcome` (`conflict`: choice; `resolve`: lands), `effect`, `noRegen`, `cancelledByDependabot` | None: `drawMergeEvent` applies `effect.energy`/`.debt`; `performMerge` (`rules/acceptance.ts`) reads `outcome`, `noRegen`. New consequence: rule change there |
 | `AMBIENT_EVENT_IDS`/`AMBIENT_EVENTS` | sometimes after a landed commit (`succeed`, `rules/commit.ts`) | `weight`, `effect`, `cancelledByDependabot` | None: `drawAmbient` applies `effect.energy`/`.debt`; a third effect is a rule change there |
 
@@ -349,7 +350,9 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   (`bridge/pushes.ts`) decides which of the player's commits are drawn local,
   pushed or squashed, from events alone (the engine has no remote). A new way
   to open a pull request, land a branch or drop commits needs its case there,
-  or commits stay drawn local forever. Presentation only: no epoch. Check:
+  or commits stay drawn local forever. A broken commit (`node_done.broken`)
+  stays local until the next commit on its branch lands. Presentation only:
+  no epoch. Check:
   `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
   (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the

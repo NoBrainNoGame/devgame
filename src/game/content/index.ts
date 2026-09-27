@@ -29,16 +29,12 @@ export type {
   AmbientEventDef,
   AmbientEventId,
   EventId,
-  FailureEventDef,
-  FailureEventId,
   MergeEventDef,
   MergeEventId,
 } from "@/game/content/events";
 export {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
-  FAILURE_EVENT_IDS,
-  FAILURE_EVENTS,
   MERGE_EVENT_IDS,
   MERGE_EVENTS,
 } from "@/game/content/events";

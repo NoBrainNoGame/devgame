@@ -47,13 +47,12 @@ export const PROFILES: Record<ProfileId, ProfileDef> = {
   senior: {
     id: "senior",
     // The craft bonus is mostly capped away; what sets the Senior apart is
-    // that a bad roll or a rejected PR does not cost the ground it would.
+    // that a refused pull request costs no standing.
     effects: {
       craftSuccessPoints: 10,
       conflictResistancePoints: 6,
       aiSuccessPoints: -4,
-      rerollFailedRoll: true,
-      counterPrRejection: true,
+      blamelessRejection: true,
     },
     startingSkills: [],
     startingTree: {},

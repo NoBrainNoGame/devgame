@@ -182,9 +182,7 @@ describe("production", () => {
 
   test("hotfix commits are exempt from the release roll", () => {
     const found = findSeed(
-      (r) =>
-        r.state.phase.kind !== "game_over" &&
-        r.events.some((e) => e.type === "incident" && e.source === "commit"),
+      (r) => r.state.phase.kind !== "game_over" && r.events.some((e) => e.type === "incident"),
       {
         prefix: "hotfix-exempt",
         pick: policy("ai"),

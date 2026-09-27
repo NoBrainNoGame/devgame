@@ -1,10 +1,5 @@
 /**
- * Three tables.
- *
- * Failures are drawn when a commit roll misses. Each one has a bespoke
- * consequence, so the table only carries the odds and the eligibility, and
- * `rules/events.ts` switches on the id — exhaustively, so adding an entry here
- * is a type error until the rule exists.
+ * Two tables.
  *
  * Merge events are what happens when a ticket lands and something happens.
  * `performMerge` rolls once for whether anything does, then draws from this
@@ -14,42 +9,6 @@
  * Ambient events are the small weather of a working week, drawn now and then
  * after a successful commit. Their whole effect fits in the table.
  */
-
-export const FAILURE_EVENT_IDS = ["prod_bug", "pr_rejected", "broken_build"] as const;
-
-export type FailureEventId = (typeof FAILURE_EVENT_IDS)[number];
-
-export interface FailureEventDef {
-  id: FailureEventId;
-  weight: number;
-  /** Needs at least one unreviewed AI commit on the ticket being written. */
-  requiresUnreviewedAi: boolean;
-  /** Cannot fire while the player is writing a hotfix. */
-  forbiddenOnHotfix: boolean;
-}
-
-export const FAILURE_EVENTS: Record<FailureEventId, FailureEventDef> = {
-  prod_bug: {
-    id: "prod_bug",
-    weight: 20,
-    // Something has to have shipped unread for production to break.
-    requiresUnreviewedAi: true,
-    // Stacking a hotfix on a hotfix is a spiral, not a game.
-    forbiddenOnHotfix: true,
-  },
-  pr_rejected: {
-    id: "pr_rejected",
-    weight: 20,
-    requiresUnreviewedAi: false,
-    forbiddenOnHotfix: false,
-  },
-  broken_build: {
-    id: "broken_build",
-    weight: 20,
-    requiresUnreviewedAi: false,
-    forbiddenOnHotfix: false,
-  },
-};
 
 export const MERGE_EVENT_IDS = [
   "merge_conflict",
@@ -160,4 +119,4 @@ export const AMBIENT_EVENTS: Record<AmbientEventId, AmbientEventDef> = {
   },
 };
 
-export type EventId = FailureEventId | MergeEventId | AmbientEventId;
+export type EventId = MergeEventId | AmbientEventId;

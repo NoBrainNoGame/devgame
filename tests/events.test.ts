@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { openTickets } from "@/game/core/rules/tickets";
+import { buggedOn, offersOf, openTickets } from "@/game/core/rules/tickets";
 
 import {
   eventsOfType,
@@ -22,34 +22,63 @@ import {
   ticketInHand,
 } from "./helpers";
 
-describe("failures", () => {
-  test("a production bug opens a hotfix ticket and fills the gauge", () => {
-    const { state, events } = findSeed(
-      (r) => r.events.some((e) => e.type === "incident" && e.source === "commit"),
-      { prefix: "hotfix", pick: policy("ai"), limit: 200 },
-    );
+describe("a roll that misses", () => {
+  /** The first seed whose first machine commit misses, and what that one action did. */
+  function firstMiss(prefix: string) {
+    for (let i = 0; i < 60; i += 1) {
+      const state = inHand(`${prefix}-${i}`);
+      const result = applyAction(state, { type: "commit", mode: "ai" });
+      const done = eventsOfType(result.events, "node_done")[0];
+      if (done?.broken === true) return { before: state, ...result, done };
+    }
+    throw new Error("no roll missed in 60 seeds");
+  }
 
-    const incident = eventsOfType(events, "incident").find((e) => e.source === "commit");
-    expect(incident).toBeDefined();
-    if (incident === undefined) return;
+  test("writes a broken commit: bugged, worth nothing, only the commit's energy spent", () => {
+    const { before, state, events, done } = firstMiss("broken");
 
-    const hotfix = state.tickets[incident.ticketId];
-    expect(hotfix?.kind).toBe("hotfix");
-    expect(hotfix?.mustWrite).toBe("hotfix");
-    expect(hotfix?.points).toBe(BALANCE.failure.hotfixPoints);
-    expect(state.quality).toBeGreaterThan(0);
+    const node = state.nodes[done.nodeId];
+    expect(node?.commit.bugged).toBe(true);
+    expect(node?.commit.debt).toBeUndefined();
+    // Nothing filled, nothing owed.
+    expect(eventsOfType(events, "points")).toEqual([]);
+    expect(state.debt).toBe(before.debt);
+    // The commit's own price, and not a cent more; the turn is spent.
+    const spent = eventsOfType(events, "energy").filter((e) => e.delta < 0);
+    expect(spent.map((e) => e.reason)).toEqual(["commit"]);
+    expect(state.turn).toBe(before.turn + 1);
+    // It is on the ticket, in the history, and a fix is the way forward.
+    const ticket = ticketInHand(state);
+    expect(ticket.nodeIds).toContain(done.nodeId);
+    expect(state.player.totalCommits).toBe(before.player.totalCommits + 1);
+    expect(offersOf(state, ticket)).toContain("fix");
+    expect(buggedOn(state, ticket)).toEqual([done.nodeId]);
+  });
+
+  test("a fix redoes the broken commit", () => {
+    const { state, done } = firstMiss("broken-fix");
+    for (let i = 0; i < 20; i += 1) {
+      const result = applyAction(state, { type: "commit", mode: "craft", kind: "fix" });
+      const fixed = eventsOfType(result.events, "bug_fixed")[0];
+      if (fixed === undefined) continue;
+      expect(fixed.nodeId).toBe(done.nodeId);
+      expect(result.state.nodes[done.nodeId]?.commit.bugged).toBeUndefined();
+      return;
+    }
+    throw new Error("no fix landed in 20 tries");
+  });
+
+  test("monitoring shortens the hotfix", () => {
+    expect(BALANCE.failure.hotfixPointsWithMonitoring).toBeLessThan(BALANCE.failure.hotfixPoints);
   });
 
   test("a hotfix ticket only takes fix commits, and they land in its own column", () => {
-    const found = findSeed(
-      (r) => r.events.some((e) => e.type === "incident" && e.source === "commit"),
-      {
-        prefix: "hotfix-commits",
-        pick: policy("ai"),
-        limit: 200,
-        stop: (_, latest) => latest.some((e) => e.type === "incident"),
-      },
-    );
+    const found = findSeed((r) => r.events.some((e) => e.type === "incident"), {
+      prefix: "hotfix-commits",
+      pick: policy("ai"),
+      limit: 300,
+      stop: (_, latest) => latest.some((e) => e.type === "incident"),
+    });
     const state = settle(found.state);
 
     const hotfix = openTickets(state).find((ticket) => ticket.kind === "hotfix");
@@ -69,49 +98,6 @@ describe("failures", () => {
       expect(done.kind).toBe("hotfix");
       expect(node.lane).toBeGreaterThanOrEqual(2);
     }
-  });
-
-  test("monitoring shortens the hotfix", () => {
-    expect(BALANCE.failure.hotfixPointsWithMonitoring).toBeLessThan(BALANCE.failure.hotfixPoints);
-  });
-
-  test("a production bug needs unreviewed machine-written code", () => {
-    const craftOnly = play(newRun("no-prod-bug"), { pick: policy("craft"), limit: 200 });
-    const prodBugs = eventsOfType(craftOnly.events, "failure_event").filter(
-      (e) => e.eventId === "prod_bug",
-    );
-    expect(prodBugs).toEqual([]);
-  });
-
-  test("Tests counters a rejected pull request instead of costing points", () => {
-    const armed = inHand("pr");
-    armed.skills = ["unit_tests"];
-
-    const run = play(armed, { pick: policy("ai"), limit: 300 });
-    for (const event of eventsOfType(run.events, "pr_rejected")) {
-      expect(event.countered).toBe(true);
-    }
-  });
-
-  test("a rejected pull request takes points back off the ticket", () => {
-    const { events } = findSeed(
-      (r) => r.events.some((e) => e.type === "pr_rejected" && !e.countered),
-      { prefix: "pr-points", pick: policy("ai"), limit: 300 },
-    );
-
-    const taken = eventsOfType(events, "points").filter((e) => e.delta < 0);
-    // A ticket with nothing filled yet has nothing to lose, which is the one
-    // case the event fires without a points delta.
-    for (const event of taken) expect(event.delta).toBe(-BALANCE.failure.prRejectedPoints);
-  });
-
-  test("a broken build costs energy and writes nothing", () => {
-    const { events } = findSeed(
-      (r) => r.events.some((e) => e.type === "failure_event" && e.eventId === "broken_build"),
-      { prefix: "broken", pick: policy("ai"), limit: 300 },
-    );
-    const spent = eventsOfType(events, "energy").filter((e) => e.reason === "broken_build");
-    expect(spent[0]?.delta).toBe(-BALANCE.failure.brokenBuildEnergy);
   });
 
   test("resolving a conflict by hand costs energy, by machine costs debt", () => {

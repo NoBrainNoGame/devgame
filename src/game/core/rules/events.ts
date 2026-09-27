@@ -2,9 +2,6 @@ import {
   AMBIENT_EVENT_IDS,
   AMBIENT_EVENTS,
   type AmbientEventId,
-  FAILURE_EVENT_IDS,
-  FAILURE_EVENTS,
-  type FailureEventId,
   MERGE_EVENT_IDS,
   MERGE_EVENTS,
   type MergeEventDef,
@@ -16,83 +13,8 @@ import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { conflictChance } from "@/game/core/rules/modifiers";
 import { maybeNarrative } from "@/game/core/rules/narrative";
 import { raiseQuality } from "@/game/core/rules/quality";
-import { hasUnreviewedAi } from "@/game/core/rules/review";
-import { currentTicket, forceTicket, isOnHotfix } from "@/game/core/rules/tickets";
-import { fillPoints } from "@/game/core/rules/write";
+import { forceTicket } from "@/game/core/rules/tickets";
 import type { IncidentSource, NodeId } from "@/game/core/types";
-
-/**
- * What a missed roll costs you.
- *
- * Only half of the table actually takes the turn away. A merge conflict hands
- * you a second decision instead, and two of the others are exactly the ones a
- * skill can neutralise — so the answer to "my PRs keep getting rejected" is a
- * build, not luck.
- */
-
-export type FailureOutcome =
-  /** Something handled it: write the commit as if the roll had passed. */
-  | { kind: "resolve" }
-  /** The turn is gone; nothing was written. */
-  | { kind: "retry" }
-  /** It shipped, and it broke production. A hotfix ticket is now open. */
-  | { kind: "resolve_then_incident" };
-
-export function resolveFailure(context: RuleContext): FailureOutcome {
-  const eventId = drawFailure(context);
-
-  // Monitoring's first half: the bug is spotted before it ships. It costs the
-  // turn anyway — you still have to go and fix it — and it only works once,
-  // because a permanent immunity to the design's nastiest failure would make
-  // one DevOps point worth more than the rest of the tree.
-  if (eventId === "prod_bug" && context.effects.monitoring && !context.state.monitoringWarning) {
-    context.state.monitoringWarning = true;
-    emit(context, { type: "monitoring_warning" });
-    return { kind: "retry" };
-  }
-
-  emit(context, { type: "failure_event", eventId });
-
-  switch (eventId) {
-    case "prod_bug":
-      return { kind: "resolve_then_incident" };
-
-    case "pr_rejected": {
-      const countered = context.effects.counterPrRejection;
-      emit(context, { type: "pr_rejected", countered });
-      if (countered) return { kind: "resolve" };
-
-      const ticket = currentTicket(context.state);
-      if (ticket !== null) fillPoints(context, ticket, -BALANCE.failure.prRejectedPoints);
-      return { kind: "retry" };
-    }
-
-    case "broken_build":
-      spendEnergy(context, BALANCE.failure.brokenBuildEnergy, "broken_build");
-      return { kind: "retry" };
-  }
-}
-
-/** What a missed roll turns out to be. A conflict never: two histories only meet at a merge. */
-function drawFailure(context: RuleContext): FailureEventId {
-  const { state } = context;
-  const onHotfix = isOnHotfix(state);
-  const unreviewed = hasUnreviewedAi(state);
-
-  const entries: { value: FailureEventId; weight: number }[] = [];
-
-  for (const id of FAILURE_EVENT_IDS) {
-    const def = FAILURE_EVENTS[id];
-    if (def.requiresUnreviewedAi && !unreviewed) continue;
-    if (def.forbiddenOnHotfix && onHotfix) continue;
-
-    entries.push({ value: id, weight: def.weight });
-  }
-
-  // `broken_build` carries no prerequisite, so this is a guard, not a path.
-  if (entries.length === 0) return "broken_build";
-  return context.rng.weighted(entries);
-}
 
 /**
  * What happened as the ticket landed. Drawn once `performMerge` has decided
@@ -138,7 +60,6 @@ export function resolveConflict(
       chancePct: chance.value,
       rolled: outcome.rolled,
       success: outcome.success,
-      rerolled: false,
     });
     emit(context, { type: "conflict_resolved", how, hiddenBug: false });
 

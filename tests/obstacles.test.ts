@@ -96,7 +96,7 @@ describe("an obstacle turning up", () => {
 
     // Write it by hand until it is full, then land it.
     const filled = play(state, {
-      pick: (s, actions) => {
+      pick: (_s, actions) => {
         const merge = actions.find((a) => a.type === "merge");
         if (merge !== undefined) return merge;
         return actions.find(

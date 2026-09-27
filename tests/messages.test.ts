@@ -7,7 +7,6 @@ import {
   allSubjectKeys,
   COMPETITOR_IDS,
   DEV_RANKS,
-  FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
   NARRATIVE_EVENT_IDS,
   NARRATIVE_EVENTS,
@@ -107,7 +106,6 @@ describe("game content is fully named", () => {
     ["acquisitions", ACQUISITION_IDS, "name", "desc"],
     ["objectives", OBJECTIVE_IDS, "name", "desc"],
     ["profiles", PROFILE_IDS, "name", "desc"],
-    ["events", FAILURE_EVENT_IDS, "title", "log"],
     ["events", MERGE_EVENT_IDS, "title", "log"],
     ["events", AMBIENT_EVENT_IDS, "title", "log"],
   ];

@@ -124,11 +124,14 @@ règles l'acceptent encore, pour que toute run enregistrée rejoue telle quelle
 | Énergie | Type de commit + main | **1, quoi qu'elle écrive** |
 | Points | 1 | **3** |
 | Échec | Rare, jamais nul | Nettement plus fréquent |
+| Jet raté | Commit cassé, à corriger | Idem |
 | Effets | Peut offrir le prochain refacto | Dette ; non relu, part en prod |
 
 Les points compensent dette et bugs : relire devient une décision, pas une taxe.
-Chances, coût, points et dette sont **sur la carte**. Un échec tire un
-[événement](#événements).
+Chances, coût, points et dette sont **sur la carte**. **Un jet raté écrit quand
+même le commit** : cassé (bugué), sans point, sans dette, local tant qu'un fix
+ne l'a pas repris ; l'énergie dépensée est celle du commit, rien de plus. Un
+commit cassé bloque la PR et offre le détour Fix.
 
 **Détours** : un commit reste un commit (un tour, graphe en chaîne). Risqué et
 doc toujours proposés, les autres sur une cible du ticket en main (un refacto de
@@ -198,15 +201,6 @@ faire.
   comptent toujours dette et impatience.
 
 ## Événements
-
-**Commit raté** (tirage pondéré par l'état) :
-
-- **Bug en production** : exige de l'IA non relue sur le ticket, jamais sur un
-  hotfix. Le commit atterrit, puis incident (hotfix forcé). Monitoring : le
-  premier bug de la run, puis le premier après chaque incident, n'est qu'un
-  avertissement (tour perdu) ; hotfix plus court.
-- **PR rejetée** : −1 point ; contrée par Tests et le bonus Blameless.
-- **Build cassé** : énergie perdue, rien d'écrit.
 
 **Livrer** tire un jet plafonné (`failure.mergeEvent*`), aggravé par dette et IA
 non relue, puis une table :
@@ -433,7 +427,7 @@ marché ; ailleurs, le marché les marque « Allié » et « Rival ».
 - **Commits accumulés** : débloquent profils et compétences, crédités à la fin
   d'une run comme à son abandon (une run qui ne meurt pas débloquerait sinon
   rien). Junior (d'emblée ; plus d'énergie, IA plus risquée), Senior (300 ;
-  un jet raté rejouable par sprint, une PR refusée qui ne coûte rien), Vibe
+  une PR refusée qui ne coûte aucune patience), Vibe
   Coder (600 ; tout IA, fourchette de santé plus large), DevOps (1000 ; la CI
   et une review gratuite régulière). Les trois payants sont des variantes de
   style, pas une échelle de force : à jeu égal, ils tiennent le début de run
@@ -520,9 +514,9 @@ de la lecture.
    la branche, un coin arrondi.
 7. Vos commits naissent **locaux** (anneau pointillé) et se **poussent** (le
    disque se remplit) une fois leur histoire racontée sur le commit encore
-   inachevé : coût, points, ce qu'ils ont soulevé. Celui qui casse la prod
-   reste local jusqu'au prochain push de sa branche : un commit qui passe,
-   l'ouverture de la PR ou le merge (obstacle compris).
+   inachevé : coût, points, ce qu'ils ont soulevé. Celui dont le jet rate
+   reste local, cassé, jusqu'au prochain push de sa branche : un commit qui
+   passe, l'ouverture de la PR ou le merge (obstacle compris).
    Poussés ensemble, les commits locaux glissent dans le plus récent et n'en
    font plus qu'un (« ×N » à son sujet) ; leurs traits restent, pas leurs
    disques. Les commits des collègues, les troncs et les merges naissent

@@ -7,8 +7,6 @@ import {
   AMBIENT_EVENTS,
   DEV_RANK,
   EFFECT_KEYS,
-  FAILURE_EVENT_IDS,
-  FAILURE_EVENTS,
   MERGE_EVENT_IDS,
   MERGE_EVENTS,
   NO_EFFECTS,
@@ -48,7 +46,6 @@ describe("content tables", () => {
       TREE_IDS,
       UPGRADE_IDS,
       PROFILE_IDS,
-      FAILURE_EVENT_IDS,
       MERGE_EVENT_IDS,
       AMBIENT_EVENT_IDS,
     ]) {
@@ -62,7 +59,6 @@ describe("content tables", () => {
     for (const id of TREE_IDS) expect(TREE[id].id).toBe(id);
     for (const id of UPGRADE_IDS) expect(UPGRADES[id].id).toBe(id);
     for (const id of PROFILE_IDS) expect(PROFILES[id].id).toBe(id);
-    for (const id of FAILURE_EVENT_IDS) expect(FAILURE_EVENTS[id].id).toBe(id);
     for (const id of MERGE_EVENT_IDS) expect(MERGE_EVENTS[id].id).toBe(id);
     for (const id of AMBIENT_EVENT_IDS) expect(AMBIENT_EVENTS[id].id).toBe(id);
   });
@@ -219,7 +215,7 @@ describe("rules fingerprint", () => {
    * own.
    */
   test("has not changed without anyone noticing", () => {
-    expect(RULES_FINGERPRINT).toBe("591676a2");
+    expect(RULES_FINGERPRINT).toBe("0c7c51d2");
   });
 
   test("the save version and the epoch are positive integers", () => {

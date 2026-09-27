@@ -3,7 +3,6 @@ import {
   AMBIENT_EVENT_IDS,
   COMPETITOR_IDS,
   DEV_RANKS,
-  FAILURE_EVENT_IDS,
   MERGE_EVENT_IDS,
   NARRATIVE_EVENT_IDS,
   OBJECTIVE_IDS,
@@ -68,7 +67,9 @@ export const SAVE_VERSION = 3;
  * epoch 8: a refusal is answered by fixing or by shipping with follow-ups,
  * the answer paying the turn; starting over is gone. And epoch 9: the
  * rebase is gone, with the lag behind `dev`, the conflict on a missed roll,
- * the Auto-rebase node and the Feature flags skill.
+ * the Auto-rebase node and the Feature flags skill. And epoch 10: a roll
+ * that misses writes a broken commit instead of drawing a failure; the
+ * reroll and the countered rejection are gone.
  */
 export const RULES_EPOCH = 1;
 
@@ -119,7 +120,6 @@ export function fingerprintFor(epoch: number): string {
       narrative: NARRATIVE_EVENT_IDS,
       objectives: OBJECTIVE_IDS,
       profiles: PROFILE_IDS,
-      failures: FAILURE_EVENT_IDS,
       merges: MERGE_EVENT_IDS,
       ambient: AMBIENT_EVENT_IDS,
     }),

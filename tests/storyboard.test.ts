@@ -111,9 +111,9 @@ describe("the storyboard", () => {
     }
   });
 
-  test("a commit's cost lands on that commit; a missed roll's cost lands on the head", () => {
+  test("a commit's cost lands on that commit, whether its roll landed or not", () => {
     let onCommit = 0;
-    let onHead = 0;
+    let onBroken = 0;
 
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
@@ -121,30 +121,25 @@ describe("the storyboard", () => {
         reveal.showAll(batch.before, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
-        // The commit's own node, if it landed: the one the head moved to. A
-        // team's commit or a release written in the same batch is somebody
-        // else's.
+        // The commit's own node: the one the head moved to. A team's commit
+        // or a release written in the same batch is somebody else's.
         const done = batch.events.find(
           (e) => e.type === "node_done" && e.nodeId === headOf(batch.after).id,
         );
         const spent = batch.events.find((e) => e.type === "energy" && e.reason === "commit");
-        if (spent === undefined) continue;
+        if (spent === undefined || done?.type !== "node_done") continue;
 
         const pop = steps.find((s) => s.kind === "pop" && s.cue?.gauge === "energy");
         if (pop === undefined || pop.kind !== "pop") continue;
 
-        if (done?.type === "node_done") {
-          expect(pop.anchor).toBe(done.nodeId);
-          onCommit += 1;
-        } else {
-          expect(pop.anchor).toBe(headOf(batch.before).id);
-          onHead += 1;
-        }
+        expect(pop.anchor).toBe(done.nodeId);
+        if (done.broken === true) onBroken += 1;
+        else onCommit += 1;
       }
     }
 
     expect(onCommit).toBeGreaterThan(0);
-    expect(onHead).toBeGreaterThan(0);
+    expect(onBroken).toBeGreaterThan(0);
   });
 
   test("a merge's rest lands on the merge, and a release is never the head", () => {
@@ -298,7 +293,7 @@ describe("local and pushed commits on screen", () => {
         );
 
         fused += steps.filter((step) => step.kind === "fuse").length;
-        broke += batch.events.filter((e) => e.type === "incident" && e.source === "commit").length;
+        broke += batch.events.filter((e) => e.type === "node_done" && e.broken === true).length;
       }
     }
     expect(fused).toBeGreaterThan(0);
@@ -342,12 +337,12 @@ describe("local and pushed commits on screen", () => {
     expect(pushes).toBeGreaterThan(0);
   });
 
-  test("a commit that broke production is left local", () => {
+  test("a broken commit is left local", () => {
     let seen = 0;
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         for (const event of batch.events) {
-          if (event.type !== "incident" || event.source !== "commit") continue;
+          if (event.type !== "node_done" || event.broken !== true) continue;
           if (!(event.nodeId in batch.after.nodes)) continue;
           seen += 1;
           expect(Object.values(batch.ledgerAfter.local).flat()).toContain(event.nodeId);

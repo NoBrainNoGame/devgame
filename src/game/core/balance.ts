@@ -72,7 +72,10 @@ export const BALANCE = {
   },
 
   commit: {
-    /** Base success chance in percent, before any modifier. */
+    /**
+     * Base success chance in percent, before any modifier. A roll that
+     * misses writes a broken commit: bugged, worth nothing, a fix to write.
+     */
     base: { craft: 92, ai: 72 } satisfies Record<CommitMode, number>,
     /** Replaces the base chance on a `risky` commit. */
     riskyBase: 78,
@@ -169,10 +172,6 @@ export const BALANCE = {
     /** Commits a hotfix ticket demands, and how many with monitoring. */
     hotfixPoints: 3,
     hotfixPointsWithMonitoring: 2,
-    /** Story points a rejected pull request takes back off the ticket. */
-    prRejectedPoints: 1,
-    /** Energy lost to a build that breaks for nothing. */
-    brokenBuildEnergy: 1,
   },
 
   /**

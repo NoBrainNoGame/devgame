@@ -41,13 +41,11 @@ export interface Effects {
   /** Debt repaid automatically at the end of every turn. */
   debtDecayPerTurn: number;
 
-  /** A failed roll may be rolled again, once per sprint. */
-  rerollFailedRoll: boolean;
-  /** A rejected pull request costs no story points. */
-  counterPrRejection: boolean;
+  /** A refused pull request costs production no patience. */
+  blamelessRejection: boolean;
   /** The "obsolete dependency" event never fires. */
   cancelObsoleteLib: boolean;
-  /** Warned once ahead of a production bug; hotfix tickets are shorter. */
+  /** Warned once before a release breaks; hotfix tickets are shorter. */
   monitoring: boolean;
   /** A free review happens automatically every N turns. 0 disables it. */
   freeReviewEvery: number;
@@ -111,8 +109,7 @@ export const NO_EFFECTS: Effects = {
   debtFuzzBonus: 0,
   debtDecayPerTurn: 0,
 
-  rerollFailedRoll: false,
-  counterPrRejection: false,
+  blamelessRejection: false,
   cancelObsoleteLib: false,
   monitoring: false,
   freeReviewEvery: 0,

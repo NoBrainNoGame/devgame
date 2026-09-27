@@ -161,10 +161,11 @@ export function writeCommit(
   ticket: Ticket,
   kind: NodeKind,
   mode: CommitMode,
-  options: { hiddenBug?: boolean } = {},
+  options: { hiddenBug?: boolean; broken?: boolean } = {},
 ): MapNode {
   const { state } = context;
   const { debt } = BALANCE;
+  const broken = options.broken === true;
 
   const previous = forkPointOf(state, ticket);
   if (previous === null) throw new Error(`writeCommit: nothing for ${ticket.id} to fork from`);
@@ -179,11 +180,20 @@ export function writeCommit(
       mode,
       reviewed: mode === "craft",
       ...(options.hiddenBug === true ? { hiddenBug: true } : {}),
+      ...(broken ? { bugged: true } : {}),
     },
   });
   ticket.nodeIds.push(node.id);
   state.player.totalCommits += 1;
   state.stats.commitsLanded[mode] += 1;
+
+  // A broken commit is in the history and nowhere else: it fills nothing,
+  // costs the codebase nothing, and waits for a fix to redo it. What it did
+  // cost — the energy, the turn — was spent before the roll.
+  if (broken) {
+    emit(context, { type: "node_done", nodeId: node.id, mode, kind, broken: true });
+    return node;
+  }
   const debtBefore = state.debt;
 
   fillPoints(context, ticket, pointsFor(ticket, mode, kind));
@@ -230,8 +240,9 @@ export function writeCommit(
   }
 
   if (kind === "fix") {
-    // The oldest bug the review flagged is the one this fix redid — on the
-    // ticket or on an obstacle it turned up, whose bugs are its own.
+    // The oldest bug is the one this fix redid — a roll that missed or a
+    // commit the review flagged, on the ticket or on an obstacle it turned
+    // up, whose bugs are its own.
     const fixed = treeNodeIds(state, ticket).find((id) => state.nodes[id]?.commit.bugged === true);
     const target = fixed === undefined ? undefined : state.nodes[fixed];
     if (fixed !== undefined && target !== undefined) {

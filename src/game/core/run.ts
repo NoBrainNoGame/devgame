@@ -104,7 +104,6 @@ export function createRun(options: CreateRunOptions): RunState {
       totalCommits: 0,
       zeroEnergyStreak: 0,
       aiChain: 0,
-      rerollUsed: false,
       turnsSinceFreeReview: 0,
       freeRefactor: false,
       docsCharges: 0,

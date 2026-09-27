@@ -5,16 +5,15 @@ import type { GameEvent, MapNode, NodeId, RunState, TicketId } from "@/game/core
  * Which of your commits are pushed, and which are still only on your machine.
  *
  * A commit you write is local first: its cost, its points and whatever it
- * broke all land on it while it is still yours. If its turn went through, it
- * is pushed at the end of its story. If it broke production, it stays local
- * until its branch is pushed again — by the next commit that goes through, by
- * opening the pull request, or by the merge — and then everything local on
- * that branch goes up as one commit: squashed into the most recent.
+ * broke all land on it while it is still yours. If its roll went through, it
+ * is pushed at the end of its story. If it missed, the commit is broken and
+ * stays local until its branch is pushed again — by the next commit that goes
+ * through, by opening the pull request, or by the merge — and then everything
+ * local on that branch goes up as one commit: squashed into the most recent.
  *
- * This is presentation, not a rule. The engine does not remember that a
- * commit broke production — only the `incident` event says so, once — so the
- * ledger is folded from events, batch after batch, and rebuilt by replaying
- * the log on load, exactly as the state itself is.
+ * This is presentation, not a rule. The engine has no remote, so the ledger
+ * is folded from events, batch after batch, and rebuilt by replaying the log
+ * on load, exactly as the state itself is.
  */
 
 export interface PushLedger {
@@ -75,13 +74,6 @@ export function advancePushes(
   const absorbed: Record<NodeId, NodeId> = { ...ledger.absorbed };
   const ops: PushOp[] = [];
 
-  // The incident is emitted after the commit that caused it, so a commit's
-  // fate is read ahead: it only ever breaks production in its own turn.
-  const broke = new Set<NodeId>();
-  for (const event of events) {
-    if (event.type === "incident" && event.source === "commit") broke.add(event.nodeId);
-  }
-
   const push = (group: readonly NodeId[], at: number, kind: PushOp["kind"]): void => {
     const into = group[group.length - 1];
     if (into === undefined) return;
@@ -102,7 +94,7 @@ export function advancePushes(
         const node = state.nodes[event.nodeId];
         if (node?.ticketId === undefined || !isBornLocal(node)) break;
         const group = [...(local[node.ticketId] ?? []), node.id];
-        if (broke.has(node.id)) {
+        if (event.broken === true) {
           local[node.ticketId] = group;
           break;
         }

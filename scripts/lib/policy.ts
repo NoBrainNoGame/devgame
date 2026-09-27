@@ -286,10 +286,16 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     return policy === "ai" ? { type: "followup" } : { type: "resume" };
   }
 
-  // The review flagged a commit: nothing else on this ticket goes anywhere
-  // until a fix has redone it, so every policy does that first.
+  // A broken or flagged commit: nothing else on this ticket goes anywhere
+  // until a fix has redone it, so every policy does that first, with its
+  // own hand.
   if (ticket !== null && buggedOn(state, ticket).length > 0) {
-    const fix = actions.find(writtenAs("fix"));
+    const fixBy = (mode: string) => (a: PlayerAction) =>
+      a.type === "commit" && a.kind === "fix" && a.mode === mode;
+    const fix =
+      policy === "ai"
+        ? (actions.find(fixBy("ai")) ?? actions.find(fixBy("craft")))
+        : (actions.find(fixBy("craft")) ?? actions.find(fixBy("ai")));
     if (fix !== undefined) return fix;
   }
 

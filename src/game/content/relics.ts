@@ -127,7 +127,7 @@ export const RELICS: Record<RelicId, RelicDef> = {
   tech_radar: keep("tech_radar", { allSuccessPoints: 5 }),
   retrospective: keep("retrospective", { reviewExtraCommits: 1 }),
   pair_programming: keep("pair_programming", { reviewEnergyDiscount: 1 }),
-  blameless: keep("blameless", { counterPrRejection: true }),
+  blameless: keep("blameless", { blamelessRejection: true }),
   sla_renegotiated: keep("sla_renegotiated", { qualityMaxBonus: 20 }),
 };
 

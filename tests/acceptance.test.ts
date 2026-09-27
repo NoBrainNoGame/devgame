@@ -69,6 +69,18 @@ describe("the pull request review", () => {
     }
   });
 
+  test("a blameless culture takes a refusal without losing patience", () => {
+    const state = makeRefusable(inHand("pr-blameless"));
+    const refused = applyAction(state, { type: "submit" }).state;
+    expect(refused.quality).toBe(state.quality + BALANCE.quality.perRejection);
+
+    const blameless = makeRefusable(inHand("pr-blameless"));
+    blameless.relics = [...blameless.relics, "blameless"];
+    const forgiven = applyAction(blameless, { type: "submit" }).state;
+    expect(forgiven.phase.kind).toBe("ticket_rejected");
+    expect(forgiven.quality).toBe(blameless.quality);
+  });
+
   test("a showcase's pull request opens whatever the health", () => {
     const state = makeReady(inHand("pr-debt-showcase"));
     state.showcase = { backlog: 0 };

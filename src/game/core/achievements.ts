@@ -98,9 +98,7 @@ const CHECKS: Record<AchievementId, RunCheck | AccountCheck> = {
   account_level_10: account(({ level }) => level >= 10),
   account_tickets_1000: account(({ ticketsDelivered }) => ticketsDelivered >= 1000),
 
-  works_on_my_machine: run(({ events }) =>
-    has(events, "failure_event", (e) => e.eventId === "prod_bug"),
-  ),
+  works_on_my_machine: run(({ events }) => has(events, "incident", (e) => e.source === "release")),
   liquid_cooling: run(({ events }) =>
     has(events, "upgrade_bought", (e) => e.id === "coffee_machine"),
   ),
@@ -115,7 +113,7 @@ const CHECKS: Record<AchievementId, RunCheck | AccountCheck> = {
     ({ state }) => (state.upgrades.ai_supervisor ?? 0) >= (UPGRADES.ai_supervisor.maxLevel ?? 3),
   ),
   house_of_cards: run(({ events }) => has(events, "debt_explosion")),
-  changes_requested: run(({ events }) => has(events, "pr_rejected")),
+  changes_requested: run(({ events }) => has(events, "pr_reviewed", (e) => !e.accepted)),
   hostile_takeover: run(({ events }) => has(events, "competitor_bought")),
 };
 

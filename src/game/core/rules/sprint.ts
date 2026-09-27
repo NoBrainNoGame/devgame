@@ -163,7 +163,6 @@ export function startNextSprint(context: RuleContext): void {
   state.sprintForced = false;
   state.sprintMonths = 0;
   state.sprintPlayerDelivered = 0;
-  state.player.rerollUsed = false;
   state.phase = { kind: "choose_action" };
 
   writeSprintStart(context);

@@ -206,8 +206,7 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
       const first = node.parents[0];
       const firstIsDev = first !== undefined && state.nodes[first]?.lane === DEV_LANE;
       const parent = ticket.parentId === undefined ? undefined : state.tickets[ticket.parentId];
-      const firstIsParent =
-        first !== undefined && parent !== undefined && parent.nodeIds.includes(first);
+      const firstIsParent = first && parent?.nodeIds.includes(first);
       const forksRight = parent === undefined ? firstIsDev : firstIsParent;
       if (expected === undefined ? !forksRight : first !== expected) {
         failures.push({ rule: "ticket-is-a-chain", detail: `${ticket.id} at ${id}` });

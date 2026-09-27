@@ -236,6 +236,15 @@ export function planBatch(
         }
         const local = node !== undefined && isBornLocal(node);
         steps.push({ kind: "reveal", nodeId: event.nodeId, at, asHead, local, hold: STORY.reveal });
+        // A roll that missed: the commit is there, red, and says so on itself.
+        if (event.broken === true) {
+          held.push({
+            caption: translate({ key: "fx.commit_broken" }),
+            colour: palette.lane.hotfix,
+            hold: STORY.popLong,
+          });
+          flashAt(palette.lane.hotfix);
+        }
         flush();
         for (const op of opsAt.get(index) ?? []) if (op.kind === "commit") pending.push(op);
         break;
@@ -372,10 +381,6 @@ export function planBatch(
         flashAt(palette.lane.hotfix);
         break;
 
-      case "pr_rejected":
-        if (!event.countered) flashAt(palette.lane.hotfix);
-        break;
-
       case "roll":
         steps.push({ kind: "beat", hold: STORY.roll });
         break;
@@ -390,14 +395,6 @@ export function planBatch(
         held.push({
           caption: translate({ key: `events.${event.eventId}.title` }),
           colour: palette.text,
-          hold: STORY.popLong,
-        });
-        break;
-
-      case "failure_event":
-        held.push({
-          caption: translate({ key: `events.${event.eventId}.title` }),
-          colour: palette.lane.hotfix,
           hold: STORY.popLong,
         });
         break;
