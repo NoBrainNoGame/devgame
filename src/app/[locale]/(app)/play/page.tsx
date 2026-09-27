@@ -45,6 +45,7 @@ export default async function PlayPage() {
       serverMeta={profile?.ok === true && profile.data !== null ? profile.data.meta : null}
       dailySeed={daily?.seed ?? null}
       serverRun={serverRun}
+      devTools={env.NODE_ENV === "development"}
     />
   );
 }

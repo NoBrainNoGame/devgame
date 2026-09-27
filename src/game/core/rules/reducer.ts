@@ -12,6 +12,7 @@ import { reportCapacity } from "@/game/core/rules/capacity";
 import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
+import { applyDevValues } from "@/game/core/rules/dev";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
 import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { performHack } from "@/game/core/rules/hack";
@@ -166,6 +167,10 @@ function dispatch(context: RuleContext, action: PlayerAction): boolean {
     case "choose_relic":
       chooseRelic(context, action.relicId);
       startNextSprint(context);
+      return false;
+
+    case "dev_set":
+      applyDevValues(context, action.values);
       return false;
   }
 }

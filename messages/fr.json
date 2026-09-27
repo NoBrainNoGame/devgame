@@ -2163,6 +2163,38 @@
     },
     "webglLost": "Contexte WebGL perdu… Un problème avec votre navigateur ou votre processeur graphique. Le graphe est dessiné sans WebGL jusqu'au rechargement de la page."
   },
+  "devPanel": {
+    "title": "Contrôle (dev)",
+    "hint": "Écrit par-dessus la run sans passer par les règles. Une run modifiée ici n'est jamais classée ni envoyée aux statistiques.",
+    "austerity": "Austérité",
+    "austerityForced": "Forcer l'austérité",
+    "groups": {
+      "resources": "Ressources",
+      "gauges": "Jauges",
+      "clock": "Horloge",
+      "ticket": "Ticket en main",
+      "upgrades": "Achats",
+      "tree": "Compétences"
+    },
+    "fields": {
+      "money": "Argent",
+      "earned": "Gains cumulés",
+      "tier": "Palier",
+      "energy": "Énergie",
+      "skillPoints": "Points de compétence",
+      "xp": "XP",
+      "patience": "Patience",
+      "health": "Santé du code",
+      "sprint": "Sprint",
+      "sprintTurn": "Tour du sprint",
+      "filled": "Points remplis"
+    },
+    "noTicket": "Aucun ticket en main.",
+    "apply": "Appliquer ({count})",
+    "cancel": "Annuler",
+    "max": "max",
+    "maxHint": "Mettre au maximum ({max})"
+  },
   "settings": {
     "open": "Réglages",
     "title": "Réglages",

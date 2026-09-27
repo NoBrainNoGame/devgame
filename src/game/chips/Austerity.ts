@@ -14,7 +14,8 @@ const SLIDE_MS = 600;
  * reports moves in small steps as the money comes in; the chip eases the
  * palette towards it over a moment rather than posting it, so a payday that
  * crosses a threshold reads as the light changing, not as a switch. A QA
- * override (`?austerity=`) is honoured when the page sets one.
+ * override (`?austerity=`, the development panel's slider) is honoured
+ * while the page sets one.
  */
 export class Austerity extends booyah.ChipBase {
   private current = 0;
@@ -44,8 +45,7 @@ export class Austerity extends booyah.ChipBase {
 
   private target(): number {
     const { session, austerityOverride } = sceneContext(this.chipContext);
-    if (austerityOverride !== undefined && austerityOverride !== null) return austerityOverride;
-    return austerityOf(session.getState().moneyEarned);
+    return austerityOverride?.() ?? austerityOf(session.getState().moneyEarned);
   }
 
   private apply(): void {

@@ -504,7 +504,37 @@ export type PlayerAction =
   /** The answer to an event. Free: the question is what costs. */
   | { type: "answer"; eventId: NarrativeEventId; choice: string }
   | { type: "resolve_conflict"; how: "manual" | "ai" }
-  | { type: "choose_relic"; relicId: RelicId };
+  | { type: "choose_relic"; relicId: RelicId }
+  /**
+   * The development build's control panel writing values over the run. Never
+   * offered, so nothing that picks from the legal moves takes it, and never
+   * scored: `replayRun` refuses a log that holds one. In the log all the
+   * same, so a reload resumes the run as it was edited.
+   */
+  | { type: "dev_set"; values: DevValues };
+
+/**
+ * What the development panel may write, each field optional: the ones left
+ * out keep their value. Clamped by the rules to what the run can hold.
+ */
+export interface DevValues {
+  money?: number;
+  /** Lifetime earnings: what the tier and the look follow. */
+  earned?: number;
+  tier?: number;
+  energy?: number;
+  skillPoints?: number;
+  xp?: number;
+  /** Production's patience used up. At its ceiling, the run ends fired. */
+  quality?: number;
+  debt?: number;
+  sprint?: number;
+  sprintTurn?: number;
+  /** Story points filled on the ticket in hand. */
+  filled?: number;
+  upgrades?: Partial<Record<UpgradeId, number>>;
+  tree?: Partial<Record<TreeNodeId, number>>;
+}
 
 export type PlayerActionType = PlayerAction["type"];
 

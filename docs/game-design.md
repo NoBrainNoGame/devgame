@@ -567,7 +567,8 @@ boules qui volent vers une jauge sont des bits (un 0 et un 1 qui alternent) ; de
 tombe derrière le graphe (`hud/MatrixRain.tsx`, un canvas 2D sous celui de Pixi,
 qui survit donc à la perte de WebGL).
 `prefers-reduced-motion` coupe le tremblement, pas le fondu. Aperçu :
-`/play?austerity=3.7`.
+`/play?austerity=3.7`, ou le curseur du panneau de contrôle en
+développement.
 
 ### La voix du système
 

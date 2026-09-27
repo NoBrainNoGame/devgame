@@ -55,6 +55,8 @@ export interface PlayClientProps {
   dailySeed: string | null;
   /** A run the server had in progress, to compare against the local one. */
   serverRun: RunSaveDto | null;
+  /** The development build: the run gets its control panel. */
+  devTools: boolean;
 }
 
 type Stage =
@@ -373,6 +375,7 @@ export function PlayClient(props: PlayClientProps) {
       onReady={onReady}
       onAct={act}
       onPlayAgain={() => setStage({ kind: "setup" })}
+      devPanel={props.devTools}
       runOverFooter={
         status === "game_over" ? (
           <SubmitFooter

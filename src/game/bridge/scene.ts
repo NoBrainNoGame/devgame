@@ -26,7 +26,7 @@ export interface SceneOptions {
   pops: boolean;
   playerName: string;
   transparent: boolean;
-  austerityOverride: number | null;
+  austerityOverride: () => number | null;
   audio: AudioService;
   /** The handle's box: the scene fills it in and empties it on the way out. */
   controls: SceneControls;

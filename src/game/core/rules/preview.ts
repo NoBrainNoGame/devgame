@@ -403,6 +403,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "choose_relic":
+    case "dev_set":
       return { action, energyCost: 0, consumesTurn: false, notes: [] };
   }
 }
@@ -442,6 +443,8 @@ export function actionKey(action: PlayerAction): string {
       return `conflict:${action.how}`;
     case "choose_relic":
       return `relic:${action.relicId}`;
+    case "dev_set":
+      return action.type;
     case "review":
     case "rest":
     case "submit":

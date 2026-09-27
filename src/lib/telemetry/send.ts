@@ -1,7 +1,7 @@
 "use client";
 
 import { idleStore } from "@/components/hud/idleStore";
-import type { RunSaveDto } from "@/game";
+import { editedByDev, type RunSaveDto } from "@/game";
 import type { RunSampleInput } from "@/lib/telemetry/schema";
 
 /**
@@ -16,6 +16,8 @@ export function sendRunSample(
   locale: string,
   sessionMs: number,
 ): void {
+  // The server refuses a run the development panel wrote over; no use sending it.
+  if (editedByDev(save)) return;
   const { settings } = idleStore.getState();
   const body: RunSampleInput = {
     save,

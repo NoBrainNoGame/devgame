@@ -53,8 +53,8 @@ export interface SceneContext {
   /** The player's name, for the `HEAD` ref. Empty when nobody said. */
   playerName: string;
   controls: SceneControls;
-  /** A look forced by the page for QA, whatever the run has earned. */
-  austerityOverride?: number | null;
+  /** A look forced by the page for QA, whatever the run has earned; read live, a slider moves it. */
+  austerityOverride?: () => number | null;
   /** Where the sounds go. The landing page passes none and gets the silent one. */
   audio: AudioService;
   /**

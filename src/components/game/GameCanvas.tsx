@@ -61,7 +61,6 @@ export function GameCanvas({
     let cancelled = false;
     let handle: GameHandle | undefined;
 
-    const override = austerityOverride();
     // The props' resume snapshot is what the run was when the player pressed
     // "resume"; a canvas mounted again later — a hot reload, a remount —
     // must pick the run up where the local save has it now, not back then.
@@ -82,7 +81,7 @@ export function GameCanvas({
       // Any modal over the run holds the canvas's story still.
       paused: () => modalsOpen() > 0,
       translate: (value) => translateRef.current(value),
-      ...(override === null ? {} : { austerityOverride: override }),
+      austerityOverride,
       audio: audioService(),
     })
       .then((created) => {
