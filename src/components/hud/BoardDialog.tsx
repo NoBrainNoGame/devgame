@@ -190,10 +190,14 @@ function TicketCard({
   // one action the board allows on it. Two real buttons, not a clickable box
   // with a button inside — nested buttons are invalid, and a box with a role
   // does not read as one.
+  //
+  // A card is as tall as the tallest in its row, not as its own content: what
+  // it describes stays at the top, what it earns and the button sit at the
+  // foot, so the cards of a row line up and nothing floats mid-card.
   return (
     <article
       className={cn(
-        "space-y-2 rounded-md border border-line bg-panel/60 p-3 text-sm",
+        "flex flex-col gap-2 rounded-md border border-line bg-panel/60 p-3 text-sm",
         // Every card looks alike: the kind is in the name, the colours are the branches'.
         current && "border-cyber",
         ticket.status === "cancelled" && "opacity-60",
@@ -201,7 +205,7 @@ function TicketCard({
     >
       <button
         type="button"
-        className="w-full space-y-2 rounded text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full flex-1 flex-col gap-2 rounded text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         title={t("ticketOpenHint")}
         onClick={onOpen}
       >
@@ -227,19 +231,8 @@ function TicketCard({
         {ticket.late === undefined ? null : (
           <p className="text-branch-hotfix text-xs">{t("late")}</p>
         )}
-        {ticket.skillId === undefined ? null : (
-          <p className="text-foreground text-xs">
-            {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
-          </p>
-        )}
         {ticket.skillId !== undefined && ticket.status === "backlog" ? (
           <p className="text-time text-xs">{t("expiresAtSprintEnd")}</p>
-        ) : null}
-        {ticket.mrr > 0 ? (
-          <p className="text-money text-xs tabular-nums">
-            {t("ticketMrr", { money: money(ticket.mrr) })}
-            {ticket.origin === "acquired" ? ` · ${t("acquired")}` : ""}
-          </p>
         ) : null}
         {ticket.assignee === undefined ? null : (
           <p className="text-muted-foreground text-xs">
@@ -249,19 +242,32 @@ function TicketCard({
           </p>
         )}
 
-        {ticket.status === "backlog" ? null : (
-          <>
-            <Progress
-              value={(ticket.filled / Math.max(1, ticket.points)) * 100}
-              className="h-1.5"
-            />
-            <p className="text-muted-foreground text-xs">
-              {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
-              {ticket.bugs > 0 ? ` · ${t("bugsOn", { count: ticket.bugs })}` : ""}
-              {ticket.unread > 0 ? ` · ${t("unreadOn", { count: ticket.unread })}` : ""}
+        <div className="mt-auto space-y-2">
+          {ticket.skillId === undefined ? null : (
+            <p className="text-foreground text-xs">
+              {t("grants")} {game(`skills.${ticket.skillId}.name` as never)}
             </p>
-          </>
-        )}
+          )}
+          {ticket.mrr > 0 ? (
+            <p className="text-money text-xs tabular-nums">
+              {t("ticketMrr", { money: money(ticket.mrr) })}
+              {ticket.origin === "acquired" ? ` · ${t("acquired")}` : ""}
+            </p>
+          ) : null}
+          {ticket.status === "backlog" ? null : (
+            <>
+              <Progress
+                value={(ticket.filled / Math.max(1, ticket.points)) * 100}
+                className="h-1.5"
+              />
+              <p className="text-muted-foreground text-xs">
+                {t("storyPointsOf", { filled: ticket.filled, max: ticket.points })}
+                {ticket.bugs > 0 ? ` · ${t("bugsOn", { count: ticket.bugs })}` : ""}
+                {ticket.unread > 0 ? ` · ${t("unreadOn", { count: ticket.unread })}` : ""}
+              </p>
+            </>
+          )}
+        </div>
       </button>
 
       {ticket.status === "backlog" ? (

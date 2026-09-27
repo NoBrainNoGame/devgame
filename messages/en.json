@@ -2166,6 +2166,38 @@
     },
     "webglLost": "WebGL context lost… A problem with your browser or your graphics processor. The graph is drawn without WebGL until the page is reloaded."
   },
+  "devPanel": {
+    "title": "Control (dev)",
+    "hint": "Writes over the run without going through the rules. A run edited here is never ranked nor sent to the statistics.",
+    "austerity": "Austerity",
+    "austerityForced": "Force the austerity",
+    "groups": {
+      "resources": "Resources",
+      "gauges": "Gauges",
+      "clock": "Clock",
+      "ticket": "Ticket in hand",
+      "upgrades": "Purchases",
+      "tree": "Skills"
+    },
+    "fields": {
+      "money": "Money",
+      "earned": "Lifetime earnings",
+      "tier": "Tier",
+      "energy": "Energy",
+      "skillPoints": "Skill points",
+      "xp": "XP",
+      "patience": "Patience",
+      "health": "Code health",
+      "sprint": "Sprint",
+      "sprintTurn": "Sprint turn",
+      "filled": "Points filled"
+    },
+    "noTicket": "No ticket in hand.",
+    "apply": "Apply ({count})",
+    "cancel": "Cancel",
+    "max": "max",
+    "maxHint": "Set to the maximum ({max})"
+  },
   "settings": {
     "open": "Settings",
     "title": "Settings",

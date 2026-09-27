@@ -5,6 +5,7 @@ import {
   TREE_IDS,
   UPGRADE_IDS,
 } from "@/game/content";
+import { canonicalJson } from "@/game/core/hash";
 import { canAcquire } from "@/game/core/rules/acquisitions";
 import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects } from "@/game/core/rules/modifiers";
@@ -148,6 +149,8 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
       return b.type === "resolve_conflict" && a.how === b.how;
     case "choose_relic":
       return b.type === "choose_relic" && a.relicId === b.relicId;
+    case "dev_set":
+      return b.type === "dev_set" && canonicalJson(a.values) === canonicalJson(b.values);
     case "review":
     case "rest":
     case "submit":
@@ -161,5 +164,9 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
 }
 
 export function isActionAvailable(state: RunState, action: PlayerAction): boolean {
+  // Legal whenever the run is on, and never in the list: the HUD, the
+  // autopilot and the simulator all pick from the list, so none of them ever
+  // takes one. `replayRun` refuses a log that holds one.
+  if (action.type === "dev_set") return state.phase.kind !== "game_over";
   return getAvailableActions(state).some((candidate) => isSameAction(candidate, action));
 }

@@ -27,6 +27,30 @@ const TicketIdSchema = z.string().regex(/^t\d+$/);
 
 const DetourKindSchema = z.enum(["refactor", "fix", "risky", "squash", "docs", "rebase"]);
 
+/** A number the development panel may write: whole, and never past what a double counts exactly. */
+const DevNumberSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
+
+/** Past any level the shop or the tree sells, and small enough to loop over. */
+const MAX_DEV_LEVEL = 999;
+const DevLevelSchema = z.number().int().min(0).max(MAX_DEV_LEVEL);
+
+/** Bounded like the rest; the rules clamp further, to what the run can hold. */
+const DevValuesSchema = z.strictObject({
+  money: DevNumberSchema.optional(),
+  earned: DevNumberSchema.optional(),
+  tier: DevNumberSchema.optional(),
+  energy: DevNumberSchema.optional(),
+  skillPoints: DevNumberSchema.optional(),
+  xp: DevNumberSchema.optional(),
+  quality: DevNumberSchema.optional(),
+  debt: DevNumberSchema.optional(),
+  sprint: DevNumberSchema.optional(),
+  sprintTurn: DevNumberSchema.optional(),
+  filled: DevNumberSchema.optional(),
+  upgrades: z.partialRecord(z.enum(UPGRADE_IDS), DevLevelSchema).optional(),
+  tree: z.partialRecord(z.enum(TREE_IDS), DevLevelSchema).optional(),
+});
+
 export const PlayerActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("start"), ticketId: TicketIdSchema }),
   z.object({ type: z.literal("checkout"), ticketId: TicketIdSchema }),
@@ -54,6 +78,7 @@ export const PlayerActionSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("resolve_conflict"), how: z.enum(["manual", "ai"]) }),
   z.object({ type: z.literal("choose_relic"), relicId: z.enum(RELIC_IDS) }),
+  z.object({ type: z.literal("dev_set"), values: DevValuesSchema }),
 ]);
 
 export const RunModeSchema = z.enum(["classic", "daily"]);

@@ -5,8 +5,10 @@ import { useTranslations } from "next-intl";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { ActionPanel } from "@/components/hud/ActionPanel";
+import { useAusterityOverride } from "@/components/hud/austerityOverride";
 import { BoardDialog } from "@/components/hud/BoardDialog";
 import { CompanyDialog } from "@/components/hud/CompanyDialog";
+import { DevPanel } from "@/components/hud/DevPanel";
 import {
   ConflictDialog,
   EventDialog,
@@ -76,6 +78,8 @@ export interface RunStageProps {
   };
   /** False keeps the idle clock off the stage: the debugger steps by hand. */
   idle?: boolean;
+  /** The development build's control panel, under the left column. */
+  devPanel?: boolean;
   /** The live handle, for the controls that drive the camera directly. */
   handle: GameHandle | null;
   onReady: (handle: GameHandle | null) => void;
@@ -99,6 +103,7 @@ export function RunStage({
   runOverFooter,
   fallbackNote,
   idle = true,
+  devPanel = false,
 }: RunStageProps) {
   const t = useTranslations("play");
   const renderMode = useGameStore((state) => state.renderMode);
@@ -129,6 +134,9 @@ export function RunStage({
     setUpgradesOpen(true);
   };
   useAusterity();
+  // The words the HUD picks by tier follow a forced look (`displayTier`):
+  // the stage re-renders when it moves, and everything under it with it.
+  useAusterityOverride();
   useAudioSettings();
   const bars = useToastsBelow();
 
@@ -152,8 +160,9 @@ export function RunStage({
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <aside className="order-2 w-full min-w-0 shrink-0 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
+          <aside className="order-2 w-full min-w-0 shrink-0 space-y-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
             {snapshot === null ? null : <InfoPanel snapshot={snapshot} />}
+            {snapshot === null || !devPanel ? null : <DevPanel handle={handle} onAct={onAct} />}
           </aside>
 
           <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">

@@ -653,6 +653,31 @@ not on today's server seed (`The daily changed at midnight UTC`) and takes
 A real run that will not replay usually means a rules change: compare its
 `rules` with `RULES_FINGERPRINT`.
 
+### The development control panel
+
+`bun run dev` puts a form under the play page's left column
+(`hud/DevPanel.tsx`; `page.tsx` passes `devTools` when `NODE_ENV` is
+`development`). It writes through a `dev_set` action (`rules/dev.ts`), so an
+edit is in the log and survives a reload like any move.
+
+- **Never offered**: `isActionAvailable` accepts it while the run is on,
+  `getAvailableActions` never lists it, so the HUD, the autopilot and the sim
+  never take it.
+- **Never scored**: `replayRun` refuses a log holding one (`editedByDev`), so
+  `submitRun` and the telemetry ingest do; `sendRunSample` does not even send
+  it. The schema still accepts it, bounded: a local save must keep loading.
+- **Silent**: no event, no log line; what the rules derive follows (tier from
+  earnings, energy's ceiling from levels, a site's team). A full patience
+  gauge still ends the run.
+- A new field: `DevValues` (`core/types.ts`), `DevValuesSchema`
+  (`dto/run.ts`), `applyDevValues` and `devSheet` (`rules/dev.ts`), the form
+  (`scalarsOf`, `GROUPS`) and `devPanel.fields` in both catalogues;
+  `tests/dev-panel.test.ts`.
+
+The slider forces the look (`hud/austerityOverride.ts`, seeded by
+`?austerity=`); the canvas reads it every frame, the HUD re-renders with it.
+The engine never sees it.
+
 ## Adding or changing translated text
 
 The engine emits `{ key, params }`, never display strings; React (`useGameText`,

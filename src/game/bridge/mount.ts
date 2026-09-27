@@ -7,6 +7,7 @@ import { GameSession, type SessionOptions } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
 import type { SceneControls } from "@/game/chips/context";
 import type { I18nText } from "@/game/core/i18n";
+import { type DevSheet, devSheet } from "@/game/core/rules/dev";
 import type { PlayerAction } from "@/game/core/types";
 import type { RunSaveDto } from "@/game/dto/run";
 
@@ -40,8 +41,11 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
    * nothing else does.
    */
   claimsGlobal?: boolean;
-  /** A look forced for QA (`?austerity=3.7`), never read by the engine. */
-  austerityOverride?: number;
+  /**
+   * A look forced for QA (`?austerity=3.7`, the development panel's slider),
+   * never read by the engine. Asked every frame, so it may change live.
+   */
+  austerityOverride?: () => number | null;
   /** The sound engine. Absent, the run is silent. */
   audio?: AudioService;
   /** Whether the page holds the canvas's story still — a modal is open. */
@@ -67,6 +71,8 @@ export interface GameHandle {
   };
   /** The run so far, ready to persist. */
   save(): RunSaveDto;
+  /** The exact values the development panel edits, and their ceilings. */
+  devSheet(): DevSheet;
   getActions(): PlayerAction[];
   /** Fast-forwards the canvas to the end of the current sequence. */
   skipAnimations(): void;
@@ -141,7 +147,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     pops: options.showPops ?? true,
     playerName: options.playerName ?? "",
     transparent: options.transparent === true,
-    austerityOverride: options.austerityOverride ?? null,
+    austerityOverride: options.austerityOverride ?? (() => null),
     audio: options.audio ?? new NullAudioService(),
     controls,
     paused: options.paused ?? (() => false),
@@ -190,6 +196,9 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     },
     save() {
       return session.save();
+    },
+    devSheet() {
+      return devSheet(session.getState());
     },
     getActions() {
       return session.getActions();

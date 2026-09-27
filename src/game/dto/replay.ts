@@ -68,6 +68,10 @@ export function replayRun(input: unknown): ReplayResult {
 
   const save: RunSaveDto = migration.dto;
 
+  if (editedByDev(save)) {
+    return { valid: false, error: "The run was edited with the development panel" };
+  }
+
   let state = createRun({
     seed: save.seed,
     mode: save.mode,
@@ -111,6 +115,15 @@ export function replayRun(input: unknown): ReplayResult {
     },
     state,
   };
+}
+
+/**
+ * Whether the development panel wrote over the run. Such a run replays in
+ * the browser — a reload resumes it — but never on the server: no score, no
+ * balancing sample.
+ */
+export function editedByDev(save: Pick<RunSaveDto, "actions">): boolean {
+  return save.actions.some((action) => action.type === "dev_set");
 }
 
 /** Whether a save was played against the rules currently in force. */

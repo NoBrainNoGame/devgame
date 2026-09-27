@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-import { austerityOverride } from "@/components/hud/austerityOverride";
+import { useAusterityOverride } from "@/components/hud/austerityOverride";
 import { useGameStore } from "@/game";
 import { decorationsAt, hexOf, lerpColour, paletteAt } from "@/game/render/palette";
 
@@ -18,12 +18,12 @@ const SLIDE_MS = 600;
  */
 export function useAusterity(): void {
   const target = useGameStore((state) => state.snapshot?.austerity ?? 0);
+  const forced = useAusterityOverride();
   const current = useRef<number | null>(null);
 
   useEffect(() => {
     const root = document.documentElement;
-    const override = austerityOverride();
-    const goal = override ?? target;
+    const goal = forced ?? target;
     let frame = 0;
     let last = performance.now();
 
@@ -76,7 +76,7 @@ export function useAusterity(): void {
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [target]);
+  }, [target, forced]);
 
   useEffect(() => {
     return () => {

@@ -35,6 +35,7 @@ export {
 export { nodePrefix } from "@/game/content/subjects";
 export type { I18nParam, I18nText } from "@/game/core/i18n";
 export { money, ref, renderText, text } from "@/game/core/i18n";
+export type { DevSheet } from "@/game/core/rules/dev";
 export { actionKey } from "@/game/core/rules/preview";
 export { tierOf } from "@/game/core/rules/tier";
 export { accountSkillPoints, levelForXp, xpForLevel } from "@/game/core/score";
@@ -42,6 +43,7 @@ export { type RunSummary, SUMMARY_TICKET_KINDS, summariseRun } from "@/game/core
 export type {
   ActionPreview,
   CommitMode,
+  DevValues,
   FinanceMonth,
   GameEvent,
   HackKind,
@@ -60,7 +62,7 @@ export { DETOUR_KINDS } from "@/game/core/types";
 export type { MetaProgressDto, SettingsDto } from "@/game/dto/meta";
 export { emptyMeta, META_VERSION, MetaProgressSchema } from "@/game/dto/meta";
 export type { ReplayResult, ReplayStats } from "@/game/dto/replay";
-export { isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";
+export { editedByDev, isCurrentRules, replayRun, runFingerprint } from "@/game/dto/replay";
 export type { PlayerActionDto, RunSaveDto } from "@/game/dto/run";
 export { MAX_ACTIONS, PlayerActionSchema, RunSaveSchema } from "@/game/dto/run";
 export type { RulesEpoch } from "@/game/dto/version";
