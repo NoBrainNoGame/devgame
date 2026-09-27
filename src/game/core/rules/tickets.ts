@@ -327,12 +327,16 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
 
   ticket.status = "open";
 
-  // Yours if you had nothing in hand. If you did, it waits: being pulled off
-  // your feature by a production bug is a punishment the WIP malus already
-  // delivers, and it would do it twice.
-  if (state.player.ticketId === null) state.player.ticketId = ticket.id;
+  // Started by you, it is what you work on now. Forced on you, it waits if
+  // you held something: being pulled off your feature by a production bug is
+  // a punishment the WIP malus already delivers, and it would do it twice.
+  const held = state.player.ticketId;
+  const switching = !forced && held !== null && held !== ticket.id;
+  if (!forced || held === null) state.player.ticketId = ticket.id;
 
   emit(context, { type: "ticket_started", ticketId: ticket.id, kind: ticket.kind, forced });
+  // The camera and the tab follow the hand, as on a switch.
+  if (switching) emit(context, { type: "checkout", ticketId: ticket.id });
 }
 
 /**

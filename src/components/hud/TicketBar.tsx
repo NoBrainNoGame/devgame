@@ -3,6 +3,7 @@
 import { KanbanSquare } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { BranchPill } from "@/components/hud/BranchPill";
 import { TicketDetails } from "@/components/hud/TicketDetails";
 import { blinkingTabs, type Urgency } from "@/components/hud/ticketFocus";
 import { ticketName } from "@/components/hud/ticketName";
@@ -89,9 +90,8 @@ export function TicketBar({
                         {dev.name}
                       </span>
                     )}
-                    <span className="tabular-nums opacity-70">
-                      {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
-                    </span>
+                    {ticket.parentId === undefined ? null : <span className="opacity-70">↳</span>}
+                    <BranchPill ticket={ticket} />
                     <ShownPoints ticket={ticket} />
                   </span>
                 </TooltipTrigger>
@@ -147,16 +147,15 @@ function TicketTab({
           className={cn(
             "flex shrink-0 items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors",
             waitingForYou && "ticket-urgent",
-            // Every ticket looks alike: the kind is in the name, the colours are the branches'.
+            // Every ticket looks alike: the kind is in the name, the only colour is its branch's.
             current
               ? "border-cyber bg-cyber/10 text-foreground"
               : "border-line text-muted-foreground hover:border-foreground/40 hover:text-foreground",
             ticket.ready && "border-cyber",
           )}
         >
-          <span className="tabular-nums text-xs opacity-70">
-            {ticket.parentId === undefined ? "" : "↳"}#{ticket.id.slice(1)}
-          </span>
+          {ticket.parentId === undefined ? null : <span className="text-xs opacity-70">↳</span>}
+          <BranchPill ticket={ticket} />
           <span className="max-w-40 truncate">{name}</span>
           <ShownPoints ticket={ticket} className="text-xs" />
           {ticket.blockedBy.length > 0 ? (

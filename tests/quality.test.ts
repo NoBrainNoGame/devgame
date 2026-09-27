@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { toLogLine } from "@/game/core/log";
+import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 import type { QualityChange } from "@/game/core/types";
@@ -164,20 +165,20 @@ describe("production", () => {
     throw new Error("no release broke in 40 attempts");
   });
 
-  test("a rest costs patience while work waits, and nothing when there is none", () => {
+  test("a rest costs patience while work waits, and is not offered when there is none", () => {
     const busy = inHand("rest-busy");
     const rested = applyAction(busy, { type: "rest" });
     expect(rested.state.stats.qualityBySource.rest).toBe(BALANCE.quality.perRest);
     expect(eventsOfType(rested.events, "quality").some((e) => e.source === "rest")).toBe(true);
 
-    // Nothing in hand and nothing to start: waiting is all there is to do.
+    // Nothing in hand and nothing to start: the turns pass on their own
+    // (`team.test.ts`), so waiting is never a choice, and never a cost.
     const idle = newRun("rest-idle");
     for (const ticket of openTickets(idle)) ticket.status = "cancelled";
     for (const ticket of Object.values(idle.tickets)) {
       if (ticket.status === "backlog") ticket.status = "cancelled";
     }
-    const waited = applyAction(idle, { type: "rest" });
-    expect(waited.state.stats.qualityBySource.rest).toBe(0);
+    expect(getAvailableActions(idle).some(isType("rest"))).toBe(false);
   });
 
   test("hotfix commits are exempt from the release roll", () => {

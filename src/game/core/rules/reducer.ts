@@ -14,10 +14,10 @@ import { createContext, emit, type RuleContext } from "@/game/core/rules/context
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { applyDevValues } from "@/game/core/rules/dev";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
-import { checkBurnout, performRest, reportCrunch } from "@/game/core/rules/energy";
+import { checkBurnout, passTurn, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { performHack } from "@/game/core/rules/hack";
 import { forgetOldHistory } from "@/game/core/rules/history";
-import { freeReviewCadence } from "@/game/core/rules/modifiers";
+import { freeReviewCadence, nothingToDo } from "@/game/core/rules/modifiers";
 import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { gameOver, isOver } from "@/game/core/rules/over";
 import { chooseRelic, sprintTurns } from "@/game/core/rules/relics";
@@ -68,6 +68,20 @@ export function applyAction(state: RunState, action: PlayerAction): ApplyResult 
   const consumesTurn = dispatch(context, action);
 
   if (consumesTurn && !isOver(context)) endTurn(context);
+
+  // Nothing in hand and nothing to start while the team still works: the
+  // turns pass on their own, as free rests, until the sprint closes or a
+  // ticket comes back to you (a hotfix, a departure). Bounded by the sprint's
+  // box: its end enters the bonus choice or opens a board with tickets on it.
+  while (
+    !isOver(context) &&
+    draft.phase.kind === "choose_action" &&
+    !boardIsEmpty(draft) &&
+    nothingToDo(draft)
+  ) {
+    passTurn(context);
+    endTurn(context);
+  }
 
   // Everything delivered and nothing waiting: the sprint has no reason to run
   // its clock down, so the release ships now. The player never sees a panel

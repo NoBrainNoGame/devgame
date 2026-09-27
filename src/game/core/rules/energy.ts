@@ -38,10 +38,11 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
 }
 
 /**
- * A turn spent not coding. It gives a little energy back, and production
- * notices: a turn off while work waits costs patience. Resting was the only
- * valve when energy was the whole game; with a team landing tickets on every
- * turn you sit out, a free rest was a free turn of their work.
+ * A turn spent not coding, chosen while work waits. It gives a little energy
+ * back, and production notices: a turn off while work waits costs patience.
+ * Resting was the only valve when energy was the whole game; with a team
+ * landing tickets on every turn you sit out, a free rest was a free turn of
+ * their work — which is why the free one is no longer a choice (`passTurn`).
  */
 export function performRest(context: RuleContext): void {
   const { state } = context;
@@ -51,6 +52,18 @@ export function performRest(context: RuleContext): void {
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });
   if (restCostsPatience(state)) raiseQuality(context, BALANCE.quality.perRest, "rest");
+}
+
+/**
+ * A turn that passes on its own: nothing in hand and nothing to start, the
+ * team at work. It regenerates like a rest and costs nothing, and it is not
+ * counted as one: the player never chose it, so the "no rest" objective and
+ * the run's tally of breaks ignore it.
+ */
+export function passTurn(context: RuleContext): void {
+  const regen = restRegen(context.state);
+  gainEnergy(context, regen, "rest");
+  emit(context, { type: "rested", energy: regen });
 }
 
 /** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */

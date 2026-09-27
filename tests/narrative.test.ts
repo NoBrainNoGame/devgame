@@ -164,14 +164,20 @@ describe("answering", () => {
 
   test("a ticket, a departure, a price war and a payment each land where they should", () => {
     const vip = open("sprint_start", "vip_deadline", 0);
-    const withTicket = applyAction(vip, {
+    const held = vip.player.ticketId;
+    const { state: withTicket, events: accepted } = applyAction(vip, {
       type: "answer",
       eventId: "vip_deadline",
       choice: "accept",
-    }).state;
-    expect(
-      Object.values(withTicket.tickets).some((t) => t.kind === "vip" && t.status === "backlog"),
-    ).toBe(true);
+    });
+    // Accepted, the VIP is started and in your hand at once, even over the
+    // ticket you held; the turn is not spent.
+    const arrived = Object.values(withTicket.tickets).find((t) => t.kind === "vip");
+    expect(arrived?.status).toBe("open");
+    expect(withTicket.player.ticketId).toBe(arrived?.id ?? null);
+    expect(withTicket.player.ticketId).not.toBe(held);
+    expect(withTicket.turn).toBe(vip.turn);
+    expect(eventsOfType(accepted, "ticket_started").length).toBe(1);
 
     const poached = open("payday", "poaching", 1);
     const gone = applyAction(poached, {

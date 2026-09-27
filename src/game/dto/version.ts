@@ -69,7 +69,10 @@ export const SAVE_VERSION = 3;
  * rebase is gone, with the lag behind `dev`, the conflict on a missed roll,
  * the Auto-rebase node and the Feature flags skill. And epoch 10: a roll
  * that misses writes a broken commit instead of drawing a failure; the
- * reroll and the countered rejection are gone.
+ * reroll and the countered rejection are gone. And epoch 11:
+ * a ticket you start is in your hand at once, an accepted VIP with it; and
+ * with nothing in hand and nothing to start the turns pass on their own, so
+ * the free rest is no longer an action a log can take.
  */
 export const RULES_EPOCH = 1;
 
