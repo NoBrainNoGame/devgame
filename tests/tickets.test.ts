@@ -95,23 +95,24 @@ describe("the backlog", () => {
     expect(after.tickets[start.ticketId]?.lane).toBeGreaterThanOrEqual(2);
   });
 
-  test("a second ticket takes its own column once written, and switching is free", () => {
+  test("a second ticket takes its own column once written, and starting or switching is free", () => {
     const one = inHand("two-columns");
     plantCommit(one, "craft");
     const start = getAvailableActions(one).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a second ticket");
 
-    const two = applyAction(one, start).state;
-    const written = applyAction(two, { type: "checkout", ticketId: start.ticketId }).state;
-    plantCommit(written, "craft");
-    const lanes = openTickets(written).map((ticket) => ticket.lane);
+    // Starting a second one puts it in your hand: the camera follows as on a switch.
+    const { state: two, events } = applyAction(one, start);
+    expect(two.player.ticketId).toBe(start.ticketId);
+    expect(two.turn).toBe(one.turn);
+    expect(eventsOfType(events, "checkout").length).toBe(1);
+    plantCommit(two, "craft");
+    const lanes = openTickets(two).map((ticket) => ticket.lane);
     expect(new Set(lanes).size).toBe(2);
-    // Starting a second one does not pull you off the first.
-    expect(two.player.ticketId).toBe(one.player.ticketId);
 
-    const switched = applyAction(two, { type: "checkout", ticketId: start.ticketId }).state;
-    expect(switched.player.ticketId).toBe(start.ticketId);
-    expect(switched.turn).toBe(two.turn);
+    const back = applyAction(two, { type: "checkout", ticketId: one.player.ticketId ?? "" }).state;
+    expect(back.player.ticketId).toBe(one.player.ticketId);
+    expect(back.turn).toBe(two.turn);
   });
 
   test("a skill ticket nobody started expires with its sprint, and its skill returns to the pool", () => {

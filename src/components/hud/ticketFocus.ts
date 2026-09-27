@@ -25,6 +25,8 @@ export interface FocusTicket {
   id: string;
   kind: string;
   deadlineSprint?: number | undefined;
+  /** Its deadline missed: nothing presses any more. */
+  late?: true | undefined;
   blockedBy: readonly string[];
   waitingOnObstacle: boolean;
 }
@@ -40,7 +42,8 @@ export type Urgency =
  * The tickets that ask for the player when nobody is on them: a VIP, a ticket
  * with a deadline — and, once such a ticket has nothing left but its
  * obstacle, the obstacle in its stead, since that is where the work is now.
- * An obstacle's own obstacle inherits the same way.
+ * An obstacle's own obstacle inherits the same way. A ticket already late
+ * asks for nothing: what blinking would have saved is gone.
  */
 export function urgencies(tickets: readonly FocusTicket[]): Map<string, Urgency> {
   const byId = new Map(tickets.map((ticket) => [ticket.id, ticket]));
@@ -55,6 +58,7 @@ export function urgencies(tickets: readonly FocusTicket[]): Map<string, Urgency>
     }
   };
   for (const ticket of tickets) {
+    if (ticket.late === true) continue;
     if (ticket.kind === "vip") visit(ticket, { reason: "vip" });
     else if (ticket.deadlineSprint !== undefined) {
       visit(ticket, { reason: "deadline", sprint: ticket.deadlineSprint });

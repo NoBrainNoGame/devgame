@@ -205,6 +205,7 @@
     "previewPoints": "Points : {min} à {max}",
     "wip": "{count, plural, one {# ticket en plus} other {# tickets en plus}}",
     "board": "Projet",
+    "mineOnly": "Mes tickets",
     "boardTitle": "Tableau du projet",
     "boardSubtitle": "Sprint {sprint} · {open, plural, one {# ticket ouvert} other {# tickets ouverts}}",
     "column": {
@@ -270,7 +271,7 @@
     "ticketCost": "−{debt} santé",
     "reviewMergeHint": "Le merge coûte le tour ; la review, non.",
     "rest": "Souffler",
-    "restHint": "Un tour sans coder : un peu d'énergie revient, moins un par ticket ouvert en plus. Si du travail attend, la prod perd patience.",
+    "restHint": "Un tour sans coder : un peu d'énergie revient, moins un par ticket ouvert en plus. Du travail attend : la prod perd patience.",
     "company": "Entreprise",
     "companyHint": "Finances, marché et équipe. Prochaine paie dans {count, plural, one {# tour} other {# tours}}.",
     "money": "{money}",
@@ -329,7 +330,6 @@
     "nothingYet": "Rien pour l'instant.",
     "pickTicket": "Ouvrir un ticket",
     "pickTicketHint": "{count, plural, one {# ticket attend au backlog : ouvrez le projet et choisissez.} other {# tickets attendent au backlog : ouvrez le projet et choisissez.}}",
-    "pickTicketEmpty": "Le backlog est vide : le sprint se termine dès que le tableau l'est.",
     "expiresAtSprintEnd": "Expire à la fin du sprint si personne ne le démarre.",
     "idleSpeedLocked": "Vitesse à débloquer dans l'arbre : Avance rapide, niveau {level}.",
     "logClose": "Fermer le journal",
@@ -435,7 +435,7 @@
     "switchOff": "—",
     "tiered": {
       "t1": {
-        "restHint": "Un tour sans coder, toléré par l'assistant : un peu d'énergie revient, moins un par ticket ouvert en plus. Si du travail attend, la prod perd patience."
+        "restHint": "Un tour sans coder, toléré par l'assistant : un peu d'énergie revient, moins un par ticket ouvert en plus. Du travail attend : la prod perd patience."
       },
       "t2": {
         "idleAuto": "Délégué",
@@ -445,7 +445,7 @@
         "restHintAutopilot": "Le superviseur joue le coup évident. Il ne souffle que si rien d'autre ne tient."
       },
       "t4": {
-        "restHint": "Un tour sans coder. Un peu d'énergie revient ; si du travail attend, la tolérance baisse.",
+        "restHint": "Un tour sans coder. Un peu d'énergie revient ; du travail attend, la tolérance baisse.",
         "patience": "Tolérance"
       },
       "t5": {
@@ -1286,7 +1286,7 @@
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
       "bug_fixed": "commit bugué repris, le bug est parti",
       "debt_refactored": "commit repris : +{{debt}} de santé du code",
-      "rested": "un tour pour souffler, +{energy} énergie",
+      "rested": "un tour sans coder, +{energy} énergie",
       "quality": {
         "incident": "la prod perd patience : {change} pour l'incident ({left}/{max})",
         "rejection": "la prod perd patience : {change} pour la PR refusée ({left}/{max})",
@@ -1415,6 +1415,7 @@
       "event_share": "Part de marché {delta}",
       "event_competitor": "Concurrent {pct} %",
       "event_ticket": "Un ticket arrive : {kind}",
+      "event_ticket_in_hand": "Un ticket arrive, démarré et en main : {kind}",
       "event_dev_leaves": "Le développeur s'en va",
       "event_points": "{count, plural, one {# point de compétence} other {# points de compétence}}",
       "event_price_war": "Guerre des prix pendant trois mois",

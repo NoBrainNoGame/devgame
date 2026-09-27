@@ -68,7 +68,10 @@ export const SAVE_VERSION = 3;
  * epoch 8: a refusal is answered by fixing or by shipping with follow-ups,
  * the answer paying the turn; starting over is gone. And epoch 9: the
  * rebase is gone, with the lag behind `dev`, the conflict on a missed roll,
- * the Auto-rebase node and the Feature flags skill.
+ * the Auto-rebase node and the Feature flags skill. And epoch 10: a ticket
+ * you start is in your hand at once, an accepted VIP with it; and with
+ * nothing in hand and nothing to start the turns pass on their own, so the
+ * free rest is no longer an action a log can take.
  */
 export const RULES_EPOCH = 1;
 

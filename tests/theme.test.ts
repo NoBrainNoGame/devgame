@@ -102,6 +102,7 @@ describe("theme", () => {
     ["branch-dev", THEME.lane.dev],
     ["branch-feature", THEME.lane.feature],
     ["branch-hotfix", THEME.lane.hotfix],
+    ["branch-refactor", THEME.lane.refactor],
     ["branch-obstacle", THEME.lane.obstacle],
     ...DEV_COLOURS.map((value, index): [string, number] => [`dev-${index}`, value]),
     ["debt", THEME.debt],

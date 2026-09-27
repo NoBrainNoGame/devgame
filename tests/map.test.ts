@@ -154,8 +154,8 @@ describe("the written graph", () => {
     const first = ticketInHand(state);
     const second = getAvailableActions(state).find(isType("start"));
     if (second?.type !== "start") throw new Error("expected a second ticket");
-    const both = applyAction(state, second).state;
-    const onSecond = applyAction(both, { type: "checkout", ticketId: second.ticketId }).state;
+    // Starting it puts it in hand.
+    const onSecond = applyAction(state, second).state;
     plantCommit(onSecond, "craft");
     expect(onSecond.tickets[second.ticketId]?.lane).toBe(first.lane === 2 ? 3 : 2);
 
@@ -166,8 +166,7 @@ describe("the written graph", () => {
 
     const third = getAvailableActions(landed).find(isType("start"));
     if (third?.type !== "start") return;
-    const withThird = applyAction(landed, third).state;
-    const onThird = applyAction(withThird, { type: "checkout", ticketId: third.ticketId }).state;
+    const onThird = applyAction(landed, third).state;
     plantCommit(onThird, "craft");
     expect(onThird.tickets[third.ticketId]?.lane).toBe(first.lane);
     expect(checkInvariants(onThird)).toEqual([]);

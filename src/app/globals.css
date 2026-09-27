@@ -186,6 +186,7 @@
   --color-branch-dev: #3fc9b8;
   --color-branch-feature: #5ab8ff;
   --color-branch-hotfix: #ff5533;
+  --color-branch-refactor: #ffb347;
   --color-branch-obstacle: #ff5ec4;
 
   /* The team's colours, the player's first: see DEV_COLOURS in render/theme.ts. */

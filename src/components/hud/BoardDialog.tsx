@@ -26,8 +26,10 @@ const RECENT_EXPIRED = 8;
 /**
  * The project board: what is waiting, what is open, what shipped. A ticket is
  * started from here and nowhere else, because starting one is a project
- * decision, not a move in the turn. It stays open after a decision — starting
- * a ticket is often the first of several — and closes when the player says.
+ * decision, not a move in the turn. It closes when a ticket goes in hand —
+ * starting one or switching to it — since the work is now on the graph, and
+ * stays open otherwise until the player says. A filter keeps the team's
+ * tickets out of the way when the board is theirs more than yours.
  *
  * It takes most of the screen, whatever its shape: three columns that scroll
  * on their own, cards side by side where a column is wide enough. Expired
@@ -47,21 +49,26 @@ export function BoardDialog({
   const t = useTranslations("hud");
   const _money = useMoney();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mineOnly, setMineOnly] = useState(false);
   const selected = snapshot.tickets.find((ticket) => ticket.id === selectedId) ?? null;
 
   const act = (action: PlayerAction): void => {
     onAct(action);
     setSelectedId(null);
+    if (action.type === "start" || action.type === "checkout") onOpenChange(false);
   };
+
+  // Yours: nobody's yet, or held or landed by you rather than a developer.
+  const mine = (ticket: TicketView): boolean =>
+    ticket.assignee === undefined && ticket.deliveredBy === undefined;
+  const shown = mineOnly ? snapshot.tickets.filter(mine) : snapshot.tickets;
+  const hasTeam = snapshot.tickets.some((ticket) => !mine(ticket));
 
   const cancelled = snapshot.tickets.filter((ticket) => ticket.status === "cancelled").reverse();
   const columns: { key: "backlog" | "open" | "merged"; tickets: TicketView[] }[] = [
-    { key: "backlog", tickets: snapshot.tickets.filter((ticket) => ticket.status === "backlog") },
-    { key: "open", tickets: snapshot.tickets.filter((ticket) => ticket.status === "open") },
-    {
-      key: "merged",
-      tickets: snapshot.tickets.filter((ticket) => ticket.status === "merged").reverse(),
-    },
+    { key: "backlog", tickets: shown.filter((ticket) => ticket.status === "backlog") },
+    { key: "open", tickets: shown.filter((ticket) => ticket.status === "open") },
+    { key: "merged", tickets: shown.filter((ticket) => ticket.status === "merged").reverse() },
   ];
 
   return (
@@ -78,6 +85,18 @@ export function BoardDialog({
               open: snapshot.tickets.filter((ticket) => ticket.status === "open").length,
             })}
           </DialogDescription>
+          {/* Only once the team holds or landed something: alone, the board is all yours. */}
+          {hasTeam ? (
+            <Button
+              size="sm"
+              variant={mineOnly ? "default" : "outline"}
+              aria-pressed={mineOnly}
+              className="w-fit"
+              onClick={() => setMineOnly((value) => !value)}
+            >
+              {t("mineOnly")}
+            </Button>
+          ) : null}
         </DialogHeader>
 
         {/* Narrow: the columns stack and the body scrolls. Wider: side by side,

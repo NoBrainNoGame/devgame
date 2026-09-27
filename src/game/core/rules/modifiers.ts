@@ -13,13 +13,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import {
-  backlogTickets,
-  currentTicket,
-  openTickets,
-  playerTickets,
-  unreadAiOn,
-} from "@/game/core/rules/tickets";
+import { backlogTickets, openTickets, playerTickets, unreadAiOn } from "@/game/core/rules/tickets";
 import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
 
 /**
@@ -86,12 +80,17 @@ export function restRegen(state: RunState): number {
 }
 
 /**
- * Whether production sees a rest as a turn off: work was waiting, in hand or
- * in the backlog. With nothing to hold and nothing to start, waiting on the
- * team is all there is to do, and nobody holds it against you.
+ * Nothing to hold and nothing to start: waiting on the team is all there is
+ * to do. The reducer passes those turns by itself, so a rest is never offered
+ * here, and production would not have held one against you anyway.
  */
+export function nothingToDo(state: RunState): boolean {
+  return playerTickets(state).length === 0 && backlogTickets(state).length === 0;
+}
+
+/** Whether production sees a rest as a turn off: work was waiting, in hand or in the backlog. */
 export function restCostsPatience(state: RunState): boolean {
-  return currentTicket(state) !== null || backlogTickets(state).length > 0;
+  return !nothingToDo(state);
 }
 
 /**

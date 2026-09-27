@@ -84,4 +84,14 @@ describe("which tabs blink", () => {
     // Another VIP in hand: this one's obstacle holds still too.
     expect(blinking("t12", [...tickets, otherVip])).toEqual([]);
   });
+
+  test("a ticket already late blinks no more, nor does its obstacle in its stead", () => {
+    const lateVip = { ...vip, late: true as const, waitingOnObstacle: true };
+    const lateBug = { ...bug, deadlineSprint: undefined, late: true as const };
+    const tickets = [lateVip, obstacle, lateBug, plain, otherVip];
+    expect(urgencies(tickets).has("t10")).toBe(false);
+    expect(urgencies(tickets).has("t11")).toBe(false);
+    expect(urgencies(tickets).has("t20")).toBe(false);
+    expect(blinking("t30", tickets)).toEqual(["t12"]);
+  });
 });

@@ -39,6 +39,8 @@ export function useAusterity(): void {
       set("--color-branch-dev", p.lane.dev);
       set("--color-branch-feature", p.lane.feature);
       set("--color-branch-hotfix", p.lane.hotfix);
+      set("--color-branch-refactor", p.lane.refactor);
+      set("--color-branch-obstacle", p.lane.obstacle);
       set("--color-debt", p.debt);
       set("--color-energy", p.energy);
       set("--color-money", p.money);

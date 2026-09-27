@@ -205,6 +205,7 @@
     "previewPoints": "Points: {min} to {max}",
     "wip": "{count, plural, one {# extra ticket} other {# extra tickets}}",
     "board": "Project",
+    "mineOnly": "My tickets",
     "boardTitle": "Project board",
     "boardSubtitle": "Sprint {sprint} · {open, plural, one {# open ticket} other {# open tickets}}",
     "column": {
@@ -270,7 +271,7 @@
     "ticketCost": "−{debt} health",
     "reviewMergeHint": "The merge costs the turn; the review did not.",
     "rest": "Take a breath",
-    "restHint": "A turn without code: a little energy comes back, minus one per extra open ticket. If work is waiting, production loses patience.",
+    "restHint": "A turn without code: a little energy comes back, minus one per extra open ticket. Work is waiting: production loses patience.",
     "company": "Company",
     "companyHint": "Finances, market and team. Next payday in {count, plural, one {# turn} other {# turns}}.",
     "money": "{money}",
@@ -329,7 +330,6 @@
     "nothingYet": "Nothing yet.",
     "pickTicket": "Open a ticket",
     "pickTicketHint": "{count, plural, one {# ticket is waiting in the backlog: open the board and choose.} other {# tickets are waiting in the backlog: open the board and choose.}}",
-    "pickTicketEmpty": "The backlog is empty: the sprint ends as soon as the board is.",
     "expiresAtSprintEnd": "Expires at the end of the sprint unless someone starts it.",
     "idleSpeedLocked": "A speed to unlock in the tree: Fast forward, level {level}.",
     "logClose": "Close the log",
@@ -435,7 +435,7 @@
     "switchOff": "—",
     "tiered": {
       "t1": {
-        "restHint": "A turn without coding, as the assistant tolerates: a little energy comes back, minus one per extra open ticket. If work is waiting, production loses patience."
+        "restHint": "A turn without coding, as the assistant tolerates: a little energy comes back, minus one per extra open ticket. Work is waiting: production loses patience."
       },
       "t2": {
         "idleAuto": "Delegated",
@@ -445,7 +445,7 @@
         "restHintAutopilot": "The supervisor plays the obvious move. It rests only when nothing else holds."
       },
       "t4": {
-        "restHint": "A turn without coding. A little energy comes back; if work is waiting, tolerance drops.",
+        "restHint": "A turn without coding. A little energy comes back; work is waiting, tolerance drops.",
         "patience": "Tolerance"
       },
       "t5": {
@@ -1286,7 +1286,7 @@
       "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
       "bug_fixed": "bugged commit redone, the bug is gone",
       "debt_refactored": "commit redone: +{debt} code health",
-      "rested": "a turn to breathe, +{energy} energy",
+      "rested": "a turn without code, +{energy} energy",
       "quality": {
         "incident": "production loses patience: {change} for the incident ({left}/{max})",
         "rejection": "production loses patience: {change} for the refused pull request ({left}/{max})",
@@ -1415,6 +1415,7 @@
       "event_share": "Market share {delta}",
       "event_competitor": "Competitor {pct}%",
       "event_ticket": "A ticket arrives: {kind}",
+      "event_ticket_in_hand": "A ticket arrives, started and in your hand: {kind}",
       "event_dev_leaves": "The developer leaves",
       "event_points": "{count, plural, one {# skill point} other {# skill points}}",
       "event_price_war": "Price war for three months",

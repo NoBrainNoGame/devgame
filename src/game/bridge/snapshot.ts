@@ -112,6 +112,8 @@ export interface TicketView {
   mrr: number;
   /** The developer working it, when it is not you. */
   assignee?: DevId;
+  /** The developer who landed it, when it was not you: a merge clears `assignee`. */
+  deliveredBy?: DevId;
   /** The feature this obstacle stands on. */
   parentId?: TicketId;
   /** The obstacles still standing on it: it cannot go to review while one is. */
@@ -292,6 +294,13 @@ export interface RunSnapshot {
  * recorded run replays as it was played; nothing offers them any more —
  * neither the HUD nor the idle clock, which both read this list.
  */
+/** Who landed a merged ticket, read off its merge commit: the merge itself cleared `assignee`. */
+function deliveredBy(state: RunState, ticket: Ticket): { deliveredBy?: DevId } {
+  const merge = ticket.mergeNodeId === undefined ? undefined : state.nodes[ticket.mergeNodeId];
+  const author = merge?.commit.author;
+  return author === undefined ? {} : { deliveredBy: author };
+}
+
 function offeredActions(state: RunState): PlayerAction[] {
   const actions = getAvailableActions(state);
   const current = currentTicket(state);
@@ -345,6 +354,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
     mrr: ticket.mrr,
     ...(ticket.assignee === undefined ? {} : { assignee: ticket.assignee }),
+    ...deliveredBy(state, ticket),
     ...(ticket.parentId === undefined ? {} : { parentId: ticket.parentId }),
     blockedBy: obstaclesOf(state, ticket).map((obstacle) => obstacle.id),
     waitingOnObstacle: ticket.status === "open" && waitsOnlyForObstacle(state, ticket),

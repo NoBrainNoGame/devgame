@@ -146,7 +146,9 @@ export function ActionPanel({
           />
         )}
 
-        {current !== undefined ? null : (
+        {/* Nothing in hand and nothing waiting never lasts: the turns pass on
+            their own until the sprint closes, so there is nothing to open. */}
+        {current !== undefined || waiting === 0 ? null : (
           <div className="relative">
             <Button
               className="h-auto w-full min-w-0 justify-between px-3 py-2 text-left"
@@ -155,7 +157,7 @@ export function ActionPanel({
               <span className="flex min-w-0 flex-col items-start gap-0.5">
                 <span className="max-w-full truncate">{t("pickTicket")}</span>
                 <span className="whitespace-normal text-left font-normal text-xs opacity-80">
-                  {waiting > 0 ? t("pickTicketHint", { count: waiting }) : t("pickTicketEmpty")}
+                  {t("pickTicketHint", { count: waiting })}
                 </span>
               </span>
             </Button>

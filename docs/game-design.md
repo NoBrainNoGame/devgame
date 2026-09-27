@@ -40,7 +40,9 @@ Des points de story : un par commit atterri à la main, trois par l'IA. Une
 [compétence](#compétences-et-arbre) éventuelle se paie en points en plus, sinon
 pas de décision.
 
-- **WIP** : démarrer (tableau du projet) et basculer sont gratuits ; chaque
+- **WIP** : démarrer (tableau du projet) et basculer sont gratuits, et un
+  ticket que vous démarrez passe en main aussitôt, même par-dessus un autre ;
+  seuls les tickets imposés attendent si vous teniez quelque chose. Chaque
   ticket ouvert au-delà du premier majore l'énergie des commits et retire un
   pourcentage de chaque jet (`wip`, relatif pour garder l'écart entre les
   mains). Compte la refacto imposée ; pas le hotfix (déjà une punition),
@@ -61,7 +63,7 @@ effectué, selon les poids du palier (`tickets.kinds.weights`).
 | --- | --- |
 | Feature | Le cas ordinaire. |
 | Bug client | 2–3 points, sans revenu, dû ce sprint. À l'heure : −10 patience, +1 part. Au backlog : annulé, +10 patience. En main : reste, sans récompense. |
-| VIP | Feature +2 points, revenu double, due ce sprint. À l'heure : prime du palier, +2 part. Au backlog : annulée, −2 part. En main : demi-revenu, sans prime, −2 part à la livraison. |
+| VIP | Feature +2 points, revenu double, due ce sprint ; acceptée (événement), elle est démarrée et en main aussitôt. À l'heure : prime du palier, +2 part. Au backlog : annulée, −2 part. En main : demi-revenu, sans prime, −2 part à la livraison. |
 | Dette | Refacto de 2 points, arrive avec le sprint si la dette atteint 40, une à la fois, sans tirage ; livrée, −20 dette. |
 | Migration | 4–6 points, +3 dette par commit du joueur (sauf Dependabot) ; livrée, un niveau de serveurs. |
 | Obstacle | Jamais tiré ([L'obstacle](#lobstacle)). |
@@ -160,10 +162,12 @@ bonus.
 
 Souffler rend `energy.restRegen` moins un par ticket en trop (au moins un) : la
 soupape se ferme quand le tableau est chargé, nœud des deux fins. Elle se
-paie : avec un ticket en main ou à démarrer, la prod voit la pause
-(`quality.perRest` de patience). Avec une équipe, un tour de repos était un
-tour de son travail offert ; il ne reste gratuit que quand il n'y a rien à
-faire.
+paie : proposée seulement avec un ticket en main ou à démarrer, la prod voit
+la pause (`quality.perRest` de patience). Rien en main et rien à démarrer,
+l'équipe au travail : les tours passent d'eux-mêmes jusqu'à la clôture du
+sprint ou au retour d'un ticket (hotfix, départ), chacun un repos gratuit qui
+ne compte pas comme une pause (ni pour l'objectif, ni pour le licenciement).
+Le joueur ne voit jamais un tableau où il n'a rien à faire.
 
 ## Ressources
 
@@ -546,8 +550,12 @@ n'est dessus ni sur un de ses sous-tickets — et, quand il n'attend plus que so
 obstacle, c'est l'obstacle qui clignote (`hud/ticketFocus.ts`) ; panneau de
 droite pour la seule décision du tour ; journal repliable
 dessous. Le tableau du projet est une modale (démarrer est une décision de
-projet, pas un coup) qui reste ouverte après une décision et prend l'essentiel
-de l'écran ; les expirés y sont un compteur en pied, nommés en infobulle.
+projet, pas un coup) qui prend l'essentiel de l'écran, se ferme dès qu'un
+ticket passe en main (démarrer, basculer) et reste ouverte sinon ; un filtre
+« Mes tickets » cache ceux que l'équipe tient ou a livrés ; les expirés y sont
+un compteur en pied, nommés en infobulle. Les onglets portent le badge de la
+branche (`feat/t7`, couleur de la colonne), le même que la pointe de la colonne
+sur le graphe ; un ticket en retard ne clignote plus.
 L'entreprise se lit dans une modale (Finances, Marché, Équipe : qui y
 travaille) et se renforce dans une autre, **Améliorations**, un onglet par
 dépense : Compétences (l'arbre, et l'achat de points), Recrutement (les rangs,

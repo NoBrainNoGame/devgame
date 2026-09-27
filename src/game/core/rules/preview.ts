@@ -20,7 +20,6 @@ import {
   gatherEffects,
   mergeEventChance,
   nodeEnergyCost,
-  restCostsPatience,
   restRegen,
   reviewCleanCount,
   reviewEnergyCost,
@@ -186,9 +185,8 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const regen = restRegen(state);
       const notes: I18nText[] = [text("notes.rest_regen", { energy: regen })];
       if (wipExtra(state) > 0) notes.push(text("notes.rest_wip", { count: wipExtra(state) }));
-      if (restCostsPatience(state)) {
-        notes.push(text("notes.rest_patience", { patience: BALANCE.quality.perRest }));
-      }
+      // Offered only while work waits, so production always sees it.
+      notes.push(text("notes.rest_patience", { patience: BALANCE.quality.perRest }));
       return { action, energyCost: 0, consumesTurn: true, notes };
     }
 
@@ -359,8 +357,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       if (e.share !== undefined) notes.push(text("notes.event_share", { delta: e.share }));
       if (e.competitor !== undefined)
         notes.push(text("notes.event_competitor", { pct: e.competitor }));
-      if (e.ticket !== undefined)
-        notes.push(text("notes.event_ticket", { kind: ref(`tickets.${e.ticket}.name`) }));
+      if (e.ticket !== undefined) {
+        const key = e.inHand === true ? "notes.event_ticket_in_hand" : "notes.event_ticket";
+        notes.push(text(key, { kind: ref(`tickets.${e.ticket}.name`) }));
+      }
       if (e.devLeaves === true) notes.push(text("notes.event_dev_leaves"));
       if (e.skillPoints !== undefined)
         notes.push(text("notes.event_points", { count: e.skillPoints }));

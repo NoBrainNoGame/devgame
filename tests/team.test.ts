@@ -195,6 +195,33 @@ describe("the team's turn", () => {
     expect(eventsOfType(later, "ticket_merged").some((e) => e.devId === "d1")).toBe(true);
     expect(eventsOfType(later, "dev_promoted")).toEqual([]);
   });
+
+  test("with nothing in hand and nothing to start, the turns pass on their own until the sprint closes", () => {
+    // The developer holds the one ticket left; you hold nothing and the
+    // backlog is empty. Any move you make — a hire, here — lets the clock
+    // run: every turn is a free rest that counts as none, and the team
+    // works each of them.
+    const state = withJunior("idle-turns");
+    const pulled = applyAction(state, { type: "rest" }).state;
+    const theirs = sortedTickets(pulled).find((ticket) => ticket.assignee === "d1");
+    if (theirs === undefined) throw new Error("expected the junior to hold a ticket");
+    theirs.points = 1000;
+    for (const ticket of sortedTickets(pulled)) {
+      if (ticket.id !== theirs.id && ticket.status !== "merged") ticket.status = "cancelled";
+    }
+    pulled.player.ticketId = null;
+    pulled.money = 100_000;
+    expect(getAvailableActions(pulled).some(isType("rest"))).toBe(false);
+
+    const { state: after, events } = applyAction(pulled, { type: "hire", rank: "junior" });
+    const passed = eventsOfType(events, "rested").length;
+    expect(passed).toBe(BALANCE.sprint.turns - pulled.sprintTurn);
+    expect(after.sprint === pulled.sprint + 1 || after.phase.kind === "choose_relic").toBe(true);
+    expect(after.stats.rests).toBe(pulled.stats.rests);
+    expect(eventsOfType(events, "quality").some((e) => e.source === "rest")).toBe(false);
+    expect(eventsOfType(events, "turn_started").length).toBe(passed);
+    expect(checkInvariants(after)).toEqual([]);
+  });
 });
 
 describe("payday for the team", () => {

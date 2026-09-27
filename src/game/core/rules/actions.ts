@@ -8,7 +8,7 @@ import {
 import { canonicalJson } from "@/game/core/hash";
 import { canAcquire } from "@/game/core/rules/acquisitions";
 import { hackOffer } from "@/game/core/rules/hack";
-import { gatherEffects } from "@/game/core/rules/modifiers";
+import { gatherEffects, nothingToDo } from "@/game/core/rules/modifiers";
 import { choiceCost } from "@/game/core/rules/narrative";
 import { canReview } from "@/game/core/rules/review";
 import { canBuySkillPoint, canBuyUpgrade } from "@/game/core/rules/shop";
@@ -74,7 +74,9 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
           else if (healthLetsOpen(state, ticket)) actions.push({ type: "submit" });
         }
       }
-      actions.push({ type: "rest" });
+      // With nothing to do the turns pass on their own (`applyAction`): a
+      // rest is a choice only while work waits, where it costs patience.
+      if (!nothingToDo(state)) actions.push({ type: "rest" });
 
       for (const id of TREE_IDS) {
         if (canPlaceTree(state, id)) actions.push({ type: "tree", id });

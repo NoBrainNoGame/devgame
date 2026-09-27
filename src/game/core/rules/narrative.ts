@@ -22,6 +22,7 @@ import {
 import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality, raiseQuality } from "@/game/core/rules/quality";
 import { releaseDev } from "@/game/core/rules/team";
+import { openTicket } from "@/game/core/rules/tickets";
 import { tierScale } from "@/game/core/rules/tier";
 import { systemNote } from "@/game/core/rules/voice";
 import type { RunState } from "@/game/core/types";
@@ -157,7 +158,11 @@ export function answerEvent(context: RuleContext, eventId: NarrativeEventId, cho
   if (effect.competitor !== undefined && competitorId !== undefined) {
     bumpCompetitor(context, competitorId, effect.competitor);
   }
-  if (effect.ticket !== undefined) arriveTicketOfKind(context, effect.ticket);
+  if (effect.ticket !== undefined) {
+    const arrived = arriveTicketOfKind(context, effect.ticket);
+    // Accepted, not merely received: the work starts now, in your hand.
+    if (effect.inHand === true) openTicket(context, arrived, false);
+  }
   if (effect.devLeaves === true) {
     const dev = state.devs.find((d) => d.id === devId);
     if (dev !== undefined) releaseDev(context, dev);

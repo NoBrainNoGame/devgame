@@ -70,6 +70,8 @@ export interface NarrativeEffect {
   competitor?: number;
   /** A ticket of this kind arrives on the spot. */
   ticket?: TicketKind;
+  /** The ticket is started and in your hand at once, not left in the backlog. */
+  inHand?: true;
   /** The last developer hired walks. */
   devLeaves?: boolean;
   skillPoints?: number;
@@ -162,7 +164,7 @@ export const NARRATIVE_EVENTS: Record<NarrativeEventId, NarrativeEventDef> = {
     minTier: 0,
     minSprint: 2,
     choices: [
-      { id: "accept", effect: { ticket: "vip" } },
+      { id: "accept", effect: { ticket: "vip", inHand: true } },
       { id: "refuse", effect: { share: -1 } },
     ],
   },
