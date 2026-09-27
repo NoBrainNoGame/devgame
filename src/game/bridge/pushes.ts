@@ -7,13 +7,15 @@ import type { GameEvent, MapNode, NodeId, RunState, TicketId } from "@/game/core
  * A commit you write is local first: its cost, its points and whatever it
  * broke all land on it while it is still yours. If its roll went through, it
  * is pushed at the end of its story. If it missed, the commit is broken and
- * stays local until its branch is pushed again — by the next commit that goes
- * through, by opening the pull request, or by the merge — and then everything
- * local on that branch goes up as one commit: squashed into the most recent.
+ * stays local until its branch is pushed again, and a push keeps only the
+ * code that worked: squashed into the next commit that goes through, or —
+ * when the pull request, a merge or an obstacle landing pushes the branch
+ * with nothing new — folded back into the last commit that did.
  *
- * This is presentation, not a rule. The engine has no remote, so the ledger
- * is folded from events, batch after batch, and rebuilt by replaying the log
- * on load, exactly as the state itself is.
+ * The rule is the engine's (`pushBranch`): a broken commit counts for nothing
+ * and leaves its ticket at the push. Where it goes on screen is decided here,
+ * folded from events batch after batch and rebuilt by replaying the log on
+ * load, exactly as the state itself is.
  */
 
 export interface PushLedger {
@@ -25,9 +27,12 @@ export interface PushLedger {
 
 /** Commits pushed together. */
 export interface PushOp {
-  /** Oldest first; the last is `into`. */
+  /** The broken commits dropped, oldest first, then `into`. */
   readonly nodeIds: readonly NodeId[];
-  /** The commit that stays: the most recent. */
+  /**
+   * The commit that stays: the one that went through, or for a `flush` the
+   * last one that had, below the broken ones it takes back.
+   */
   readonly into: NodeId;
   /** Index of the event that pushed them. */
   readonly at: number;
@@ -57,26 +62,6 @@ export function isBornLocal(node: MapNode): boolean {
   );
 }
 
-/** What a commit drawn on the graph carries, for its rings and its tooltip. */
-export interface CommitMarks {
-  bugged: boolean;
-  unread: boolean;
-}
-
-/**
- * The marks of commits drawn as one: the commit that stays and every commit
- * squashed into it. The squash is only how the screen shows a push: a broken
- * commit pushed with the next one is still bugged on its branch, blocking the
- * pull request until a fix redoes it, and unread machine work is still
- * suspect at the release. Drawn from the survivor alone, both would vanish.
- */
-export function marksOf(commits: readonly Pick<MapNode, "commit">[]): CommitMarks {
-  return {
-    bugged: commits.some((node) => node.commit.bugged === true),
-    unread: commits.some((node) => node.commit.mode === "ai" && !node.commit.reviewed),
-  };
-}
-
 /** Commits squashed into this one, itself included; 1 for an ordinary commit. */
 export function squashedInto(ledger: PushLedger, id: NodeId): number {
   let count = 1;
@@ -101,11 +86,16 @@ export function advancePushes(
     ops.push({ nodeIds: group, into, at, kind });
   };
 
+  // Only broken commits are ever left local, and a push keeps none of them.
+  // Nothing went through to squash them into: they fold into the commit the
+  // branch now ends on. A branch with none stays as it is — never pushed.
   const flush = (ticketId: TicketId, at: number): void => {
     const group = local[ticketId];
-    if (group === undefined) return;
+    const ticket = state.tickets[ticketId];
+    const into = ticket?.nodeIds[ticket.nodeIds.length - 1];
+    if (group === undefined || into === undefined) return;
     delete local[ticketId];
-    push(group, at, "flush");
+    push([...group, into], at, "flush");
   };
 
   events.forEach((event, at) => {

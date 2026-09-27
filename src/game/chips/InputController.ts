@@ -3,7 +3,6 @@ import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import type { FxQueue } from "@/game/chips/FxQueue";
 import type { GraphView } from "@/game/chips/GraphView";
-import type { NodeId } from "@/game/core/types";
 
 /**
  * What the graph does when you point at it.
@@ -33,9 +32,9 @@ export class InputController extends booyah.ChipBase {
     // the pointer.
     const pushOf = (nodeId: string | null): GameStore["hoveredPush"] => {
       if (nodeId === null) return null;
-      const folded: NodeId[] = [];
-      for (const [id, into] of reveal.absorbed) if (into === nodeId) folded.push(id);
-      return { local: reveal.local.has(nodeId), folded };
+      let squashed = 1;
+      for (const into of reveal.absorbed.values()) if (into === nodeId) squashed += 1;
+      return { local: reveal.local.has(nodeId), squashed };
     };
 
     this._subscribe(this.graph, "nodeHover", (...args: unknown[]) => {

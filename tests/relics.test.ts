@@ -20,8 +20,8 @@ import { eventsOfType, findSeed, newRun, play, policy, settle } from "./helpers"
  * sprint's cards, and every card taken or shown is counted for balancing.
  */
 
-function atOffer(prefix: string): RunState {
-  const { state } = findSeed((r) => r.state.phase.kind === "choose_relic", {
+function atOffer(prefix: string, also: (state: RunState) => boolean = () => true): RunState {
+  const { state } = findSeed((r) => r.state.phase.kind === "choose_relic" && also(r.state), {
     prefix,
     pick: policy("craft"),
     limit: 200,
@@ -184,10 +184,10 @@ describe("boosts", () => {
   });
 
   test("grooming drops every backlog ticket nobody touched", () => {
-    const state = atOffer("boost-grooming");
-    const untouched = Object.values(state.tickets).filter(
-      (t) => t.status === "backlog" && t.nodeIds.length === 0,
-    );
+    const isUntouched = (t: RunState["tickets"][string]): boolean =>
+      t.status === "backlog" && t.nodeIds.length === 0;
+    const state = atOffer("boost-grooming", (s) => Object.values(s.tickets).some(isUntouched));
+    const untouched = Object.values(state.tickets).filter(isUntouched);
     expect(untouched.length).toBeGreaterThan(0);
     const result = take(state, "grooming");
     for (const t of untouched) expect(result.state.tickets[t.id]?.status).toBe("cancelled");

@@ -13,7 +13,7 @@ import {
   openTicket,
   unreadAiOn,
 } from "@/game/core/rules/tickets";
-import { completeMerge, completeObstacle } from "@/game/core/rules/write";
+import { completeMerge, completeObstacle, pushBranch } from "@/game/core/rules/write";
 import type { Ticket, TicketId } from "@/game/core/types";
 
 /**
@@ -38,6 +38,8 @@ export function performSubmit(context: RuleContext): void {
   const ticket = currentTicket(state);
   if (ticket === null) throw new Error("performSubmit: no ticket in hand");
 
+  // A pull request is opened from the remote: the branch goes up first.
+  pushBranch(state, ticket);
   const { acceptance } = BALANCE;
   const unread = unreadAiOn(state, ticket);
 

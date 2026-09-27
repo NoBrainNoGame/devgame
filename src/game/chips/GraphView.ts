@@ -1,6 +1,5 @@
 import { Container, Graphics, Text } from "pixi.js";
 
-import { type CommitMarks, marksOf } from "@/game/bridge/pushes";
 import type * as booyah from "@/game/chips/booyah";
 import { ContainerChip } from "@/game/chips/ContainerChip";
 import { sceneContext } from "@/game/chips/context";
@@ -97,8 +96,6 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   private rows: Rows = { of: (node) => node.depth };
   private rowTarget = new Map<NodeId, number>();
   private rowNow = new Map<NodeId, number>();
-  /** The commits squashed into each commit drawn, which it carries the marks of. */
-  private folded = new Map<NodeId, NodeId[]>();
 
   protected _onActivate(): void {
     this.lanes = new Graphics();
@@ -283,10 +280,8 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     // A squashed commit goes into the one it was pushed with, and its row
     // closes up behind it.
-    this.folded = new Map();
-    for (const [id, into] of reveal.absorbed) {
-      this.folded.set(into, [...(this.folded.get(into) ?? []), id]);
-    }
+    const folded = new Map<NodeId, number>();
+    for (const into of reveal.absorbed.values()) folded.set(into, (folded.get(into) ?? 1) + 1);
 
     const live = new Set<NodeId>();
     for (const node of nodes) {
@@ -299,7 +294,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
         continue;
       }
       live.add(node.id);
-      this.upsert(node, reveal.local.has(node.id));
+      this.upsert(node, reveal.local.has(node.id), folded.get(node.id) ?? 1);
     }
 
     for (const id of [...this.sprites.keys()]) {
@@ -394,10 +389,9 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   // --- commits --------------------------------------------------------------
 
-  private upsert(node: MapNode, local: boolean): void {
+  private upsert(node: MapNode, local: boolean, squashed: number): void {
     const { translate, subjects } = sceneContext(this.chipContext);
     let sprite = this.sprites.get(node.id);
-    const squashed = (this.folded.get(node.id)?.length ?? 0) + 1;
     const subject = `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`;
     // Commits pushed as one read as one, and say how many they were.
     const text = squashed > 1 ? `${subject} (×${squashed})` : subject;
@@ -446,7 +440,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     // Pushed is forward only; a picture rebuilt from the ledger starts where it stands.
     sprite.local = local;
     if (local) sprite.pushed = 0;
-    drawRings(sprite.rings, this.marksAt(node), this.hovered === node.id);
+    drawRings(sprite.rings, node, this.hovered === node.id);
     drawBody(sprite.body, node);
     if (local || sprite.pushed < 1) drawLocalBody(sprite.localBody, node);
     else sprite.localBody.clear();
@@ -466,18 +460,8 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     for (const [nodeId, sprite] of this.sprites) {
       const node = this.node(nodeId);
-      if (node !== undefined) drawRings(sprite.rings, this.marksAt(node), this.hovered === nodeId);
+      if (node !== undefined) drawRings(sprite.rings, node, this.hovered === nodeId);
     }
-  }
-
-  /** Its own marks and those of every commit squashed into it. */
-  private marksAt(node: MapNode): CommitMarks {
-    const commits = [node];
-    for (const id of this.folded.get(node.id) ?? []) {
-      const folded = this.node(id);
-      if (folded !== undefined) commits.push(folded);
-    }
-    return marksOf(commits);
   }
 
   private node(id: NodeId): MapNode | undefined {

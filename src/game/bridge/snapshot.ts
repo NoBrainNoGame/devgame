@@ -124,6 +124,7 @@ export interface TicketView {
   waitingOnHealth: boolean;
   lane?: number;
   ready: boolean;
+  /** Its commits that count, oldest first: never a broken one still on your machine. */
   commits: number;
   nodeIds: NodeId[];
   sprintArrived: number;
@@ -287,13 +288,11 @@ export interface RunSnapshot {
   tickets: TicketView[];
 }
 
-/**
- * The moves the player is offered: the legal ones, less the commits that
- * would fill points on a ticket that is full and waits only for its
- * obstacle or for the codebase's health. The rules keep those legal so every
- * recorded run replays as it was played; nothing offers them any more —
- * neither the HUD nor the idle clock, which both read this list.
- */
+/** The ticket's commits that count: a broken one is only on your machine, and the next push drops it. */
+function pushedOn(state: RunState, ticket: Ticket): NodeId[] {
+  return ticket.nodeIds.filter((id) => state.nodes[id]?.commit.broken !== true);
+}
+
 /** Who landed a merged ticket, read off its merge commit: the merge itself cleared `assignee`. */
 function deliveredBy(state: RunState, ticket: Ticket): { deliveredBy?: DevId } {
   const merge = ticket.mergeNodeId === undefined ? undefined : state.nodes[ticket.mergeNodeId];
@@ -301,6 +300,13 @@ function deliveredBy(state: RunState, ticket: Ticket): { deliveredBy?: DevId } {
   return author === undefined ? {} : { deliveredBy: author };
 }
 
+/**
+ * The moves the player is offered: the legal ones, less the commits that
+ * would fill points on a ticket that is full and waits only for its
+ * obstacle or for the codebase's health. The rules keep those legal so every
+ * recorded run replays as it was played; nothing offers them any more —
+ * neither the HUD nor the idle clock, which both read this list.
+ */
 function offeredActions(state: RunState): PlayerAction[] {
   const actions = getAvailableActions(state);
   const current = currentTicket(state);
@@ -345,7 +351,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     points: ticket.points,
     filled: ticket.filled,
     rework: ticket.rework,
-    nodeIds: [...ticket.nodeIds],
+    nodeIds: pushedOn(state, ticket),
     sprintArrived: ticket.sprintArrived,
     debtAdded: ticket.debtAdded,
     rejections: ticket.rejections,
@@ -362,7 +368,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     ...(ticket.lane === undefined ? {} : { lane: ticket.lane }),
     // Ready means the pull request can open: one the health floor holds back is not.
     ready: ticket.status === "open" && isReady(state, ticket) && !waitsOnlyForHealth(state, ticket),
-    commits: ticket.nodeIds.length,
+    commits: pushedOn(state, ticket).length,
     ...(ticket.mustWrite === undefined ? {} : { mustWrite: ticket.mustWrite }),
     ...(ticket.origin === undefined ? {} : { origin: ticket.origin }),
     ...(ticket.nameKey === undefined ? {} : { nameKey: ticket.nameKey }),

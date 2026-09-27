@@ -17,7 +17,6 @@ export type { LandingHandle } from "@/game/bridge/landing";
 export { mountLanding } from "@/game/bridge/landing";
 export type { GameHandle, MountOptions } from "@/game/bridge/mount";
 export { mountGame } from "@/game/bridge/mount";
-export { type CommitMarks, marksOf } from "@/game/bridge/pushes";
 export type {
   DevView,
   EconomyView,

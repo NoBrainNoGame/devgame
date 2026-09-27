@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { buggedOn, offersOf, openTickets } from "@/game/core/rules/tickets";
+import { buggedOn, offersOf, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
 
 import {
   eventsOfType,
@@ -34,11 +34,11 @@ describe("a roll that misses", () => {
     throw new Error("no roll missed in 60 seeds");
   }
 
-  test("writes a broken commit: bugged, worth nothing, only the commit's energy spent", () => {
+  test("writes a broken commit: local, worth nothing, only the commit's energy spent", () => {
     const { before, state, events, done } = firstMiss("broken");
 
     const node = state.nodes[done.nodeId];
-    expect(node?.commit.bugged).toBe(true);
+    expect(node?.commit.broken).toBe(true);
     expect(node?.commit.debt).toBeUndefined();
     // Nothing filled, nothing owed.
     expect(eventsOfType(events, "points")).toEqual([]);
@@ -47,25 +47,60 @@ describe("a roll that misses", () => {
     const spent = eventsOfType(events, "energy").filter((e) => e.delta < 0);
     expect(spent.map((e) => e.reason)).toEqual(["commit"]);
     expect(state.turn).toBe(before.turn + 1);
-    // It is on the ticket, in the history, and a fix is the way forward.
+    // It is on your machine, at the tip of the branch, and counts for nothing:
+    // not a commit to your name, not a bug, nothing for a review to read.
     const ticket = ticketInHand(state);
     expect(ticket.nodeIds).toContain(done.nodeId);
-    expect(state.player.totalCommits).toBe(before.player.totalCommits + 1);
-    expect(offersOf(state, ticket)).toContain("fix");
-    expect(buggedOn(state, ticket)).toEqual([done.nodeId]);
+    expect(state.player.totalCommits).toBe(before.player.totalCommits);
+    expect(state.stats.commitsLanded).toEqual(before.stats.commitsLanded);
+    expect(buggedOn(state, ticket)).toEqual([]);
+    expect(unreadAiOn(state, ticket)).toEqual([]);
+    expect(offersOf(state, ticket)).not.toContain("fix");
   });
 
-  test("a fix redoes the broken commit", () => {
-    const { state, done } = firstMiss("broken-fix");
+  test("the next commit that goes through keeps only the code that worked", () => {
+    const { before, state, done } = firstMiss("broken-push");
+    const below = ticketInHand(before).nodeIds.at(-1);
+    let now = state;
     for (let i = 0; i < 20; i += 1) {
-      const result = applyAction(state, { type: "commit", mode: "craft", kind: "fix" });
-      const fixed = eventsOfType(result.events, "bug_fixed")[0];
-      if (fixed === undefined) continue;
-      expect(fixed.nodeId).toBe(done.nodeId);
-      expect(result.state.nodes[done.nodeId]?.commit.bugged).toBeUndefined();
+      const result = applyAction(now, { type: "commit", mode: "craft" });
+      now = result.state;
+      const landed = eventsOfType(result.events, "node_done").find((e) => e.broken !== true);
+      if (landed === undefined) continue;
+      const ticket = ticketInHand(now);
+      // Every broken commit is gone from the ticket; the one that landed is
+      // built on the last code that worked, and is the only one counted.
+      expect(ticket.nodeIds).not.toContain(done.nodeId);
+      expect(ticket.nodeIds.every((id) => now.nodes[id]?.commit.broken !== true)).toBe(true);
+      const parent = now.nodes[landed.nodeId]?.parents[0];
+      if (below === undefined) expect(now.nodes[parent ?? ""]?.lane).toBe(1);
+      else expect(parent).toBe(below);
+      expect(now.player.totalCommits).toBe(before.player.totalCommits + 1);
       return;
     }
-    throw new Error("no fix landed in 20 tries");
+    throw new Error("no commit landed in 20 tries");
+  });
+
+  test("a pull request pushes the branch, and what broke does not go with it", () => {
+    // A commit that lands, then one that misses on top of it.
+    let state = inHand("broken-pr");
+    for (let i = 0; i < 20 && ticketInHand(state).nodeIds.length === 0; i += 1) {
+      state = applyAction(state, { type: "commit", mode: "craft" }).state;
+    }
+    let draft: string | undefined;
+    for (let i = 0; i < 40 && draft === undefined; i += 1) {
+      const result = applyAction(state, { type: "commit", mode: "ai" });
+      state = result.state;
+      draft = eventsOfType(result.events, "node_done").find((e) => e.broken === true)?.nodeId;
+    }
+    if (draft === undefined) throw new Error("no roll missed in 40 tries");
+
+    // A broken commit holds nothing: the pull request opens over it.
+    const ready = makeReady(state);
+    expect(getAvailableActions(ready).some(isType("submit"))).toBe(true);
+    const after = applyAction(ready, { type: "submit" }).state;
+    expect(ticketInHand(after).nodeIds).not.toContain(draft);
+    expect(after.nodes[draft]).toBeDefined();
   });
 
   test("monitoring shortens the hotfix", () => {

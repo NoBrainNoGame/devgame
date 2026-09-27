@@ -28,6 +28,7 @@ import type {
   NodeCommit,
   NodeId,
   NodeKind,
+  RunState,
   Ticket,
 } from "@/game/core/types";
 
@@ -143,6 +144,16 @@ function forkPointOf(state: RuleContext["state"], ticket: Ticket): MapNode | nul
   return tipOfLane(state, DEV_LANE);
 }
 
+/**
+ * The branch goes up, and only the code that worked goes with it: the broken
+ * commits still on your machine leave the ticket and never count again. Every
+ * push does this — a commit that went through, the pull request, a merge, an
+ * obstacle landing — so a bug is only ever one the branch actually pushed.
+ */
+export function pushBranch(state: RunState, ticket: Ticket): void {
+  ticket.nodeIds = ticket.nodeIds.filter((id) => state.nodes[id]?.commit.broken !== true);
+}
+
 /** Story points a commit of this kind fills, by the hand that wrote it. */
 export function pointsFor(ticket: Ticket, mode: CommitMode, kind: NodeKind): number {
   const { points } = BALANCE;
@@ -167,6 +178,9 @@ export function writeCommit(
   const { debt } = BALANCE;
   const broken = options.broken === true;
 
+  // Going through pushes the branch, squashing what broke before it: the
+  // commit is built on the last code that worked.
+  if (!broken) pushBranch(state, ticket);
   const previous = forkPointOf(state, ticket);
   if (previous === null) throw new Error(`writeCommit: nothing for ${ticket.id} to fork from`);
   const lane = ensureLane(state, ticket);
@@ -178,22 +192,24 @@ export function writeCommit(
     ticketId: ticket.id,
     commit: {
       mode,
-      reviewed: mode === "craft",
+      // Nothing to read in a broken commit: it never goes up.
+      reviewed: mode === "craft" || broken,
       ...(options.hiddenBug === true ? { hiddenBug: true } : {}),
-      ...(broken ? { bugged: true } : {}),
+      ...(broken ? { broken: true } : {}),
     },
   });
   ticket.nodeIds.push(node.id);
-  state.player.totalCommits += 1;
-  state.stats.commitsLanded[mode] += 1;
 
-  // A broken commit is in the history and nowhere else: it fills nothing,
-  // costs the codebase nothing, and waits for a fix to redo it. What it did
-  // cost — the energy, the turn — was spent before the roll.
+  // A broken commit is on your machine and nowhere else: it fills nothing,
+  // costs the codebase nothing, is not a commit to your name, and the next
+  // push drops it. What it did cost — the energy, the turn — was spent
+  // before the roll.
   if (broken) {
     emit(context, { type: "node_done", nodeId: node.id, mode, kind, broken: true });
     return node;
   }
+  state.player.totalCommits += 1;
+  state.stats.commitsLanded[mode] += 1;
   const debtBefore = state.debt;
 
   fillPoints(context, ticket, pointsFor(ticket, mode, kind));
@@ -240,9 +256,8 @@ export function writeCommit(
   }
 
   if (kind === "fix") {
-    // The oldest bug is the one this fix redid — a roll that missed or a
-    // commit the review flagged, on the ticket or on an obstacle it turned
-    // up, whose bugs are its own.
+    // The oldest bug is the one this fix redid — a commit the review flagged,
+    // on the ticket or on an obstacle it turned up, whose bugs are its own.
     const fixed = treeNodeIds(state, ticket).find((id) => state.nodes[id]?.commit.bugged === true);
     const target = fixed === undefined ? undefined : state.nodes[fixed];
     if (fixed !== undefined && target !== undefined) {
@@ -337,6 +352,9 @@ export function completeObstacle(
     throw new Error(`completeObstacle: ${ticket.id} is no obstacle`);
   const parent = getTicket(state, ticket.parentId);
 
+  // Both branches go up before one lands on the other.
+  pushBranch(state, ticket);
+  pushBranch(state, parent);
   const tip = tipOfTicket(state, ticket);
   const onto = tipOfTicket(state, parent);
   if (tip === null || onto === null || parent.lane === undefined) {
@@ -401,6 +419,8 @@ export function completeMerge(
     spendEnergy(context, nodeEnergyCost(state, "feature_merge", undefined).value, "merge");
   }
 
+  // A merge lands what is on the remote.
+  pushBranch(state, ticket);
   const tip = tipOfTicket(state, ticket);
   const dev = tipOfLane(state, DEV_LANE);
   if (tip === null || dev === null) {

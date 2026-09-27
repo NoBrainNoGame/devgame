@@ -346,19 +346,19 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   `lerpPalette`), `--color-<name>` in `globals.css`, written by `useAusterity`
   (`tests/theme.test.ts` compares the CSS with `THEME`). Check:
   `tests/storyboard.test.ts`, `tests/gauges.test.ts`.
-- **An event that writes or throws away commits**: `advancePushes`
-  (`bridge/pushes.ts`) decides which of the player's commits are drawn local,
-  pushed or squashed, from events alone (the engine has no remote). A new way
-  to open a pull request, land a branch or drop commits needs its case there,
-  or commits stay drawn local forever. A broken commit (`node_done.broken`)
-  stays local until the next commit on its branch lands. A squash closes its
-  rows up (`render/rows.ts`): every y on the graph goes through a row, never
-  a depth (`nodeY` takes a row), or the squashed rows come back as holes.
-  A mark drawn on a commit (a ring, a tooltip line) is read with `marksOf`
-  over the survivor and every commit squashed into it, or a squash hides a
-  bug the engine still holds. Presentation only:
-  no epoch. Check:
-  `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
+- **An event that writes or throws away commits**: a broken commit
+  (`commit.broken`, `node_done.broken`) is local and counts for nothing; every
+  push of its branch drops it from the ticket (`pushBranch` in
+  `rules/write.ts`): a commit that lands, the pull request, a merge, an
+  obstacle landing. A new way to push a branch calls `pushBranch` first, or a
+  broken commit reaches a review, a merge or the release. `advancePushes`
+  (`bridge/pushes.ts`) draws the same thing from events: a new push needs its
+  case there too, or commits stay drawn local forever — the two must agree,
+  local on screen exactly when broken and still on the ticket. A squash closes
+  its rows up (`render/rows.ts`): every y on the graph goes through a row,
+  never a depth (`nodeY` takes a row), or the squashed rows come back as
+  holes. Check: `tests/pushes.test.ts`, `tests/events.test.ts`,
+  `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
   (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the
   Pixi tree is tied to `sceneContext.signal`: a scene that threw in a frame

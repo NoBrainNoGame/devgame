@@ -1,23 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import {
-  advancePushes,
-  emptyPushes,
-  isBornLocal,
-  marksOf,
-  type PushLedger,
-} from "@/game/bridge/pushes";
+import { advancePushes, emptyPushes, isBornLocal, type PushLedger } from "@/game/bridge/pushes";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import type {
-  GameEvent,
-  MapNode,
-  NodeCommit,
-  NodeId,
-  PlayerAction,
-  RunState,
-} from "@/game/core/types";
+import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
 
 import { newRun, policy } from "./helpers";
@@ -89,12 +76,18 @@ describe("the push ledger", () => {
     }
   });
 
-  test("pushed together, local commits fold into the most recent, the one that stays", () => {
+  test("a push keeps only the code that worked: what folds is broken, what stays went through", () => {
     let folds = 0;
     for (const run of runs) {
       for (const step of run.steps) {
         for (const op of step.ops) {
           expect(op.nodeIds[op.nodeIds.length - 1]).toBe(op.into);
+          const into = step.state.nodes[op.into];
+          expect(into?.commit.broken).toBeUndefined();
+          const ticket =
+            into?.ticketId === undefined ? undefined : step.state.tickets[into.ticketId];
+          expect(ticket?.nodeIds).toContain(op.into);
+
           const older = op.nodeIds.slice(0, -1);
           if (older.length === 0) continue;
           folds += 1;
@@ -102,14 +95,33 @@ describe("the push ledger", () => {
           for (const id of older) {
             expect(wasLocal.has(id)).toBe(true);
             expect(step.after.absorbed[id]).toBe(op.into);
+            expect(step.state.nodes[id]?.commit.broken).toBe(true);
+            expect(ticket?.nodeIds).not.toContain(id);
           }
-          // The one that stays is the newest: the tip of its column.
-          const depths = op.nodeIds.map((id) => step.state.nodes[id]?.depth ?? -1);
-          expect(Math.max(...depths)).toBe(step.state.nodes[op.into]?.depth ?? -2);
+          // Squashed into the commit that went through, the newest; or, with
+          // nothing new, taken back by the last one that had, below them.
+          const depths = older.map((id) => step.state.nodes[id]?.depth ?? -1);
+          const depth = into?.depth ?? -2;
+          if (op.kind === "commit") expect(depth).toBeGreaterThan(Math.max(...depths));
+          else expect(depth).toBeLessThan(Math.min(...depths));
         }
       }
     }
     expect(folds).toBeGreaterThan(0);
+  });
+
+  test("the commits left local are the broken ones still on their ticket, and only those", () => {
+    for (const run of runs) {
+      for (const step of run.steps) {
+        const local = new Set(Object.values(step.after.local).flat());
+        for (const ticket of Object.values(step.state.tickets)) {
+          for (const id of ticket.nodeIds) {
+            const broken = step.state.nodes[id]?.commit.broken === true;
+            expect(local.has(id)).toBe(broken);
+          }
+        }
+      }
+    }
   });
 
   test("a pull request and a merge push the branch first", () => {
@@ -126,35 +138,6 @@ describe("the push ledger", () => {
     expect(seen).toBeGreaterThan(0);
   });
 
-  test("a squash is drawn with the bugs of every commit it took in", () => {
-    // A broken commit, a fix that missed too, then one that landed: the fix
-    // redid the oldest, and the missed fix is still bugged under the squash.
-    let carried = 0;
-    let hidden = 0;
-    for (const run of runs) {
-      for (const step of run.steps) {
-        const folded = new Map<NodeId, MapNode[]>();
-        for (const [id, into] of Object.entries(step.after.absorbed)) {
-          const node = step.state.nodes[id];
-          if (node !== undefined) folded.set(into, [...(folded.get(into) ?? []), node]);
-        }
-        for (const [into, commits] of folded) {
-          const survivor = step.state.nodes[into];
-          expect(survivor).toBeDefined();
-          if (survivor === undefined || !commits.some((node) => node.commit.bugged === true)) {
-            continue;
-          }
-          carried += 1;
-          // Drawn from the survivor alone, this bug would not be on screen.
-          if (survivor.commit.bugged !== true) hidden += 1;
-          expect(marksOf([survivor, ...commits]).bugged).toBe(true);
-        }
-      }
-    }
-    expect(carried).toBeGreaterThan(0);
-    expect(hidden).toBeGreaterThan(0);
-  });
-
   test("replaying the log gives the ledger the batches built", () => {
     for (const run of runs.slice(0, 10)) {
       let replayed = emptyPushes();
@@ -167,24 +150,5 @@ describe("the push ledger", () => {
       );
       expect(replayed).toEqual(run.ledger);
     }
-  });
-});
-
-describe("the marks of a squash", () => {
-  const commit = (fields: Partial<NodeCommit>): Pick<MapNode, "commit"> => ({
-    commit: { mode: "craft", reviewed: true, ...fields },
-  });
-
-  test("a clean commit carries nothing", () => {
-    expect(marksOf([commit({})])).toEqual({ bugged: false, unread: false });
-  });
-
-  test("the survivor carries a bug from any commit folded into it", () => {
-    expect(marksOf([commit({}), commit({ bugged: true })]).bugged).toBe(true);
-  });
-
-  test("the survivor carries unread machine work from any commit folded into it", () => {
-    expect(marksOf([commit({}), commit({ mode: "ai", reviewed: false })]).unread).toBe(true);
-    expect(marksOf([commit({}), commit({ mode: "ai", reviewed: true })]).unread).toBe(false);
   });
 });

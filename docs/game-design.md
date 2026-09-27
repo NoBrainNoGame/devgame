@@ -126,14 +126,18 @@ règles l'acceptent encore, pour que toute run enregistrée rejoue telle quelle
 | Énergie | Type de commit + main | **1, quoi qu'elle écrive** |
 | Points | 1 | **3** |
 | Échec | Rare, jamais nul | Nettement plus fréquent |
-| Jet raté | Commit cassé, à corriger | Idem |
+| Jet raté | Commit cassé, à refaire | Idem |
 | Effets | Peut offrir le prochain refacto | Dette ; non relu, part en prod |
 
 Les points compensent dette et bugs : relire devient une décision, pas une taxe.
 Chances, coût, points et dette sont **sur la carte**. **Un jet raté écrit quand
-même le commit** : cassé (bugué), sans point, sans dette, local tant qu'un fix
-ne l'a pas repris ; l'énergie dépensée est celle du commit, rien de plus. Un
-commit cassé bloque la PR et offre le détour Fix.
+même le commit** : cassé, local, et il ne compte pour rien — ni point, ni
+dette, ni bug, ni commit à votre nom (score, compte) ; l'énergie dépensée est
+celle du commit, rien de plus. **Un bug ne compte qu'une fois poussé**, et le
+push ne garde que le code qui marche : le prochain push de la branche (un
+commit qui passe, la PR, le merge, l'atterrissage d'un obstacle) fait
+disparaître ses commits cassés (`pushBranch`). Un commit cassé ne bloque donc
+rien : on recommence.
 
 **Détours** : un commit reste un commit (un tour, graphe en chaîne). Risqué et
 doc toujours proposés, les autres sur une cible du ticket en main (un refacto de
@@ -144,7 +148,8 @@ rien est un commit avec un joli nom).
 - **Refacto** : rembourse exactement la dette du commit du ticket qui en a coûté
   le plus (chaque commit la retient) ; celle d'un autre ticket se refactore
   là-bas.
-- **Fix** : reprend le plus ancien commit bugué ; un fix IA reste attrapable.
+- **Fix** : reprend le plus ancien commit que la review a marqué bugué ; un
+  fix IA reste attrapable.
 
 ### La review
 
@@ -519,17 +524,14 @@ de la lecture.
 7. Vos commits naissent **locaux** (anneau pointillé) et se **poussent** (le
    disque se remplit) une fois leur histoire racontée sur le commit encore
    inachevé : coût, points, ce qu'ils ont soulevé. Celui dont le jet rate
-   reste local, cassé, jusqu'au prochain push de sa branche : un commit qui
-   passe, l'ouverture de la PR ou le merge (obstacle compris).
-   Poussés ensemble, les commits locaux n'en font plus qu'un (« ×N » à son
-   sujet) : leurs rangées se referment, le plus récent descend à la place du
-   plus ancien et l'historique au-dessus descend avec lui, sans laisser de
-   trou (`render/rows.ts`). Celui qui reste porte les marques de tous ceux
-   qu'il absorbe (`marksOf`) : un bug squashé reste un anneau rouge jusqu'à
-   son fix, une écriture machine non relue reste signalée, car le moteur, lui,
-   les garde. Les commits des collègues, les troncs et les merges naissent
-   poussés. Présentation seule : le moteur n'a pas de remote,
-   `bridge/pushes.ts` le déduit des événements et le rejoue au chargement.
+   reste local, cassé, jusqu'au prochain push de sa branche, qui ne garde que
+   le code bon : les cassés se fondent dans le commit qui passe (« ×N » à son
+   sujet) ou, poussés par la PR, le merge ou l'obstacle sans rien de neuf,
+   dans le dernier commit bon de la branche. Leurs rangées se referment et
+   l'historique au-dessus descend, sans laisser de trou (`render/rows.ts`).
+   Les commits des collègues, les troncs et les merges naissent poussés. La
+   règle est au moteur (`pushBranch`) ; `bridge/pushes.ts` en déduit l'écran
+   depuis les événements et le rejoue au chargement.
 
 Un choix se nomme par ce qu'il fait : « Démarrer », « Ouvrir la PR »,
 « Refacto · à la main ».

@@ -1338,8 +1338,8 @@
       "obstacle_cleared": "obstacle réglé, retour sur la feature",
       "obstacle_cleared_by": "{dev} a réglé l'obstacle",
       "commit_broken": {
-        "craft": "{subject} — écrit à la main, jet raté : commit cassé, à corriger",
-        "ai": "{subject} — généré par la machine, jet raté : commit cassé, à corriger"
+        "craft": "{subject} — écrit à la main, jet raté : commit cassé, resté en local",
+        "ai": "{subject} — généré par la machine, jet raté : commit cassé, resté en local"
       }
     },
     "notes": {

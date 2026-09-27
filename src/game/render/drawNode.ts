@@ -1,6 +1,5 @@
 import type { Graphics } from "pixi.js";
 
-import type { CommitMarks } from "@/game/bridge/pushes";
 import { devColourIndex } from "@/game/content";
 import type { MapNode } from "@/game/core/types";
 import { palette } from "@/game/render/palette";
@@ -23,15 +22,15 @@ const LOCAL_DASH_SHARE = 0.55;
  * on the graph that is not yours to stand on, and whose it is at a glance.
  *
  * Three layers, so a push can cross-fade the body without touching the rings:
- * the rings (unread, bug, hover), the disc, and the dashed disc of a commit
- * not pushed yet (`bridge/pushes.ts`).
+ * the rings (unread, bug or broken, hover), the disc, and the dashed disc of
+ * a commit not pushed yet (`bridge/pushes.ts`).
  */
-export function drawRings(graphics: Graphics, marks: CommitMarks, hovered: boolean): void {
+export function drawRings(graphics: Graphics, node: MapNode, hovered: boolean): void {
   graphics.clear();
 
-  if (marks.bugged) {
+  if (node.commit.bugged === true || node.commit.broken === true) {
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 2, color: palette.lane.hotfix });
-  } else if (marks.unread) {
+  } else if (node.commit.mode === "ai" && node.commit.reviewed === false) {
     graphics.circle(0, 0, NODE_RADIUS + 3).stroke({ width: 1.5, color: palette.node.unreviewed });
   }
 

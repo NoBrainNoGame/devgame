@@ -79,6 +79,13 @@ export interface NodeCommit {
    */
   bugged?: true;
   /**
+   * The roll missed: the commit is on your machine and nowhere else, and
+   * counts for nothing — no point, no debt, no bug, no commit to your name.
+   * The next push of its branch keeps only the code that worked, and it
+   * leaves the ticket (`pushBranch`); the history keeps it for the screen.
+   */
+  broken?: true;
+  /**
    * What this commit cost the codebase when it landed. A refactor targets the
    * commit that cost the most and takes exactly that back.
    */

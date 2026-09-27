@@ -286,9 +286,8 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     return policy === "ai" ? { type: "followup" } : { type: "resume" };
   }
 
-  // A broken or flagged commit: nothing else on this ticket goes anywhere
-  // until a fix has redone it, so every policy does that first, with its
-  // own hand.
+  // A flagged commit: nothing else on this ticket goes anywhere until a fix
+  // has redone it, so every policy does that first, with its own hand.
   if (ticket !== null && buggedOn(state, ticket).length > 0) {
     const fixBy = (mode: string) => (a: PlayerAction) =>
       a.type === "commit" && a.kind === "fix" && a.mode === mode;
