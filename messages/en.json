@@ -224,10 +224,6 @@
     "readyToSubmit": "Ready: open the PR.",
     "inHand": "The ticket in hand.",
     "clickToSwitch": "Click to switch to it (free).",
-    "mustWrite": {
-      "hotfix": "Production is down: only fix commits count here.",
-      "refactor": "The debt exploded: only refactor commits count here."
-    },
     "submit": "Open the PR",
     "submitHint": "Points full: the review reads the ticket and decides.",
     "submitHealthBlocked": "Code health under the floor ({floor}): the review would refuse. Refactor before opening the pull request.",
@@ -1151,6 +1147,7 @@
       },
       "hotfix": {
         "name": "Hotfix",
+        "aiName": "AI hotfix",
         "desc": "A fix: commit forced by a production bug, to write before you carry on."
       },
       "sprint_merge": {

@@ -87,9 +87,6 @@ export function TicketDetails({
             {t("ticketRework", { count: ticket.rework, rejections: ticket.rejections })}
           </p>
         ) : null}
-        {ticket.mustWrite === undefined ? null : (
-          <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
-        )}
         {ticket.mrr > 0 ? (
           <p className="text-money text-xs tabular-nums">
             {t("ticketMrr", { money: money(ticket.mrr) })}

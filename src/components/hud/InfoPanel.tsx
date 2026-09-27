@@ -140,9 +140,6 @@ function TicketCard({ ticket }: { ticket: TicketView }) {
         barClassName="bg-primary"
         className="h-1.5"
       />
-      {ticket.mustWrite === undefined ? null : (
-        <p className="text-branch-hotfix text-xs">{t(`mustWrite.${ticket.mustWrite}`)}</p>
-      )}
       {ticket.mrr > 0 ? (
         <p className="text-money text-xs tabular-nums">
           {t("ticketMrr", { money: money(ticket.mrr) })}

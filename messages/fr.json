@@ -224,10 +224,6 @@
     "readyToSubmit": "Prêt : ouvrez la PR.",
     "inHand": "Le ticket en main.",
     "clickToSwitch": "Cliquer pour basculer dessus (gratuit).",
-    "mustWrite": {
-      "hotfix": "La prod est cassée : seuls des commits de correctif comptent ici.",
-      "refactor": "La dette a explosé : seuls des commits de refacto comptent ici."
-    },
     "submit": "Ouvrir la PR",
     "submitHint": "Points pleins : la review lit le ticket et décide.",
     "submitHealthBlocked": "Santé du code sous le plancher ({floor}) : la review refuserait. Refactorez avant d'ouvrir la PR.",
@@ -1151,6 +1147,7 @@
       },
       "hotfix": {
         "name": "Hotfix",
+        "aiName": "Hotfix IA",
         "desc": "Un commit fix: imposé par un bug en production, à écrire avant de reprendre."
       },
       "sprint_merge": {

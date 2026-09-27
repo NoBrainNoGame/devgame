@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { placeDetours } from "@/components/hud/detours";
 import { displayTier } from "@/components/hud/displayTier";
 import { IdleBar } from "@/components/hud/IdleBar";
 import { useGameText } from "@/components/hud/useGameText";
@@ -36,6 +37,7 @@ export function ActionPanel({
   onOpenBoard: () => void;
 }) {
   const t = useTranslations("hud");
+  const game = useTranslations("game");
   const tiered = useTiered(displayTier(snapshot));
 
   if (snapshot.phase.kind !== "choose_action") return null;
@@ -53,6 +55,10 @@ export function ActionPanel({
   const land = snapshot.actions.find((action) => action.type === "merge");
 
   const current = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
+  const { main: promoted, instead } = placeDetours(written, current);
+  // A forced ticket takes one kind of commit: every commit on it is a refactor
+  // or a hotfix, whichever button is pressed, so the buttons say which.
+  const forced = current?.mustWrite;
   // Full, and held back by its obstacle alone: no commit is offered on it any
   // more, and the way forward is the obstacle.
   const toObstacle =
@@ -84,10 +90,6 @@ export function ActionPanel({
           />
         )}
 
-        {current?.mustWrite === undefined ? null : (
-          <p className="text-branch-hotfix text-xs">{t(`mustWrite.${current.mustWrite}`)}</p>
-        )}
-
         {submit === undefined ? null : (
           <ActionButton
             label={t("submit")}
@@ -102,6 +104,16 @@ export function ActionPanel({
         {current?.waitingOnHealth === true ? (
           <p className="text-debt text-xs">{t("submitHealthBlocked", { floor: healthFloor() })}</p>
         ) : null}
+
+        {promoted.map((action) => (
+          <WrittenAsButton
+            key={actionKey(action)}
+            action={action}
+            snapshot={snapshot}
+            main
+            onAct={onAct}
+          />
+        ))}
 
         {toObstacle === undefined ? null : (
           <ActionButton
@@ -128,7 +140,13 @@ export function ActionPanel({
         {plain.map((action) => (
           <ActionButton
             key={actionKey(action)}
-            label={action.mode === "craft" ? t("craftCommit") : t("aiCommit")}
+            label={
+              forced !== undefined
+                ? game(`nodes.${forced}.${action.mode === "ai" ? "aiName" : "name"}`)
+                : action.mode === "craft"
+                  ? t("craftCommit")
+                  : t("aiCommit")
+            }
             hint={action.mode === "craft" ? t("craftCommitHint") : t("aiCommitHint")}
             preview={snapshot.previews[actionKey(action)]}
             action={action}
@@ -178,10 +196,10 @@ export function ActionPanel({
 
         {displayTier(snapshot) < 4 ? null : <ReviewPolicySwitch snapshot={snapshot} />}
 
-        {written.length === 0 ? null : (
+        {instead.length === 0 ? null : (
           <>
             <p className="pt-1 text-muted-foreground text-xs">{t("writeInstead")}</p>
-            {written.map((action) => (
+            {instead.map((action) => (
               <WrittenAsButton
                 key={actionKey(action)}
                 action={action}
@@ -228,15 +246,19 @@ function ReviewPolicySwitch({ snapshot }: { snapshot: RunSnapshot }) {
  * Writing this commit as a refactor, a fix, a gamble.
  *
  * It is not a fork and never was: the choice is *how to write this commit*, so
- * it sits with the other two ways of writing it and costs the same turn.
+ * it sits with the other two ways of writing it and costs the same turn —
+ * unless it is the way forward (`main`): then it is a full card among the
+ * main actions, the hand's one lit.
  */
 function WrittenAsButton({
   action,
   snapshot,
+  main = false,
   onAct,
 }: {
   action: Extract<PlayerAction, { type: "commit" }>;
   snapshot: RunSnapshot;
+  main?: boolean;
   onAct: (action: PlayerAction) => void;
 }) {
   const t = useTranslations("hud");
@@ -253,7 +275,8 @@ function WrittenAsButton({
       {...(action.mode === "craft" ? { subtitle: t("byHand") } : {})}
       hint={game(`nodes.${action.kind}.desc` as never)}
       preview={snapshot.previews[actionKey(action)]}
-      compact
+      compact={!main}
+      emphasis={main && action.mode === "craft"}
       action={action}
       onAct={() => onAct(action)}
     />
