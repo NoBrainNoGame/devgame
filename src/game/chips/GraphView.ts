@@ -18,7 +18,15 @@ import {
 import { palette } from "@/game/render/palette";
 import { type Rows, rowsOf } from "@/game/render/rows";
 import { labelStyle } from "@/game/render/textStyles";
-import { LANE_ALPHA, laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER } from "@/game/render/theme";
+import {
+  LANE_ALPHA,
+  LOCAL_DASH,
+  LOCAL_GAP,
+  laneColour,
+  NODE_RADIUS,
+  nodePrefix,
+  REF_GUTTER,
+} from "@/game/render/theme";
 
 /**
  * The history, drawn the way a git client draws it.
@@ -327,6 +335,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
    * decides; this only strokes.
    */
   private drawLanes(state: RunState, nodes: readonly MapNode[]): void {
+    const { reveal } = sceneContext(this.chipContext);
     this.lanes.clear();
 
     // A feature an obstacle is holding waits, dotted, while the obstacle is written.
@@ -336,6 +345,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
         lane: node.lane,
         depth: this.rowOf(node.id),
         ticketId: node.ticketId,
+        local: reveal.local.has(node.id),
       })),
       (id) => state.tickets[id]?.kind,
       Math.max(this.topRow, ...nodes.map((node) => this.rowOf(node.id))),
@@ -349,6 +359,17 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       if (segment.style === "dotted") {
         const alpha = LANE_ALPHA.continuation;
         drawDottedLane(this.lanes, segment.lane, segment.from, segment.to, colour, alpha);
+      } else if (segment.style === "local") {
+        drawDottedLane(
+          this.lanes,
+          segment.lane,
+          segment.from,
+          segment.to,
+          colour,
+          LANE_ALPHA.feature,
+          LOCAL_DASH,
+          LOCAL_GAP,
+        );
       } else {
         const alpha = segment.lane < FIRST_FEATURE_LANE ? LANE_ALPHA.trunk : LANE_ALPHA.feature;
         drawLane(this.lanes, segment.lane, segment.from, segment.to, colour, alpha);
@@ -357,6 +378,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   }
 
   private drawEdges(state: RunState, nodes: readonly MapNode[]): void {
+    const { reveal } = sceneContext(this.chipContext);
     this.edges.clear();
     const shown = new Set(nodes.map((node) => node.id));
 
@@ -376,12 +398,14 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
           branch.lane >= FIRST_FEATURE_LANE && branch.ticketId !== undefined
             ? palette.lane[ticketColour(state.tickets[branch.ticketId]?.kind)]
             : laneColour(branch.lane, branch.kind);
+        // A fork into a commit not pushed yet: the branch is only yours so far.
         drawEdge(
           this.edges,
           { lane: parent.lane, depth: this.rowOf(parent.id) },
           { lane: node.lane, depth: this.rowOf(node.id) },
           colour,
           0.9,
+          reveal.local.has(node.id),
         );
       }
     }

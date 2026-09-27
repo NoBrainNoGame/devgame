@@ -4,7 +4,19 @@ import { TICKET_KIND } from "@/game/content";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import type { MapNode, Ticket, TicketId } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { CORNER, EDGE_WIDTH, LANE_DASH, LANE_GAP } from "@/game/render/theme";
+import {
+  CORNER,
+  EDGE_WIDTH,
+  LANE_DASH,
+  LANE_GAP,
+  LOCAL_DASH,
+  LOCAL_GAP,
+} from "@/game/render/theme";
+
+interface Point {
+  x: number;
+  y: number;
+}
 
 /**
  * How the lines of the graph are drawn.
@@ -13,7 +25,9 @@ import { CORNER, EDGE_WIDTH, LANE_DASH, LANE_GAP } from "@/game/render/theme";
  * `dev` run solid from their first drawn node to their last, then dotted up
  * to the top row to say they are still there; a ticket's line runs from the
  * row it forked on to its tip and stops, whether or not the ticket is open.
- * Nothing runs ahead of a commit that has not happened.
+ * Nothing runs ahead of a commit that has not happened. What is still on your
+ * machine is dashed — the line up to a local commit, and the fork into a
+ * branch nothing of which is pushed — until the push draws it solid.
  *
  * Between columns an edge does what a git client draws: it leaves the trunk
  * sideways on the trunk's own row, turns one rounded corner, and travels
@@ -74,10 +88,19 @@ export function drawEdge(
   to: { lane: number; depth: number },
   colour: number,
   alpha: number,
+  dashed = false,
 ): void {
   const path = edgePath(from, to);
   const head = path[0];
   if (head === undefined) return;
+
+  if (dashed) {
+    for (const [a, b] of dashesAlong(pathPoints(path), LOCAL_DASH, LOCAL_GAP)) {
+      graphics.moveTo(a.x, a.y).lineTo(b.x, b.y);
+    }
+    graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "butt" });
+    return;
+  }
 
   graphics.moveTo(head.x1, head.y1);
   for (const segment of path) {
@@ -85,6 +108,68 @@ export function drawEdge(
     else graphics.arcTo(segment.cx, segment.cy, segment.x2, segment.y2, segment.r);
   }
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "round", join: "round" });
+}
+
+/** Chords per corner when a path is flattened: enough that a dash cannot tell. */
+const CORNER_CHORDS = 6;
+
+/**
+ * An edge as points, for what Pixi cannot dash: its lines as they are, its
+ * corner as a few chords of the curve it is drawn with.
+ */
+export function pathPoints(path: readonly EdgeSegment[]): Point[] {
+  const head = path[0];
+  if (head === undefined) return [];
+  const points: Point[] = [{ x: head.x1, y: head.y1 }];
+  for (const segment of path) {
+    if (segment.kind === "line") {
+      points.push({ x: segment.x2, y: segment.y2 });
+      continue;
+    }
+    // The corner turns through its control point: a quadratic curve is
+    // within a hair of the circle's arc at this radius.
+    for (let i = 1; i <= CORNER_CHORDS; i += 1) {
+      const t = i / CORNER_CHORDS;
+      const u = 1 - t;
+      points.push({
+        x: u * u * segment.x1 + 2 * u * t * segment.cx + t * t * segment.x2,
+        y: u * u * segment.y1 + 2 * u * t * segment.cy + t * t * segment.y2,
+      });
+    }
+  }
+  return points;
+}
+
+/**
+ * The dashes along a polyline, each as its two ends, starting with a dash. The
+ * rhythm carries on across the vertices; a dash that meets one is cut there
+ * and goes on from it, so none cuts a corner.
+ */
+export function dashesAlong(points: readonly Point[], dash: number, gap: number): [Point, Point][] {
+  const dashes: [Point, Point][] = [];
+  const period = dash + gap;
+  let phase = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    const a = points[i - 1];
+    const b = points[i];
+    if (a === undefined || b === undefined) continue;
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    if (length === 0) continue;
+    const at = (d: number): Point => ({
+      x: a.x + ((b.x - a.x) * d) / length,
+      y: a.y + ((b.y - a.y) * d) / length,
+    });
+    let d = 0;
+    while (d < length) {
+      const drawing = phase < dash;
+      const step = Math.min(length - d, (drawing ? dash : period) - phase);
+      if (drawing) dashes.push([at(d), at(d + step)]);
+      d += step;
+      phase += step;
+      if (phase >= period) phase = 0;
+    }
+  }
+  return dashes;
 }
 
 /** A branch's own line, from one of its rows to another. */
@@ -104,7 +189,8 @@ export function drawLane(
 
 /**
  * The same line, dotted: a trunk that is still there but has nothing new on
- * it yet. Pixi 8 has no dash style, so the dashes are drawn one by one.
+ * it yet — or, with the longer local dashes, a branch not pushed. Pixi 8 has
+ * no dash style, so the dashes are drawn one by one.
  */
 export function drawDottedLane(
   graphics: Graphics,
@@ -113,6 +199,8 @@ export function drawDottedLane(
   toDepth: number,
   colour: number,
   alpha: number,
+  dash: number = LANE_DASH,
+  gap: number = LANE_GAP,
 ): void {
   if (toDepth <= fromDepth) return;
   const x = nodeX(lane);
@@ -123,9 +211,9 @@ export function drawDottedLane(
 
   // Butt caps: a round cap would grow each dash by half the width and eat
   // the gap, and the dots would read as a line again.
-  for (let offset = 0; offset < length; offset += LANE_DASH + LANE_GAP) {
+  for (let offset = 0; offset < length; offset += dash + gap) {
     const y1 = yStart + direction * offset;
-    const y2 = yStart + direction * Math.min(length, offset + LANE_DASH);
+    const y2 = yStart + direction * Math.min(length, offset + dash);
     graphics.moveTo(x, y1).lineTo(x, y2);
   }
   graphics.stroke({ width: EDGE_WIDTH, color: colour, alpha, cap: "butt" });
@@ -137,7 +225,8 @@ export interface LaneSegment {
   lane: number;
   from: number;
   to: number;
-  style: "solid" | "dotted";
+  /** `local`: the stretch of a branch that is still only on your machine. */
+  style: "solid" | "dotted" | "local";
   colour: LaneColour;
 }
 
@@ -150,13 +239,15 @@ export function ticketColour(kind: Ticket["kind"] | undefined): LaneColour {
  * The lines to draw for what is on screen. Trunks: solid between their own
  * nodes, dotted from the last one to the top row (`main` with no node yet is
  * dotted all the way, so its column reads as reserved rather than as a gap).
- * Features: one solid segment per *ticket*, so a column two tickets used in
- * turn shows two lines with a gap between them, not one line through both.
- * A feature an obstacle is holding is still there while the obstacle is
- * written beside it: its line goes on dotted to the top row, like a trunk's.
+ * Features: one segment per *ticket*, so a column two tickets used in turn
+ * shows two lines with a gap between them, not one line through both; solid
+ * up to its last pushed commit, `local` from there to its local tip — all of
+ * it, while nothing on it is pushed. A feature an obstacle is holding is
+ * still there while the obstacle is written beside it: its line goes on
+ * dotted to the top row, like a trunk's.
  */
 export function laneSegments(
-  nodes: readonly Pick<MapNode, "lane" | "depth" | "ticketId">[],
+  nodes: readonly (Pick<MapNode, "lane" | "depth" | "ticketId"> & { local?: boolean })[],
   kindOf: (ticketId: TicketId) => Ticket["kind"] | undefined,
   topDepth: number,
   heldOpen: (ticketId: TicketId) => boolean = () => false,
@@ -176,22 +267,35 @@ export function laneSegments(
     if (topDepth > last) segments.push({ lane, from: last, to: topDepth, style: "dotted", colour });
   }
 
-  const byTicket = new Map<TicketId, { lane: number; from: number; to: number }>();
+  interface Span {
+    lane: number;
+    from: number;
+    to: number;
+    /** The highest pushed row, or null while nothing on the branch is. */
+    pushed: number | null;
+  }
+  const byTicket = new Map<TicketId, Span>();
   for (const node of nodes) {
     if (node.lane < FIRST_FEATURE_LANE || node.ticketId === undefined) continue;
+    const pushed = node.local === true ? null : node.depth;
     const span = byTicket.get(node.ticketId);
     if (span === undefined) {
-      byTicket.set(node.ticketId, { lane: node.lane, from: node.depth, to: node.depth });
+      byTicket.set(node.ticketId, { lane: node.lane, from: node.depth, to: node.depth, pushed });
     } else {
       span.from = Math.min(span.from, node.depth);
       span.to = Math.max(span.to, node.depth);
+      if (pushed !== null) span.pushed = Math.max(span.pushed ?? pushed, pushed);
     }
   }
-  for (const [ticketId, span] of byTicket) {
+  for (const [ticketId, { lane, from, to, pushed }] of byTicket) {
     const colour = ticketColour(kindOf(ticketId));
-    if (span.to > span.from) segments.push({ ...span, style: "solid", colour });
-    if (heldOpen(ticketId) && topDepth > span.to) {
-      segments.push({ lane: span.lane, from: span.to, to: topDepth, style: "dotted", colour });
+    // Your local commits are always the newest on their branch: what is
+    // pushed runs from the fork, what is not runs on from there to the tip.
+    const solidTo = pushed ?? from;
+    if (solidTo > from) segments.push({ lane, from, to: solidTo, style: "solid", colour });
+    if (to > solidTo) segments.push({ lane, from: solidTo, to, style: "local", colour });
+    if (heldOpen(ticketId) && topDepth > to) {
+      segments.push({ lane, from: to, to: topDepth, style: "dotted", colour });
     }
   }
 

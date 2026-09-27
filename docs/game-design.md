@@ -521,8 +521,10 @@ de la lecture.
    commits d'une branche.
 6. Fourche et merge à angle droit : horizontale au rang du tronc, verticale dans
    la branche, un coin arrondi.
-7. Vos commits naissent **locaux** (anneau pointillé) et se **poussent** (le
-   disque se remplit) une fois leur histoire racontée sur le commit encore
+7. Vos commits naissent **locaux** (anneau pointillé, et la ligne de la
+   branche en tirets depuis son dernier commit poussé, fourche comprise tant
+   que rien n'est poussé) et se **poussent** (le disque se remplit, la ligne
+   devient pleine) une fois leur histoire racontée sur le commit encore
    inachevé : coût, points, ce qu'ils ont soulevé. Celui dont le jet rate
    reste local, cassé, jusqu'au prochain push de sa branche, qui ne garde que
    le code bon : les cassés se fondent dans le commit qui passe (« ×N » à son

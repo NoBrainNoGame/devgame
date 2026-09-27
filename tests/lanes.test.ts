@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { nodeX, nodeY } from "@/game/render/coords";
-import { edgePath, laneSegments } from "@/game/render/lanes";
+import { dashesAlong, edgePath, laneSegments, pathPoints } from "@/game/render/lanes";
 import { CORNER, LANE_WIDTH } from "@/game/render/theme";
 
 /**
@@ -145,6 +145,91 @@ describe("a feature held by an obstacle", () => {
     // The obstacle's own line stops at its tip, as any ticket's does.
     expect(held.filter((s) => s.lane === 3)).toEqual([
       { lane: 3, from: 3, to: 4, style: "solid", colour: "obstacle" },
+    ]);
+  });
+});
+
+describe("a branch still on your machine", () => {
+  const kindOf = (): "feature" => "feature";
+
+  test("is solid up to its last pushed commit, dashed from there to its local tip", () => {
+    const nodes = [
+      { lane: DEV_LANE, depth: 0 },
+      { lane: FIRST_FEATURE_LANE, depth: 1, ticketId: "t1" },
+      { lane: FIRST_FEATURE_LANE, depth: 2, ticketId: "t1" },
+      { lane: FIRST_FEATURE_LANE, depth: 3, ticketId: "t1", local: true },
+      { lane: FIRST_FEATURE_LANE, depth: 4, ticketId: "t1", local: true },
+    ];
+    expect(laneSegments(nodes, kindOf, 4).filter((s) => s.lane === FIRST_FEATURE_LANE)).toEqual([
+      { lane: FIRST_FEATURE_LANE, from: 1, to: 2, style: "solid", colour: "feature" },
+      { lane: FIRST_FEATURE_LANE, from: 2, to: 4, style: "local", colour: "feature" },
+    ]);
+  });
+
+  test("is dashed all the way while nothing on it is pushed", () => {
+    const nodes = [
+      { lane: DEV_LANE, depth: 0 },
+      { lane: FIRST_FEATURE_LANE, depth: 1, ticketId: "t1", local: true },
+      { lane: FIRST_FEATURE_LANE, depth: 2, ticketId: "t1", local: true },
+    ];
+    expect(laneSegments(nodes, kindOf, 2).filter((s) => s.lane === FIRST_FEATURE_LANE)).toEqual([
+      { lane: FIRST_FEATURE_LANE, from: 1, to: 2, style: "local", colour: "feature" },
+    ]);
+  });
+
+  test("its fork is dashed along the path a solid one takes, never across a corner", () => {
+    const path = edgePath({ lane: DEV_LANE, depth: 0 }, { lane: FIRST_FEATURE_LANE, depth: 3 });
+    const points = pathPoints(path);
+    // It starts and ends where the solid edge does.
+    const head = path[0];
+    const tail = path[path.length - 1];
+    expect(points[0]).toEqual({ x: head?.x1 ?? Number.NaN, y: head?.y1 ?? Number.NaN });
+    expect(points[points.length - 1]).toEqual({
+      x: tail?.x2 ?? Number.NaN,
+      y: tail?.y2 ?? Number.NaN,
+    });
+
+    const dashes = dashesAlong(points, 7, 4);
+    expect(dashes.length).toBeGreaterThan(0);
+    // Every dash lies on one piece of the path: its ends on the same chord.
+    const onPiece = ([a, b]: (typeof dashes)[number]): boolean =>
+      points.some((p, i) => {
+        const q = points[i + 1];
+        if (q === undefined) return false;
+        const cross = (x: number, y: number) => (q.x - p.x) * (y - p.y) - (q.y - p.y) * (x - p.x);
+        return Math.abs(cross(a.x, a.y)) < 1e-6 && Math.abs(cross(b.x, b.y)) < 1e-6;
+      });
+    expect(dashes.every(onPiece)).toBe(true);
+    // No dash is longer than a dash.
+    for (const [a, b] of dashes)
+      expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeLessThanOrEqual(7 + 1e-9);
+  });
+
+  test("the dashes keep their rhythm across a vertex", () => {
+    // A 4-long dash meets the vertex after 3: cut there, it goes on for 1
+    // more, then the 2-long gap, then the next dash.
+    const dashes = dashesAlong(
+      [
+        { x: 0, y: 0 },
+        { x: 3, y: 0 },
+        { x: 3, y: 5 },
+      ],
+      4,
+      2,
+    );
+    expect(dashes).toEqual([
+      [
+        { x: 0, y: 0 },
+        { x: 3, y: 0 },
+      ],
+      [
+        { x: 3, y: 0 },
+        { x: 3, y: 1 },
+      ],
+      [
+        { x: 3, y: 3 },
+        { x: 3, y: 5 },
+      ],
     ]);
   });
 });
