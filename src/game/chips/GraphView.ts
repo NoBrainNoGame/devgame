@@ -7,7 +7,7 @@ import { DEV_LANE, FIRST_FEATURE_LANE } from "@/game/core/map/layout";
 import { obstaclesOf } from "@/game/core/rules/tickets";
 import type { MapNode, NodeId, RunState } from "@/game/core/types";
 import { labelX, nodeX, nodeY } from "@/game/render/coords";
-import { drawCommit } from "@/game/render/drawNode";
+import { drawBody, drawLocalBody, drawRings } from "@/game/render/drawNode";
 import {
   drawDottedLane,
   drawEdge,
@@ -32,6 +32,11 @@ import { LANE_ALPHA, laneColour, NODE_RADIUS, nodePrefix, REF_GUTTER } from "@/g
  * commit before it is written, so the graph stops at the last commit: nothing
  * above it, not even a hint of what comes next. A new commit is never inserted
  * silently: the reveal set says when, and the sprite grows in.
+ *
+ * Your commits arrive local, a dashed ring, and fill in as they are pushed.
+ * Local commits pushed together slide up their column into the most recent
+ * one and are gone: their disc and subject, not their place in the lines,
+ * which keep the shape git recorded (`bridge/pushes.ts`).
  */
 
 export interface GraphViewEvents extends booyah.BaseCompositeEvents {
@@ -40,12 +45,27 @@ export interface GraphViewEvents extends booyah.BaseCompositeEvents {
 
 interface CommitSprite {
   root: Container;
-  graphics: Graphics;
+  rings: Graphics;
+  body: Graphics;
+  localBody: Graphics;
   /** 0 to 1. Drives the grow-and-fade the node arrives with. */
   reveal: number;
+  /** Drawn as not pushed yet. */
+  local: boolean;
+  /** 0 local, 1 pushed: the dashed ring fills in between. */
+  pushed: number;
+  /** Sliding into the commit it was squashed into, then gone. */
+  fuse: { from: Point; to: Point; t: number } | null;
+}
+
+interface Point {
+  x: number;
+  y: number;
 }
 
 const REVEAL_MS = 260;
+const PUSH_MS = 240;
+const FUSE_MS = 360;
 /** Room a commit subject takes, for framing. */
 const SUBJECT_WIDTH = 200;
 /** Room the refs take when there are no subjects past them, for framing: a branch name and its owner's. */
@@ -97,18 +117,57 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const { reducedMotion } = sceneContext(this.chipContext);
 
     for (const [id, sprite] of this.sprites) {
-      if (sprite.reveal >= 1) continue;
+      if (sprite.fuse !== null) {
+        this.tickFuse(id, sprite, delta, reducedMotion);
+        continue;
+      }
 
-      sprite.reveal = reducedMotion ? 1 : Math.min(1, sprite.reveal + delta / REVEAL_MS);
+      const growing = sprite.reveal < 1;
+      const pushing = !sprite.local && sprite.pushed < 1;
+      if (!growing && !pushing) continue;
+
+      if (growing) {
+        sprite.reveal = reducedMotion ? 1 : Math.min(1, sprite.reveal + delta / REVEAL_MS);
+      }
+      if (pushing) {
+        sprite.pushed = reducedMotion ? 1 : Math.min(1, sprite.pushed + delta / PUSH_MS);
+      }
       const eased = 1 - (1 - sprite.reveal) ** 3;
 
       // Overshoot slightly on the way in: a commit lands, it does not fade up.
-      sprite.root.scale.set(eased * (1 + 0.25 * (1 - eased)));
+      // And swell as it fills: pushed, it is there for everyone.
+      const swell = 1 + 0.3 * Math.sin(Math.PI * sprite.pushed);
+      sprite.root.scale.set(eased * (1 + 0.25 * (1 - eased)) * swell);
       sprite.root.alpha = eased;
+      this.crossFade(sprite);
 
       const label = this.labels.get(id);
-      if (label !== undefined) label.alpha = eased * 0.75;
+      if (label !== undefined && growing) label.alpha = eased * 0.75;
     }
+  }
+
+  /** Accelerates into the commit it was pushed with, shrinking, then is gone. */
+  private tickFuse(id: NodeId, sprite: CommitSprite, delta: number, reducedMotion: boolean): void {
+    const fuse = sprite.fuse;
+    if (fuse === null) return;
+    fuse.t = reducedMotion ? 1 : Math.min(1, fuse.t + delta / FUSE_MS);
+    const eased = fuse.t ** 3;
+
+    sprite.root.position.set(
+      fuse.from.x + (fuse.to.x - fuse.from.x) * eased,
+      fuse.from.y + (fuse.to.y - fuse.from.y) * eased,
+    );
+    sprite.root.scale.set(1 - 0.5 * eased);
+    sprite.root.alpha = 1 - 0.8 * eased;
+    const label = this.labels.get(id);
+    if (label !== undefined) label.alpha = 0.75 * (1 - fuse.t);
+
+    if (fuse.t >= 1) this.drop(id);
+  }
+
+  private crossFade(sprite: CommitSprite): void {
+    sprite.body.alpha = sprite.pushed;
+    sprite.localBody.alpha = 1 - sprite.pushed;
   }
 
   /** Redraws everything with the palette as it is now: the ambience moved. */
@@ -130,7 +189,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
   }
 
   private rebuild(): void {
-    const { session } = sceneContext(this.chipContext);
+    const { session, reveal } = sceneContext(this.chipContext);
     const state = session.getState();
     const nodes = this.revealed();
 
@@ -140,19 +199,51 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     this.drawLanes(state, nodes);
     this.drawEdges(state, nodes);
 
+    // A squashed commit still holds its place in the lines above; only its
+    // disc goes, into the one it was pushed with.
+    const folded = new Map<NodeId, number>();
+    for (const into of reveal.absorbed.values()) folded.set(into, (folded.get(into) ?? 1) + 1);
+
     const live = new Set<NodeId>();
     for (const node of nodes) {
+      const into = reveal.absorbed.get(node.id);
+      if (into !== undefined) {
+        const sprite = this.sprites.get(node.id);
+        if (sprite === undefined) continue;
+        live.add(node.id);
+        this.fuseInto(node.id, sprite, into);
+        continue;
+      }
       live.add(node.id);
-      this.upsert(node);
+      this.upsert(node, reveal.local.has(node.id), folded.get(node.id) ?? 1);
     }
 
-    for (const [id, sprite] of this.sprites) {
-      if (live.has(id)) continue;
-      sprite.root.destroy({ children: true });
-      this.sprites.delete(id);
-      this.labels.get(id)?.destroy();
-      this.labels.delete(id);
+    for (const id of [...this.sprites.keys()]) {
+      if (!live.has(id)) this.drop(id);
     }
+  }
+
+  private drop(id: NodeId): void {
+    this.sprites.get(id)?.root.destroy({ children: true });
+    this.sprites.delete(id);
+    this.labels.get(id)?.destroy();
+    this.labels.delete(id);
+  }
+
+  private fuseInto(id: NodeId, sprite: CommitSprite, into: NodeId): void {
+    if (sprite.fuse !== null) return;
+    const target = this.node(into);
+    if (target === undefined) {
+      this.drop(id);
+      return;
+    }
+    sprite.root.eventMode = "none";
+    if (this.hovered === id) this.setHovered(null);
+    sprite.fuse = {
+      from: { x: sprite.root.position.x, y: sprite.root.position.y },
+      to: { x: nodeX(target.lane), y: nodeY(target.depth) },
+      t: 0,
+    };
   }
 
   /**
@@ -212,14 +303,19 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
   // --- commits --------------------------------------------------------------
 
-  private upsert(node: MapNode): void {
+  private upsert(node: MapNode, local: boolean, squashed: number): void {
     const { translate, subjects } = sceneContext(this.chipContext);
     let sprite = this.sprites.get(node.id);
+    const subject = `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`;
+    // Commits pushed as one read as one, and say how many they were.
+    const text = squashed > 1 ? `${subject} (×${squashed})` : subject;
 
     if (sprite === undefined) {
       const root = new Container();
-      const graphics = new Graphics();
-      root.addChild(graphics);
+      const rings = new Graphics();
+      const localBody = new Graphics();
+      const body = new Graphics();
+      root.addChild(rings, localBody, body);
 
       root.eventMode = "static";
       root.cursor = "help";
@@ -230,14 +326,20 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
       });
 
       this.nodeLayer.addChild(root);
-      sprite = { root, graphics, reveal: 0 };
+      sprite = {
+        root,
+        rings,
+        body,
+        localBody,
+        reveal: 0,
+        local,
+        pushed: local ? 0 : 1,
+        fuse: null,
+      };
       this.sprites.set(node.id, sprite);
 
       if (subjects) {
-        const label = new Text({
-          text: `${nodePrefix(node.kind, node.commit.mode)}: ${translate({ key: node.subjectKey })}`,
-          style: labelStyle,
-        });
+        const label = new Text({ text, style: labelStyle });
         label.anchor.set(0, 0.5);
         label.alpha = 0;
         this.labelLayer.addChild(label);
@@ -249,10 +351,18 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
     const y = nodeY(node.depth);
 
     sprite.root.position.set(x, y);
-    drawCommit(sprite.graphics, node, this.hovered === node.id);
+    // Pushed is forward only; a picture rebuilt from the ledger starts where it stands.
+    sprite.local = local;
+    if (local) sprite.pushed = 0;
+    drawRings(sprite.rings, node, this.hovered === node.id);
+    drawBody(sprite.body, node);
+    if (local || sprite.pushed < 1) drawLocalBody(sprite.localBody, node);
+    else sprite.localBody.clear();
+    this.crossFade(sprite);
 
     const label = this.labels.get(node.id);
     if (label !== undefined) {
+      if (label.text !== text) label.text = text;
       label.position.set(this.subjectX(), y);
       label.visible = this.showLabels;
     }
@@ -264,7 +374,7 @@ export class GraphView extends ContainerChip<GraphViewEvents> {
 
     for (const [nodeId, sprite] of this.sprites) {
       const node = this.node(nodeId);
-      if (node !== undefined) drawCommit(sprite.graphics, node, this.hovered === nodeId);
+      if (node !== undefined) drawRings(sprite.rings, node, this.hovered === nodeId);
     }
   }
 

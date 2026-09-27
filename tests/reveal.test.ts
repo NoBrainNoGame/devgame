@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { emptyPushes } from "@/game/bridge/pushes";
 import { RevealSet } from "@/game/bridge/reveal";
 import { headOf } from "@/game/core/map/graph";
 
@@ -10,7 +11,7 @@ describe("the reveal set", () => {
     for (let i = 0; i < 20; i += 1) {
       const { state } = play(newRun(`reveal-${i}`), { pick: policy("ai"), limit: 60 });
       const reveal = new RevealSet();
-      reveal.showAll(state);
+      reveal.showAll(state, emptyPushes());
 
       expect([...reveal.nodes].sort()).toEqual(Object.keys(state.nodes).sort());
       expect(reveal.headId).toBe(headOf(state).id);
@@ -46,8 +47,8 @@ describe("the reveal set", () => {
       changes += 1;
     });
 
-    reveal.showAll(state);
-    reveal.showAll(state);
+    reveal.showAll(state, emptyPushes());
+    reveal.showAll(state, emptyPushes());
     expect(changes).toBe(1);
   });
 
@@ -55,7 +56,7 @@ describe("the reveal set", () => {
     const state = inHand("reveal-snap");
     const reveal = new RevealSet();
     const snapshot = reveal.snapshot();
-    reveal.showAll(state);
+    reveal.showAll(state, emptyPushes());
     expect(snapshot.nodes.size).toBe(0);
     expect(reveal.nodes.size).toBeGreaterThan(0);
   });

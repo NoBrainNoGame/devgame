@@ -309,6 +309,12 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   `lerpPalette`), `--color-<name>` in `globals.css`, written by `useAusterity`
   (`tests/theme.test.ts` compares the CSS with `THEME`). Check:
   `tests/storyboard.test.ts`, `tests/gauges.test.ts`.
+- **An event that writes or throws away commits**: `advancePushes`
+  (`bridge/pushes.ts`) decides which of the player's commits are drawn local,
+  pushed or squashed, from events alone (the engine has no remote). A new way
+  to open a pull request, land a branch or drop commits needs its case there,
+  or commits stay drawn local forever. Presentation only: no epoch. Check:
+  `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
   (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the
   Pixi tree is tied to `sceneContext.signal`: a scene that threw in a frame

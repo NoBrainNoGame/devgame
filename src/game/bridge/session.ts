@@ -1,5 +1,6 @@
 import { Emitter } from "@/game/bridge/emitter";
 import { holdFor, readout } from "@/game/bridge/gauges";
+import { advancePushes, emptyPushes, type PushLedger, type PushOp } from "@/game/bridge/pushes";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
@@ -27,6 +28,8 @@ export interface AppliedPayload {
   action: PlayerAction;
   /** This publication's number, so a late effect can tell it belongs to an older one. */
   batch: number;
+  /** What the batch pushed, in the order the story tells it. */
+  pushes: PushOp[];
   /**
    * Where the action was taken, in page coordinates, when it was taken in a
    * dialog over the canvas: what it gives flies from there to the HUD.
@@ -72,6 +75,7 @@ export type DispatchResult = { ok: true } | { ok: false; reason: string };
 export class GameSession extends Emitter {
   private readonly actionLog: PlayerAction[] = [];
   private state: RunState;
+  private pushes: PushLedger = emptyPushes();
   private presentation: Presentation = { animated: true, holdGauges: false };
   private batch = 0;
 
@@ -91,6 +95,9 @@ export class GameSession extends Emitter {
         ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
       },
       options.resumeActions ?? [],
+      (events, state) => {
+        this.pushes = advancePushes(this.pushes, events, state).ledger;
+      },
     );
     this.state = rebuilt.state;
     this.actionLog.push(...rebuilt.replayed);
@@ -100,6 +107,11 @@ export class GameSession extends Emitter {
 
   getState(): RunState {
     return this.state;
+  }
+
+  /** Which of the run's commits are pushed, as the graph ends a batch. */
+  getPushes(): PushLedger {
+    return this.pushes;
   }
 
   getActions(): PlayerAction[] {
@@ -124,6 +136,8 @@ export class GameSession extends Emitter {
     const result = applyAction(this.state, action);
     this.state = result.state;
     this.actionLog.push(action);
+    const pushed = advancePushes(this.pushes, result.events, result.state);
+    this.pushes = pushed.ledger;
 
     this.batch += 1;
     this.publish(result.events, action);
@@ -132,6 +146,7 @@ export class GameSession extends Emitter {
       state: result.state,
       action,
       batch: this.batch,
+      pushes: pushed.ops,
       ...(origin === undefined ? {} : { origin }),
     };
     this.emit("applied", payload);

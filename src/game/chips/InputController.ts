@@ -1,4 +1,4 @@
-import { gameStore } from "@/game/bridge/store";
+import { type GameStore, gameStore } from "@/game/bridge/store";
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
 import type { FxQueue } from "@/game/chips/FxQueue";
@@ -26,14 +26,28 @@ export class InputController extends booyah.ChipBase {
   }
 
   protected _onActivate(): void {
-    const { app } = sceneContext(this.chipContext);
+    const { app, reveal } = sceneContext(this.chipContext);
+
+    // Whether the commit is pushed as drawn, which a push can change under
+    // the pointer.
+    const pushOf = (nodeId: string | null): GameStore["hoveredPush"] => {
+      if (nodeId === null) return null;
+      let squashed = 1;
+      for (const into of reveal.absorbed.values()) if (into === nodeId) squashed += 1;
+      return { local: reveal.local.has(nodeId), squashed };
+    };
 
     this._subscribe(this.graph, "nodeHover", (...args: unknown[]) => {
       const nodeId = (args[0] as string | null) ?? null;
       gameStore.setState({
         hoveredNodeId: nodeId,
         hoveredAt: nodeId === null ? null : this.graph.screenPositionOf(nodeId),
+        hoveredPush: pushOf(nodeId),
       });
+    });
+    this._subscribe(reveal, "changed", () => {
+      const { hoveredNodeId } = gameStore.getState();
+      if (hoveredNodeId !== null) gameStore.setState({ hoveredPush: pushOf(hoveredNodeId) });
     });
 
     // A click skips the sequence in the game. A run that is only looked at
@@ -45,6 +59,6 @@ export class InputController extends booyah.ChipBase {
   }
 
   protected _onTerminate(): void {
-    gameStore.setState({ hoveredNodeId: null, hoveredAt: null });
+    gameStore.setState({ hoveredNodeId: null, hoveredAt: null, hoveredPush: null });
   }
 }

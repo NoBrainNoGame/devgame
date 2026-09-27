@@ -7,6 +7,7 @@ import { sceneContext } from "@/game/chips/context";
 import { Flash } from "@/game/chips/fx/Flash";
 import { Look } from "@/game/chips/fx/Look";
 import { Pop } from "@/game/chips/fx/Pop";
+import { Push } from "@/game/chips/fx/Push";
 import { Reveal } from "@/game/chips/fx/Reveal";
 import { Sfx } from "@/game/chips/fx/Sfx";
 import { Beat, type SkipFlag } from "@/game/chips/fx/skip";
@@ -74,7 +75,7 @@ export class FxQueue extends booyah.Queue {
   skip(): void {
     const { reveal, session } = sceneContext(this.chipContext);
     if (this.current !== null) this.current.skip.value = true;
-    reveal.showAll(session.getState());
+    reveal.showAll(session.getState(), session.getPushes());
     this.focus(null);
     clearHeld();
     gameStore.setState({ pendingAnimation: false });
@@ -105,7 +106,7 @@ export class FxQueue extends booyah.Queue {
     arm();
 
     if (reducedMotion) {
-      reveal.showAll(payload.state);
+      reveal.showAll(payload.state, sceneContext(this.chipContext).session.getPushes());
       // Nothing moves, but a sound is not a motion: it plays at once.
       for (const step of planBatch(payload.events, payload.state, reveal.snapshot(), translate)) {
         if (step.kind === "sfx") audio.play(step.id);
@@ -117,6 +118,7 @@ export class FxQueue extends booyah.Queue {
       const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate, {
         reviewHold: interactive,
         economyPops: !isShopAction(payload.action),
+        pushes: payload.pushes,
       });
       const cued = new Set<string>();
       for (const step of steps) {
@@ -158,7 +160,8 @@ export class FxQueue extends booyah.Queue {
         clearHeld();
         // Whatever the storyboard did not think to reveal, the end of the
         // batch does: the screen always ends a turn complete.
-        reveal.showAll(sceneContext(this.chipContext).session.getState());
+        const { session } = sceneContext(this.chipContext);
+        reveal.showAll(session.getState(), session.getPushes());
         this.focus(null);
         gameStore.setState({ pendingAnimation: false });
       }),
@@ -175,7 +178,11 @@ export class FxQueue extends booyah.Queue {
   private chipFor(step: Step, skip: SkipFlag, batch: number): booyah.Chip {
     switch (step.kind) {
       case "reveal":
-        return new Reveal(step.nodeId, step.at.y, step.asHead, step.hold, skip);
+        return new Reveal(step.nodeId, step.at.y, step.asHead, step.local, step.hold, skip);
+      case "fuse":
+        return new Push(step.nodeIds, step.into, step.at.y, step.hold, skip);
+      case "push":
+        return new Push([step.nodeId], null, step.at.y, step.hold, skip);
       case "look":
         return new Look(step.y, step.hold, skip);
       case "pop":

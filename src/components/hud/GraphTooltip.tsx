@@ -20,6 +20,7 @@ export function GraphTooltip(): React.JSX.Element | null {
 
   const nodeId = useGameStore((state) => state.hoveredNodeId);
   const at = useGameStore((state) => state.hoveredAt);
+  const push = useGameStore((state) => state.hoveredPush);
   const snapshot = useGameStore((state) => state.snapshot);
 
   if (nodeId === null || at === null || snapshot === null) return null;
@@ -68,6 +69,18 @@ export function GraphTooltip(): React.JSX.Element | null {
             <Row label={t("tooltipReview")}>
               <span className={cn(unread ? "text-debt" : "text-muted-foreground")}>
                 {unread ? t("tooltipUnread") : t("tooltipRead")}
+              </span>
+            </Row>
+          )}
+
+          {push === null || node.lane < 2 ? null : (
+            <Row label={t("tooltipPush")}>
+              <span className="text-muted-foreground">
+                {push.local
+                  ? t("tooltipLocal")
+                  : push.squashed > 1
+                    ? t("tooltipSquashed", { count: push.squashed })
+                    : t("tooltipPushed")}
               </span>
             </Row>
           )}

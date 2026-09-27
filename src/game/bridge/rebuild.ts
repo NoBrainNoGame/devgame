@@ -2,7 +2,7 @@ import { type RunSnapshot, toSnapshot } from "@/game/bridge/snapshot";
 import { isActionAvailable } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import { type CreateRunOptions, createRun } from "@/game/core/run";
-import type { PlayerAction, RunState } from "@/game/core/types";
+import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import type { RunSaveDto } from "@/game/dto/run";
 import { SAVE_VERSION } from "@/game/dto/version";
 
@@ -19,7 +19,15 @@ export interface Rebuilt {
   replayed: PlayerAction[];
 }
 
-export function rebuildRun(options: CreateRunOptions, actions: readonly PlayerAction[]): Rebuilt {
+/**
+ * `observe` sees every replayed action's events, for what the screen derives
+ * from them and the state does not keep (`pushes.ts`).
+ */
+export function rebuildRun(
+  options: CreateRunOptions,
+  actions: readonly PlayerAction[],
+  observe?: (events: readonly GameEvent[], state: RunState) => void,
+): Rebuilt {
   let state = createRun(options);
   const replayed: PlayerAction[] = [];
   for (const action of actions) {
@@ -27,7 +35,9 @@ export function rebuildRun(options: CreateRunOptions, actions: readonly PlayerAc
     // rules changed under it — stop and keep what replayed cleanly rather
     // than build a state that never existed.
     if (!isActionAvailable(state, action)) break;
-    state = applyAction(state, action).state;
+    const result = applyAction(state, action);
+    state = result.state;
+    observe?.(result.events, state);
     replayed.push(action);
   }
   return { state, replayed };

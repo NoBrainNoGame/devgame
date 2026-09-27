@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { advancePushes, emptyPushes, type PushLedger, type PushOp } from "@/game/bridge/pushes";
 import { RevealSet } from "@/game/bridge/reveal";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
@@ -14,6 +15,10 @@ interface Batch {
   before: RunState;
   after: RunState;
   events: GameEvent[];
+  /** Which commits were pushed before the batch, and after it. */
+  ledger: PushLedger;
+  ledgerAfter: PushLedger;
+  ops: PushOp[];
 }
 
 const translate = (text: { key: string }): string => text.key;
@@ -22,22 +27,34 @@ const translate = (text: { key: string }): string => text.key;
 function batchesOf(seed: string, hand: "ai" | "craft", limit = 120): Batch[] {
   const batches: Batch[] = [];
   let state = newRun(seed);
+  let ledger = emptyPushes();
   for (let i = 0; i < limit && state.phase.kind !== "game_over"; i += 1) {
     const action = policy(hand)(state, getAvailableActions(state));
     if (action === undefined) break;
     const result = applyAction(state, action);
-    batches.push({ before: state, after: result.state, events: result.events });
+    const pushed = advancePushes(ledger, result.events, result.state);
+    batches.push({
+      before: state,
+      after: result.state,
+      events: result.events,
+      ledger,
+      ledgerAfter: pushed.ledger,
+      ops: pushed.ops,
+    });
     state = result.state;
+    ledger = pushed.ledger;
   }
   return batches;
 }
 
 /** What the screen shows after a batch's steps, starting from `before`. */
-function playSteps(before: RunState, steps: Step[]): RevealSet {
+function playSteps(before: RunState, ledger: PushLedger, steps: Step[]): RevealSet {
   const reveal = new RevealSet();
-  reveal.showAll(before);
+  reveal.showAll(before, ledger);
   for (const step of steps) {
-    if (step.kind === "reveal") reveal.showNode(step.nodeId, step.asHead);
+    if (step.kind === "reveal") reveal.showNode(step.nodeId, step.asHead, step.local);
+    if (step.kind === "fuse") reveal.absorb(step.nodeIds, step.into);
+    if (step.kind === "push") reveal.push(step.nodeId);
   }
   return reveal;
 }
@@ -49,7 +66,7 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, seed.endsWith("7") ? "craft" : "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         for (const step of steps) {
@@ -66,7 +83,7 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         const written = Object.keys(batch.after.nodes).filter((id) => !(id in batch.before.nodes));
@@ -87,7 +104,7 @@ describe("the storyboard", () => {
         // where `HEAD` ends up once the final look hands it back.
         // A restarted ticket's commits leave the state; the end of the batch
         // prunes them from the screen, so only what still exists is compared.
-        const shown = playSteps(batch.before, steps);
+        const shown = playSteps(batch.before, batch.ledger, steps);
         const kept = [...shown.nodes].filter((id) => id in batch.after.nodes);
         expect(kept.sort()).toEqual(Object.keys(batch.after.nodes).sort());
       }
@@ -101,7 +118,7 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         // The commit's own node, if it landed: the one the head moved to. A
@@ -150,7 +167,7 @@ describe("the storyboard", () => {
         merges += 1;
 
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         const regen = steps.find(
@@ -181,7 +198,7 @@ describe("the storyboard", () => {
 
       const result = applyAction(two, other);
       const reveal = new RevealSet();
-      reveal.showAll(two);
+      reveal.showAll(two, emptyPushes());
       const steps = planBatch(result.events, result.state, reveal.snapshot(), translate);
 
       const looks = steps.filter((s): s is Extract<Step, { kind: "look" }> => s.kind === "look");
@@ -206,7 +223,7 @@ describe("the pops that move the HUD", () => {
     for (const seed of SEEDS.slice(0, 20)) {
       for (const batch of batchesOf(seed, "ai", 80)) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const cues = cuesOf(planBatch(batch.events, batch.after, reveal.snapshot(), translate));
         for (let i = 1; i < cues.length; i += 1) {
           expect(cues[i]?.serial ?? 0).toBeGreaterThan(cues[i - 1]?.serial ?? 0);
@@ -236,7 +253,7 @@ describe("the pops that move the HUD", () => {
       for (const batch of batchesOf(seed, "craft", 120)) {
         if (!batch.events.some((e) => e.type === "month_closed")) continue;
         const reveal = new RevealSet();
-        reveal.showAll(batch.before);
+        reveal.showAll(batch.before, batch.ledger);
         const money = cuesOf(
           planBatch(batch.events, batch.after, reveal.snapshot(), translate),
         ).filter((cue) => cue.gauge === "money");
@@ -253,5 +270,89 @@ describe("the pops that move the HUD", () => {
       }
     }
     expect(paydays).toBeGreaterThan(0);
+  });
+});
+
+describe("local and pushed commits on screen", () => {
+  const sorted = (ids: Iterable<string>): string[] => [...ids].sort();
+
+  test("the screen ends a batch where the ledger does", () => {
+    let fused = 0;
+    let broke = 0;
+    for (const seed of SEEDS) {
+      for (const batch of batchesOf(seed, "ai")) {
+        const reveal = new RevealSet();
+        reveal.showAll(batch.before, batch.ledger);
+        const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate, {
+          pushes: batch.ops,
+        });
+        const shown = playSteps(batch.before, batch.ledger, steps);
+
+        const exists = (id: string): boolean => id in batch.after.nodes;
+        expect(sorted([...shown.local].filter(exists))).toEqual(
+          sorted(Object.values(batch.ledgerAfter.local).flat()),
+        );
+        expect(Object.fromEntries([...shown.absorbed].filter(([id]) => exists(id)))).toEqual(
+          batch.ledgerAfter.absorbed,
+        );
+
+        fused += steps.filter((step) => step.kind === "fuse").length;
+        broke += batch.events.filter((e) => e.type === "incident" && e.source === "commit").length;
+      }
+    }
+    expect(fused).toBeGreaterThan(0);
+    expect(broke).toBeGreaterThan(0);
+  });
+
+  test("a commit's own story plays out before it is pushed", () => {
+    let pushes = 0;
+    for (const seed of SEEDS) {
+      for (const batch of batchesOf(seed, "ai")) {
+        const reveal = new RevealSet();
+        reveal.showAll(batch.before, batch.ledger);
+        const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate, {
+          pushes: batch.ops,
+        });
+
+        // Only pushes of a commit that went through: a pull request is read,
+        // and answered, on commits already pushed, as it is in git.
+        const byCommit = new Set(
+          batch.ops.filter((op) => op.kind === "commit").map((op) => op.into),
+        );
+        const pushed = new Set<string>();
+        const shownSoFar = new Set(reveal.nodes);
+        for (const step of steps) {
+          if (step.kind === "reveal") shownSoFar.add(step.nodeId);
+          if (step.kind === "fuse") {
+            expect(shownSoFar.has(step.into)).toBe(true);
+            for (const id of step.nodeIds) expect(shownSoFar.has(id)).toBe(true);
+          }
+          if (step.kind === "push") {
+            expect(shownSoFar.has(step.nodeId)).toBe(true);
+            if (byCommit.has(step.nodeId)) pushed.add(step.nodeId);
+            pushes += 1;
+          }
+          if (step.kind === "pop" || step.kind === "flash") {
+            expect(pushed.has(step.anchor)).toBe(false);
+          }
+        }
+      }
+    }
+    expect(pushes).toBeGreaterThan(0);
+  });
+
+  test("a commit that broke production is left local", () => {
+    let seen = 0;
+    for (const seed of SEEDS) {
+      for (const batch of batchesOf(seed, "ai")) {
+        for (const event of batch.events) {
+          if (event.type !== "incident" || event.source !== "commit") continue;
+          if (!(event.nodeId in batch.after.nodes)) continue;
+          seen += 1;
+          expect(Object.values(batch.ledgerAfter.local).flat()).toContain(event.nodeId);
+        }
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
   });
 });
