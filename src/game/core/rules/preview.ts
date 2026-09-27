@@ -18,6 +18,7 @@ import {
   gatherEffects,
   mergeEventChance,
   nodeEnergyCost,
+  restCostsPatience,
   restRegen,
   reviewCleanCount,
   reviewEnergyCost,
@@ -145,11 +146,6 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       if (ticket !== null) {
         const unread = unreadAiOn(state, ticket).length;
         if (unread > 0) notes.push(text("notes.unread_risk", { count: unread }));
-        if (state.debt > BALANCE.acceptance.maxDebt) {
-          notes.push(
-            text("notes.health_refusal", { floor: BALANCE.debt.max - BALANCE.acceptance.maxDebt }),
-          );
-        }
       }
       // The review itself is free; the merge that follows an acceptance is
       // priced on its own button, and a refusal costs the turn.
@@ -189,6 +185,9 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const regen = restRegen(state);
       const notes: I18nText[] = [text("notes.rest_regen", { energy: regen })];
       if (wipExtra(state) > 0) notes.push(text("notes.rest_wip", { count: wipExtra(state) }));
+      if (restCostsPatience(state)) {
+        notes.push(text("notes.rest_patience", { patience: BALANCE.quality.perRest }));
+      }
       return { action, energyCost: 0, consumesTurn: true, notes };
     }
 

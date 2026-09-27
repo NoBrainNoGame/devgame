@@ -185,6 +185,9 @@ describe("the backlog", () => {
     let started = false;
     const idle = play(deep, {
       pick: (state, actions) => {
+        // Nor production's patience: every rest taken while the backlog
+        // waits costs some, and would get the player fired first.
+        state.quality = 0;
         if (state.player.ticketId === null && !started) {
           started = true;
           return actions.find((a) => a.type === "start");

@@ -54,6 +54,25 @@ export function chooseAutopilot(
     const toObstacle = find((a) => a.type === "checkout" && inHand.blockedBy.includes(a.ticketId));
     if (toObstacle !== undefined) return toObstacle;
   }
+  // Full, and held back by the codebase's health: a refactor is the way to
+  // its pull request, once there is breath for it. With nothing indebted on
+  // it, the debt is elsewhere, and so is the next move.
+  if (inHand?.waitingOnHealth === true) {
+    const refactor = find(
+      (a) => a.type === "commit" && a.mode === "craft" && a.kind === "refactor",
+    );
+    if (refactor !== undefined) {
+      if (writable(refactor) !== undefined) return refactor;
+    } else {
+      const stuck = (id: string): boolean =>
+        snapshot.tickets.some(
+          (ticket) => ticket.id === id && (ticket.waitingOnHealth || ticket.waitingOnObstacle),
+        );
+      const elsewhere =
+        find((a) => a.type === "checkout" && !stuck(a.ticketId)) ?? find((a) => a.type === "start");
+      if (elsewhere !== undefined) return elsewhere;
+    }
+  }
   if (inHand !== undefined && inHand.bugs > 0) {
     const fix = find((a) => a.type === "commit" && a.mode === "craft" && a.kind === "fix");
     if (fix !== undefined) return fix;

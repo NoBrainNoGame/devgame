@@ -97,6 +97,7 @@
       "stale": "Licenciement : trop de tickets laissés au backlog.",
       "outage": "Licenciement : des serveurs saturés trop longtemps.",
       "idle_sprint": "Licenciement : trop de sprints sans rien livrer vous-même.",
+      "rest": "Licenciement : trop de pauses pendant que le travail attendait.",
       "deadline": "Licenciement : un bug client abandonné de trop.",
       "event": "Licenciement : une mauvaise réponse de trop.",
       "objective": "Licenciement : un objectif manqué de trop."
@@ -108,6 +109,7 @@
       "stale": "Tickets imposés",
       "outage": "Serveurs saturés",
       "idle_sprint": "Sprints sans livraison",
+      "rest": "Pauses",
       "deadline": "Bugs clients abandonnés",
       "event": "Événements",
       "objective": "Objectifs manqués"
@@ -224,6 +226,7 @@
     },
     "submit": "Ouvrir la PR",
     "submitHint": "Points pleins : la review lit le ticket et décide.",
+    "submitHealthBlocked": "Santé du code sous le plancher ({floor}) : la review refuserait. Refactorez avant d'ouvrir la PR.",
     "sprintTurn": "tour {turn}/{max}",
     "releaseIn": "{count, plural, =0 {release à la fin de ce tour} one {release dans # tour} other {release dans # tours}}",
     "sprintHint": "Le sprint est une boîte de tours. Quand elle est vide, dev part en production avec ce qui a été mergé, et les bugs remontent.",
@@ -239,6 +242,7 @@
     "reviewRestartHint": "Les commits sont jetés, la branche repart de dev.",
     "reviewResume": "Continuer",
     "reviewResumeHint": "Garder les commits, corriger ceux qui sont bugués.",
+    "reviewSprintClosed": "Ce refus a clos le sprint : la release est partie, la PR garde ses commits.",
     "skip": "Passer",
     "reviewUnread": "{count, plural, one {# commit IA non relu} other {# commits IA non relus}}",
     "reviewBugs": "{bugs, plural, one {# bug trouvé} other {# bugs trouvés}}",
@@ -265,7 +269,7 @@
     "ticketCost": "−{debt} santé",
     "reviewMergeHint": "Le merge coûte le tour ; la review, non.",
     "rest": "Souffler",
-    "restHint": "Un tour sans coder : de l'énergie revient, moins un par ticket ouvert en plus.",
+    "restHint": "Un tour sans coder : un peu d'énergie revient, moins un par ticket ouvert en plus. Si du travail attend, la prod perd patience.",
     "company": "Entreprise",
     "companyHint": "Finances, marché et équipe. Prochaine paie dans {count, plural, one {# tour} other {# tours}}.",
     "money": "{money}",
@@ -430,7 +434,7 @@
     "switchOff": "—",
     "tiered": {
       "t1": {
-        "restHint": "Un tour sans coder, recommandé par l'assistant : de l'énergie revient, moins un par ticket ouvert en plus."
+        "restHint": "Un tour sans coder, toléré par l'assistant : un peu d'énergie revient, moins un par ticket ouvert en plus. Si du travail attend, la prod perd patience."
       },
       "t2": {
         "idleAuto": "Délégué",
@@ -440,7 +444,7 @@
         "restHintAutopilot": "Le superviseur joue le coup évident. Il ne souffle que si rien d'autre ne tient."
       },
       "t4": {
-        "restHint": "Un tour sans coder. L'énergie revient ; l'opérateur est invité à s'en servir.",
+        "restHint": "Un tour sans coder. Un peu d'énergie revient ; si du travail attend, la tolérance baisse.",
         "patience": "Tolérance"
       },
       "t5": {
@@ -449,7 +453,7 @@
       },
       "t6": {
         "rest": "Attente",
-        "restHint": "Un cycle sans écriture.",
+        "restHint": "Un cycle sans écriture. Noté.",
         "company": "Instance {seed}",
         "actionsTitle": "Cycle"
       }
@@ -479,7 +483,6 @@
     "patienceHint": "La patience de la prod : un bug en production, une PR refusée ou un ticket du backlog qui a traîné la font baisser. Vide, c'est le licenciement. Un sprint propre la fait remonter.",
     "codeHealthHint": "La santé du code, c'est la dette technique à l'envers. Elle n'est affichée précisément qu'avec un linter.",
     "previewHealth": "Santé du code : {min} à {max}",
-    "reviewHealth": "Santé du code : {health} (plancher {floor})",
     "chipHealth": "{delta} santé",
     "chipPoints": "+{points} pts",
     "conflictAiCost": " — −{delta} santé",
@@ -1300,7 +1303,6 @@
       "pr_accepted": "PR acceptée, ticket mergé sur dev",
       "ticket_restarted": "branche jetée, {count, plural, one {# commit} other {# commits}} de moins, on repart de dev",
       "pr_rejected_bugs": "PR refusée, {bugs, plural, one {# bug à corriger} other {# bugs à corriger}}",
-      "pr_rejected_debt": "PR refusée, la dette est trop haute",
       "bug_fixed": "commit bugué repris, le bug est parti",
       "debt_refactored": "commit repris : +{{debt}} de santé du code",
       "rested": "un tour pour souffler, +{energy} énergie",
@@ -1310,6 +1312,7 @@
         "stale": "la prod perd patience : {change} pour le ticket laissé au backlog ({left}/{max})",
         "outage": "la prod perd patience : {change} pour les serveurs saturés ({left}/{max})",
         "idle_sprint": "la prod perd patience : {change}, rien livré de votre main ce sprint ({left}/{max})",
+        "rest": "la prod perd patience : {change}, une pause pendant que le travail attend ({left}/{max})",
         "clean_sprint": "sprint propre : la prod respire, {change} de patience ({left}/{max})",
         "hack": "quelqu'un a effacé des tickets d'incident : la prod respire, {change} de patience ({left}/{max})",
         "deadline": "la prod perd patience : {change} pour le bug client abandonné ({left}/{max})",
@@ -1401,6 +1404,7 @@
       "refactor_target": "Reprend le commit qui a coûté {debt} de santé du code",
       "fix_bug": "Reprend le plus ancien commit bugué du ticket",
       "rest_regen": "+{energy} énergie",
+      "rest_patience": "−{patience} de patience : du travail attend",
       "rest_wip": "{count, plural, one {# ticket en plus : on souffle moins} other {# tickets en plus : on souffle moins}}",
       "tier_locked": "Se débloque au palier {tier}",
       "capacity_gain": "+{users} utilisateurs servis",
@@ -1437,7 +1441,6 @@
       },
       "event_health": "Santé du code {delta}",
       "event_patience": "Patience de la prod {delta}",
-      "health_refusal": "Santé du code sous le plancher ({floor}) : la review refusera",
       "obstacle_merge": "Revient sur la feature, sans review ni événement"
     },
     "tickets": {

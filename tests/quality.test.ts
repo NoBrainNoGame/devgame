@@ -13,6 +13,7 @@ import {
   isCommit,
   isType,
   makeReady,
+  newRun,
   plantAiCommit,
   policy,
   prefer,
@@ -105,6 +106,7 @@ describe("production", () => {
       "stale",
       "outage",
       "idle_sprint",
+      "rest",
       "deadline",
       "event",
       "objective",
@@ -160,6 +162,22 @@ describe("production", () => {
       return;
     }
     throw new Error("no release broke in 40 attempts");
+  });
+
+  test("a rest costs patience while work waits, and nothing when there is none", () => {
+    const busy = inHand("rest-busy");
+    const rested = applyAction(busy, { type: "rest" });
+    expect(rested.state.stats.qualityBySource.rest).toBe(BALANCE.quality.perRest);
+    expect(eventsOfType(rested.events, "quality").some((e) => e.source === "rest")).toBe(true);
+
+    // Nothing in hand and nothing to start: waiting is all there is to do.
+    const idle = newRun("rest-idle");
+    for (const ticket of openTickets(idle)) ticket.status = "cancelled";
+    for (const ticket of Object.values(idle.tickets)) {
+      if (ticket.status === "backlog") ticket.status = "cancelled";
+    }
+    const waited = applyAction(idle, { type: "rest" });
+    expect(waited.state.stats.qualityBySource.rest).toBe(0);
   });
 
   test("hotfix commits are exempt from the release roll", () => {

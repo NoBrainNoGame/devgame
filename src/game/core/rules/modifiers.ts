@@ -13,7 +13,14 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
-import { behindOf, openTickets, playerTickets, unreadAiOn } from "@/game/core/rules/tickets";
+import {
+  backlogTickets,
+  behindOf,
+  currentTicket,
+  openTickets,
+  playerTickets,
+  unreadAiOn,
+} from "@/game/core/rules/tickets";
 import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
 
 /**
@@ -77,6 +84,15 @@ export function wipExtra(state: RunState): number {
 /** What a turn of rest gives back. A crowded board is one you cannot rest on. */
 export function restRegen(state: RunState): number {
   return Math.max(1, BALANCE.energy.restRegen - wipExtra(state));
+}
+
+/**
+ * Whether production sees a rest as a turn off: work was waiting, in hand or
+ * in the backlog. With nothing to hold and nothing to start, waiting on the
+ * team is all there is to do, and nobody holds it against you.
+ */
+export function restCostsPatience(state: RunState): boolean {
+  return currentTicket(state) !== null || backlogTickets(state).length > 0;
 }
 
 /**

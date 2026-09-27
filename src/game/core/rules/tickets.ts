@@ -122,6 +122,31 @@ export function waitsOnlyForObstacle(state: RunState, ticket: Ticket): boolean {
   );
 }
 
+/**
+ * Whether the codebase's health lets this ticket's pull request open. Under
+ * the floor the reviewer would refuse it whatever the code, and a review that
+ * can only refuse costs a turn and production's patience and teaches
+ * nothing, so none is offered — except on a ticket whose landing pays the
+ * debt back, or the remedy would wait on the disease. A showcase's reviewer
+ * refuses nothing.
+ */
+export function healthLetsOpen(state: RunState, ticket: Ticket): boolean {
+  return (
+    state.showcase !== null ||
+    state.debt <= BALANCE.acceptance.maxDebt ||
+    TICKET_KIND[ticket.kind].repaysDebt
+  );
+}
+
+/**
+ * Full, nothing flagged, no obstacle: only the codebase's health keeps the
+ * ticket from its review. Writing more on it fills nothing; a refactor is the
+ * way to the pull request — here, or on whichever ticket holds the debt.
+ */
+export function waitsOnlyForHealth(state: RunState, ticket: Ticket): boolean {
+  return ticket.parentId === undefined && isReady(state, ticket) && !healthLetsOpen(state, ticket);
+}
+
 /** Detours that only fill points: pointless on a ticket already full. */
 export const FILLING_DETOURS: ReadonlySet<DetourKind> = new Set(["docs", "risky"]);
 

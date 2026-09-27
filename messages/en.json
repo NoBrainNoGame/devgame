@@ -97,6 +97,7 @@
       "stale": "Fired: too many tickets left in the backlog.",
       "outage": "Fired: servers saturated for too long.",
       "idle_sprint": "Fired: too many sprints without landing anything yourself.",
+      "rest": "Fired: too many breaks while work was waiting.",
       "deadline": "Fired: one abandoned customer bug too many.",
       "event": "Fired: one wrong answer too many.",
       "objective": "Fired: one missed objective too many."
@@ -108,6 +109,7 @@
       "stale": "Forced tickets",
       "outage": "Saturated servers",
       "idle_sprint": "Sprints without a delivery",
+      "rest": "Breaks",
       "deadline": "Abandoned customer bugs",
       "event": "Events",
       "objective": "Missed objectives"
@@ -224,6 +226,7 @@
     },
     "submit": "Open the PR",
     "submitHint": "Points full: the review reads the ticket and decides.",
+    "submitHealthBlocked": "Code health under the floor ({floor}): the review would refuse. Refactor before opening the pull request.",
     "sprintTurn": "turn {turn}/{max}",
     "releaseIn": "{count, plural, =0 {release at the end of this turn} one {release in # turn} other {release in # turns}}",
     "sprintHint": "A sprint is a box of turns. When it is empty, dev ships to production with whatever was merged, and the bugs come back.",
@@ -239,6 +242,7 @@
     "reviewRestartHint": "The commits are thrown away, the branch restarts from dev.",
     "reviewResume": "Carry on",
     "reviewResumeHint": "Keep the commits, fix the bugged ones.",
+    "reviewSprintClosed": "This refusal closed the sprint: the release has shipped, and the pull request keeps its commits.",
     "skip": "Skip",
     "reviewUnread": "{count, plural, one {# unread AI commit} other {# unread AI commits}}",
     "reviewBugs": "{bugs, plural, one {# bug found} other {# bugs found}}",
@@ -265,7 +269,7 @@
     "ticketCost": "−{debt} health",
     "reviewMergeHint": "The merge costs the turn; the review did not.",
     "rest": "Take a breath",
-    "restHint": "A turn without code: energy comes back, minus one per extra open ticket.",
+    "restHint": "A turn without code: a little energy comes back, minus one per extra open ticket. If work is waiting, production loses patience.",
     "company": "Company",
     "companyHint": "Finances, market and team. Next payday in {count, plural, one {# turn} other {# turns}}.",
     "money": "{money}",
@@ -430,7 +434,7 @@
     "switchOff": "—",
     "tiered": {
       "t1": {
-        "restHint": "A turn without coding, as the assistant recommends: energy comes back, minus one per extra open ticket."
+        "restHint": "A turn without coding, as the assistant tolerates: a little energy comes back, minus one per extra open ticket. If work is waiting, production loses patience."
       },
       "t2": {
         "idleAuto": "Delegated",
@@ -440,7 +444,7 @@
         "restHintAutopilot": "The supervisor plays the obvious move. It rests only when nothing else holds."
       },
       "t4": {
-        "restHint": "A turn without coding. Energy comes back; the operator is invited to use it.",
+        "restHint": "A turn without coding. A little energy comes back; if work is waiting, tolerance drops.",
         "patience": "Tolerance"
       },
       "t5": {
@@ -449,7 +453,7 @@
       },
       "t6": {
         "rest": "Wait",
-        "restHint": "A cycle without writing.",
+        "restHint": "A cycle without writing. Logged.",
         "company": "Instance {seed}",
         "actionsTitle": "Cycle"
       }
@@ -479,7 +483,6 @@
     "patienceHint": "Production's patience: a bug in production, a refused pull request or a backlog ticket left waiting wear it down. Empty is the sack. A clean sprint brings it back up.",
     "codeHealthHint": "Code health is technical debt turned upside down. It is only shown exactly once a linter is watching.",
     "previewHealth": "Code health: {min} to {max}",
-    "reviewHealth": "Code health: {health} (floor {floor})",
     "chipHealth": "{delta} health",
     "chipPoints": "+{points} pts",
     "conflictAiCost": " — −{delta} health",
@@ -1300,7 +1303,6 @@
       "pr_accepted": "PR accepted, ticket merged into dev",
       "ticket_restarted": "branch thrown away, {count, plural, one {# commit} other {# commits}} fewer, starting again from dev",
       "pr_rejected_bugs": "PR rejected, {bugs, plural, one {# bug to fix} other {# bugs to fix}}",
-      "pr_rejected_debt": "PR rejected, the debt is too high",
       "bug_fixed": "bugged commit redone, the bug is gone",
       "debt_refactored": "commit redone: +{debt} code health",
       "rested": "a turn to breathe, +{energy} energy",
@@ -1310,6 +1312,7 @@
         "stale": "production loses patience: {change} for the ticket left in the backlog ({left}/{max})",
         "outage": "production loses patience: {change} for the saturated servers ({left}/{max})",
         "idle_sprint": "production loses patience: {change}, nothing landed by your hand this sprint ({left}/{max})",
+        "rest": "production loses patience: {change}, a break while work was waiting ({left}/{max})",
         "clean_sprint": "clean sprint: production breathes, {change} patience ({left}/{max})",
         "hack": "someone erased incident tickets: production breathes, {change} patience ({left}/{max})",
         "deadline": "production loses patience: {change} for the abandoned customer bug ({left}/{max})",
@@ -1401,6 +1404,7 @@
       "refactor_target": "Redoes the commit that cost {debt} code health",
       "fix_bug": "Redoes the ticket's oldest bugged commit",
       "rest_regen": "+{energy} energy",
+      "rest_patience": "−{patience} patience: work is waiting",
       "rest_wip": "{count, plural, one {# extra ticket: less rest} other {# extra tickets: less rest}}",
       "tier_locked": "Unlocks at tier {tier}",
       "capacity_gain": "+{users} users served",
@@ -1437,7 +1441,6 @@
       },
       "event_health": "Code health {delta}",
       "event_patience": "Production's patience {delta}",
-      "health_refusal": "Code health under the floor ({floor}): the review will refuse",
       "obstacle_merge": "Lands back on the feature, with no review and no event"
     },
     "tickets": {

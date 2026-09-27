@@ -19,8 +19,10 @@ import type { Ticket } from "@/game/core/types";
  *
  * A ticket with its points full is not delivered, it is submitted. Somebody
  * reads it, and what they find is exactly what the design punishes: every
- * machine-written commit nobody reviewed may be caught as a bug, and a
- * codebase over its debt ceiling takes nothing more. Accepted, the ticket
+ * machine-written commit nobody reviewed may be caught as a bug. A codebase
+ * over its debt ceiling never gets this far — no pull request opens under the
+ * health floor (`healthLetsOpen`), because that refusal would be certain,
+ * and a certain refusal is a trap, not a risk. Accepted, the ticket
  * waits for the player to press merge — the verdict is read out first, and a
  * merge that lands before the button is pressed reads as the game playing
  * itself — and the merge costs the turn. Refused, it comes back with the bugs
@@ -47,9 +49,8 @@ export function performSubmit(context: RuleContext): void {
     if (hidden || context.rng.chance(acceptance.bugDetectPct)) caught.push(id);
   }
   const bugs = caught.length;
-  const overDebt = state.showcase === null && state.debt > acceptance.maxDebt;
-  const accepted = bugs === 0 && !overDebt;
-  const rework = accepted ? 0 : bugs * acceptance.pointsPerBug;
+  const accepted = bugs === 0;
+  const rework = bugs * acceptance.pointsPerBug;
 
   emit(context, {
     type: "pr_reviewed",
@@ -57,8 +58,6 @@ export function performSubmit(context: RuleContext): void {
     accepted,
     bugs,
     unread: unread.length,
-    debt: state.debt,
-    maxDebt: acceptance.maxDebt,
     rework,
   });
 
@@ -91,7 +90,7 @@ export function performSubmit(context: RuleContext): void {
   const extra = backlogTickets(state)[0];
   if (extra !== undefined) openTicket(context, extra, true);
 
-  state.phase = { kind: "ticket_rejected", ticketId: ticket.id, bugs, overDebt };
+  state.phase = { kind: "ticket_rejected", ticketId: ticket.id, bugs };
 }
 
 /**

@@ -9,6 +9,7 @@ import { useTiered } from "@/components/hud/useTiered";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { type ActionPreview, actionKey, type PlayerAction, type RunSnapshot } from "@/game";
+import { healthFloor } from "@/game/bridge/gauges";
 import { signed } from "@/game/core/i18n";
 import { cn } from "@/lib/utils";
 
@@ -97,6 +98,10 @@ export function ActionPanel({
             onAct={() => onAct(submit)}
           />
         )}
+
+        {current?.waitingOnHealth === true ? (
+          <p className="text-debt text-xs">{t("submitHealthBlocked", { floor: healthFloor() })}</p>
+        ) : null}
 
         {toObstacle === undefined ? null : (
           <ActionButton

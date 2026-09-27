@@ -97,7 +97,7 @@ export function plantCommit(state: RunState, mode: CommitMode): string {
 
 /**
  * A copy whose ticket in hand can be submitted right now and will be
- * accepted: points full, nothing unread, debt under the ceiling.
+ * accepted: points full, nothing unread, health over the floor.
  */
 export function makeReady(state: RunState): RunState {
   const next = structuredClone(state);
@@ -105,6 +105,17 @@ export function makeReady(state: RunState): RunState {
   if (ticket.nodeIds.length === 0) plantCommit(next, "craft");
   ticket.filled = ticket.points;
   next.debt = Math.min(next.debt, BALANCE.acceptance.maxDebt);
+  return next;
+}
+
+/**
+ * The same, but the review is certain to refuse it: one machine-written
+ * commit on it hides a bug, and a hidden bug is always caught.
+ */
+export function makeRefusable(state: RunState): RunState {
+  const next = makeReady(state);
+  const node = next.nodes[plantAiCommit(next)];
+  if (node !== undefined) node.commit.hiddenBug = true;
   return next;
 }
 

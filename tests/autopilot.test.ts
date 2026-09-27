@@ -4,6 +4,7 @@ import { chooseAutopilot } from "@/game/bridge/autopilot";
 import { IDLE_SPEEDS, idleSpeedAllowed, idleTarget } from "@/game/bridge/idle";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor, SUPERVISOR_REASONS } from "@/game/bridge/supervisor";
+import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction } from "@/game/core/types";
@@ -13,6 +14,7 @@ import {
   inHand,
   isType,
   makeReady,
+  makeRefusable,
   newRun,
   plantAiCommit,
   play,
@@ -72,12 +74,30 @@ describe("the idle clock's target", () => {
       expect(idleTarget(toSnapshot(accepted))?.type).toBe("merge");
       legal(accepted);
     }
-    const rejected = makeReady(inHand("idle-resume"));
-    rejected.debt = 90;
+    const rejected = makeRefusable(inHand("idle-resume"));
     const refused = applyAction(rejected, { type: "submit" }).state;
     expect(refused.phase.kind).toBe("ticket_rejected");
     expect(idleTarget(toSnapshot(refused))?.type).toBe("resume");
     legal(refused);
+  });
+
+  test("a ticket held back by health alone is refactored, never resubmitted", () => {
+    const state = makeReady(inHand("idle-health"));
+    const planted = state.nodes[plantAiCommit(state)];
+    if (planted === undefined) throw new Error("planted commit missing");
+    planted.commit.reviewed = true;
+    planted.commit.debt = BALANCE.debt.perAiCommit;
+    state.debt = BALANCE.acceptance.maxDebt + 1;
+    state.player.energy = toSnapshot(state).player.energyMax;
+
+    const snapshot = toSnapshot(state);
+    expect(snapshot.tickets.find((t) => t.id === snapshot.player.ticketId)?.waitingOnHealth).toBe(
+      true,
+    );
+    // Nothing that only fills points is offered on it any more.
+    expect(snapshot.actions.some((a) => a.type === "commit" && a.kind === undefined)).toBe(false);
+    expect(idleTarget(snapshot)).toEqual({ type: "commit", mode: "craft", kind: "refactor" });
+    legal(state);
   });
 
   test("a relic offer takes the first relic; a conflict is fixed by hand", () => {

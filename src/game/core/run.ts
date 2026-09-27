@@ -161,6 +161,7 @@ export function createRun(options: CreateRunOptions): RunState {
         stale: 0,
         outage: 0,
         idle_sprint: 0,
+        rest: 0,
         deadline: 0,
         event: 0,
         objective: 0,

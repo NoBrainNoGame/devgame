@@ -71,8 +71,11 @@ export const STORY = {
   roll: 120,
   boundary: 200,
   look: 320,
-  /** The review dialog's analysis. The canvas holds still while it reads. */
-  review: 2800,
+  /**
+   * The review dialog's analysis — three lines at 650 ms, then a breath. The
+   * canvas holds still while it reads.
+   */
+  review: 2150,
   /**
    * The longest a figure's balls take to reach the HUD, the last one
    * included: the story lasts at least this long after it raises one, so the

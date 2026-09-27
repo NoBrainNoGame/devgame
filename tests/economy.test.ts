@@ -158,13 +158,16 @@ describe("the month", () => {
     expect(report.lost).toBe(report.mrr - servedRevenue);
     expect(report.revenue).toBe(Math.floor(servedRevenue * report.multiplier));
 
+    // The rest that passes the turn costs its own patience, work being in hand.
     const { state: after, events } = applyAction(state, { type: "rest" });
     expect(eventsOfType(events, "outage")[0]?.overPct).toBe(100);
     // Per ten percent over the tolerance, so growing past the servers hurts
     // more, and the same share hurts the same at every order of magnitude.
     const { outageQualityPer10Pct, outageTolerancePct } = BALANCE.economy.infra;
     expect(after.quality).toBe(
-      state.quality + outageQualityPer10Pct * Math.ceil((report.overPct - outageTolerancePct) / 10),
+      state.quality +
+        BALANCE.quality.perRest +
+        outageQualityPer10Pct * Math.ceil((report.overPct - outageTolerancePct) / 10),
     );
 
     // A quarter over is lost revenue and nothing else.
@@ -173,7 +176,7 @@ describe("the month", () => {
     tolerated.sprintTurn = monthTurns() - 1;
     const mild = applyAction(tolerated, { type: "rest" });
     expect(eventsOfType(mild.events, "outage").length).toBe(1);
-    expect(mild.state.quality).toBe(tolerated.quality);
+    expect(mild.state.quality).toBe(tolerated.quality + BALANCE.quality.perRest);
 
     const served = structuredClone(state);
     served.upgrades.servers = 8;

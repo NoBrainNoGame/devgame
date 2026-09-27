@@ -73,8 +73,14 @@ dette comme refacto, VIP comme feature, obstacle à part.
 
 Points pleins, le ticket est soumis. Chaque commit IA non relu du ticket et de
 ses obstacles peut être attrapé (`acceptance.bugDetectPct` ; un bug caché
-toujours) ; dette au-delà de `acceptance.maxDebt` : refus d'office. La modale
-lit le verdict (commits, non relus, dette), puis tranche.
+toujours). La modale lit le verdict (commits, non relus), puis tranche.
+
+Dette au-delà de `acceptance.maxDebt` (santé sous le plancher) : la PR ne
+s'ouvre pas, le bouton dit de refactorer. Ce refus-là serait certain, et un
+refus certain est un piège, pas un risque. Plein et propre, le ticket attend
+qu'un refacto, ici ou sur le ticket qui porte la dette, repasse le plancher.
+Ouvrent toujours : le ticket de dette et la refacto imposée (leur livraison
+rembourse, le remède n'attend pas la guérison), et une vitrine.
 
 - **Acceptée** : soumettre ne coûte rien ; Merger (bouton ou
   [horloge](#le-jeu-tourne-sans-vous)) coûte le tour, pose le ticket sur `dev`
@@ -153,7 +159,11 @@ basculer, recommencer, continuer, arbre, boutique, embauche, rachat, réponse,
 bonus.
 
 Souffler rend `energy.restRegen` moins un par ticket en trop (au moins un) : la
-soupape se ferme quand le tableau est chargé, nœud des deux fins.
+soupape se ferme quand le tableau est chargé, nœud des deux fins. Elle se
+paie : avec un ticket en main ou à démarrer, la prod voit la pause
+(`quality.perRest` de patience). Avec une équipe, un tour de repos était un
+tour de son travail offert ; il ne reste gratuit que quand il n'y a rien à
+faire.
 
 ## Ressources
 
@@ -175,7 +185,8 @@ soupape se ferme quand le tableau est chargé, nœud des deux fins.
   visible ; vide, licenciement. Le moteur compte l'impatience
   (`state.quality`), la jauge son complément. Baisse : incident, PR refusée,
   ticket imposé, mois saturé, sprint sans merge de votre main (l'équipe ne
-  compte pas), bug client manqué, « sans souffler » manqué, réponses. Remonte :
+  compte pas), pause pendant que du travail attend, bug client manqué, « sans
+  souffler » manqué, réponses. Remonte :
   sprint propre (sans incident ni ticket imposé, un merge de votre main), bug
   client à l'heure, hack gagné, bonus, réponses. **Chaque variation est une
   ligne du journal qui dit pourquoi** ; l'écran de fin nomme la dernière source
@@ -342,8 +353,9 @@ review. Seul l'interrupteur le coupe.
 
 - **Tour ordinaire**, dès le départ il fait tout avancer (`chooseAutopilot`) :
   merger, continuer après refus, corriger ce que la review a signalé, ouvrir la
-  PR d'un ticket plein, démarrer le plus ancien si rien n'est en main, coder à la
-  main tant que l'énergie garde sa marge, souffler sinon.
+  PR d'un ticket plein (refactorer d'abord si la santé la bloque, aller ailleurs
+  si rien n'y est endetté), démarrer le plus ancien si rien n'est en main, coder
+  à la main tant que l'énergie garde sa marge, souffler sinon.
 - **Autres phases** : l'évident (merger l'accepté, continuer après refus,
   conflit à la main, premier bonus, première réponse), pour qu'une run seule ne
   cale jamais.

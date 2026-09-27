@@ -2,6 +2,7 @@ import type { SessionOptions } from "@/game/bridge/session";
 import type { RunSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { RELICS, UPGRADES } from "@/game/content";
+import { BALANCE } from "@/game/core/balance";
 import { actionKey } from "@/game/core/rules/preview";
 import type { PlayerAction } from "@/game/core/types";
 import { emptyMeta } from "@/game/dto/meta";
@@ -80,14 +81,13 @@ export function chooseDemo(snapshot: RunSnapshot, played: number): PlayerAction 
     choice = chooseSupervisor({ ...snapshot, autopilot: SUPERVISOR_LEVEL - 1 })?.action;
   }
 
-  // The supervisor opens the pull request as soon as the ticket is full. The
-  // reviewer refuses an indebted codebase and may catch unread machine work,
-  // and a refusal costs the turn: the demo cleans up first, the way the
-  // careful simulator policy does.
+  // The supervisor opens the pull request as soon as the ticket is full. A
+  // showcase's reviewer refuses nothing, so the demo keeps a player's habits
+  // for the picture's sake, the way the careful simulator policy does: the
+  // health back over the floor first, then the machine's work read.
   if (choice?.type === "submit") {
-    const notes = previews[actionKey(choice)]?.notes ?? [];
     const inHand = snapshot.tickets.find((ticket) => ticket.id === snapshot.player.ticketId);
-    if (notes.some((note) => note.key === "notes.health_refusal")) {
+    if (snapshot.debt.range[0] > BALANCE.acceptance.maxDebt) {
       choice =
         find((a) => a.type === "commit" && a.mode === "craft" && a.kind === "refactor") ??
         find((a) => a.type === "rest") ??

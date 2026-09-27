@@ -50,9 +50,7 @@ export function toLogLine(
         kind: event.accepted ? "merge" : "revert",
         text: event.accepted
           ? text("log.pr_accepted")
-          : event.bugs > 0
-            ? text("log.pr_rejected_bugs", { bugs: event.bugs })
-            : text("log.pr_rejected_debt"),
+          : text("log.pr_rejected_bugs", { bugs: event.bugs }),
       };
 
     case "rested":

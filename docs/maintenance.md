@@ -211,9 +211,13 @@ for the merger, so the count ignores the board (a new competitor adds one);
 ### The pull request review
 
 `performSubmit` (`rules/acceptance.ts`) judges a full ticket by
-`BALANCE.acceptance` (`bugDetectPct`, `maxDebt`, `pointsPerBug`; game-design,
-*La review de PR*). A new refusal: the rule there, a `pr_reviewed` field for the
-dialog, a line in `ReviewDialog.tsx`. Keep the rejection force-opening the
+`BALANCE.acceptance` (`bugDetectPct`, `pointsPerBug`; game-design, *La review
+de PR*). `maxDebt` is not a refusal but a gate: `healthLetsOpen`
+(`rules/tickets.ts`) keeps `submit` out of `getAvailableActions`, except on a
+kind with `repaysDebt` (`content/tickets.ts`), and
+`waitsOnlyForHealth` tells the HUD, the idle clock and the sim to refactor. A
+certain refusal belongs there, never in `performSubmit`. A new refusal: the
+rule there, a `pr_reviewed` field for the dialog, a line in `ReviewDialog.tsx`. Keep the rejection force-opening the
 oldest backlog ticket (`openTicket(context, backlogTickets(state)[0], true)`):
 without it a rejection is cheap.
 

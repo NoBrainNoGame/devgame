@@ -15,6 +15,7 @@ import { canHire } from "@/game/core/rules/team";
 import {
   backlogTickets,
   currentTicket,
+  healthLetsOpen,
   isReady,
   offersOf,
   playerTickets,
@@ -38,7 +39,8 @@ import type { PlayerAction, RunState } from "@/game/core/types";
  * repays nothing, costs energy and spends a turn. An action that can only
  * ever make things worse is not a decision, it is a trap. Submitting the
  * ticket for review is gated the same way: it exists once the points are
- * full, and not before.
+ * full, and not before, and never while the codebase's health is under the
+ * floor the reviewer refuses at.
  */
 export function getAvailableActions(state: RunState): PlayerAction[] {
   switch (state.phase.kind) {
@@ -64,10 +66,11 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
         }
 
         if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
-        // Full and clean, a ticket goes to review; an obstacle lands back on
-        // its feature without one.
+        // Full and clean, a ticket goes to review, once the codebase's health
+        // clears the floor; an obstacle lands back on its feature without one.
         if (isReady(state, ticket)) {
-          actions.push(ticket.parentId === undefined ? { type: "submit" } : { type: "merge" });
+          if (ticket.parentId !== undefined) actions.push({ type: "merge" });
+          else if (healthLetsOpen(state, ticket)) actions.push({ type: "submit" });
         }
       }
       actions.push({ type: "rest" });

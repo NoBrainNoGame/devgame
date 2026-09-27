@@ -264,6 +264,7 @@ export type QualitySource =
   | "stale"
   | "outage"
   | "idle_sprint"
+  | "rest"
   | "deadline"
   | "event"
   | "objective";
@@ -345,7 +346,7 @@ export type Phase =
   /** The review said yes. The merge waits for the player to press the button. */
   | { kind: "pr_accepted"; ticketId: TicketId }
   /** The review said no. Start the ticket over, or fix it and carry on. */
-  | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number; overDebt: boolean }
+  | { kind: "ticket_rejected"; ticketId: TicketId; bugs: number }
   | { kind: "choose_relic"; offer: RelicId[] }
   /** Something happened to the company and asks it a question. */
   | { kind: "event"; eventId: NarrativeEventId; competitorId?: CompetitorId; devId?: DevId }
@@ -554,8 +555,6 @@ export type GameEvent =
       accepted: boolean;
       bugs: number;
       unread: number;
-      debt: number;
-      maxDebt: number;
       /** Rework points added, when rejected. */
       rework: number;
     }

@@ -1,6 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { energyMax, restRegen } from "@/game/core/rules/modifiers";
+import { energyMax, restCostsPatience, restRegen } from "@/game/core/rules/modifiers";
+import { raiseQuality } from "@/game/core/rules/quality";
 
 /**
  * Energy is the run's clock. Every commit spends it, merges and weekends give
@@ -36,15 +37,23 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
   emit(context, { type: "energy", delta: applied, value: player.energy, reason });
 }
 
-/** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
-/** A turn spent not coding. */
+/**
+ * A turn spent not coding. It gives a little energy back, and production
+ * notices: a turn off while work waits costs patience. Resting was the only
+ * valve when energy was the whole game; with a team landing tickets on every
+ * turn you sit out, a free rest was a free turn of their work.
+ */
 export function performRest(context: RuleContext): void {
-  context.state.sprintCounters.rests += 1;
-  context.state.stats.rests += 1;
-  const regen = restRegen(context.state);
+  const { state } = context;
+  state.sprintCounters.rests += 1;
+  state.stats.rests += 1;
+  const regen = restRegen(state);
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });
+  if (restCostsPatience(state)) raiseQuality(context, BALANCE.quality.perRest, "rest");
 }
+
+/** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
 
 export function syncEnergyMax(context: RuleContext): void {
   const { player } = context.state;

@@ -61,7 +61,10 @@ export const SAVE_VERSION = 3;
  * drawn from what the run can use. And epoch 5: obstacles — a commit on a
  * feature may turn a sub-ticket up, drawn from the PRNG, that forks off the
  * feature and holds its review — a repository that starts with a commit on
- * `main`, so every node id moved, and a hire that draws a name.
+ * `main`, so every node id moved, and a hire that draws a name. And epoch 6:
+ * no pull request opens under the health floor, where the review used to
+ * refuse it, so a log that submitted there no longer replays. And epoch 7:
+ * a rest costs patience while work waits, and gives less energy back.
  */
 export const RULES_EPOCH = 1;
 

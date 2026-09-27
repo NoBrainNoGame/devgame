@@ -67,9 +67,10 @@ export const BALANCE = {
     burnoutStreak: 2,
     /**
      * Energy a turn spent resting gives back, minus one per open ticket beyond
-     * the first: a crowded board is one you cannot rest on.
+     * the first: a crowded board is one you cannot rest on. Kept low, because
+     * a rest is also a turn the team works for free (`quality.perRest`).
      */
-    restRegen: 5,
+    restRegen: 3,
   },
 
   commit: {
@@ -311,12 +312,16 @@ export const BALANCE = {
    * The pull request review. A ticket with its points full is submitted; the
    * reviewer reads it and either lands it or sends it back with what they
    * found. What they find is what the design punishes: machine-written work
-   * nobody read, and a codebase too indebted to take more.
+   * nobody read. A codebase too indebted to take more is not a refusal but a
+   * closed door: no pull request opens under its floor.
    */
   acceptance: {
     /** Chance in percent that each unread machine-written commit is caught as a bug. */
     bugDetectPct: 55,
-    /** Debt above which a review refuses, whatever the code. */
+    /**
+     * Debt above which no pull request may be opened: the reviewer would
+     * refuse it whatever the code, so the button waits for a refactor.
+     */
     maxDebt: 45,
     /** Story points added per bug found, for the fixes. */
     pointsPerBug: 1,
@@ -338,6 +343,11 @@ export const BALANCE = {
      * can clear the board without you; production still expects to see you.
      */
     perIdleSprint: 15,
+    /**
+     * Patience lost per rest taken while work waited, in hand or in the
+     * backlog. Production sees the turn off, whatever the team did with it.
+     */
+    perRest: 4,
     decayPerCleanSprint: 20,
   },
 

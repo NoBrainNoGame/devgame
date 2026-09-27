@@ -22,6 +22,7 @@ import {
   obstaclesOf,
   playerTickets,
   unreadAiOn,
+  waitsOnlyForHealth,
   waitsOnlyForObstacle,
 } from "@/game/core/rules/tickets";
 import type { PlayerAction, RunState, Ticket } from "@/game/core/types";
@@ -101,7 +102,8 @@ function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | u
  * The open ticket closest to landing, if it is not the one in hand. A ticket
  * waiting on nothing but its obstacle is not close to anything: full, it has
  * nothing left to write, and only the obstacle moves it — so the obstacle is
- * where the player goes. Policies written before obstacles kept committing on
+ * where the player goes. One waiting on the codebase's health is the same:
+ * only a refactor, wherever the debt sits, moves it. Policies written before obstacles kept committing on
  * the full ticket and died of it, which made every sim figure wrong.
  */
 function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
@@ -117,7 +119,9 @@ function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction 
     }
   }
 
-  const open = playerTickets(state).filter((ticket) => !waitsOnlyForObstacle(state, ticket));
+  const open = playerTickets(state).filter(
+    (ticket) => !waitsOnlyForObstacle(state, ticket) && !waitsOnlyForHealth(state, ticket),
+  );
   if (open.length === 0) return undefined;
   const remaining = (ticket: Ticket): number =>
     ticket.points - ticket.filled + (ticket.mustWrite ? -5 : 0);
@@ -287,23 +291,32 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (fix !== undefined) return fix;
   }
 
-  // Ready to submit. The reviewer catches unread machine work and refuses an
-  // indebted codebase, so a policy that reads its options cleans up first:
-  // review until nothing is unread, refactor under the ceiling, then submit.
-  // The naive `ai` policy submits blind and pays for it.
+  // Full, and held back by the codebase's health: no pull request opens under
+  // the floor, and the HUD says to refactor, so every policy does — even the
+  // naive one, which has no other button left to press on this ticket. Out of
+  // breath, the ones that rest take their turn off first (below).
+  const tired = policy !== "ai" && lowEnergy;
+  if (ticket !== null && waitsOnlyForHealth(state, ticket) && !tired) {
+    const refactor = actions.find(writtenAs("refactor"));
+    if (refactor !== undefined) return refactor;
+    // Nothing indebted on it: the debt is elsewhere, and so is the next move.
+    const elsewhere =
+      chooseCheckout(state, actions) ??
+      actions.find((a) => a.type === "start" && getTicket(state, a.ticketId).kind === "debt") ??
+      actions.find((a) => a.type === "start");
+    if (elsewhere !== undefined) return elsewhere;
+  }
+
+  // Ready to submit. The reviewer catches unread machine work, so a policy
+  // that reads its options cleans up first: review until nothing is unread,
+  // then submit. The naive `ai` policy submits blind and pays for it.
   const submit = actions.find(isSubmit);
   if (submit !== undefined) {
-    if (policy !== "ai") {
-      if (unreviewed > 0) {
-        const review = actions.find(isReview);
-        if (review !== undefined) return review;
-        const squash = actions.find(writtenAs("squash"));
-        if (squash !== undefined) return squash;
-      }
-      if (state.debt > BALANCE.acceptance.maxDebt) {
-        const refactor = actions.find(writtenAs("refactor"));
-        if (refactor !== undefined) return refactor;
-      }
+    if (policy !== "ai" && unreviewed > 0) {
+      const review = actions.find(isReview);
+      if (review !== undefined) return review;
+      const squash = actions.find(writtenAs("squash"));
+      if (squash !== undefined) return squash;
     }
     return submit;
   }

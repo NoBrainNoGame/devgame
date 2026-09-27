@@ -14,6 +14,7 @@ import {
   isCommit,
   isType,
   makeReady,
+  makeRefusable,
   newRun,
   plantCommit,
   play,
@@ -174,8 +175,7 @@ describe("the written graph", () => {
   });
 
   test("a restart hands the column back with the commits", () => {
-    const state = makeReady(inHand("restart-column"));
-    state.debt = 90;
+    const state = makeRefusable(inHand("restart-column"));
     const rejected = applyAction(state, { type: "submit" }).state;
     if (rejected.phase.kind !== "ticket_rejected") return;
     const restarted = applyAction(rejected, { type: "restart" }).state;

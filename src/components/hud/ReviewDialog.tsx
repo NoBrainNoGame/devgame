@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { PlayerAction, RunSnapshot } from "@/game";
 import { gameStore, useGameStore } from "@/game";
-import { HEALTH_MAX } from "@/game/bridge/gauges";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,7 +18,7 @@ import { cn } from "@/lib/utils";
  * The verdict is already decided — the engine rolled it when the ticket was
  * submitted — but a verdict that lands instantly reads as arbitrary. So the
  * dialog reads the ticket out loud first: the commits, what nobody reviewed,
- * the debt, then the answer. The canvas holds still meanwhile; the storyboard
+ * then the answer. The canvas holds still meanwhile; the storyboard
  * gives it the same beat this animation takes.
  *
  * Accepted, the merge waits for the button: it is the player's move, costs
@@ -30,9 +29,12 @@ import { cn } from "@/lib/utils";
  */
 
 const STEP_MS = 650;
+/** The commits, what nobody read, then the verdict. */
+const VERDICT_STEP = 3;
 
 export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct: OnAct }) {
   const t = useTranslations("hud");
+  const common = useTranslations("common");
   const pending = useGameStore((state) => state.pendingReview);
   const reducedMotion = useGameStore(() => false);
   const [step, setStep] = useState(0);
@@ -53,16 +55,22 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
   // setting — or a reload with nothing to read — skip straight to the verdict.
   useEffect(() => {
     if (ticketId === null) return;
-    setStep(reading ? 0 : 4);
+    setStep(reading ? 0 : VERDICT_STEP);
     if (!reading) return;
-    const timers = [1, 2, 3, 4].map((n) => setTimeout(() => setStep(n), n * STEP_MS));
+    const timers = [1, 2, VERDICT_STEP].map((n) => setTimeout(() => setStep(n), n * STEP_MS));
     return () => {
       for (const timer of timers) clearTimeout(timer);
     };
   }, [ticketId, reading]);
 
+  // A refusal costs the turn, and that turn can be the sprint's last or the
+  // one that gets you fired: the engine has moved on to the release or the
+  // end, and the question the refusal asked went with it. The verdict is
+  // still worth reading, but its only answer is to close it — the dialogs
+  // for whatever came next wait behind it.
   const decided = phase.kind === "pr_accepted" || phase.kind === "ticket_rejected";
-  const done = step >= 4;
+  const movedOn = pending !== null && !decided;
+  const done = step >= VERDICT_STEP;
   const hasVerdict = verdict !== null;
 
   // The clock does not answer a question it has not heard: it waits for the
@@ -101,12 +109,6 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
                     }`
                   : t("reviewAllRead")}
               </Line>
-              <Line shown={step >= 3} tone={pending.debt > pending.maxDebt ? "warn" : "ok"}>
-                {t("reviewHealth", {
-                  health: HEALTH_MAX - pending.debt,
-                  floor: HEALTH_MAX - pending.maxDebt,
-                })}
-              </Line>
             </>
           )}
           <Line shown={done} tone={verdict.accepted ? "ok" : "bad"} strong>
@@ -116,18 +118,28 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
 
         {!done ? (
           <div className="flex justify-end">
-            <Button size="sm" variant="ghost" onClick={() => setStep(4)}>
+            <Button size="sm" variant="ghost" onClick={() => setStep(VERDICT_STEP)}>
               {t("skip")}
+            </Button>
+          </div>
+        ) : movedOn ? (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-muted-foreground text-xs">
+              {phase.kind === "game_over"
+                ? ""
+                : `${t("reviewSprintClosed")}${
+                    verdict.bugs > 0 ? ` ${t("reviewBugsToFix", { count: verdict.bugs })}` : ""
+                  }`}
+            </p>
+            <Button onClick={() => gameStore.setState({ pendingReview: null })}>
+              {common("close")}
             </Button>
           </div>
         ) : verdict.accepted ? (
           <div className="flex items-center justify-between gap-3">
             <p className="text-muted-foreground text-xs">{t("reviewMergeHint")}</p>
             <div className="relative">
-              <Button
-                disabled={!decided}
-                onClick={(event) => answer({ type: "merge" }, originOf(event))}
-              >
+              <Button onClick={(event) => answer({ type: "merge" }, originOf(event))}>
                 {t("reviewMerge")}
               </Button>
               <IdleBar action={{ type: "merge" }} />
@@ -143,7 +155,6 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
               <Button
                 variant="outline"
                 className="h-auto flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                disabled={!decided}
                 onClick={(event) => answer({ type: "restart" }, originOf(event))}
               >
                 <span>{t("reviewRestart")}</span>
@@ -154,7 +165,6 @@ export function ReviewDialog({ snapshot, onAct }: { snapshot: RunSnapshot; onAct
               <div className="relative">
                 <Button
                   className="h-auto w-full flex-col items-start gap-1 whitespace-normal py-2 text-left"
-                  disabled={!decided}
                   onClick={(event) => answer({ type: "resume" }, originOf(event))}
                 >
                   <span>{t("reviewResume")}</span>

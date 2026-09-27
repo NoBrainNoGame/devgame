@@ -3,13 +3,20 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { applyAction } from "@/game/core/rules/reducer";
-import { buggedOn, mostIndebtedOn, offersOf, openTickets } from "@/game/core/rules/tickets";
+import {
+  buggedOn,
+  mostIndebtedOn,
+  offersOf,
+  openTickets,
+  waitsOnlyForHealth,
+} from "@/game/core/rules/tickets";
 
 import {
   eventsOfType,
   inHand,
   isType,
   makeReady,
+  makeRefusable,
   plantAiCommit,
   plantCommit,
   submitAndMerge,
@@ -30,18 +37,43 @@ describe("the pull request review", () => {
     expect(result.state.turn).toBe(state.turn + 1);
   });
 
-  test("debt over the ceiling is refused whatever the code", () => {
+  test("under the health floor no pull request opens, and a refactor opens it again", () => {
     const state = makeReady(inHand("pr-debt"));
+    const planted = state.nodes[plantAiCommit(state)];
+    if (planted === undefined) throw new Error("planted commit missing");
+    planted.commit.reviewed = true;
+    planted.commit.debt = BALANCE.debt.perAiCommit;
     state.debt = BALANCE.acceptance.maxDebt + 1;
-    const result = applyAction(state, { type: "submit" });
+    const ticket = ticketInHand(state);
 
-    expect(eventsOfType(result.events, "pr_reviewed")[0]?.accepted).toBe(false);
-    expect(result.state.phase.kind).toBe("ticket_rejected");
-    expect(
-      getAvailableActions(result.state)
-        .map((a) => a.type)
-        .sort(),
-    ).toEqual(["restart", "resume"]);
+    expect(getAvailableActions(state).some(isType("submit"))).toBe(false);
+    expect(waitsOnlyForHealth(state, ticket)).toBe(true);
+    expect(offersOf(state, ticket)).toContain("refactor");
+
+    for (let i = 0; i < 20; i += 1) {
+      const result = applyAction(state, { type: "commit", mode: "craft", kind: "refactor" });
+      if (eventsOfType(result.events, "debt_refactored").length === 0) continue;
+      expect(result.state.debt).toBeLessThanOrEqual(BALANCE.acceptance.maxDebt);
+      expect(getAvailableActions(result.state).some(isType("submit"))).toBe(true);
+      return;
+    }
+    throw new Error("no refactor landed in 20 tries");
+  });
+
+  test("a ticket whose landing pays debt back opens under the floor", () => {
+    for (const kind of ["debt", "refactor"] as const) {
+      const state = makeReady(inHand(`pr-debt-${kind}`));
+      ticketInHand(state).kind = kind;
+      state.debt = BALANCE.acceptance.maxDebt + 25;
+      expect(getAvailableActions(state).some(isType("submit"))).toBe(true);
+    }
+  });
+
+  test("a showcase's pull request opens whatever the health", () => {
+    const state = makeReady(inHand("pr-debt-showcase"));
+    state.showcase = { backlog: 0 };
+    state.debt = BALANCE.acceptance.maxDebt + 10;
+    expect(getAvailableActions(state).some(isType("submit"))).toBe(true);
   });
 
   test("unread machine work gets caught, adds fix points, and brings a ticket with it", () => {
@@ -119,8 +151,7 @@ describe("the pull request review", () => {
   });
 
   test("restarting throws the commits away and the ticket starts from dev", () => {
-    const state = makeReady(inHand("pr-restart"));
-    state.debt = BALANCE.acceptance.maxDebt + 10;
+    const state = makeRefusable(inHand("pr-restart"));
     const rejected = applyAction(state, { type: "submit" }).state;
     const ticket = ticketInHand(rejected);
     const commits = [...ticket.nodeIds];
@@ -138,16 +169,16 @@ describe("the pull request review", () => {
   });
 
   test("carrying on keeps the commits and the fix points", () => {
-    const state = makeReady(inHand("pr-resume"));
-    state.debt = BALANCE.acceptance.maxDebt + 10;
+    const state = makeRefusable(inHand("pr-resume"));
     const rejected = applyAction(state, { type: "submit" }).state;
     const ticket = ticketInHand(rejected);
 
     const resumed = applyAction(rejected, { type: "resume" }).state;
     expect(resumed.tickets[ticket.id]?.nodeIds).toEqual(ticket.nodeIds);
     expect(resumed.phase.kind).toBe("choose_action");
-    // Still over the ceiling: a second submit is refused again.
-    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(true);
+    // The caught bug is flagged and its fix point added: no submit until a fix.
+    expect(resumed.tickets[ticket.id]?.points).toBe(ticket.points);
+    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(false);
   });
 
   test("a flagged commit blocks the next submit until a fix takes the bug out", () => {
@@ -243,8 +274,7 @@ describe("the pull request review", () => {
   });
 
   test("a submitted ticket costs a turn; answering a rejection does not", () => {
-    const state = makeReady(inHand("pr-turn"));
-    state.debt = BALANCE.acceptance.maxDebt + 10;
+    const state = makeRefusable(inHand("pr-turn"));
     const rejected = applyAction(state, { type: "submit" }).state;
     expect(rejected.turn).toBe(state.turn + 1);
     expect(applyAction(rejected, { type: "resume" }).state.turn).toBe(rejected.turn);
