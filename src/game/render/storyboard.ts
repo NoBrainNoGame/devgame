@@ -7,6 +7,7 @@ import { MAIN_LANE } from "@/game/core/map/layout";
 import type { GameEvent, NodeId, RunState } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { palette } from "@/game/render/palette";
+import { rowsOf } from "@/game/render/rows";
 
 /**
  * A turn's events, arranged into what the canvas plays.
@@ -161,9 +162,14 @@ export function planBatch(
   // Pushes waiting for their commit's story to end.
   let pending: PushOp[] = [];
 
+  // The rows as the screen will have them when each step plays: a squash
+  // this batch pushes closes its rows up for every step after it.
+  const absorbed = new Map(shown.absorbed);
+  let rows = rowsOf(state.nodes, absorbed);
+
   const positionOf = (id: NodeId): Point | null => {
     const node = state.nodes[id];
-    return node === undefined ? null : { x: nodeX(node.lane), y: nodeY(node.depth) };
+    return node === undefined ? null : { x: nodeX(node.lane), y: nodeY(rows.of(node)) };
   };
 
   const flush = (): void => {
@@ -185,9 +191,15 @@ export function planBatch(
   };
 
   const pushSteps = (op: PushOp): void => {
-    const at = positionOf(op.into);
-    if (at === null || !revealed.has(op.into)) return;
+    if (!revealed.has(op.into)) return;
     const folded = op.nodeIds.filter((id) => id !== op.into && revealed.has(id));
+    if (folded.length > 0) {
+      for (const id of folded) absorbed.set(id, op.into);
+      rows = rowsOf(state.nodes, absorbed);
+    }
+    // Where the squash ends: the commit on its closed-up row.
+    const at = positionOf(op.into);
+    if (at === null) return;
     if (folded.length > 0) {
       steps.push({ kind: "fuse", nodeIds: folded, into: op.into, at, hold: STORY.fuse });
     }
@@ -353,7 +365,7 @@ export function planBatch(
         const head = headOf(state);
         cursor = revealed.has(head.id) ? head.id : cursor;
         away = true;
-        steps.push({ kind: "look", y: nodeY(head.depth), hold: STORY.look });
+        steps.push({ kind: "look", y: nodeY(rows.of(head)), hold: STORY.look });
         break;
       }
 

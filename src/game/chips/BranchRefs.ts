@@ -131,9 +131,8 @@ export class BranchRefs extends booyah.ChipBase {
         this.pills.set(ref.key, pill);
         this.layer.addChild(pill.root);
       }
-      const depth = depthOf.get(ref.nodeId) ?? 0;
       const dx = offset.get(ref.nodeId) ?? 0;
-      pill.root.position.set(x0 + dx, nodeY(depth));
+      pill.root.position.set(x0 + dx, nodeY(this.graph.rowOf(ref.nodeId)));
       offset.set(ref.nodeId, dx + pill.width + 4);
     }
 

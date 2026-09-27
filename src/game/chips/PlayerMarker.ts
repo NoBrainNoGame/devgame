@@ -2,6 +2,7 @@ import { Container, Graphics } from "pixi.js";
 
 import * as booyah from "@/game/chips/booyah";
 import { sceneContext } from "@/game/chips/context";
+import type { GraphView } from "@/game/chips/GraphView";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { palette } from "@/game/render/palette";
 import { NODE_RADIUS } from "@/game/render/theme";
@@ -23,6 +24,10 @@ export class PlayerMarker extends booyah.ChipBase {
   private x = 0;
   private y = 0;
   private placed = false;
+
+  constructor(private readonly graph: GraphView) {
+    super();
+  }
 
   protected _onActivate(): void {
     const { world } = sceneContext(this.chipContext);
@@ -48,7 +53,7 @@ export class PlayerMarker extends booyah.ChipBase {
     if (node === undefined) return;
 
     const targetX = nodeX(node.lane);
-    const targetY = nodeY(node.depth);
+    const targetY = nodeY(this.graph.rowOf(node.id));
 
     const ease =
       this.placed && !reducedMotion ? Math.min(1, this._lastTickInfo.timeSinceLastTick / 110) : 1;

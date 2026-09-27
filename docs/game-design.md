@@ -517,9 +517,10 @@ de la lecture.
    inachevé : coût, points, ce qu'ils ont soulevé. Celui dont le jet rate
    reste local, cassé, jusqu'au prochain push de sa branche : un commit qui
    passe, l'ouverture de la PR ou le merge (obstacle compris).
-   Poussés ensemble, les commits locaux glissent dans le plus récent et n'en
-   font plus qu'un (« ×N » à son sujet) ; leurs traits restent, pas leurs
-   disques. Les commits des collègues, les troncs et les merges naissent
+   Poussés ensemble, les commits locaux n'en font plus qu'un (« ×N » à son
+   sujet) : leurs rangées se referment, le plus récent descend à la place du
+   plus ancien et l'historique au-dessus descend avec lui, sans laisser de
+   trou (`render/rows.ts`). Les commits des collègues, les troncs et les merges naissent
    poussés. Présentation seule : le moteur n'a pas de remote,
    `bridge/pushes.ts` le déduit des événements et le rejoue au chargement.
 

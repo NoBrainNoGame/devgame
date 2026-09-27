@@ -32,7 +32,7 @@ export class RunScene extends ContainerChip {
 
     const graph = new GraphView();
     const refs = new BranchRefs(graph);
-    const marker = new PlayerMarker();
+    const marker = new PlayerMarker(graph);
     const fx = new FxQueue();
     const camera = new Camera(graph);
     const { controls } = sceneContext(this.chipContext);

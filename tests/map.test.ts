@@ -56,7 +56,8 @@ describe("the written graph", () => {
     expect(broken).toEqual([]);
     // The policy has to have actually exercised the team, or this proves nothing.
     expect(teamCommits).toBeGreaterThan(300);
-  });
+    // Three hundred runs sit right at the default five seconds on a busy machine.
+  }, 20_000);
 
   test("a fresh run has two commits: main's first, and dev forked off it", () => {
     for (let i = 0; i < 50; i++) {

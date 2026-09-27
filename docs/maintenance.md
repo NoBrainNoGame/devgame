@@ -351,7 +351,9 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   pushed or squashed, from events alone (the engine has no remote). A new way
   to open a pull request, land a branch or drop commits needs its case there,
   or commits stay drawn local forever. A broken commit (`node_done.broken`)
-  stays local until the next commit on its branch lands. Presentation only:
+  stays local until the next commit on its branch lands. A squash closes its
+  rows up (`render/rows.ts`): every y on the graph goes through a row, never
+  a depth (`nodeY` takes a row), or the squashed rows come back as holes. Presentation only:
   no epoch. Check:
   `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
