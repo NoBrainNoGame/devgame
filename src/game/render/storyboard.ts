@@ -1,4 +1,5 @@
 import { type SfxId, sfxFor } from "@/game/audio/sfx";
+import { isBornLocal, type PushOp } from "@/game/bridge/pushes";
 import type { RevealSnapshot } from "@/game/bridge/reveal";
 import { type I18nText, money, signed as signedAmount, text } from "@/game/core/i18n";
 import { headOf } from "@/game/core/map/graph";
@@ -15,6 +16,10 @@ import { palette } from "@/game/render/palette";
  * the hotfix it opens. The story is told the other way round: the commit
  * appears, and what it cost lands on it. So the planner holds the pops back
  * until the reveal they belong to, and re-anchors them there.
+ *
+ * A commit of yours appears local and is pushed once its own story is told:
+ * what its turn brings lands on it while it still looks unfinished
+ * (`bridge/pushes.ts`).
  *
  * Pure, and tested on real runs: every pop is anchored on a commit that is on
  * screen by the time it plays, every commit the batch wrote is revealed exactly
@@ -46,7 +51,11 @@ export interface GaugeCue {
 }
 
 export type Step =
-  | { kind: "reveal"; nodeId: NodeId; at: Point; asHead: boolean; hold: number }
+  | { kind: "reveal"; nodeId: NodeId; at: Point; asHead: boolean; local: boolean; hold: number }
+  /** Local commits slide into the one they are pushed with. */
+  | { kind: "fuse"; nodeIds: NodeId[]; into: NodeId; at: Point; hold: number }
+  /** A local commit reaches the remote and fills in. */
+  | { kind: "push"; nodeId: NodeId; at: Point; hold: number }
   | { kind: "look"; y: number | null; hold: number }
   | {
       kind: "pop";
@@ -65,6 +74,8 @@ export type Step =
 /** Durations in milliseconds. Rendering, not rules, so not in `balance.ts`. */
 export const STORY = {
   reveal: 220,
+  fuse: 380,
+  push: 260,
   pop: 650,
   popLong: 900,
   flash: 420,
@@ -104,6 +115,8 @@ export interface PlanOptions {
    * nothing to tell.
    */
   economyPops?: boolean;
+  /** What the batch pushed (`GameSession`'s ledger): without it, nothing is pushed on screen. */
+  pushes?: readonly PushOp[];
 }
 
 export function planBatch(
@@ -143,6 +156,11 @@ export function planBatch(
   let cursor: NodeId | null = shown.headId;
   let away = false;
 
+  const opsAt = new Map<number, PushOp[]>();
+  for (const op of options.pushes ?? []) opsAt.set(op.at, [...(opsAt.get(op.at) ?? []), op]);
+  // Pushes waiting for their commit's story to end.
+  let pending: PushOp[] = [];
+
   const positionOf = (id: NodeId): Point | null => {
     const node = state.nodes[id];
     return node === undefined ? null : { x: nodeX(node.lane), y: nodeY(node.depth) };
@@ -166,7 +184,34 @@ export function planBatch(
     }
   };
 
-  for (const event of events) {
+  const pushSteps = (op: PushOp): void => {
+    const at = positionOf(op.into);
+    if (at === null || !revealed.has(op.into)) return;
+    const folded = op.nodeIds.filter((id) => id !== op.into && revealed.has(id));
+    if (folded.length > 0) {
+      steps.push({ kind: "fuse", nodeIds: folded, into: op.into, at, hold: STORY.fuse });
+    }
+    steps.push({ kind: "push", nodeId: op.into, at, hold: STORY.push });
+    if (op.into !== cursor) away = true;
+  };
+
+  // Whatever the last commit had to tell is told: it goes up. Only when the
+  // story moves to another node, or ends — until then, every figure the batch
+  // raises still lands on it while it is local.
+  const settle = (): void => {
+    for (const op of pending) pushSteps(op);
+    pending = [];
+  };
+
+  for (const [index, event] of events.entries()) {
+    // A pull request or a merge needs the branch on the remote first. The
+    // held pops stay held: a merge's cost belongs to the merge.
+    const flushes = (opsAt.get(index) ?? []).filter((op) => op.kind === "flush");
+    if (flushes.length > 0) {
+      settle();
+      for (const op of flushes) pushSteps(op);
+    }
+
     switch (event.type) {
       case "node_done": {
         const at = positionOf(event.nodeId);
@@ -180,14 +225,19 @@ export function planBatch(
         const byColleague = node !== undefined && node.commit.author !== undefined;
         // What was held so far is yours — a roll's cost, a point — and lands
         // where you stand, not on the commit a colleague just wrote.
+        // A colleague's commit does not end yours: what it brings still lands
+        // on your commit, which stays local until your story moves on.
         if (byColleague) flush();
+        else settle();
         revealed.add(event.nodeId);
         if (!byColleague) {
           cursor = event.nodeId;
           away = false;
         }
-        steps.push({ kind: "reveal", nodeId: event.nodeId, at, asHead, hold: STORY.reveal });
+        const local = node !== undefined && isBornLocal(node);
+        steps.push({ kind: "reveal", nodeId: event.nodeId, at, asHead, local, hold: STORY.reveal });
         flush();
+        for (const op of opsAt.get(index) ?? []) if (op.kind === "commit") pending.push(op);
         break;
       }
 
@@ -282,14 +332,6 @@ export function planBatch(
         }
         break;
 
-      case "squashed":
-        held.push({
-          caption: `⊟ ${event.nodeIds.length}`,
-          colour: palette.lane.refactor,
-          hold: STORY.pop,
-        });
-        break;
-
       case "docs_used":
         held.push({ caption: "¶", colour: palette.lane.refactor, hold: STORY.pop });
         break;
@@ -298,6 +340,7 @@ export function planBatch(
         // The camera goes to the ticket picked up: its tip, or `dev` if it has
         // not been forked yet.
         flush();
+        settle();
         const head = headOf(state);
         cursor = revealed.has(head.id) ? head.id : cursor;
         away = true;
@@ -339,6 +382,7 @@ export function planBatch(
 
       case "pr_reviewed":
         flush();
+        settle();
         steps.push({ kind: "beat", hold: reviewHold ? STORY.review : STORY.boundary });
         break;
 
@@ -434,6 +478,7 @@ export function planBatch(
   }
 
   flush();
+  settle();
   if (away) steps.push({ kind: "look", y: null, hold: STORY.look });
   if (steps.length === 0) steps.push({ kind: "beat", hold: STORY.roll });
   return steps;

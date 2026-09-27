@@ -9,7 +9,7 @@ import type { PlayerAction } from "@/game/core/types";
  * not, already moves everything (`chooseAutopilot`). The first reads the
  * machine's work before it piles up. The second also keeps the code in
  * shape — checks out a hotfix that is waiting, refactors when production or
- * the debt say so, squashes and reads the machine's work sooner. The third
+ * the debt say so, and reads the machine's work sooner. The third
  * also spends: the rung the game advises, the best rank the payroll can
  * carry, a skill point when the money is plentiful. Every move comes with the
  * reason the HUD prints under the panel. Nothing here touches the engine, and
@@ -27,7 +27,6 @@ export const SUPERVISOR_REASONS = [
   "rest",
   "hotfix",
   "refactor",
-  "squash",
   "buy",
   "hire",
   "point",
@@ -43,8 +42,7 @@ export interface SupervisorMove {
 /** Quality share and debt floor at which the second level refactors. */
 const REFACTOR_AT_QUALITY_PCT = 50;
 const REFACTOR_AT_DEBT = 40;
-/** Unread machine commits at which the second level squashes, then reviews. */
-const SQUASH_AT_UNREAD = 3;
+/** Unread machine commits at which the second level reviews. */
 const REVIEW_AT_UNREAD = 1;
 /** Months of bills the third level keeps in hand before hiring. */
 const HIRE_RESERVE_MONTHS = 2;
@@ -128,12 +126,6 @@ export function chooseSupervisor(snapshot: RunSnapshot): SupervisorMove | undefi
           (a) => a.type === "commit" && a.mode === "craft" && a.kind === "refactor",
         );
         if (refactor !== undefined) return { action: refactor, reason: "refactor" };
-      }
-      if (inHand.unread >= SQUASH_AT_UNREAD) {
-        const squash = find(
-          (a) => a.type === "commit" && a.mode === "craft" && a.kind === "squash",
-        );
-        if (squash !== undefined) return { action: squash, reason: "squash" };
       }
       if (inHand.unread >= REVIEW_AT_UNREAD) {
         const review = find((a) => a.type === "review");

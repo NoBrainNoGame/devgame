@@ -4,20 +4,19 @@ import type { SkipFlag } from "@/game/chips/fx/skip";
 import type { NodeId } from "@/game/core/types";
 
 /**
- * A commit appears, and the camera goes to it.
+ * Local commits reach the remote.
  *
- * The reveal itself is one line — the set changes, the graph redraws — and
- * the hold after it is what makes a turn of three commits read as three
- * things happening rather than as the graph suddenly being longer.
+ * Like a reveal, the effect is one line — the set changes and the graph
+ * animates it — and the hold is what lets the fill-in be seen. With `into`,
+ * the commits slide into that one first: pushed together, squashed into one.
  */
-export class Reveal extends booyah.ChipBase {
+export class Push extends booyah.ChipBase {
   private elapsed = 0;
 
   constructor(
-    private readonly nodeId: NodeId,
+    private readonly nodeIds: readonly NodeId[],
+    private readonly into: NodeId | null,
     private readonly y: number,
-    private readonly asHead: boolean,
-    private readonly local: boolean,
     private readonly duration: number,
     private readonly skip: SkipFlag,
   ) {
@@ -26,7 +25,11 @@ export class Reveal extends booyah.ChipBase {
 
   protected _onActivate(): void {
     const { reveal, controls } = sceneContext(this.chipContext);
-    reveal.showNode(this.nodeId, this.asHead, this.local);
+    if (this.into === null) {
+      for (const id of this.nodeIds) reveal.push(id);
+    } else {
+      reveal.absorb(this.nodeIds, this.into);
+    }
     controls.camera?.focusOn(this.y);
   }
 

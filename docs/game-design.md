@@ -134,8 +134,6 @@ rien est un commit avec un joli nom).
   le plus (chaque commit la retient) ; celle d'un autre ticket se refactore
   là-bas.
 - **Fix** : reprend le plus ancien commit bugué ; un fix IA reste attrapable.
-- **Squash** : dès `squash.minUnread` commits IA non relus ; leur dette part, et
-  eux du score. Seul effacement de dette sans review.
 - **Rebase** : si un de vos merges a touché `dev` depuis l'ouverture ; efface ce
   retard (qui aggrave le jet de livraison), sans point. Chance selon la dette
   (quasi gratuit propre, pile ou face à soixante) ; raté, de la dette, sauf
@@ -362,7 +360,7 @@ review. Seul l'interrupteur le coupe.
 - **Superviseur IA** : s'achète pour de meilleurs choix, jamais pour plus
   d'autonomie, et annonce son coup sous le panneau. N1 : relit les commits IA
   dès deux non relus. N2 : prend le hotfix en attente, refactorise quand prod
-  ou dette le disent, squashe à trois IA non relus, relit dès un. N3 : barreau
+  ou dette le disent, relit dès un. N3 : barreau
   conseillé, meilleur grade payable avec deux mois de factures d'avance, point
   de compétence si l'argent abonde.
 
@@ -497,6 +495,16 @@ de la lecture.
    commits d'une branche.
 6. Fourche et merge à angle droit : horizontale au rang du tronc, verticale dans
    la branche, un coin arrondi.
+7. Vos commits naissent **locaux** (anneau pointillé) et se **poussent** (le
+   disque se remplit) une fois leur histoire racontée sur le commit encore
+   inachevé : coût, points, ce qu'ils ont soulevé. Celui qui casse la prod
+   reste local jusqu'au prochain push de sa branche : un commit qui passe,
+   l'ouverture de la PR ou le merge (obstacle compris).
+   Poussés ensemble, les commits locaux glissent dans le plus récent et n'en
+   font plus qu'un (« ×N » à son sujet) ; leurs traits restent, pas leurs
+   disques. Les commits des collègues, les troncs et les merges naissent
+   poussés. Présentation seule : le moteur n'a pas de remote,
+   `bridge/pushes.ts` le déduit des événements et le rejoue au chargement.
 
 Un choix se nomme par ce qu'il fait : « Démarrer », « Ouvrir la PR »,
 « Refacto · à la main ».

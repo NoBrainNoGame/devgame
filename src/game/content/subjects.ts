@@ -22,7 +22,6 @@ export const SUBJECT_PREFIXES = [
   "refactor",
   "docs",
   "perf",
-  "squash",
   "rebase",
   "init",
   "release",
@@ -68,8 +67,6 @@ export function nodePrefix(kind: NodeKind, mode: CommitMode | undefined): Subjec
       return "refactor";
     case "release":
       return "release";
-    case "squash":
-      return "squash";
     case "docs":
       return "docs";
     case "rebase":

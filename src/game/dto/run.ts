@@ -25,7 +25,7 @@ export const MAX_ACTIONS = 5000;
 
 const TicketIdSchema = z.string().regex(/^t\d+$/);
 
-const DetourKindSchema = z.enum(["refactor", "fix", "risky", "squash", "docs", "rebase"]);
+const DetourKindSchema = z.enum(["refactor", "fix", "risky", "docs", "rebase"]);
 
 /** A number the development panel may write: whole, and never past what a double counts exactly. */
 const DevNumberSchema = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);

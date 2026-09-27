@@ -121,8 +121,8 @@ export function makeRefusable(state: RunState): RunState {
 
 /**
  * Drives a run until the ticket in hand offers `kind`, ready to write it that
- * way. Squash and rebase are situational, so this plays real seeds rather than
- * stubbing the board: a real seed proves the choice is reachable in a game
+ * way. A rebase is situational, so this plays real seeds rather than stubbing
+ * the board: a real seed proves the choice is reachable in a game
  * that could actually happen.
  */
 export function standingOn(kind: DetourKind, options: { prefix?: string } = {}): RunState {

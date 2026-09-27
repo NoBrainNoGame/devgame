@@ -36,7 +36,7 @@ export type RunMode = "classic" | "daily";
  * decision about *this* commit, so it costs a turn like any other and leaves
  * the graph a chain — the shape a feature branch actually has.
  */
-export const DETOUR_KINDS = ["refactor", "fix", "risky", "squash", "docs", "rebase"] as const;
+export const DETOUR_KINDS = ["refactor", "fix", "risky", "docs", "rebase"] as const;
 export type DetourKind = (typeof DETOUR_KINDS)[number];
 
 export type NodeKind =
@@ -51,8 +51,6 @@ export type NodeKind =
   | "fix"
   /** More story points for a worse roll. */
   | "risky"
-  /** Erases machine-written history: debt repaid, commits lost. */
-  | "squash"
   /** Buys the next few machine-written commits out of their debt. */
   | "docs"
   /** Replays the ticket on top of `dev`. Cheap when clean, brutal when not. */
@@ -625,7 +623,6 @@ export type GameEvent =
   | { type: "monitoring_warning" }
   | { type: "ambient_event"; eventId: AmbientEventId }
   | { type: "reviewed"; nodeIds: NodeId[]; debtDelta: number; chain: boolean; free: boolean }
-  | { type: "squashed"; nodeIds: NodeId[]; debtDelta: number; commitsLost: number }
   | { type: "docs_written"; charges: number }
   | { type: "docs_used"; nodeId: NodeId; remaining: number }
   | { type: "rebased"; ticketId: TicketId }

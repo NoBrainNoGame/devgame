@@ -115,7 +115,7 @@ export function laneColour(lane: number, kind: NodeKind): number {
   // has to read as one even though it lives on the feature you had open.
   if (kind === "hotfix" || kind === "fix") return THEME.lane.hotfix;
   // The maintenance commits share one colour: they are all "stop and tidy up".
-  if (kind === "refactor" || kind === "squash" || kind === "docs") return THEME.lane.refactor;
+  if (kind === "refactor" || kind === "docs") return THEME.lane.refactor;
 
   if (lane === MAIN_LANE) return THEME.lane.trunk;
   if (lane === DEV_LANE) return THEME.lane.dev;
@@ -148,8 +148,6 @@ export function nodeGlyph(kind: NodeKind): string {
       return "↻";
     case "risky":
       return "⚡";
-    case "squash":
-      return "\u229f";
     case "docs":
       return "\u00b6";
     case "rebase":

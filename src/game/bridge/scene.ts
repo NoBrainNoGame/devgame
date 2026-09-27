@@ -90,7 +90,7 @@ export async function buildPixiScene(
   // Nothing of the run is animated on a new picture: everything it wrote is
   // there from the first frame.
   const reveal = new RevealSet();
-  reveal.showAll(session.getState());
+  reveal.showAll(session.getState(), session.getPushes());
 
   // Canvas2D is the fallback: it draws the run as it stands, and nothing is
   // ever waited for.

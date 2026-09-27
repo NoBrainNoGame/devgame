@@ -243,16 +243,15 @@ has a bad weight or a never-met flag. Merge events are counted by
 
 ### A way of writing a commit (a "detour")
 
-Refactor, fix, risky, squash, docs, rebase are kinds a commit *becomes*, not map
-places.
+Refactor, fix, risky, docs, rebase are kinds a commit *becomes*, not map places.
 
 1. Add to `DETOUR_KINDS` (`core/types.ts`; `DetourKind` derives), the `NodeKind`
    union and the hard-coded `DetourKindSchema` (`dto/run.ts`), or saves using it
    fail to parse.
 2. Offer it in `offersOf` (`rules/tickets.ts`), the **one** source for actions,
-   previews and the commit rule: always, or on a condition like `squash`,
-   `rebase`, `fix`, `refactor` (prefer a target on the ticket in hand; random
-   offers get ignored).
+   previews and the commit rule: always, or on a condition like `rebase`, `fix`,
+   `refactor` (prefer a target on the ticket in hand; random offers get
+   ignored).
 3. A `BALANCE.energy.cost` price and a `nodeGlyph` glyph (`render/theme.ts`):
    typecheck errors until done. `pointsFor` (`rules/write.ts`) sets what it
    fills (rebase: nothing).
@@ -282,7 +281,7 @@ Rare; the most places to touch, the least compiler help.
    `writeRelease` for the trunk). Allow a new trunk kind in `checkInvariants`
    (`map/graph.ts`) or tests refuse it.
 5. Behaviour in `writeCommit` (special-cases `risky`, `refactor`, `fix`,
-   `squash`, `docs`, `rebase`): **a new kind silently falls through** as an
+   `docs`, `rebase`): **a new kind silently falls through** as an
    ordinary commit, no typecheck or test failure.
 6. `game.nodes.<kind>.{name,desc}` (+ `aiName` if a detour); the log passes
    `nodes.<kind>.name` to `log.node_done`.
@@ -314,6 +313,12 @@ non-empty cancelled tickets); sim `generation → invariant failures 0`.
   `lerpPalette`), `--color-<name>` in `globals.css`, written by `useAusterity`
   (`tests/theme.test.ts` compares the CSS with `THEME`). Check:
   `tests/storyboard.test.ts`, `tests/gauges.test.ts`.
+- **An event that writes or throws away commits**: `advancePushes`
+  (`bridge/pushes.ts`) decides which of the player's commits are drawn local,
+  pushed or squashed, from events alone (the engine has no remote). A new way
+  to open a pull request, land a branch or drop commits needs its case there,
+  or commits stay drawn local forever. Presentation only: no epoch. Check:
+  `tests/pushes.test.ts`, `tests/storyboard.test.ts`.
 - **Scene guard**: the picture is rebuilt around a session that never is
   (`bridge/mount.ts`, `bridge/scene.ts`). Anything a chip hangs outside the
   Pixi tree is tied to `sceneContext.signal`: a scene that threw in a frame
@@ -435,7 +440,7 @@ Read honestly:
   policies; careful ones burn out.
 - `score`: one huge `max` is luck; compare medians.
 - **No policy may dominate**: `craft` doubling the others means AI commits are
-  not worth their points. `ai` never reviews or squashes and should die fast;
+  not worth their points. `ai` never reviews and should die fast;
   compare `mixed`, `careful`.
 - `failures` (raw count): a missing id never fires; check
   `requiresUnreviewedAi`/`forbiddenOnHotfix`.

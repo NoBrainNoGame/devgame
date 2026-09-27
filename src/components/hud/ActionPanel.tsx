@@ -223,7 +223,7 @@ function ReviewPolicySwitch({ snapshot }: { snapshot: RunSnapshot }) {
 }
 
 /**
- * Writing this commit as a refactor, a squash, a rebase.
+ * Writing this commit as a refactor, a fix, a rebase.
  *
  * It is not a fork and never was: the choice is *how to write this commit*, so
  * it sits with the other two ways of writing it and costs the same turn.

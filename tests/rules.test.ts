@@ -504,34 +504,6 @@ describe("free actions", () => {
   });
 });
 
-describe("squash", () => {
-  test("erases machine-written commits, their debt and their score", () => {
-    const { before, after, events } = committedAs("squash");
-
-    const squashed = eventsOfType(events, "squashed")[0];
-    expect(squashed).toBeDefined();
-    if (squashed === undefined) return;
-
-    expect(squashed.nodeIds.length).toBeGreaterThanOrEqual(BALANCE.squash.minUnread);
-    expect(squashed.debtDelta).toBeLessThan(0);
-    expect(after.debt).toBeLessThan(before.debt);
-    // The commits are gone from the history, so they are gone from the count.
-    // The squash commit is itself a commit, so the count moves by one up and
-    // `commitsLost` down: everything the fold swallowed beyond the one it kept.
-    expect(squashed.commitsLost).toBe(squashed.nodeIds.length - BALANCE.squash.keptCommits);
-    expect(after.player.totalCommits).toBe(before.player.totalCommits + 1 - squashed.commitsLost);
-  });
-
-  test("is only offered with something to squash, and needs no review skill", () => {
-    const state = inHand("squash-gate");
-    state.skills = [];
-    expect(offersOf(state, ticketInHand(state))).not.toContain("squash");
-
-    for (let i = 0; i < BALANCE.squash.minUnread; i += 1) plantAiCommit(state);
-    expect(offersOf(state, ticketInHand(state))).toContain("squash");
-  });
-});
-
 describe("documentation", () => {
   test("buys the next machine-written commits out of their debt", () => {
     const { after: written } = committedAs("docs");

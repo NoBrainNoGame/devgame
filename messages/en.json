@@ -191,6 +191,10 @@
     "tooltipReview": "Review",
     "tooltipRead": "read",
     "tooltipUnread": "unread",
+    "tooltipPush": "Push",
+    "tooltipLocal": "local, not pushed yet",
+    "tooltipPushed": "pushed",
+    "tooltipSquashed": "pushed, {count} commits squashed",
     "tooltipBranch": "Branch",
     "tooltipFeature": "feature",
     "tooltipGrants": "Grants",
@@ -372,7 +376,6 @@
       "rest": "rest",
       "hotfix": "take the hotfix",
       "refactor": "refactor",
-      "squash": "squash the AI commits",
       "buy": "buy the advised rung",
       "hire": "hire",
       "point": "buy a skill point"
@@ -1032,7 +1035,7 @@
       },
       "ai_supervisor": {
         "name": "AI supervisor",
-        "desc": "Auto mode already moves everything forward; the supervisor makes it choose better. Level 1: it reads the machine's code before it piles up. Level 2: it takes hotfixes, refactors and squashes. Level 3: it spends too. No go-live date scheduled. Subscription."
+        "desc": "Auto mode already moves everything forward; the supervisor makes it choose better. Level 1: it reads the machine's code before it piles up. Level 2: it takes hotfixes, refactors and reads sooner. Level 3: it spends too. No go-live date scheduled. Subscription."
       },
       "datacenter": {
         "name": "Datacenter",
@@ -1129,11 +1132,6 @@
       }
     },
     "nodes": {
-      "squash": {
-        "name": "Squash",
-        "desc": "Folds the last machine-written commits into one: the debt goes with them, and so does the score.",
-        "aiName": "AI squash"
-      },
       "docs": {
         "name": "Documentation",
         "desc": "The next machine-written commits add no debt at all.",
@@ -1243,7 +1241,6 @@
       }
     },
     "log": {
-      "squashed": "{count, plural, one {# commit squashed} other {# commits squashed}}, {lost, plural, one {# off the count} other {# off the count}}",
       "docs_written": "docs written, {count, plural, one {# AI commit covered} other {# AI commits covered}}",
       "rebased": "ticket rebased onto dev, history is current",
       "_comment": "The node, skill, relic, node, upgrade and rank parameters are key paths (for example skills.unit_tests.name) that the renderer translates before substituting them. The commit prefix (feat:, fix:, chore:, merge:, revert:) is added by the UI: do not repeat it here.",
@@ -1652,16 +1649,6 @@
           "3": "move the computation to the background",
           "4": "drop the index that got in the way",
           "5": "push the batch to eighty-eight miles per hour"
-        }
-      },
-      "squash": {
-        "all": {
-          "0": "condense the branch history",
-          "1": "squash the machine's commits",
-          "2": "reduce six commits to one",
-          "3": "erase the back and forth",
-          "4": "keep the result, not the path",
-          "5": "one commit to rule them all"
         }
       },
       "rebase": {

@@ -1,4 +1,5 @@
 import { Emitter } from "@/game/bridge/emitter";
+import type { PushLedger } from "@/game/bridge/pushes";
 import { headOf } from "@/game/core/map/graph";
 import type { NodeId, RunState } from "@/game/core/types";
 
@@ -15,11 +16,17 @@ import type { NodeId, RunState } from "@/game/core/types";
  * time as their moment comes; a skip, a reduced-motion setting or the end of
  * a batch reveals everything. Only the effect queue writes here, and every
  * view redraws on `changed`.
+ *
+ * It also says which commits are drawn local, and which were squashed into a
+ * later one (`pushes.ts`): the ledger knows at once, the screen catches up as
+ * the story pushes them.
  */
 
 export interface RevealSnapshot {
   nodes: ReadonlySet<NodeId>;
   headId: NodeId | null;
+  local: ReadonlySet<NodeId>;
+  absorbed: ReadonlyMap<NodeId, NodeId>;
 }
 
 export class RevealSet extends Emitter {
@@ -29,14 +36,34 @@ export class RevealSet extends Emitter {
    * the last commit revealed, not on the one the engine has already moved to.
    */
   headId: NodeId | null = null;
+  /** Drawn as not pushed yet. */
+  readonly local = new Set<NodeId>();
+  /** Drawn inside the commit it was squashed into, not on its own. */
+  readonly absorbed = new Map<NodeId, NodeId>();
 
-  /** Draws a commit. Returns whether it was new. */
-  showNode(id: NodeId, asHead = true): boolean {
+  /** Draws a commit, local if it has not been pushed yet. Returns whether it was new. */
+  showNode(id: NodeId, asHead = true, local = false): boolean {
     const fresh = !this.nodes.has(id);
     this.nodes.add(id);
     if (asHead) this.headId = id;
+    if (fresh && local) this.local.add(id);
     if (fresh || asHead) this.emit("changed");
     return fresh;
+  }
+
+  /** Local commits folding into a later one as they are pushed together. */
+  absorb(ids: readonly NodeId[], into: NodeId): void {
+    for (const id of ids) {
+      if (id === into) continue;
+      this.local.delete(id);
+      this.absorbed.set(id, into);
+    }
+    this.emit("changed");
+  }
+
+  /** A local commit reaches the remote. */
+  push(id: NodeId): void {
+    if (this.local.delete(id)) this.emit("changed");
   }
 
   /**
@@ -44,7 +71,7 @@ export class RevealSet extends Emitter {
    * and nothing it has since thrown away: a restarted ticket's commits are
    * gone from the state, so they go from the screen too.
    */
-  showAll(state: RunState): void {
+  showAll(state: RunState, pushes: PushLedger): void {
     let changed = false;
     for (const id of Object.keys(state.nodes)) {
       if (!this.nodes.has(id)) {
@@ -63,10 +90,41 @@ export class RevealSet extends Emitter {
       this.headId = head;
       changed = true;
     }
+
+    const local = new Set(Object.values(pushes.local).flat());
+    for (const id of [...this.local]) {
+      if (!local.has(id)) {
+        this.local.delete(id);
+        changed = true;
+      }
+    }
+    for (const id of local) {
+      if (id in state.nodes && !this.local.has(id)) {
+        this.local.add(id);
+        changed = true;
+      }
+    }
+    for (const id of [...this.absorbed.keys()]) {
+      if (pushes.absorbed[id] === undefined) {
+        this.absorbed.delete(id);
+        changed = true;
+      }
+    }
+    for (const [id, into] of Object.entries(pushes.absorbed)) {
+      if (this.absorbed.get(id) !== into) {
+        this.absorbed.set(id, into);
+        changed = true;
+      }
+    }
     if (changed) this.emit("changed");
   }
 
   snapshot(): RevealSnapshot {
-    return { nodes: new Set(this.nodes), headId: this.headId };
+    return {
+      nodes: new Set(this.nodes),
+      headId: this.headId,
+      local: new Set(this.local),
+      absorbed: new Map(this.absorbed),
+    };
   }
 }

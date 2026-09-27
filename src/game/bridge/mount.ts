@@ -168,6 +168,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
         renderMode: mode,
         hoveredNodeId: null,
         hoveredAt: null,
+        hoveredPush: null,
         ...(animated ? {} : { pendingAnimation: false, heldGauges: null }),
       });
     },

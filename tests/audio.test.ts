@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { AMBIENT_FILES, SFX_FILES } from "@/game/audio/manifest";
 import { SFX_IDS, sfxFor } from "@/game/audio/sfx";
+import { emptyPushes } from "@/game/bridge/pushes";
 import { RevealSet } from "@/game/bridge/reveal";
 import { planBatch } from "@/game/render/storyboard";
 
@@ -27,7 +28,7 @@ describe("sounds", () => {
     const run = play(newRun("sfx-batch"), { pick: policy("craft"), limit: 12 });
     const reveal = new RevealSet();
     const state = newRun("sfx-batch");
-    reveal.showAll(state);
+    reveal.showAll(state, emptyPushes());
     const steps = planBatch(run.events, run.state, reveal.snapshot(), () => "");
     const sounds = steps.filter((step) => step.kind === "sfx");
     const mapped = run.events.filter((event) => sfxFor(event) !== null);

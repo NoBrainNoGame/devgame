@@ -243,7 +243,6 @@ export function writeCommit(
     }
   }
 
-  if (kind === "squash") performSquash(context, ticket);
   if (kind === "docs") writeDocs(context);
 
   if (kind === "rebase") {
@@ -297,44 +296,6 @@ export function fillPoints(context: RuleContext, ticket: Ticket, delta: number):
     value: ticket.filled,
     max: ticket.points,
   });
-}
-
-/**
- * Squash: the machine's last few commits on this ticket become one, and the
- * mess goes with them.
- *
- * It repays more debt per commit than a review does, needs no skill, and is
- * the only answer to debt a run that never learned to review will find. What
- * it costs is the score: those commits are gone from the history, so they are
- * gone from the count.
- */
-function performSquash(context: RuleContext, ticket: Ticket): void {
-  const { state } = context;
-  const { squash } = BALANCE;
-
-  const unread = ticket.nodeIds.filter((id) => {
-    const commit = state.nodes[id]?.commit;
-    return commit !== undefined && commit.mode === "ai" && !commit.reviewed;
-  });
-  const swallowed = unread.slice(-squash.maxCommits);
-  if (swallowed.length === 0) return;
-
-  // Squashed commits are neither read nor unread: they no longer exist as
-  // separate things, which is also why production can no longer be traced
-  // back to them.
-  for (const id of swallowed) {
-    const node = state.nodes[id];
-    if (node !== undefined) node.commit.reviewed = true;
-  }
-  state.player.aiChain = 0;
-
-  const repaid = swallowed.length * squash.repayPerCommit;
-  if (repaid > 0) repayDebt(context, repaid);
-
-  const lost = Math.max(0, swallowed.length - squash.keptCommits);
-  state.player.totalCommits = Math.max(0, state.player.totalCommits - lost);
-
-  emit(context, { type: "squashed", nodeIds: swallowed, debtDelta: -repaid, commitsLost: lost });
 }
 
 /** Documentation: the next few machine-written commits carry no debt. */
