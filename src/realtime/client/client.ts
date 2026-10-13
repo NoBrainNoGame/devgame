@@ -110,7 +110,8 @@ export class RealtimeClient {
   }
 
   private async connect(): Promise<void> {
-    const generation = (this.generation += 1);
+    this.generation += 1;
+    const generation = this.generation;
     const { dispatch } = this.store.getState();
     dispatch({
       type: "connection",

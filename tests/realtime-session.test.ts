@@ -43,12 +43,6 @@ function worldWithTwo() {
   return { world, stream, keep };
 }
 
-function joinedOf(stream: ServerMessage[]) {
-  const found = stream.find((m) => m.type === "company.joined");
-  if (found?.type !== "company.joined") throw new Error("no join");
-  return found;
-}
-
 function sessionFor(
   world: RealtimeWorld,
   seat: number,
