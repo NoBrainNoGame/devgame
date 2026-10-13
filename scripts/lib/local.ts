@@ -12,6 +12,8 @@ import { resolve } from "node:path";
 export const CONTAINER = "devgame-postgres";
 export const ADMIN_PID = resolve(process.cwd(), ".admin.pid");
 export const ADMIN_LOG = resolve(process.cwd(), ".admin.log");
+export const REALTIME_PID = resolve(process.cwd(), ".realtime.pid");
+export const REALTIME_LOG = resolve(process.cwd(), ".realtime.log");
 
 export async function run(
   command: string[],
@@ -66,15 +68,46 @@ function alive(pid: number): boolean {
   }
 }
 
-/** The admin panel's pid when it is running, null otherwise. */
-export async function adminPid(): Promise<number | null> {
-  if (!existsSync(ADMIN_PID)) return null;
-  const pid = Number((await readFile(ADMIN_PID, "utf8")).trim());
+/** A background process's pid when it is running, null otherwise. */
+async function livePid(pidFile: string): Promise<number | null> {
+  if (!existsSync(pidFile)) return null;
+  const pid = Number((await readFile(pidFile, "utf8")).trim());
   if (!Number.isInteger(pid) || !alive(pid)) {
-    await unlink(ADMIN_PID).catch(() => undefined);
+    await unlink(pidFile).catch(() => undefined);
     return null;
   }
   return pid;
+}
+
+/**
+ * Starts a command detached, its output in a log file, its pid in a pid
+ * file. Idempotent: one already running is left alone. Returns the pid, and
+ * whether this call started it.
+ */
+async function startInBackground(
+  command: string[],
+  files: { pid: string; log: string },
+): Promise<{ pid: number; started: boolean }> {
+  const running = await livePid(files.pid);
+  if (running !== null) return { pid: running, started: false };
+  const log = openSync(files.log, "a");
+  const child = Bun.spawn(command, { stdout: log, stderr: log, stdin: "ignore" });
+  child.unref();
+  await writeFile(files.pid, String(child.pid));
+  return { pid: child.pid, started: true };
+}
+
+async function stopBackground(pidFile: string): Promise<boolean> {
+  const pid = await livePid(pidFile);
+  if (pid === null) return false;
+  process.kill(pid, "SIGTERM");
+  await unlink(pidFile).catch(() => undefined);
+  return true;
+}
+
+/** The admin panel's pid when it is running, null otherwise. */
+export function adminPid(): Promise<number | null> {
+  return livePid(ADMIN_PID);
 }
 
 /**
@@ -82,28 +115,37 @@ export async function adminPid(): Promise<number | null> {
  * pid in `.admin.pid`. Idempotent: an admin already running is left alone.
  */
 export async function startAdminInBackground(port: number): Promise<void> {
-  const running = await adminPid();
-  if (running !== null) {
-    console.log(`Admin panel already running (pid ${running}): http://127.0.0.1:${port}`);
-    return;
-  }
-  const log = openSync(ADMIN_LOG, "a");
-  const child = Bun.spawn(["bun", "scripts/admin.ts"], {
-    stdout: log,
-    stderr: log,
-    stdin: "ignore",
+  const { pid, started } = await startInBackground(["bun", "scripts/admin.ts"], {
+    pid: ADMIN_PID,
+    log: ADMIN_LOG,
   });
-  child.unref();
-  await writeFile(ADMIN_PID, String(child.pid));
   console.log(
-    `Admin panel started (pid ${child.pid}): http://127.0.0.1:${port} — log in .admin.log`,
+    started
+      ? `Admin panel started (pid ${pid}): http://127.0.0.1:${port} — log in .admin.log`
+      : `Admin panel already running (pid ${pid}): http://127.0.0.1:${port}`,
   );
 }
 
-export async function stopAdmin(): Promise<boolean> {
-  const pid = await adminPid();
-  if (pid === null) return false;
-  process.kill(pid, "SIGTERM");
-  await unlink(ADMIN_PID).catch(() => undefined);
-  return true;
+export function stopAdmin(): Promise<boolean> {
+  return stopBackground(ADMIN_PID);
+}
+
+/**
+ * Starts the realtime server (`src/realtime/server.ts`) detached, its output
+ * in `.realtime.log`, its pid in `.realtime.pid`. Idempotent.
+ */
+export async function startRealtimeInBackground(port: number): Promise<void> {
+  const { pid, started } = await startInBackground(["bun", "src/realtime/server.ts"], {
+    pid: REALTIME_PID,
+    log: REALTIME_LOG,
+  });
+  console.log(
+    started
+      ? `Realtime server started (pid ${pid}): ws://localhost:${port} — log in .realtime.log`
+      : `Realtime server already running (pid ${pid}): ws://localhost:${port}`,
+  );
+}
+
+export function stopRealtime(): Promise<boolean> {
+  return stopBackground(REALTIME_PID);
 }

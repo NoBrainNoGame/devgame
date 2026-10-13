@@ -1,16 +1,23 @@
 import { env } from "@/lib/env";
 
-import { requireDocker, run, startAdminInBackground, waitForPostgres } from "./lib/local";
+import {
+  requireDocker,
+  run,
+  startAdminInBackground,
+  startRealtimeInBackground,
+  waitForPostgres,
+} from "./lib/local";
 
 /**
- * `bun run db:up`: the Postgres container, then the admin panel beside it,
- * in the background. What `bun run init` does on a machine that already
+ * `bun run db:up`: the Postgres container, then the admin panel and the
+ * realtime server beside it, in the background. What `bun run init` does on a machine that already
  * has its `.env`.
  */
 async function main(): Promise<void> {
   await requireDocker();
   await run(["docker", "compose", "up", "-d"]);
   await waitForPostgres();
+  if (env.MULTI) await startRealtimeInBackground(env.REALTIME_PORT);
   if (env.ADMIN_PASSWORD === undefined) {
     console.log(
       "No ADMIN_PASSWORD in .env: the admin panel stays off. Add one and `bun run admin`.",

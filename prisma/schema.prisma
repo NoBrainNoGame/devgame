@@ -59,6 +59,7 @@ model Profile {
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   runs Run[]
+  seats CompanyMember[]
 }
 
 /// A run is its seed plus the ordered list of player actions. The score is
@@ -260,4 +261,102 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Multiplayer
+// ---------------------------------------------------------------------------
+//
+// The realtime server (`src/realtime`) is the only writer of these tables. A
+// company is a seed plus the ordered entries that happened to it, exactly as a
+// solo run is a seed plus actions; `snapshot` is a compaction of the log so a
+// join or a restart does not replay thousands of rounds.
+
+enum CompanyStatus {
+  open
+  closed
+}
+
+/// The persistent world companies live in: one row, holding the world's clock
+/// and the cursor of its random stream so events fall the same way after a restart.
+model World {
+  id             String   @id
+  seed           String   @db.VarChar(64)
+  round          Int      @default(0)
+  rng            Int      @default(0)
+  lastEventRound Int      @default(-20)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  companies Company[]
+}
+
+model Company {
+  id          String        @id @default(cuid())
+  worldId     String
+  name        String        @db.VarChar(24)
+  seed        String        @db.VarChar(64)
+  status      CompanyStatus @default(open)
+  /// Why it closed: dissolved, abandoned or shutdown. Null while open.
+  closeReason String?       @db.VarChar(16)
+  /// Solo rules the company is played against; a company on older rules is not resumed.
+  rulesEpoch  Int
+  crewEpoch   Int
+  /// How it starts: founder, profile, unlocks. Not a score, never.
+  start       Json
+  /// Computed by the engine at each round, for the ranking. Never from a client.
+  score       Int           @default(0)
+  /// Sequence number of the last entry.
+  seq         Int           @default(0)
+  /// A compaction of the state, and the sequence it stands after.
+  snapshot    Json?
+  snapshotSeq Int?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  closedAt    DateTime?
+
+  world   World            @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  members CompanyMember[]
+  entries CompanyEntry[]
+
+  @@index([worldId, status, score(sort: Desc)])
+}
+
+/// A human in a company. A seat is never reused, and a profile holds at most one
+/// live seat: both are partial unique indexes, hand-written — see
+/// `prisma/migrations/00000000000007_multiplayer`.
+model CompanyMember {
+  id           String    @id @default(cuid())
+  companyId    String
+  profileId    String
+  seat         Int
+  name         String    @db.VarChar(24)
+  site         String    @db.VarChar(40)
+  joinedAt     DateTime  @default(now())
+  /// Set when they leave; the row stays, for the ranking of those who were there.
+  leftAt       DateTime?
+  /// What they brought, frozen when they left.
+  finalScore   Int       @default(0)
+  missesInRow  Int       @default(0)
+  autopilot    Boolean   @default(false)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, leftAt])
+}
+
+model CompanyEntry {
+  companyId  String
+  seq        Int
+  /// The world's round it was resolved in, for a round entry.
+  worldRound Int?
+  entry      Json
+  /// Hash of the state after it: recovery checks the last one.
+  hash       String   @db.VarChar(16)
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, seq])
 }

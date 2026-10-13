@@ -17,8 +17,11 @@ import { PlayerActionSchema } from "@/game/dto/run";
 /** Bumped by hand when a frame changes shape; a client and a server on different ones refuse each other. */
 export const PROTOCOL_VERSION = 1;
 
-/** A frame larger than this is not read: the server closes the socket. */
+/** A frame from a browser larger than this is not read: the server closes the socket. */
 export const MAX_FRAME_BYTES = 16 * 1024;
+
+/** A frame from the server may carry a compacted state; it is trusted, but still bounded. */
+export const MAX_SERVER_FRAME_BYTES = 8 * 1024 * 1024;
 
 const SeatSchema = z.number().int().min(0).max(4096);
 const IdSchema = z.string().min(1).max(64);
@@ -207,15 +210,15 @@ export type ServerMessageType = ServerMessage["type"];
 
 /** Parses one text frame; null when it is not JSON or not a message of this protocol. */
 export function parseClientMessage(raw: string): ClientMessage | null {
-  return parseWith(ClientMessageSchema, raw);
+  return parseWith(ClientMessageSchema, raw, MAX_FRAME_BYTES);
 }
 
 export function parseServerMessage(raw: string): ServerMessage | null {
-  return parseWith(ServerMessageSchema, raw);
+  return parseWith(ServerMessageSchema, raw, MAX_SERVER_FRAME_BYTES);
 }
 
-function parseWith<T>(schema: z.ZodType<T>, raw: string): T | null {
-  if (raw.length > MAX_FRAME_BYTES) return null;
+function parseWith<T>(schema: z.ZodType<T>, raw: string, max: number): T | null {
+  if (raw.length > max) return null;
   let json: unknown;
   try {
     json = JSON.parse(raw);

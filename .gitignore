@@ -49,3 +49,10 @@ next-env.d.ts
 # local admin panel, started by `bun run db:up`
 .admin.pid
 .admin.log
+
+# local realtime server, started by `bun run db:up`
+.realtime.pid
+.realtime.log
+
+# realtime server bundle (bun run realtime:build)
+/dist

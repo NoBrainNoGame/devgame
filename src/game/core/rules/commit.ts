@@ -59,7 +59,6 @@ function writeAndSettle(
   mode: CommitMode,
   options: { hiddenBug?: boolean; broken?: boolean },
 ): MapNode {
-  const { state } = context;
   const node = writeCommit(context, ticket, kind, mode, options);
 
   if (options.broken !== true) {

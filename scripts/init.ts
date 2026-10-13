@@ -8,6 +8,7 @@ import {
   requireDocker,
   run,
   startAdminInBackground,
+  startRealtimeInBackground,
   waitForPostgres,
 } from "./lib/local";
 
@@ -155,6 +156,10 @@ export async function init(options: InitOptions): Promise<void> {
   const written = await readFile(options.target, "utf8");
   const port = Number(written.match(/^ADMIN_PORT=(\d+)/m)?.[1] ?? "3100");
   if (/^ADMIN_PASSWORD="[^"]{12,}"/m.test(written)) await startAdminInBackground(port);
+  // Multiplayer needs its own server beside the app, unless the file turns it off.
+  if (!/^REALTIME_ENABLED=(false|0)\s*$/m.test(written)) {
+    await startRealtimeInBackground(Number(written.match(/^REALTIME_PORT=(\d+)/m)?.[1] ?? "3200"));
+  }
   console.log(
     "Ready: `bun run dev` then http://localhost:3000. The magic link is printed to this terminal.",
   );

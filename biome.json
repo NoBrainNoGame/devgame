@@ -111,6 +111,41 @@
       }
     },
     {
+      "includes": ["src/realtime/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "pixi.js": "The realtime server is a Bun process: no rendering here.",
+                  "react": "The realtime server is a Bun process: no UI here.",
+                  "react-dom": "The realtime server is a Bun process: no UI here.",
+                  "next": "The realtime server is not Next: the app and the server share the game and the protocol only.",
+                  "zustand": "The realtime server owns the world in memory; a store is the client's.",
+                  "@ghom/booyah": "Chips are the scene's; the server never draws."
+                },
+                "patterns": [
+                  {
+                    "group": [
+                      "next/*",
+                      "@/components/*",
+                      "@/app/*",
+                      "@/game/chips/*",
+                      "@/game/render/*",
+                      "@/game/audio/*"
+                    ],
+                    "message": "src/realtime may import the game's engine, bridge snapshot and protocol, never the app or the scene."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["scripts/**", "src/game/core/**"],
       "linter": {
         "rules": {
