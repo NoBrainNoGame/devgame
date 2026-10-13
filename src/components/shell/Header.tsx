@@ -26,6 +26,7 @@ export async function Header(): Promise<React.JSX.Element> {
   const links = [
     { href: "/play", label: nav("play") },
     { href: "/leaderboard", label: nav("leaderboard") },
+    ...(env.MULTI ? [{ href: "/multi", label: nav("multi") }] : []),
     ...(env.ONLINE ? [{ href: "/profile", label: nav("profile") }] : []),
     // The local admin panel, framed: a development convenience, and the
     // page behind it is a 404 anywhere else.

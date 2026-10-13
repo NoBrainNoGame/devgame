@@ -248,16 +248,25 @@ export class GameSession extends Emitter {
     this.pushes = pushed.ledger;
 
     const mine = this.myAction(entry);
+    // What happened to a colleague's tank or pull request is not shown as mine.
+    const events = result.events.filter((event) => this.isMine(event));
     this.batch += 1;
-    this.publish(result.events, mine);
+    this.publish(events, mine);
     const payload: AppliedPayload = {
-      events: result.events,
+      events,
       state: this.getState(),
       batch: this.batch,
       pushes: pushed.ops,
       ...(mine === undefined ? {} : { action: mine }),
     };
     this.emit("applied", payload);
+    return true;
+  }
+
+  private isMine(event: GameEvent): boolean {
+    if (event.type === "energy" || event.type === "crunch" || event.type === "pr_reviewed") {
+      return event.seat === undefined || event.seat === this.seat;
+    }
     return true;
   }
 

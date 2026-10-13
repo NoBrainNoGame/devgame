@@ -22,7 +22,8 @@
     "profile": "Profile",
     "home": "Home",
     "report": "Report a bug",
-    "admin": "Admin"
+    "admin": "Admin",
+    "multi": "Multi"
   },
   "landing": {
     "title": "Devgame",
@@ -2405,6 +2406,156 @@
         "name": "Hostile takeover",
         "desc": "Buy a company that takes a competitor off the market."
       }
+    }
+  },
+  "multi": {
+    "title": "Multiplayer",
+    "lobby": {
+      "title": "A company, several developers",
+      "subtitle": "Pick a company with a free seat, found your own, or wait to be recruited. Everyone plays a turn every 30 seconds.",
+      "signedAs": "Playing as {name}",
+      "createTitle": "Found a company",
+      "createPlaceholder": "Company name (3 to 24 characters)",
+      "create": "Found it",
+      "companies": "Companies",
+      "noCompanies": "No company yet: found the first one.",
+      "members": "{count, plural, one {# developer} other {# developers}}",
+      "freeSeats": "{count, plural, one {# free seat} other {# free seats}}",
+      "score": "{score} pts",
+      "rank": "#{rank}",
+      "join": "Join",
+      "full": "Full",
+      "waitingTitle": "Waiting to be recruited",
+      "noWaiting": "Nobody is waiting.",
+      "waitMe": "Wait for a company",
+      "unwait": "Stop waiting",
+      "waitingYou": "You are on the list: a developer of a company with a free seat can recruit you.",
+      "leaderboard": "Full ranking",
+      "soloLink": "Play solo"
+    },
+    "connection": {
+      "connecting": "Connecting to the world…",
+      "reconnecting": "Connection lost, trying again (attempt {attempt})…",
+      "closed": "Sign in to play with others.",
+      "outdated": "This page plays another version of the game: reload it.",
+      "disabled": "Multiplayer is not available here.",
+      "signIn": "Sign in",
+      "reload": "Reload"
+    },
+    "round": {
+      "label": "Round {round}",
+      "seconds": "{seconds} s",
+      "waiting": "Choose your move",
+      "sent": "Move sent: you can still change it",
+      "deciding": "The company is voting",
+      "resolving": "Resolving the round…",
+      "missed": "Missed {count}/{max}",
+      "autopilot": "On autopilot",
+      "noRound": "Waiting for the next round",
+      "seatSent": "{name}: move sent",
+      "seatWaiting": "{name}: still choosing"
+    },
+    "pending": {
+      "title": "Your move this round",
+      "change": "Pick another move to replace it.",
+      "cancel": "Forget it",
+      "none": "No move chosen yet. Nothing sent means a missed round."
+    },
+    "team": {
+      "title": "Your site",
+      "me": "you",
+      "energy": "{energy}/{max}",
+      "noTicket": "no ticket",
+      "status": {
+        "online": "online",
+        "offline": "offline",
+        "autopilot": "autopilot"
+      },
+      "pending": {
+        "resolve_conflict": "untangling a merge",
+        "pr_accepted": "merge to land",
+        "ticket_rejected": "review refused"
+      },
+      "otherSites": "Other sites: {count}"
+    },
+    "ranking": {
+      "title": "Ranking",
+      "companies": "Companies",
+      "players": "Players",
+      "company": "Your company: {rank}/{total}",
+      "player": "You: {rank}/{total}",
+      "link": "Full ranking",
+      "empty": "No ranking yet."
+    },
+    "autopilot": {
+      "line": "The supervisor is playing your seat. Make a move to take it back.",
+      "others": "On autopilot: {names}"
+    },
+    "vote": {
+      "relicTitle": "The company picks its sprint bonus",
+      "relicSubtitle": "Everyone votes. The most voted wins; on a tie, the first seat decides.",
+      "eventTitle": "The company decides",
+      "eventSubtitle": "Everyone votes. The most voted wins; on a tie, the first seat decides.",
+      "votes": "{count, plural, one {# vote} other {# votes}}",
+      "yours": "your vote",
+      "remaining": "{seconds} s left",
+      "chosen": "Chosen: {choice}",
+      "noVote": "No vote means the first option."
+    },
+    "over": {
+      "title": "The company is dissolved",
+      "back": "Back to the lobby",
+      "closed": {
+        "dissolved": "Nobody is left: the company is dissolved.",
+        "abandoned": "The company reached the end of the world's patience and closed.",
+        "shutdown": "The server is restarting: your company is safe, reconnect in a moment."
+      }
+    },
+    "leave": "Leave the company",
+    "leaveConfirm": "Leave for good? Your tickets go to your colleagues.",
+    "toasts": {
+      "joined": "{name} joined the company.",
+      "left": "{name} left the company.",
+      "missed": "You missed a round.",
+      "autopilot": "The supervisor took your seat after {count} missed rounds."
+    },
+    "errors": {
+      "seated": "You already have a seat: leave it first.",
+      "not-seated": "You have no seat in a company.",
+      "closed": "That company has closed.",
+      "full": "No free seat there.",
+      "no-company": "That company does not exist any more.",
+      "cannot-join": "You cannot join that company.",
+      "bad-name": "A company name has 3 to 24 characters.",
+      "world-full": "The world is full: join a company instead.",
+      "not-waiting": "That player is no longer waiting.",
+      "stale-round": "That move was for a round that is over.",
+      "illegal": "That move is not available right now.",
+      "deciding": "The company is voting: no moves until it is done.",
+      "turn-action": "That move is chosen for the round.",
+      "free-action": "That move does not wait for the round.",
+      "vote": "The company decides this one by vote.",
+      "no-question": "Nothing is being voted on.",
+      "bad-choice": "That is not one of the options.",
+      "bad-message": "The server did not understand that.",
+      "internal": "Something went wrong on the server.",
+      "outdated": "This page plays another version of the game: reload it.",
+      "offline": "You are offline: that move was not sent.",
+      "no-round": "No round is open: wait for the next one.",
+      "unknown": "Something went wrong."
+    },
+    "board": {
+      "title": "Multiplayer ranking",
+      "subtitle": "Companies of the world and the developers in them, live. A company's score is what its developers committed, delivered and survived together.",
+      "companies": "Companies",
+      "players": "Developers",
+      "rank": "Rank",
+      "name": "Name",
+      "company": "Company",
+      "members": "Developers",
+      "score": "Score",
+      "empty": "No company is playing right now.",
+      "play": "Play with others"
     }
   }
 }

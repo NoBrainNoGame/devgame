@@ -65,6 +65,7 @@ export function performSubmit(context: RuleContext): void {
     bugs,
     unread: unread.length,
     rework,
+    ...(state.crew === undefined ? {} : { seat: seatOf(context) }),
   });
 
   if (accepted) {

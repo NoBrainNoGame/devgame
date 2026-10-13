@@ -285,11 +285,13 @@ export function RunOverDialog({
                 ? t("burnout")
                 : reason === "caught"
                   ? t("caught")
-                  : reason === "fired"
-                    ? cause === undefined
-                      ? t("fired")
-                      : t(`firedBy.${cause}` as never)
-                    : null}
+                  : reason === "dissolved"
+                    ? t("dissolved")
+                    : reason === "fired"
+                      ? cause === undefined
+                        ? t("fired")
+                        : t(`firedBy.${cause}` as never)
+                      : null}
           </DialogDescription>
         </DialogHeader>
 

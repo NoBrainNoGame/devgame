@@ -16,6 +16,7 @@ export const KNOWN_PATHS = [
   "/",
   "/play",
   "/leaderboard",
+  "/multi",
   "/profile",
   "/login",
   "/report",

@@ -460,6 +460,7 @@ const PAGE_WEIGHT: Record<KnownPath, number> = {
   "/": 40,
   "/play": 55,
   "/leaderboard": 18,
+  "/multi": 8,
   "/profile": 6,
   "/login": 5,
   "/report": 1,

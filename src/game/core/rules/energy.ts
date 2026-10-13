@@ -36,7 +36,13 @@ function changeEnergy(context: RuleContext, delta: number, reason: string): void
   const applied = player.energy - before;
   if (applied === 0) return;
 
-  emit(context, { type: "energy", delta: applied, value: player.energy, reason });
+  emit(context, {
+    type: "energy",
+    delta: applied,
+    value: player.energy,
+    reason,
+    ...(context.state.crew === undefined ? {} : { seat: seatOf(context) }),
+  });
 }
 
 /**
@@ -122,5 +128,11 @@ export function burnedOut(context: RuleContext): Seat[] {
 /** Emits a crunch event when the state changed, so the HUD can react once. */
 export function reportCrunch(context: RuleContext, wasCrunch: boolean): void {
   const now = actorOf(context).energy <= BALANCE.energy.crunchThreshold;
-  if (now !== wasCrunch) emit(context, { type: "crunch", active: now });
+  if (now !== wasCrunch) {
+    emit(context, {
+      type: "crunch",
+      active: now,
+      ...(context.state.crew === undefined ? {} : { seat: seatOf(context) }),
+    });
+  }
 }

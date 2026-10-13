@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 
 import { austerityOverride } from "@/components/hud/austerityOverride";
 import { useGameText } from "@/components/hud/useGameText";
-import type { GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
+import type { CompanyOptions, GameHandle, I18nText, MetaProgressDto, RunSaveDto } from "@/game";
 import { mountGame } from "@/game";
 import { audioService } from "@/game/audio/AudioService";
 import { readLocalRun } from "@/lib/storage/sync";
@@ -33,6 +33,9 @@ export function GameCanvas({
     reducedMotion?: boolean;
     playerName?: string;
     startingSkillPoints?: number;
+    /** A company's run: the seat and what the server sent. The run is then never resumed from `localStorage`. */
+    seat?: number;
+    company?: CompanyOptions;
   };
   onReady: (handle: GameHandle | null) => void;
 }) {
@@ -65,7 +68,8 @@ export function GameCanvas({
     // "resume"; a canvas mounted again later — a hot reload, a remount —
     // must pick the run up where the local save has it now, not back then.
     const wanted = optionsRef.current;
-    const local = readLocalRun();
+    // A company is rebuilt from what the server sent, never from a local save.
+    const local = wanted.company === undefined ? readLocalRun() : null;
     const resume =
       local !== null &&
       local.clientRunId === wanted.clientRunId &&

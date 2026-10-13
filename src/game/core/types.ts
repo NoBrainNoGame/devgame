@@ -629,7 +629,7 @@ export type GameEvent =
   | { type: "node_done"; nodeId: NodeId; mode: CommitMode; kind: NodeKind; broken?: true }
   /** Story points filled on a ticket. */
   | { type: "points"; ticketId: TicketId; delta: number; value: number; max: number }
-  | { type: "energy"; delta: number; value: number; reason: string }
+  | { type: "energy"; delta: number; value: number; reason: string; seat?: Seat }
   | { type: "rested"; energy: number }
   | { type: "debt"; delta: number; value: number }
   | { type: "ticket_arrived"; ticketId: TicketId }
@@ -645,6 +645,8 @@ export type GameEvent =
       unread: number;
       /** Rework points added, when rejected. */
       rework: number;
+      /** Whose pull request, in a company. */
+      seat?: Seat;
     }
   /** A refused ticket shipped with its bugs, a follow-up ticket for each. */
   | { type: "followup"; ticketId: TicketId; bugs: number; ticketIds: TicketId[] }
@@ -746,7 +748,7 @@ export type GameEvent =
   | { type: "dev_promoted"; devId: DevId; rank: DevRank }
   /** A developer picked a ticket up from the backlog. */
   | { type: "ticket_assigned"; ticketId: TicketId; devId: DevId }
-  | { type: "crunch"; active: boolean }
+  | { type: "crunch"; active: boolean; seat?: Seat }
   | { type: "seat_joined"; seat: Seat; name: string; site: SiteId }
   | { type: "seat_left"; seat: Seat; name: string; reason: "left" | "burnout" }
   /** The deadline passed with no action: a rest without regeneration, and patience lost. */

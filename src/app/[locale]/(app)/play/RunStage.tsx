@@ -38,7 +38,7 @@ import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { useUpgradesNews } from "@/components/hud/useUpgradesNews";
 import { useAudioSettings } from "@/components/settings/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
+import type { CompanyOptions, GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
 import { useGameStore } from "@/game";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +76,9 @@ export interface RunStageProps {
     playerName?: string;
     /** A saved run's own starting points, for the debugger. */
     startingSkillPoints?: number;
+    /** A company's run: the seat and what the server sent. */
+    seat?: number;
+    company?: CompanyOptions;
   };
   /** False keeps the idle clock off the stage: the debugger steps by hand. */
   idle?: boolean;
@@ -94,6 +97,21 @@ export interface RunStageProps {
   fallbackNote?: string;
   /** The player's own run: the achievements button and the tutorial's road. */
   onOpenAchievements?: () => void;
+  /**
+   * What a company's page puts around the run: under the two bars, at the foot
+   * of each side column, and over the whole stage. Solo gives none.
+   */
+  slots?: {
+    underBars?: React.ReactNode;
+    leftBottom?: React.ReactNode;
+    rightBottom?: React.ReactNode;
+    overlay?: React.ReactNode;
+  };
+  /**
+   * A company decides its bonus and its events by vote: this replaces the two
+   * dialogs that would ask one player alone.
+   */
+  vote?: React.ReactNode;
 }
 
 export function RunStage({
@@ -108,6 +126,8 @@ export function RunStage({
   onOpenAchievements,
   idle = true,
   devPanel = false,
+  slots,
+  vote,
 }: RunStageProps) {
   const t = useTranslations("play");
   const renderMode = useGameStore((state) => state.renderMode);
@@ -163,6 +183,7 @@ export function RunStage({
             <TicketBar snapshot={snapshot} onAct={onAct} onOpenBoard={() => setBoardOpen(true)} />
           )}
         </div>
+        {slots?.underBars}
 
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <aside className="order-2 w-full min-w-0 shrink-0 space-y-5 overflow-x-hidden overflow-y-auto border-line border-t bg-panel/40 p-4 lg:order-1 lg:w-64 lg:border-t-0 lg:border-r">
@@ -171,6 +192,7 @@ export function RunStage({
             )}
             {snapshot === null ? null : <InfoPanel snapshot={snapshot} />}
             {snapshot === null || !devPanel ? null : <DevPanel handle={handle} onAct={onAct} />}
+            {slots?.leftBottom}
           </aside>
 
           <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">
@@ -222,6 +244,7 @@ export function RunStage({
                 {idle ? <IdleDriver paused={readingReview} onAct={onAct} /> : null}
               </>
             )}
+            {slots?.rightBottom}
           </aside>
         </div>
 
@@ -250,8 +273,14 @@ export function RunStage({
             />
             <ReviewDialog snapshot={snapshot} onAct={onAct} />
             <ConflictDialog snapshot={snapshot} busy={busy} onAct={onAct} />
-            <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
-            <EventDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+            {vote === undefined ? (
+              <>
+                <RelicDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+                <EventDialog snapshot={snapshot} busy={busy} onAct={onAct} />
+              </>
+            ) : (
+              vote
+            )}
             <RunOverDialog
               snapshot={snapshot}
               busy={busy}
@@ -260,6 +289,7 @@ export function RunStage({
             />
           </>
         )}
+        {slots?.overlay}
       </div>
     </ReducedMotionProvider>
   );

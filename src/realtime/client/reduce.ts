@@ -127,6 +127,8 @@ export type RealtimeEvent =
   /** The stage applied entries up to this sequence number. */
   | { type: "applied"; seq: number }
   | { type: "dismissed"; at: number }
+  /** The player left the stage for the lobby: forget the company they were in. */
+  | { type: "left" }
   /** The stage's state disagreed with the server's hash: the company will be sent again. */
   | { type: "desync" };
 
@@ -158,6 +160,17 @@ export function reduce(state: RealtimeState, event: RealtimeEvent): RealtimeStat
       };
     case "dismissed":
       return { ...state, errors: state.errors.filter((error) => error.at !== event.at) };
+    case "left":
+      return {
+        ...state,
+        join: null,
+        members: [],
+        inbox: [],
+        round: null,
+        resolved: null,
+        question: null,
+        closed: null,
+      };
     case "desync":
       return { ...state, inbox: [] };
     case "server":

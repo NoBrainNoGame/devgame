@@ -22,7 +22,8 @@
     "profile": "Profil",
     "home": "Accueil",
     "report": "Signaler un bug",
-    "admin": "Admin"
+    "admin": "Admin",
+    "multi": "Multi"
   },
   "landing": {
     "title": "Devgame",
@@ -2405,6 +2406,156 @@
         "name": "OPA hostile",
         "desc": "Rachetez une entreprise qui retire un concurrent du marché."
       }
+    }
+  },
+  "multi": {
+    "title": "Multijoueur",
+    "lobby": {
+      "title": "Une entreprise, plusieurs développeurs",
+      "subtitle": "Choisissez une entreprise qui a une place, fondez la vôtre, ou attendez d'être recruté. Chacun joue un tour toutes les 30 secondes.",
+      "signedAs": "Vous jouez en tant que {name}",
+      "createTitle": "Fonder une entreprise",
+      "createPlaceholder": "Nom de l'entreprise (3 à 24 caractères)",
+      "create": "La fonder",
+      "companies": "Entreprises",
+      "noCompanies": "Aucune entreprise pour l'instant : fondez la première.",
+      "members": "{count, plural, one {# développeur} other {# développeurs}}",
+      "freeSeats": "{count, plural, one {# place libre} other {# places libres}}",
+      "score": "{score} pts",
+      "rank": "n°{rank}",
+      "join": "Rejoindre",
+      "full": "Complète",
+      "waitingTitle": "En attente d'être recrutés",
+      "noWaiting": "Personne n'attend.",
+      "waitMe": "Attendre une entreprise",
+      "unwait": "Ne plus attendre",
+      "waitingYou": "Vous êtes sur la liste : un développeur d'une entreprise qui a une place libre peut vous recruter.",
+      "leaderboard": "Classement complet",
+      "soloLink": "Jouer en solo"
+    },
+    "connection": {
+      "connecting": "Connexion au monde…",
+      "reconnecting": "Connexion perdue, nouvel essai (tentative {attempt})…",
+      "closed": "Connectez-vous pour jouer avec d'autres.",
+      "outdated": "Cette page joue une autre version du jeu : rechargez-la.",
+      "disabled": "Le multijoueur n'est pas disponible ici.",
+      "signIn": "Se connecter",
+      "reload": "Recharger"
+    },
+    "round": {
+      "label": "Tour {round}",
+      "seconds": "{seconds} s",
+      "waiting": "Choisissez votre coup",
+      "sent": "Coup envoyé : vous pouvez encore le changer",
+      "deciding": "L'entreprise vote",
+      "resolving": "Résolution du tour…",
+      "missed": "Raté {count}/{max}",
+      "autopilot": "En pilote automatique",
+      "noRound": "En attente du prochain tour",
+      "seatSent": "{name} : coup envoyé",
+      "seatWaiting": "{name} : choisit encore"
+    },
+    "pending": {
+      "title": "Votre coup ce tour",
+      "change": "Choisissez un autre coup pour le remplacer.",
+      "cancel": "L'oublier",
+      "none": "Aucun coup choisi. Rien d'envoyé, c'est un tour raté."
+    },
+    "team": {
+      "title": "Votre site",
+      "me": "vous",
+      "energy": "{energy}/{max}",
+      "noTicket": "pas de ticket",
+      "status": {
+        "online": "en ligne",
+        "offline": "hors ligne",
+        "autopilot": "pilote auto"
+      },
+      "pending": {
+        "resolve_conflict": "démêle un merge",
+        "pr_accepted": "merge à poser",
+        "ticket_rejected": "review refusée"
+      },
+      "otherSites": "Autres sites : {count}"
+    },
+    "ranking": {
+      "title": "Classement",
+      "companies": "Entreprises",
+      "players": "Joueurs",
+      "company": "Votre entreprise : {rank}/{total}",
+      "player": "Vous : {rank}/{total}",
+      "link": "Classement complet",
+      "empty": "Pas encore de classement."
+    },
+    "autopilot": {
+      "line": "Le superviseur joue votre place. Faites un coup pour la reprendre.",
+      "others": "En pilote automatique : {names}"
+    },
+    "vote": {
+      "relicTitle": "L'entreprise choisit son bonus de sprint",
+      "relicSubtitle": "Tout le monde vote. Le plus voté l'emporte ; à égalité, la première place tranche.",
+      "eventTitle": "L'entreprise décide",
+      "eventSubtitle": "Tout le monde vote. Le plus voté l'emporte ; à égalité, la première place tranche.",
+      "votes": "{count, plural, one {# vote} other {# votes}}",
+      "yours": "votre vote",
+      "remaining": "{seconds} s restantes",
+      "chosen": "Choisi : {choice}",
+      "noVote": "Sans vote, c'est la première option."
+    },
+    "over": {
+      "title": "L'entreprise est dissoute",
+      "back": "Retour au salon",
+      "closed": {
+        "dissolved": "Plus personne : l'entreprise est dissoute.",
+        "abandoned": "L'entreprise a épuisé la patience du monde et ferme.",
+        "shutdown": "Le serveur redémarre : votre entreprise est à l'abri, reconnectez-vous dans un instant."
+      }
+    },
+    "leave": "Quitter l'entreprise",
+    "leaveConfirm": "Partir pour de bon ? Vos tickets vont à vos collègues.",
+    "toasts": {
+      "joined": "{name} rejoint l'entreprise.",
+      "left": "{name} quitte l'entreprise.",
+      "missed": "Vous avez raté un tour.",
+      "autopilot": "Le superviseur a pris votre place après {count} tours ratés."
+    },
+    "errors": {
+      "seated": "Vous avez déjà une place : quittez-la d'abord.",
+      "not-seated": "Vous n'avez pas de place dans une entreprise.",
+      "closed": "Cette entreprise a fermé.",
+      "full": "Plus de place libre là-bas.",
+      "no-company": "Cette entreprise n'existe plus.",
+      "cannot-join": "Vous ne pouvez pas rejoindre cette entreprise.",
+      "bad-name": "Le nom d'une entreprise fait 3 à 24 caractères.",
+      "world-full": "Le monde est plein : rejoignez plutôt une entreprise.",
+      "not-waiting": "Ce joueur n'attend plus.",
+      "stale-round": "Ce coup était pour un tour terminé.",
+      "illegal": "Ce coup n'est pas disponible maintenant.",
+      "deciding": "L'entreprise vote : pas de coup avant la fin du vote.",
+      "turn-action": "Ce coup se choisit pour le tour.",
+      "free-action": "Ce coup n'attend pas le tour.",
+      "vote": "L'entreprise tranche celui-ci par un vote.",
+      "no-question": "Aucun vote en cours.",
+      "bad-choice": "Ce n'est pas l'une des options.",
+      "bad-message": "Le serveur n'a pas compris.",
+      "internal": "Un problème est survenu côté serveur.",
+      "outdated": "Cette page joue une autre version du jeu : rechargez-la.",
+      "offline": "Vous êtes hors ligne : ce coup n'est pas parti.",
+      "no-round": "Aucun tour n'est ouvert : attendez le prochain.",
+      "unknown": "Un problème est survenu."
+    },
+    "board": {
+      "title": "Classement multijoueur",
+      "subtitle": "Les entreprises du monde et les développeurs qui les composent, en direct. Le score d'une entreprise, c'est ce que ses développeurs ont commité, livré et traversé ensemble.",
+      "companies": "Entreprises",
+      "players": "Développeurs",
+      "rank": "Rang",
+      "name": "Nom",
+      "company": "Entreprise",
+      "members": "Développeurs",
+      "score": "Score",
+      "empty": "Aucune entreprise ne joue en ce moment.",
+      "play": "Jouer avec d'autres"
     }
   }
 }
