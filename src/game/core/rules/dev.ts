@@ -8,6 +8,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import type { RuleContext } from "@/game/core/rules/context";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { energyMax, gatherEffects } from "@/game/core/rules/modifiers";
 import { gameOver } from "@/game/core/rules/over";
 import { qualityMax } from "@/game/core/rules/quality";
@@ -49,13 +50,13 @@ export interface DevSheet {
 }
 
 export function devSheet(state: RunState): DevSheet {
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   return {
     values: {
       money: state.money,
       earned: state.moneyEarned,
       tier: state.tier,
-      energy: state.player.energy,
+      energy: playerOf(state, SOLO_SEAT).energy,
       skillPoints: state.skillPoints,
       xp: state.xpEarned,
       quality: state.quality,
@@ -110,7 +111,7 @@ export function applyDevValues(context: RuleContext, values: DevValues): void {
     state.sprintTurn = clamp(values.sprintTurn, 0, sprintTurns(state) - 1);
   }
 
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   if (values.filled !== undefined && ticket !== null) {
     ticket.filled = clamp(values.filled, 0, ticket.points);
   }
@@ -137,9 +138,10 @@ export function applyDevValues(context: RuleContext, values: DevValues): void {
   // Levels move the ceilings: energy's and patience's are read from the effects.
   context.refresh();
   const ceiling = energyMax(state, context.effects);
-  state.player.energyMax = ceiling;
-  state.player.energy = clamp(values.energy ?? state.player.energy, 0, ceiling);
-  if (state.player.energy > 0) state.player.zeroEnergyStreak = 0;
+  const player = playerOf(state, SOLO_SEAT);
+  player.energyMax = ceiling;
+  player.energy = clamp(values.energy ?? player.energy, 0, ceiling);
+  if (player.energy > 0) player.zeroEnergyStreak = 0;
   if (values.quality !== undefined) {
     const max = qualityMax(context.effects);
     state.quality = clamp(values.quality, 0, max);

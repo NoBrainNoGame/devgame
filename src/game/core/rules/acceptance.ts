@@ -1,6 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { seatOf } from "@/game/core/rules/crew";
 import { drawMergeEvent } from "@/game/core/rules/events";
 import { mergeEventChance } from "@/game/core/rules/modifiers";
 import { raiseQuality } from "@/game/core/rules/quality";
@@ -35,7 +36,7 @@ import type { Ticket, TicketId } from "@/game/core/types";
 
 export function performSubmit(context: RuleContext): void {
   const { state } = context;
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, seatOf(context));
   if (ticket === null) throw new Error("performSubmit: no ticket in hand");
 
   // A pull request is opened from the remote: the branch goes up first.
@@ -113,7 +114,7 @@ export function performMerge(context: RuleContext): void {
     return;
   }
   // An obstacle needs no review: full, it lands back on its feature.
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, seatOf(context));
   if (ticket !== null && ticket.parentId !== undefined && isReady(state, ticket)) {
     completeObstacle(context, ticket);
     return;

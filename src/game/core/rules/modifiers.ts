@@ -13,8 +13,9 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, text } from "@/game/core/i18n";
+import { playerOf } from "@/game/core/rules/crew";
 import { backlogTickets, openTickets, playerTickets, unreadAiOn } from "@/game/core/rules/tickets";
-import type { CommitMode, NodeKind, RunState, Ticket } from "@/game/core/types";
+import type { CommitMode, NodeKind, RunState, Seat, Ticket } from "@/game/core/types";
 
 /**
  * The single place that turns "what the player has" into "what the numbers
@@ -60,8 +61,8 @@ export function energyMax(state: RunState, effects = gatherEffects(state)): numb
 }
 
 /** Low energy hurts every roll, and says so before you spend it. */
-export function isCrunch(state: RunState): boolean {
-  return state.player.energy <= BALANCE.energy.crunchThreshold;
+export function isCrunch(state: RunState, seat: Seat): boolean {
+  return playerOf(state, seat).energy <= BALANCE.energy.crunchThreshold;
 }
 
 /**
@@ -69,14 +70,14 @@ export function isCrunch(state: RunState): boolean {
  * in your head, and every commit and every roll pays for it. What the team
  * holds is not in your head.
  */
-export function wipExtra(state: RunState): number {
-  const counted = playerTickets(state).filter((ticket) => TICKET_KIND[ticket.kind].countsWip);
+export function wipExtra(state: RunState, seat: Seat): number {
+  const counted = playerTickets(state, seat).filter((ticket) => TICKET_KIND[ticket.kind].countsWip);
   return Math.max(0, counted.length - 1);
 }
 
 /** What a turn of rest gives back. A crowded board is one you cannot rest on. */
-export function restRegen(state: RunState): number {
-  return Math.max(1, BALANCE.energy.restRegen - wipExtra(state));
+export function restRegen(state: RunState, seat: Seat): number {
+  return Math.max(1, BALANCE.energy.restRegen - wipExtra(state, seat));
 }
 
 /**
@@ -84,13 +85,13 @@ export function restRegen(state: RunState): number {
  * to do. The reducer passes those turns by itself, so a rest is never offered
  * here, and production would not have held one against you anyway.
  */
-export function nothingToDo(state: RunState): boolean {
-  return playerTickets(state).length === 0 && backlogTickets(state).length === 0;
+export function nothingToDo(state: RunState, seat: Seat): boolean {
+  return playerTickets(state, seat).length === 0 && backlogTickets(state).length === 0;
 }
 
 /** Whether production sees a rest as a turn off: work was waiting, in hand or in the backlog. */
-export function restCostsPatience(state: RunState): boolean {
-  return !nothingToDo(state);
+export function restCostsPatience(state: RunState, seat: Seat): boolean {
+  return !nothingToDo(state, seat);
 }
 
 /**
@@ -145,6 +146,7 @@ export function mergeEventChance(state: RunState, ticket: Ticket): number {
  */
 export function commitChance(
   state: RunState,
+  seat: Seat,
   mode: CommitMode,
   kind: NodeKind,
   effects = gatherEffects(state),
@@ -178,12 +180,12 @@ export function commitChance(
     notes.push(text("notes.debt", { points: signed(-debtMalus) }));
   }
 
-  if (isCrunch(state)) {
+  if (isCrunch(state, seat)) {
     value -= BALANCE.energy.crunchMalusPoints;
     notes.push(text("notes.crunch", { points: signed(-BALANCE.energy.crunchMalusPoints) }));
   }
 
-  const extra = wipExtra(state);
+  const extra = wipExtra(state, seat);
   if (extra > 0) {
     const malus = Math.round((value * BALANCE.wip.malusPctPerExtra * extra) / 100);
     value -= malus;
@@ -194,7 +196,11 @@ export function commitChance(
 }
 
 /** Chance of untangling a merge conflict by hand rather than asking the machine. */
-export function conflictChance(state: RunState, effects = gatherEffects(state)): Breakdown {
+export function conflictChance(
+  state: RunState,
+  seat: Seat,
+  effects = gatherEffects(state),
+): Breakdown {
   const notes: I18nText[] = [];
   let value: number = BALANCE.failure.conflictManualBase;
 
@@ -202,7 +208,7 @@ export function conflictChance(state: RunState, effects = gatherEffects(state)):
     value += effects.conflictResistancePoints;
     notes.push(text("notes.build", { points: signed(effects.conflictResistancePoints) }));
   }
-  if (isCrunch(state)) {
+  if (isCrunch(state, seat)) {
     value -= BALANCE.energy.crunchMalusPoints;
     notes.push(text("notes.crunch", { points: signed(-BALANCE.energy.crunchMalusPoints) }));
   }
@@ -220,6 +226,7 @@ export function conflictChance(state: RunState, effects = gatherEffects(state)):
  */
 export function nodeEnergyCost(
   state: RunState,
+  seat: Seat,
   kind: NodeKind,
   mode: CommitMode | undefined,
 ): Breakdown {
@@ -234,12 +241,12 @@ export function nodeEnergyCost(
     if (mode !== undefined) value += BALANCE.energy.commitCost[mode];
   }
 
-  if (kind === "refactor" && mode !== undefined && state.player.freeRefactor) {
+  if (kind === "refactor" && mode !== undefined && playerOf(state, seat).freeRefactor) {
     notes.push(text("notes.free_refactor"));
     return { value: 0, notes };
   }
 
-  const extra = wipExtra(state);
+  const extra = wipExtra(state, seat);
   if (extra > 0 && value > 0) {
     const multiplier = 1 + BALANCE.wip.energyPerExtra * extra;
     value = Math.round(value * multiplier);
@@ -262,9 +269,13 @@ export function reviewEnergyCost(state: RunState, effects = gatherEffects(state)
 }
 
 /** How many unreviewed AI commits one review cleans up, chain bonus included. */
-export function reviewCleanCount(state: RunState, effects = gatherEffects(state)): number {
+export function reviewCleanCount(
+  state: RunState,
+  seat: Seat,
+  effects = gatherEffects(state),
+): number {
   const { review } = BALANCE;
-  const chain = state.player.aiChain >= review.chainLength;
+  const chain = playerOf(state, seat).aiChain >= review.chainLength;
   return review.cleans + effects.reviewExtraCommits + (chain ? review.chainBonus : 0);
 }
 

@@ -1,5 +1,6 @@
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
-import type { MapNode, NodeId, RunState, Ticket } from "@/game/core/types";
+import { occupiedSeats, playerOf } from "@/game/core/rules/crew";
+import type { MapNode, NodeId, RunState, Seat, Ticket } from "@/game/core/types";
 
 /**
  * Reading and checking the graph. Nothing here mutates state.
@@ -42,8 +43,8 @@ export function tipOfTicket(state: RunState, ticket: Ticket): MapNode | null {
  * a branch that has not been forked is still `dev`. Five different rules would
  * have to keep a stored copy right; none has to keep this one.
  */
-export function headOf(state: RunState): MapNode {
-  const ticketId = state.player.ticketId;
+export function headOf(state: RunState, seat: Seat): MapNode {
+  const ticketId = playerOf(state, seat).ticketId;
   const ticket = ticketId === null ? undefined : state.tickets[ticketId];
   const onTicket = ticket === undefined ? null : tipOfTicket(state, ticket);
   if (onTicket !== null) return onTicket;
@@ -137,7 +138,7 @@ export function checkInvariants(state: RunState): InvariantFailure[] {
     if (ticket.status !== "open") {
       failures.push({ rule: "assigned-is-open", detail: `${ticket.id} is ${ticket.status}` });
     }
-    if (state.player.ticketId === ticket.id) {
+    if (occupiedSeats(state).some((seat) => playerOf(state, seat).ticketId === ticket.id)) {
       failures.push({ rule: "assigned-is-not-in-hand", detail: ticket.id });
     }
   }

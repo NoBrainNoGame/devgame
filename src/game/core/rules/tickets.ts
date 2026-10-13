@@ -3,8 +3,9 @@ import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, occupiedSeats, playerOf, seatOf } from "@/game/core/rules/crew";
 import { raiseQuality } from "@/game/core/rules/quality";
-import type { DetourKind, NodeId, RunState, Ticket, TicketId } from "@/game/core/types";
+import type { DetourKind, NodeId, RunState, Seat, Ticket, TicketId } from "@/game/core/types";
 
 /**
  * The board: what is waiting, what is open, and which one is being written.
@@ -32,12 +33,12 @@ export function backlogTickets(state: RunState): Ticket[] {
 }
 
 /** Open tickets that are yours: what the team holds is not on your desk. */
-export function playerTickets(state: RunState): Ticket[] {
+export function playerTickets(state: RunState, _seat: Seat): Ticket[] {
   return openTickets(state).filter((ticket) => ticket.assignee === undefined);
 }
 
-export function currentTicket(state: RunState): Ticket | null {
-  const id = state.player.ticketId;
+export function currentTicket(state: RunState, seat: Seat): Ticket | null {
+  const id = playerOf(state, seat).ticketId;
   if (id === null) return null;
   const ticket = state.tickets[id];
   return ticket === undefined || ticket.status !== "open" ? null : ticket;
@@ -150,8 +151,8 @@ export function waitsOnlyForHealth(state: RunState, ticket: Ticket): boolean {
 /** Detours that only fill points: pointless on a ticket already full. */
 export const FILLING_DETOURS: ReadonlySet<DetourKind> = new Set(["docs", "risky"]);
 
-export function isOnHotfix(state: RunState): boolean {
-  return currentTicket(state)?.mustWrite === "hotfix";
+export function isOnHotfix(state: RunState, seat: Seat): boolean {
+  return currentTicket(state, seat)?.mustWrite === "hotfix";
 }
 
 /**
@@ -183,7 +184,7 @@ export function startTicket(context: RuleContext, ticketId: TicketId): void {
 }
 
 export function checkoutTicket(context: RuleContext, ticketId: TicketId): void {
-  context.state.player.ticketId = ticketId;
+  actorOf(context).ticketId = ticketId;
   emit(context, { type: "checkout", ticketId });
 }
 
@@ -260,7 +261,10 @@ export function spawnObstacle(context: RuleContext, parent: Ticket, nodeId: Node
   state.tickets[id] = ticket;
   state.stats.arrivedByKind.obstacle += 1;
   // Started for whoever was writing: the feature's author is the obstacle's.
-  if (state.player.ticketId === parent.id) state.player.ticketId = id;
+  for (const seat of occupiedSeats(state)) {
+    const player = playerOf(state, seat);
+    if (player.ticketId === parent.id) player.ticketId = id;
+  }
 
   emit(context, {
     type: "obstacle_spawned",
@@ -330,9 +334,10 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
   // Started by you, it is what you work on now. Forced on you, it waits if
   // you held something: being pulled off your feature by a production bug is
   // a punishment the WIP malus already delivers, and it would do it twice.
-  const held = state.player.ticketId;
+  const player = actorOf(context);
+  const held = player.ticketId;
   const switching = !forced && held !== null && held !== ticket.id;
-  if (!forced || held === null) state.player.ticketId = ticket.id;
+  if (!forced || held === null) player.ticketId = ticket.id;
 
   emit(context, { type: "ticket_started", ticketId: ticket.id, kind: ticket.kind, forced });
   // The camera and the tab follow the hand, as on a switch.
@@ -345,8 +350,9 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
  */
 export function settleCurrent(context: RuleContext): void {
   const { state } = context;
-  if (currentTicket(state) !== null) return;
+  const seat = seatOf(context);
+  if (currentTicket(state, seat) !== null) return;
 
-  const next = playerTickets(state)[0];
-  state.player.ticketId = next === undefined ? null : next.id;
+  const next = playerTickets(state, seat)[0];
+  actorOf(context).ticketId = next === undefined ? null : next.id;
 }

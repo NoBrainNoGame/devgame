@@ -7,6 +7,7 @@ import { gameStore } from "@/game/bridge/store";
 import { checkInvariants, headOf, tipOfLane } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { createContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { SHOWCASE_KEEP_ROWS } from "@/game/core/rules/history";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { payTeam } from "@/game/core/rules/team";
@@ -31,7 +32,7 @@ function playDemo(seed: string): RunState {
     for (let played = 0; played < PLAYED; played += 1) {
       const state = session.getState();
       expect(state.devs.map((dev) => dev.rank)).toEqual(["junior", "junior"]);
-      const snapshot = toSnapshot(state);
+      const snapshot = toSnapshot(state, SOLO_SEAT);
       expect(demoDone(snapshot)).toBe(false);
       const action = chooseDemo(snapshot, played);
       if (action === undefined) throw new Error(`${seed}: nothing to play at action ${played}`);
@@ -82,7 +83,7 @@ describe("a showcase that runs for hours", () => {
       const state = session.getState();
       peakNodes = Math.max(peakNodes, Object.keys(state.nodes).length);
       peakTickets = Math.max(peakTickets, Object.keys(state.tickets).length);
-      const action = chooseDemo(toSnapshot(state), played);
+      const action = chooseDemo(toSnapshot(state, SOLO_SEAT), played);
       if (action === undefined) throw new Error(`nothing to play at ${played}`);
       const result = session.dispatch(action);
       if (!result.ok) throw new Error(`action ${played} refused: ${result.reason}`);
@@ -96,7 +97,7 @@ describe("a showcase that runs for hours", () => {
     // What the rules still read is there: the trunks' tips, the head, every open ticket's commits.
     expect(tipOfLane(state, MAIN_LANE)).not.toBeNull();
     expect(tipOfLane(state, DEV_LANE)).not.toBeNull();
-    expect(state.nodes[headOf(state).id]).toBeDefined();
+    expect(state.nodes[headOf(state, SOLO_SEAT).id]).toBeDefined();
     for (const ticket of Object.values(state.tickets)) {
       if (ticket.status !== "open") continue;
       for (const id of ticket.nodeIds) expect(state.nodes[id]).toBeDefined();

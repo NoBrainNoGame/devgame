@@ -1,4 +1,5 @@
 import { canonicalJson, fingerprint } from "@/game/core/hash";
+import { commitsOf } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun, hashState } from "@/game/core/run";
 import { computeScore } from "@/game/core/score";
@@ -108,7 +109,7 @@ export function replayRun(input: unknown): ReplayResult {
       turns: state.turn,
       sprints: Math.max(0, state.sprint - 1),
       ticketsDelivered: state.ticketsDelivered,
-      commits: state.player.totalCommits,
+      commits: commitsOf(state),
       xp: state.xpEarned,
       moneyEarned: state.moneyEarned,
       hash: hashState(state),

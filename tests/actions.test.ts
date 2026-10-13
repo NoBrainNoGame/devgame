@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { getAvailableActions, isActionAvailable } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { InvalidActionError } from "@/game/core/types";
 
@@ -12,7 +13,7 @@ describe("getAvailableActions", () => {
     expect(state.phase.kind).toBe("choose_action");
     expect(state.player.ticketId).toBeNull();
 
-    const types = getAvailableActions(state).map((a) => a.type);
+    const types = getAvailableActions(state, SOLO_SEAT).map((a) => a.type);
     expect(types).toContain("start");
     expect(types).not.toContain("commit");
     expect(types).not.toContain("submit");
@@ -20,7 +21,7 @@ describe("getAvailableActions", () => {
 
   test("a ticket in hand offers both commits and the detours, never a submit yet", () => {
     const state = inHand("actions-2");
-    const actions = getAvailableActions(state);
+    const actions = getAvailableActions(state, SOLO_SEAT);
 
     expect(actions.some((a) => a.type === "commit" && a.mode === "craft")).toBe(true);
     expect(actions.some((a) => a.type === "commit" && a.mode === "ai")).toBe(true);
@@ -32,14 +33,14 @@ describe("getAvailableActions", () => {
     const state = inHand("actions-2");
     const ready = makeReviewable(state);
 
-    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
-    expect(getAvailableActions(ready).some(isType("review"))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("review"))).toBe(false);
+    expect(getAvailableActions(ready, SOLO_SEAT).some(isType("review"))).toBe(true);
   });
 
   test("submitting is offered exactly when the points are full", () => {
     const state = inHand("actions-merge");
-    expect(getAvailableActions(state).some(isType("submit"))).toBe(false);
-    expect(getAvailableActions(makeReady(state)).some(isType("submit"))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("submit"))).toBe(false);
+    expect(getAvailableActions(makeReady(state), SOLO_SEAT).some(isType("submit"))).toBe(true);
   });
 
   test("a commit is legal even with no energy left to pay for it", () => {
@@ -47,7 +48,7 @@ describe("getAvailableActions", () => {
     const broke = structuredClone(state);
     broke.player.energy = 0;
 
-    expect(isActionAvailable(broke, { type: "commit", mode: "craft" })).toBe(true);
+    expect(isActionAvailable(broke, SOLO_SEAT, { type: "commit", mode: "craft" })).toBe(true);
   });
 
   test("starting a ticket that is not in the backlog is refused", () => {
@@ -67,7 +68,9 @@ describe("getAvailableActions", () => {
     const mine = state.player.ticketId;
     expect(mine).not.toBeNull();
     expect(
-      getAvailableActions(state).some((a) => a.type === "checkout" && a.ticketId === mine),
+      getAvailableActions(state, SOLO_SEAT).some(
+        (a) => a.type === "checkout" && a.ticketId === mine,
+      ),
     ).toBe(false);
   });
 
@@ -79,7 +82,7 @@ describe("getAvailableActions", () => {
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
 
-    const actions = getAvailableActions(state);
+    const actions = getAvailableActions(state, SOLO_SEAT);
     expect(actions.map((a) => (a.type === "resolve_conflict" ? a.how : a.type)).sort()).toEqual([
       "ai",
       "manual",
@@ -93,17 +96,17 @@ describe("getAvailableActions", () => {
       limit: 600,
     });
 
-    expect(getAvailableActions(state)).toEqual([]);
+    expect(getAvailableActions(state, SOLO_SEAT)).toEqual([]);
     expect(() => applyAction(state, { type: "review" })).toThrow(InvalidActionError);
   });
 
   test("skill points only appear once they can be spent", () => {
     const state = inHand("actions-6");
-    expect(getAvailableActions(state).some(isType("tree"))).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("tree"))).toBe(false);
 
     const rich = structuredClone(state);
     rich.skillPoints = 5;
-    expect(getAvailableActions(rich).some(isType("tree"))).toBe(true);
+    expect(getAvailableActions(rich, SOLO_SEAT).some(isType("tree"))).toBe(true);
   });
 
   test("a maxed tree node stops being offered", () => {
@@ -113,7 +116,7 @@ describe("getAvailableActions", () => {
     maxed.tree.ci = 1;
     maxed.tree.cd = 1;
 
-    const offered = getAvailableActions(maxed)
+    const offered = getAvailableActions(maxed, SOLO_SEAT)
       .filter(isType("tree"))
       .map((a) => (a.type === "tree" ? a.id : ""));
     expect(offered).not.toContain("cd");
@@ -125,14 +128,14 @@ describe("getAvailableActions", () => {
     const rich = structuredClone(state);
     rich.skillPoints = 9;
 
-    const locked = getAvailableActions(rich)
+    const locked = getAvailableActions(rich, SOLO_SEAT)
       .filter(isType("tree"))
       .map((a) => (a.type === "tree" ? a.id : ""));
     expect(locked).not.toContain("cd");
     expect(() => applyAction(rich, { type: "tree", id: "cd" })).toThrow(InvalidActionError);
 
     const unlocked = applyAction(rich, { type: "tree", id: "ci" }).state;
-    const offered = getAvailableActions(unlocked)
+    const offered = getAvailableActions(unlocked, SOLO_SEAT)
       .filter(isType("tree"))
       .map((a) => (a.type === "tree" ? a.id : ""));
     expect(offered).toContain("cd");

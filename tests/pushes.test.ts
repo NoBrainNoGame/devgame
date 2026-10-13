@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { advancePushes, emptyPushes, isBornLocal, type PushLedger } from "@/game/bridge/pushes";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
 import { SAVE_VERSION } from "@/game/dto/version";
@@ -24,7 +25,7 @@ function ledgerRun(seed: string, hand: "ai" | "craft", limit = 150) {
   const steps: Step[] = [];
   const actions: PlayerAction[] = [];
   for (let i = 0; i < limit && state.phase.kind !== "game_over"; i += 1) {
-    const action = policy(hand)(state, getAvailableActions(state));
+    const action = policy(hand)(state, getAvailableActions(state, SOLO_SEAT));
     if (action === undefined) break;
     const result = applyAction(state, action);
     const pushed = advancePushes(ledger, result.events, result.state);

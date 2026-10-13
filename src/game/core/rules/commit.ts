@@ -1,5 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, seatOf } from "@/game/core/rules/crew";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { drawAmbient, resolveConflict } from "@/game/core/rules/events";
 import { commitChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
@@ -25,15 +26,15 @@ export function commitKindFor(ticket: Ticket, kind: DetourKind | undefined): Nod
 
 export function performCommit(context: RuleContext, mode: CommitMode, kind?: DetourKind): void {
   const { state } = context;
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, seatOf(context));
   if (ticket === null) throw new Error("performCommit: no ticket in hand");
 
   const nodeKind = commitKindFor(ticket, kind);
 
-  spendEnergy(context, nodeEnergyCost(state, nodeKind, mode).value, "commit");
+  spendEnergy(context, nodeEnergyCost(state, seatOf(context), nodeKind, mode).value, "commit");
 
   // A showcase's commits always land: the run is looked at, not played.
-  const measured = commitChance(state, mode, nodeKind, context.effects);
+  const measured = commitChance(state, seatOf(context), mode, nodeKind, context.effects);
   const chance = state.showcase !== null ? { ...measured, value: 100 } : measured;
   const outcome = context.rng.roll(chance.value);
 
@@ -64,7 +65,7 @@ function writeAndSettle(
   if (options.broken !== true) {
     // Writing it by hand leaves you knowing where the bodies are.
     if (mode === "craft" && context.rng.chance(BALANCE.commit.craftFreeRefactorPct)) {
-      state.player.freeRefactor = true;
+      actorOf(context).freeRefactor = true;
     }
     if (context.rng.chance(BALANCE.commit.ambientOnSuccessPct)) drawAmbient(context);
   }

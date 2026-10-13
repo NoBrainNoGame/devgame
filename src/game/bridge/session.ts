@@ -6,10 +6,11 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { achievementsInRun } from "@/game/core/achievements";
 import { isActionAvailable } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { ShowcaseOptions } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
-import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
+import type { GameEvent, PlayerAction, RunState, Seat } from "@/game/core/types";
 import type { MetaProgressDto } from "@/game/dto/meta";
 import type { RunSaveDto } from "@/game/dto/run";
 import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
@@ -59,6 +60,8 @@ export interface SessionOptions {
   meta: MetaProgressDto;
   clientRunId: string;
   createdAt: string;
+  /** The human this session plays. Absent: the solo seat. */
+  seat?: Seat;
   /** Replays a previously saved log, so a reload resumes where it left off. */
   resumeActions?: readonly PlayerAction[];
   /** The landing page's run: a team from turn 1, and no way to lose. */
@@ -106,6 +109,10 @@ export class GameSession extends Emitter {
     this.publish();
   }
 
+  get seat(): Seat {
+    return this.options.seat ?? SOLO_SEAT;
+  }
+
   getState(): RunState {
     return this.state;
   }
@@ -130,11 +137,11 @@ export class GameSession extends Emitter {
     if (gameStore.getState().pendingAnimation) {
       return { ok: false, reason: "animating" };
     }
-    if (!isActionAvailable(this.state, action)) {
+    if (!isActionAvailable(this.state, this.seat, action)) {
       return { ok: false, reason: "illegal" };
     }
 
-    const result = applyAction(this.state, action);
+    const result = applyAction(this.state, action, this.seat);
     this.state = result.state;
     this.actionLog.push(action);
     const pushed = advancePushes(this.pushes, result.events, result.state);
@@ -178,7 +185,7 @@ export class GameSession extends Emitter {
     const isOver = this.state.phase.kind === "game_over";
 
     const review = events.find((event) => event.type === "pr_reviewed");
-    const snapshot = toSnapshot(this.state);
+    const snapshot = toSnapshot(this.state, this.seat);
     // The gauges keep their old values until the canvas shows them moving.
     const previous = gameStore.getState().snapshot;
     const heldGauges =

@@ -263,7 +263,9 @@ export class Camera extends booyah.ChipBase {
     const { session, reveal } = sceneContext(this.chipContext);
     const state = session.getState();
     const head =
-      reveal.headId === null ? headOf(state) : (state.nodes[reveal.headId] ?? headOf(state));
+      reveal.headId === null
+        ? headOf(state, session.seat)
+        : (state.nodes[reveal.headId] ?? headOf(state, session.seat));
     // Where its row is heading, not where it is on the way: a squash closing
     // up below it moves it, and the camera goes straight there.
     return nodeY(this.graph === null ? head.depth : this.graph.targetRowOf(head.id));

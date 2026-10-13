@@ -75,7 +75,7 @@ export class FxQueue extends booyah.Queue {
   skip(): void {
     const { reveal, session } = sceneContext(this.chipContext);
     if (this.current !== null) this.current.skip.value = true;
-    reveal.showAll(session.getState(), session.getPushes());
+    reveal.showAll(session.getState(), session.seat, session.getPushes());
     this.focus(null);
     clearHeld();
     gameStore.setState({ pendingAnimation: false });
@@ -106,7 +106,11 @@ export class FxQueue extends booyah.Queue {
     arm();
 
     if (reducedMotion) {
-      reveal.showAll(payload.state, sceneContext(this.chipContext).session.getPushes());
+      reveal.showAll(
+        payload.state,
+        sceneContext(this.chipContext).session.seat,
+        sceneContext(this.chipContext).session.getPushes(),
+      );
       // Nothing moves, but a sound is not a motion: it plays at once.
       for (const step of planBatch(payload.events, payload.state, reveal.snapshot(), translate)) {
         if (step.kind === "sfx") audio.play(step.id);
@@ -161,7 +165,7 @@ export class FxQueue extends booyah.Queue {
         // Whatever the storyboard did not think to reveal, the end of the
         // batch does: the screen always ends a turn complete.
         const { session } = sceneContext(this.chipContext);
-        reveal.showAll(session.getState(), session.getPushes());
+        reveal.showAll(session.getState(), session.seat, session.getPushes());
         this.focus(null);
         gameStore.setState({ pendingAnimation: false });
       }),

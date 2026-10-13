@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import {
   commitChance,
   debtView,
@@ -43,7 +44,7 @@ describe("commit", () => {
       const state = inHand(`preview-${i}`);
 
       const action = { type: "commit", mode: "ai" } as const;
-      const preview = getActionPreview(state, action);
+      const preview = getActionPreview(state, SOLO_SEAT, action);
       const rolls = eventsOfType(applyAction(state, action).events, "roll");
 
       expect(rolls[0]?.chancePct).toBe(preview.successPct ?? -1);
@@ -57,7 +58,7 @@ describe("commit", () => {
     state.player.energy = state.player.energyMax;
 
     const action = { type: "commit", mode: "craft" } as const;
-    const preview = getActionPreview(state, action);
+    const preview = getActionPreview(state, SOLO_SEAT, action);
 
     // Asserted on what the commit charged, not on the net: a success can also
     // draw an ambient event that hands energy back in the same action.
@@ -68,19 +69,23 @@ describe("commit", () => {
 
   test("the machine costs one energy whatever it writes", () => {
     const state = inHand("flat");
-    expect(nodeEnergyCost(state, "commit", "ai").value).toBe(BALANCE.energy.commitCost.ai);
-    expect(nodeEnergyCost(state, "refactor", "ai").value).toBe(BALANCE.energy.commitCost.ai);
-    expect(nodeEnergyCost(state, "docs", "ai").value).toBe(BALANCE.energy.commitCost.ai);
+    expect(nodeEnergyCost(state, SOLO_SEAT, "commit", "ai").value).toBe(
+      BALANCE.energy.commitCost.ai,
+    );
+    expect(nodeEnergyCost(state, SOLO_SEAT, "refactor", "ai").value).toBe(
+      BALANCE.energy.commitCost.ai,
+    );
+    expect(nodeEnergyCost(state, SOLO_SEAT, "docs", "ai").value).toBe(BALANCE.energy.commitCost.ai);
     // By hand, a refactor costs what a refactor costs.
-    expect(nodeEnergyCost(state, "refactor", "craft").value).toBeGreaterThan(
-      nodeEnergyCost(state, "commit", "craft").value,
+    expect(nodeEnergyCost(state, SOLO_SEAT, "refactor", "craft").value).toBeGreaterThan(
+      nodeEnergyCost(state, SOLO_SEAT, "commit", "craft").value,
     );
   });
 
   test("the machine fills more story points than a hand, and pays in debt", () => {
     const state = inHand("points");
-    const craft = getActionPreview(state, { type: "commit", mode: "craft" });
-    const ai = getActionPreview(state, { type: "commit", mode: "ai" });
+    const craft = getActionPreview(state, SOLO_SEAT, { type: "commit", mode: "craft" });
+    const ai = getActionPreview(state, SOLO_SEAT, { type: "commit", mode: "ai" });
 
     expect(craft.points).toEqual([BALANCE.points.craft, BALANCE.points.craft]);
     expect(ai.points).toEqual([BALANCE.points.ai, BALANCE.points.ai]);
@@ -127,9 +132,10 @@ describe("commit", () => {
     const skilled = structuredClone(state);
     skilled.skills = ["sprint_final"];
 
-    const plain = getActionPreview(state, { type: "commit", mode: "ai" }).debtDelta?.[0] ?? 0;
+    const plain =
+      getActionPreview(state, SOLO_SEAT, { type: "commit", mode: "ai" }).debtDelta?.[0] ?? 0;
     const discounted =
-      getActionPreview(skilled, { type: "commit", mode: "ai" }).debtDelta?.[0] ?? 0;
+      getActionPreview(skilled, SOLO_SEAT, { type: "commit", mode: "ai" }).debtDelta?.[0] ?? 0;
     expect(discounted).toBe(plain - 3);
 
     const landed = findSeed(
@@ -148,11 +154,11 @@ describe("commit", () => {
 
   test("debt makes every roll worse", () => {
     const state = inHand("debt-risk");
-    const clean = commitChance(state, "ai", "commit").value;
+    const clean = commitChance(state, SOLO_SEAT, "ai", "commit").value;
 
     const indebted = structuredClone(state);
     indebted.debt = 40;
-    const dirty = commitChance(indebted, "ai", "commit").value;
+    const dirty = commitChance(indebted, SOLO_SEAT, "ai", "commit").value;
 
     // The chance is a whole number: the malus is rounded with it.
     expect(dirty).toBe(Math.round(clean - 40 / BALANCE.commit.debtRiskDivisor));
@@ -164,13 +170,13 @@ describe("commit", () => {
     const hopeless = structuredClone(state);
     hopeless.debt = 100;
     hopeless.player.energy = 0;
-    expect(commitChance(hopeless, "ai", "commit").value).toBeGreaterThanOrEqual(
+    expect(commitChance(hopeless, SOLO_SEAT, "ai", "commit").value).toBeGreaterThanOrEqual(
       BALANCE.commit.clamp.min,
     );
 
     const blessed = structuredClone(state);
     blessed.tree.luck = 500;
-    expect(commitChance(blessed, "craft", "commit").value).toBeLessThanOrEqual(
+    expect(commitChance(blessed, SOLO_SEAT, "craft", "commit").value).toBeLessThanOrEqual(
       BALANCE.commit.clamp.max,
     );
   });
@@ -187,19 +193,21 @@ describe("work in progress", () => {
   test("every open ticket beyond the first taxes energy and the roll", () => {
     const one = inHand("wip");
     const two = structuredClone(one);
-    const start = getAvailableActions(two).find(isType("start"));
+    const start = getAvailableActions(two, SOLO_SEAT).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a second ticket");
     const both = applyAction(two, start).state;
 
-    expect(wipExtra(one)).toBe(0);
-    expect(wipExtra(both)).toBe(1);
+    expect(wipExtra(one, SOLO_SEAT)).toBe(0);
+    expect(wipExtra(both, SOLO_SEAT)).toBe(1);
 
-    const alone = commitChance(one, "craft", "commit").value;
-    expect(commitChance(both, "craft", "commit").value).toBe(
+    const alone = commitChance(one, SOLO_SEAT, "craft", "commit").value;
+    expect(commitChance(both, SOLO_SEAT, "craft", "commit").value).toBe(
       alone - Math.round((alone * BALANCE.wip.malusPctPerExtra) / 100),
     );
-    expect(nodeEnergyCost(both, "commit", "craft").value).toBe(
-      Math.round(nodeEnergyCost(one, "commit", "craft").value * (1 + BALANCE.wip.energyPerExtra)),
+    expect(nodeEnergyCost(both, SOLO_SEAT, "commit", "craft").value).toBe(
+      Math.round(
+        nodeEnergyCost(one, SOLO_SEAT, "commit", "craft").value * (1 + BALANCE.wip.energyPerExtra),
+      ),
     );
   });
 });
@@ -213,10 +221,10 @@ describe("energy and crunch", () => {
     const tired = structuredClone(state);
     tired.player.energy = BALANCE.energy.crunchThreshold;
 
-    expect(isCrunch(rested)).toBe(false);
-    expect(isCrunch(tired)).toBe(true);
-    expect(commitChance(tired, "craft", "commit").value).toBe(
-      commitChance(rested, "craft", "commit").value - BALANCE.energy.crunchMalusPoints,
+    expect(isCrunch(rested, SOLO_SEAT)).toBe(false);
+    expect(isCrunch(tired, SOLO_SEAT)).toBe(true);
+    expect(commitChance(tired, SOLO_SEAT, "craft", "commit").value).toBe(
+      commitChance(rested, SOLO_SEAT, "craft", "commit").value - BALANCE.energy.crunchMalusPoints,
     );
   });
 
@@ -260,7 +268,7 @@ describe("energy and crunch", () => {
     expect(reviewed.state.phase.kind).toBe("pr_accepted");
     expect(reviewed.state.turn).toBe(state.turn);
     expect(reviewed.state.tickets[ticket.id]?.status).toBe("open");
-    expect(getAvailableActions(reviewed.state).map((a) => a.type)).toEqual(["merge"]);
+    expect(getAvailableActions(reviewed.state, SOLO_SEAT).map((a) => a.type)).toEqual(["merge"]);
 
     const result = applyAction(reviewed.state, { type: "merge" });
     if (result.state.phase.kind === "resolve_conflict") return;
@@ -365,31 +373,33 @@ describe("review", () => {
     const hot = structuredClone(state);
     hot.player.aiChain = BALANCE.review.chainLength;
 
-    expect(reviewCleanCount(hot)).toBe(reviewCleanCount(cold) + BALANCE.review.chainBonus);
+    expect(reviewCleanCount(hot, SOLO_SEAT)).toBe(
+      reviewCleanCount(cold, SOLO_SEAT) + BALANCE.review.chainBonus,
+    );
   });
 
   test("a review with nothing to read is not offered at all", () => {
     const state = withReviewSkill(inHand("nothing"));
-    expect(getAvailableActions(state).some(isType("review"))).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("review"))).toBe(false);
   });
 
   test("the clock's speed tier is declared, summed and read: the snapshot shows the node's level", () => {
     const state = inHand("fast-forward");
-    expect(toSnapshot(state).idleSpeedTier).toBe(0);
+    expect(toSnapshot(state, SOLO_SEAT).idleSpeedTier).toBe(0);
     state.tree.fast_forward = 2;
-    expect(toSnapshot(state).idleSpeedTier).toBe(2);
+    expect(toSnapshot(state, SOLO_SEAT).idleSpeedTier).toBe(2);
   });
 
   test("review is there from the first turn, and a skill makes it read more", () => {
     const state = inHand("unlearned");
     state.skills = [];
     plantAiCommit(state);
-    expect(getAvailableActions(state).some(isType("review"))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("review"))).toBe(true);
 
     const learned = structuredClone(state);
     learned.skills = ["code_review"];
-    expect(reviewCleanCount(learned, gatherEffects(learned))).toBe(
-      reviewCleanCount(state, gatherEffects(state)) + 1,
+    expect(reviewCleanCount(learned, SOLO_SEAT, gatherEffects(learned))).toBe(
+      reviewCleanCount(state, SOLO_SEAT, gatherEffects(state)) + 1,
     );
   });
 
@@ -401,7 +411,7 @@ describe("review", () => {
 
   test("a review costs the energy the preview advertised", () => {
     const state = makeReviewable(inHand("review-energy"));
-    const cost = getActionPreview(state, { type: "review" }).energyCost;
+    const cost = getActionPreview(state, SOLO_SEAT, { type: "review" }).energyCost;
     expect(cost).toBeGreaterThan(0);
 
     const after = applyAction(state, { type: "review" }).state;
@@ -446,12 +456,12 @@ describe("review", () => {
 describe("free actions", () => {
   test("starting a ticket does not take a turn", () => {
     const state = newRun("free-start");
-    const start = getAvailableActions(state).find(isType("start"));
+    const start = getAvailableActions(state, SOLO_SEAT).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a start");
 
     const after = applyAction(state, start).state;
     expect(after.turn).toBe(state.turn);
-    expect(getActionPreview(state, start).consumesTurn).toBe(false);
+    expect(getActionPreview(state, SOLO_SEAT, start).consumesTurn).toBe(false);
   });
 
   test("placing a skill point does not either", () => {
@@ -486,8 +496,8 @@ describe("free actions", () => {
     const withCi = structuredClone(state);
     withCi.tree.ci = 2;
 
-    expect(commitChance(withCi, "ai", "commit").value).toBe(
-      commitChance(state, "ai", "commit").value + 10,
+    expect(commitChance(withCi, SOLO_SEAT, "ai", "commit").value).toBe(
+      commitChance(state, SOLO_SEAT, "ai", "commit").value + 10,
     );
   });
 
@@ -523,7 +533,7 @@ describe("documentation", () => {
 
   test("the preview stops advertising a debt it will not charge", () => {
     const { after: written } = committedAs("docs");
-    const preview = getActionPreview(written, { type: "commit", mode: "ai" });
+    const preview = getActionPreview(written, SOLO_SEAT, { type: "commit", mode: "ai" });
     expect(preview.debtDelta).toEqual([0, 0]);
   });
 });

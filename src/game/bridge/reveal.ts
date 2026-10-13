@@ -1,7 +1,7 @@
 import { Emitter } from "@/game/bridge/emitter";
 import type { PushLedger } from "@/game/bridge/pushes";
 import { headOf } from "@/game/core/map/graph";
-import type { NodeId, RunState } from "@/game/core/types";
+import type { NodeId, RunState, Seat } from "@/game/core/types";
 
 /**
  * What the graph is allowed to draw right now.
@@ -71,7 +71,7 @@ export class RevealSet extends Emitter {
    * and nothing it has since thrown away: a restarted ticket's commits are
    * gone from the state, so they go from the screen too.
    */
-  showAll(state: RunState, pushes: PushLedger): void {
+  showAll(state: RunState, seat: Seat, pushes: PushLedger): void {
     let changed = false;
     for (const id of Object.keys(state.nodes)) {
       if (!this.nodes.has(id)) {
@@ -85,7 +85,7 @@ export class RevealSet extends Emitter {
         changed = true;
       }
     }
-    const head = headOf(state).id;
+    const head = headOf(state, seat).id;
     if (head !== this.headId) {
       this.headId = head;
       changed = true;

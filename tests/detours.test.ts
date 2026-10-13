@@ -4,6 +4,7 @@ import { placeDetours } from "@/components/hud/detours";
 import type { PlayerAction } from "@/game";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { BALANCE } from "@/game/core/balance";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { RunState } from "@/game/core/types";
 
@@ -23,7 +24,7 @@ function indebted(seed: string): RunState {
 }
 
 function detoursOf(state: RunState) {
-  const snapshot = toSnapshot(state);
+  const snapshot = toSnapshot(state, SOLO_SEAT);
   const written = snapshot.actions.filter(
     (action): action is Commit => action.type === "commit" && action.kind !== undefined,
   );

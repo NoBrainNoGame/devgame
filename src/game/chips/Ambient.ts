@@ -16,7 +16,7 @@ export class Ambient extends booyah.ChipBase {
   protected _onTick(): void {
     const { session, audio } = sceneContext(this.chipContext);
     const state = session.getState();
-    const layers = Math.max(0, playerTickets(state).length - 1);
+    const layers = Math.max(0, playerTickets(state, session.seat).length - 1);
     const tension =
       TENSION.tierWeight * (state.tier / BALANCE.economy.tier.last) +
       TENSION.qualityWeight * (state.quality / BALANCE.quality.max);

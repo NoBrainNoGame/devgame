@@ -4,6 +4,7 @@ import { advancePushes, emptyPushes, type PushLedger, type PushOp } from "@/game
 import { RevealSet } from "@/game/bridge/reveal";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { GameEvent, RunState } from "@/game/core/types";
 import { nodeY } from "@/game/render/coords";
@@ -29,7 +30,7 @@ function batchesOf(seed: string, hand: "ai" | "craft", limit = 120): Batch[] {
   let state = newRun(seed);
   let ledger = emptyPushes();
   for (let i = 0; i < limit && state.phase.kind !== "game_over"; i += 1) {
-    const action = policy(hand)(state, getAvailableActions(state));
+    const action = policy(hand)(state, getAvailableActions(state, SOLO_SEAT));
     if (action === undefined) break;
     const result = applyAction(state, action);
     const pushed = advancePushes(ledger, result.events, result.state);
@@ -50,7 +51,7 @@ function batchesOf(seed: string, hand: "ai" | "craft", limit = 120): Batch[] {
 /** What the screen shows after a batch's steps, starting from `before`. */
 function playSteps(before: RunState, ledger: PushLedger, steps: Step[]): RevealSet {
   const reveal = new RevealSet();
-  reveal.showAll(before, ledger);
+  reveal.showAll(before, SOLO_SEAT, ledger);
   for (const step of steps) {
     if (step.kind === "reveal") reveal.showNode(step.nodeId, step.asHead, step.local);
     if (step.kind === "fuse") reveal.absorb(step.nodeIds, step.into);
@@ -66,7 +67,7 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, seed.endsWith("7") ? "craft" : "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         for (const step of steps) {
@@ -83,7 +84,7 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         const written = Object.keys(batch.after.nodes).filter((id) => !(id in batch.before.nodes));
@@ -118,13 +119,13 @@ describe("the storyboard", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         // The commit's own node: the one the head moved to. A team's commit
         // or a release written in the same batch is somebody else's.
         const done = batch.events.find(
-          (e) => e.type === "node_done" && e.nodeId === headOf(batch.after).id,
+          (e) => e.type === "node_done" && e.nodeId === headOf(batch.after, SOLO_SEAT).id,
         );
         const spent = batch.events.find((e) => e.type === "energy" && e.reason === "commit");
         if (spent === undefined || done?.type !== "node_done") continue;
@@ -166,7 +167,7 @@ describe("the storyboard", () => {
         merges += 1;
 
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate);
 
         const regen = steps.find(
@@ -188,20 +189,20 @@ describe("the storyboard", () => {
     for (const seed of SEEDS.slice(0, 10)) {
       // Two tickets open, a few commits on the first, then a switch.
       const one = inHand(seed);
-      const start = getAvailableActions(one).find((a) => a.type === "start");
+      const start = getAvailableActions(one, SOLO_SEAT).find((a) => a.type === "start");
       if (start === undefined) continue;
       const two = play(applyAction(one, start).state, { pick: policy("craft"), limit: 3 }).state;
       if (two.phase.kind !== "choose_action") continue;
-      const other = getAvailableActions(two).find((a) => a.type === "checkout");
+      const other = getAvailableActions(two, SOLO_SEAT).find((a) => a.type === "checkout");
       if (other === undefined) continue;
 
       const result = applyAction(two, other);
       const reveal = new RevealSet();
-      reveal.showAll(two, emptyPushes());
+      reveal.showAll(two, SOLO_SEAT, emptyPushes());
       const steps = planBatch(result.events, result.state, reveal.snapshot(), translate);
 
       const looks = steps.filter((s): s is Extract<Step, { kind: "look" }> => s.kind === "look");
-      expect(looks[0]?.y).toBe(nodeY(headOf(result.state).depth));
+      expect(looks[0]?.y).toBe(nodeY(headOf(result.state, SOLO_SEAT).depth));
       expect(looks[looks.length - 1]?.y).toBeNull();
     }
   });
@@ -222,7 +223,7 @@ describe("the pops that move the HUD", () => {
     for (const seed of SEEDS.slice(0, 20)) {
       for (const batch of batchesOf(seed, "ai", 80)) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const cues = cuesOf(planBatch(batch.events, batch.after, reveal.snapshot(), translate));
         for (let i = 1; i < cues.length; i += 1) {
           expect(cues[i]?.serial ?? 0).toBeGreaterThan(cues[i - 1]?.serial ?? 0);
@@ -252,7 +253,7 @@ describe("the pops that move the HUD", () => {
       for (const batch of batchesOf(seed, "craft", 120)) {
         if (!batch.events.some((e) => e.type === "month_closed")) continue;
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const money = cuesOf(
           planBatch(batch.events, batch.after, reveal.snapshot(), translate),
         ).filter((cue) => cue.gauge === "money");
@@ -281,7 +282,7 @@ describe("local and pushed commits on screen", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate, {
           pushes: batch.ops,
         });
@@ -308,7 +309,7 @@ describe("local and pushed commits on screen", () => {
     for (const seed of SEEDS) {
       for (const batch of batchesOf(seed, "ai")) {
         const reveal = new RevealSet();
-        reveal.showAll(batch.before, batch.ledger);
+        reveal.showAll(batch.before, SOLO_SEAT, batch.ledger);
         const steps = planBatch(batch.events, batch.after, reveal.snapshot(), translate, {
           pushes: batch.ops,
         });

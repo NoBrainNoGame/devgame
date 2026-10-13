@@ -4,6 +4,7 @@ import { DEV_RANK } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthTurns } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -29,11 +30,13 @@ describe("hiring", () => {
   test("costs money, no turn, and is offered only when affordable and the team has room", () => {
     const state = inHand("hire");
     state.money = 0;
-    expect(getAvailableActions(state).some(isType("hire"))).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("hire"))).toBe(false);
 
     const rich = structuredClone(state);
     rich.money = DEV_RANK.junior.hireCost;
-    const hire = getAvailableActions(rich).find((a) => a.type === "hire" && a.rank === "junior");
+    const hire = getAvailableActions(rich, SOLO_SEAT).find(
+      (a) => a.type === "hire" && a.rank === "junior",
+    );
     expect(hire).toBeDefined();
     if (hire === undefined) return;
 
@@ -55,7 +58,7 @@ describe("hiring", () => {
         hiredSprint: 1,
       });
     }
-    expect(getAvailableActions(full).some(isType("hire"))).toBe(false);
+    expect(getAvailableActions(full, SOLO_SEAT).some(isType("hire"))).toBe(false);
   });
 
   test("the recruiter takes a third off", () => {
@@ -83,7 +86,9 @@ describe("the team's turn", () => {
     expect(after.tickets[oldest.id]?.status).toBe("open");
     expect(after.player.ticketId).toBe(state.player.ticketId);
     expect(
-      getAvailableActions(after).some((a) => a.type === "checkout" && a.ticketId === oldest.id),
+      getAvailableActions(after, SOLO_SEAT).some(
+        (a) => a.type === "checkout" && a.ticketId === oldest.id,
+      ),
     ).toBe(false);
     expect(checkInvariants(after)).toEqual([]);
 
@@ -133,8 +138,10 @@ describe("the team's turn", () => {
     expect(after.player.aiChain).toBe(3);
     expect(after.debt).toBe(state.debt);
     expect(after.player.totalCommits).toBe(state.player.totalCommits);
-    expect(wipExtra(after)).toBe(wipExtra(state));
-    expect(playerTickets(after).map((t) => t.id)).toEqual(playerTickets(state).map((t) => t.id));
+    expect(wipExtra(after, SOLO_SEAT)).toBe(wipExtra(state, SOLO_SEAT));
+    expect(playerTickets(after, SOLO_SEAT).map((t) => t.id)).toEqual(
+      playerTickets(state, SOLO_SEAT).map((t) => t.id),
+    );
   });
 
   test("a full ticket lands by itself: no energy, no merge under your feet, the skill is yours", () => {
@@ -211,7 +218,7 @@ describe("the team's turn", () => {
     }
     pulled.player.ticketId = null;
     pulled.money = 100_000;
-    expect(getAvailableActions(pulled).some(isType("rest"))).toBe(false);
+    expect(getAvailableActions(pulled, SOLO_SEAT).some(isType("rest"))).toBe(false);
 
     const { state: after, events } = applyAction(pulled, { type: "hire", rank: "junior" });
     const passed = eventsOfType(events, "rested").length;
@@ -246,7 +253,9 @@ describe("payday for the team", () => {
       expect(ticket?.assignee).toBeUndefined();
       expect(ticket?.lane).toBe(working.tickets[id]?.lane);
       expect(
-        getAvailableActions(after).some((a) => a.type === "checkout" && a.ticketId === id),
+        getAvailableActions(after, SOLO_SEAT).some(
+          (a) => a.type === "checkout" && a.ticketId === id,
+        ),
       ).toBe(true);
     }
     expect(checkInvariants(after)).toEqual([]);
@@ -311,7 +320,7 @@ describe("the hired game is the same game", () => {
     const state = funded("pure-team");
     const started = applyAction(
       state,
-      getAvailableActions(state).find(isType("start")) ?? { type: "rest" },
+      getAvailableActions(state, SOLO_SEAT).find(isType("start")) ?? { type: "rest" },
     ).state;
     const hired = applyAction(started, { type: "hire", rank: "junior" }).state;
     expect(hired.rng).toEqual(started.rng);

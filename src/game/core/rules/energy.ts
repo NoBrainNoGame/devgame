@@ -1,5 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, seatOf } from "@/game/core/rules/crew";
 import { energyMax, restCostsPatience, restRegen } from "@/game/core/rules/modifiers";
 import { raiseQuality } from "@/game/core/rules/quality";
 
@@ -24,7 +25,7 @@ export function gainEnergy(context: RuleContext, amount: number, reason: string)
 }
 
 function changeEnergy(context: RuleContext, delta: number, reason: string): void {
-  const { player } = context.state;
+  const player = actorOf(context);
   const max = energyMax(context.state, context.effects);
   const before = player.energy;
 
@@ -48,10 +49,11 @@ export function performRest(context: RuleContext): void {
   const { state } = context;
   state.sprintCounters.rests += 1;
   state.stats.rests += 1;
-  const regen = restRegen(state);
+  const regen = restRegen(state, seatOf(context));
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });
-  if (restCostsPatience(state)) raiseQuality(context, BALANCE.quality.perRest, "rest");
+  if (restCostsPatience(state, seatOf(context)))
+    raiseQuality(context, BALANCE.quality.perRest, "rest");
 }
 
 /**
@@ -61,7 +63,7 @@ export function performRest(context: RuleContext): void {
  * the run's tally of breaks ignore it.
  */
 export function passTurn(context: RuleContext): void {
-  const regen = restRegen(context.state);
+  const regen = restRegen(context.state, seatOf(context));
   gainEnergy(context, regen, "rest");
   emit(context, { type: "rested", energy: regen });
 }
@@ -69,7 +71,7 @@ export function passTurn(context: RuleContext): void {
 /** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
 
 export function syncEnergyMax(context: RuleContext): void {
-  const { player } = context.state;
+  const player = actorOf(context);
   const max = energyMax(context.state, context.effects);
   if (max === player.energyMax) return;
 
@@ -84,7 +86,7 @@ export function syncEnergyMax(context: RuleContext): void {
  * has ended in burnout.
  */
 export function checkBurnout(context: RuleContext): boolean {
-  const { player } = context.state;
+  const player = actorOf(context);
 
   if (player.energy > 0) {
     player.zeroEnergyStreak = 0;
@@ -97,6 +99,6 @@ export function checkBurnout(context: RuleContext): boolean {
 
 /** Emits a crunch event when the state changed, so the HUD can react once. */
 export function reportCrunch(context: RuleContext, wasCrunch: boolean): void {
-  const now = context.state.player.energy <= BALANCE.energy.crunchThreshold;
+  const now = actorOf(context).energy <= BALANCE.energy.crunchThreshold;
   if (now !== wasCrunch) emit(context, { type: "crunch", active: now });
 }

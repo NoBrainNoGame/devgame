@@ -8,6 +8,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { seatOf } from "@/game/core/rules/crew";
 import { addDebt } from "@/game/core/rules/debt";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
 import { conflictChance } from "@/game/core/rules/modifiers";
@@ -51,7 +52,7 @@ export function resolveConflict(
   if (how === "manual") {
     spendEnergy(context, BALANCE.failure.conflictManualEnergy, "conflict_manual");
 
-    const chance = conflictChance(context.state, context.effects);
+    const chance = conflictChance(context.state, seatOf(context), context.effects);
     const outcome = context.rng.roll(chance.value);
 
     emit(context, {

@@ -4,6 +4,7 @@ import { AMBIENT_FILES, SFX_FILES } from "@/game/audio/manifest";
 import { SFX_IDS, sfxFor } from "@/game/audio/sfx";
 import { emptyPushes } from "@/game/bridge/pushes";
 import { RevealSet } from "@/game/bridge/reveal";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { planBatch } from "@/game/render/storyboard";
 
 import { newRun, play, policy } from "./helpers";
@@ -28,7 +29,7 @@ describe("sounds", () => {
     const run = play(newRun("sfx-batch"), { pick: policy("craft"), limit: 12 });
     const reveal = new RevealSet();
     const state = newRun("sfx-batch");
-    reveal.showAll(state, emptyPushes());
+    reveal.showAll(state, SOLO_SEAT, emptyPushes());
     const steps = planBatch(run.events, run.state, reveal.snapshot(), () => "");
     const sounds = steps.filter((step) => step.kind === "sfx");
     const mapped = run.events.filter((event) => sfxFor(event) !== null);

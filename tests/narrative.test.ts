@@ -6,6 +6,7 @@ import { NARRATIVE_EVENT_IDS, NARRATIVE_EVENTS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
 import { createContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -88,11 +89,11 @@ describe("when a question opens", () => {
       if (def.needsCompetitor === true) expect(state.phase.competitorId).toBeDefined();
       if (def.competitor !== undefined) expect(state.phase.competitorId).toBe(def.competitor);
       if (def.needsDev === true) expect(state.phase.devId).toBe("d1");
-      const offered = getAvailableActions(state);
+      const offered = getAvailableActions(state, SOLO_SEAT);
       expect(offered.length).toBeGreaterThan(0);
       expect(offered.every((a) => a.type === "answer" && a.eventId === id)).toBe(true);
       for (const action of offered) expect(PlayerActionSchema.safeParse(action).success).toBe(true);
-      const target = idleTarget(toSnapshot(state));
+      const target = idleTarget(toSnapshot(state, SOLO_SEAT));
       expect(target).toBeDefined();
       if (target !== undefined) expect(offered.some((a) => isSameAction(a, target))).toBe(true);
     }
@@ -204,7 +205,7 @@ describe("answering", () => {
     }).state;
     expect(fought.market.priceWarUntilMonth).not.toBeNull();
 
-    const preview = getActionPreview(kept, {
+    const preview = getActionPreview(kept, SOLO_SEAT, {
       type: "answer",
       eventId: "poaching",
       choice: "raise",
@@ -216,7 +217,7 @@ describe("answering", () => {
   test("an answer nobody can afford is not offered", () => {
     const poached = open("payday", "poaching", 1);
     poached.money = 0;
-    const offered = getAvailableActions(poached);
+    const offered = getAvailableActions(poached, SOLO_SEAT);
     expect(offered.some((a) => a.type === "answer" && a.choice === "raise")).toBe(false);
     expect(offered.some((a) => a.type === "answer" && a.choice === "let_go")).toBe(true);
     expect(() =>

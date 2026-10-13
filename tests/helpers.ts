@@ -1,6 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { DEV_LANE } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { currentTicket, ensureLane, offersOf } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
@@ -25,14 +26,14 @@ export function newRun(
 /** A run with a ticket in hand: the first of the backlog, just started. */
 export function inHand(seed: string): RunState {
   const state = newRun(seed);
-  const start = getAvailableActions(state).find((action) => action.type === "start");
+  const start = getAvailableActions(state, SOLO_SEAT).find((action) => action.type === "start");
   if (start === undefined) throw new Error(`${seed}: the backlog is empty at turn one`);
   return applyAction(state, start).state;
 }
 
 /** The ticket being written, which a test about a commit needs to exist. */
 export function ticketInHand(state: RunState): Ticket {
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   if (ticket === null) throw new Error("expected a ticket in hand");
   return ticket;
 }
@@ -157,7 +158,7 @@ function offering(
     for (let step = 0; step < 300; step += 1) {
       if (state.phase.kind === "game_over") break;
 
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, SOLO_SEAT);
       if (
         state.phase.kind === "choose_action" &&
         ticket !== null &&
@@ -180,7 +181,7 @@ function offering(
 
       // Greedy about the board: every ticket started as soon as it arrives,
       // so the situations a detour needs come within a sprint or two.
-      const legal = getAvailableActions(state);
+      const legal = getAvailableActions(state, SOLO_SEAT);
       const action = prefer(
         isType("merge"),
         isType("submit"),
@@ -208,7 +209,7 @@ export function writingACommit(prefix: string): RunState {
 /** Answers whatever the run is waiting on — a sprint bonus, a question — with the first offer. */
 export function settle(state: RunState): RunState {
   if (state.phase.kind === "event") {
-    const answer = getAvailableActions(state).find((a) => a.type === "answer");
+    const answer = getAvailableActions(state, SOLO_SEAT).find((a) => a.type === "answer");
     return answer === undefined ? state : settle(applyAction(state, answer).state);
   }
   if (state.phase.kind !== "choose_relic") return state;
@@ -243,7 +244,7 @@ export function play(
   for (let i = 0; i < limit; i++) {
     if (state.phase.kind === "game_over") break;
 
-    const legal = getAvailableActions(state);
+    const legal = getAvailableActions(state, SOLO_SEAT);
     if (legal.length === 0) break;
 
     const action = options.pick?.(state, legal) ?? legal[0];

@@ -17,6 +17,7 @@
 import { isProfileId, PROFILE_IDS, type ProfileId } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { capacityOf, loadOf, monthlyReport, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -148,7 +149,7 @@ function playOne(
   let objectivesFailed = 0;
 
   while (state.phase.kind !== "game_over" && turns < maxTurns) {
-    const actions = getAvailableActions(state);
+    const actions = getAvailableActions(state, SOLO_SEAT);
     if (actions.length === 0) {
       return summarise(state, "stuck", {
         failures,
@@ -217,7 +218,7 @@ function playOne(
     for (const event of result.events) {
       if (event.type === "turn_started") {
         turns += 1;
-        wipSum += Math.max(0, playerTickets(state).length - 1);
+        wipSum += Math.max(0, playerTickets(state, SOLO_SEAT).length - 1);
       }
       if (event.type === "node_done" && event.broken === true) {
         failures[`broken_${event.mode}`] = (failures[`broken_${event.mode}`] ?? 0) + 1;
@@ -259,9 +260,9 @@ function playOne(
           : action.type === "start" || action.type === "checkout"
             ? `${action.type}:${action.ticketId}`
             : action.type;
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, SOLO_SEAT);
       console.log(
-        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${playerTickets(state).length} $=${state.money} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
+        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${playerTickets(state, SOLO_SEAT).length} $=${state.money} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
       );
     }
   }
@@ -441,7 +442,7 @@ function checkGeneration(count: number): void {
       version: SAVE_VERSION,
     });
     for (let step = 0; step < 40 && state.phase.kind !== "game_over"; step += 1) {
-      const actions = getAvailableActions(state);
+      const actions = getAvailableActions(state, SOLO_SEAT);
       const action = choose("mixed", state, actions);
       state = applyAction(state, action).state;
     }

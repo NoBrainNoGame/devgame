@@ -3,6 +3,7 @@ import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { RELICS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { energyMax } from "@/game/core/rules/modifiers";
 import {
   buggedOn,
@@ -145,7 +146,7 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
     if (bought !== undefined && chance(0.5 + persona.greed * 0.5)) return bought;
   }
 
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   const hack = find((a) => a.type === "hack");
   // A coin flip for the run: the greedy take it about half the time.
   if (hack !== undefined && chance(persona.greed * 0.5)) return hack;
@@ -164,7 +165,7 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
 
   // The idle clock plays some of the turns: the player is watching, or away.
   if (chance(persona.idleShare)) {
-    const move = chooseSupervisor(toSnapshot(state))?.action;
+    const move = chooseSupervisor(toSnapshot(state, SOLO_SEAT))?.action;
     if (move !== undefined && actions.some((a) => sameAction(a, move))) return move;
   }
 
@@ -233,7 +234,7 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
   if (unread >= readAt && review !== undefined && chance(persona.reviewDiscipline)) return review;
 
   // Greed: a second ticket while one is open, when the backlog offers one.
-  if (playerTickets(state).length < 3 && chance(persona.greed * 0.08)) {
+  if (playerTickets(state, SOLO_SEAT).length < 3 && chance(persona.greed * 0.08)) {
     const starts = actions.filter((a) => a.type === "start");
     const start = starts[Math.floor(next() * starts.length)];
     if (start !== undefined) return start;

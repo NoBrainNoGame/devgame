@@ -14,6 +14,7 @@ import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { type CapacityAdvice, capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
+import { playerOf } from "@/game/core/rules/crew";
 import { monthlyReport, paydayIn, projectedLoadOf } from "@/game/core/rules/economy";
 import { hackOffer } from "@/game/core/rules/hack";
 import { competitorsAlive, powerOf, priceWarMonthsLeft } from "@/game/core/rules/market";
@@ -60,6 +61,7 @@ import type {
   RunMode,
   RunState,
   RunStats,
+  Seat,
   Ticket,
   TicketId,
 } from "@/game/core/types";
@@ -307,9 +309,9 @@ function deliveredBy(state: RunState, ticket: Ticket): { deliveredBy?: DevId } {
  * recorded run replays as it was played; nothing offers them any more —
  * neither the HUD nor the idle clock, which both read this list.
  */
-function offeredActions(state: RunState): PlayerAction[] {
-  const actions = getAvailableActions(state);
-  const current = currentTicket(state);
+function offeredActions(state: RunState, seat: Seat): PlayerAction[] {
+  const actions = getAvailableActions(state, seat);
+  const current = currentTicket(state, seat);
   if (
     current === null ||
     (!waitsOnlyForObstacle(state, current) && !waitsOnlyForHealth(state, current))
@@ -322,10 +324,11 @@ function offeredActions(state: RunState): PlayerAction[] {
   );
 }
 
-export function toSnapshot(state: RunState): RunSnapshot {
+export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
   const effects = gatherEffects(state);
-  const actions = offeredActions(state);
-  const current = currentTicket(state);
+  const player = playerOf(state, seat);
+  const actions = offeredActions(state, seat);
+  const current = currentTicket(state, seat);
 
   const nodes: RunSnapshot["nodes"] = {};
   for (const id of Object.keys(state.nodes).sort()) {
@@ -413,16 +416,16 @@ export function toSnapshot(state: RunState): RunSnapshot {
 
     phase: state.phase,
     actions,
-    previews: previewAll(state, actions),
+    previews: previewAll(state, seat, actions),
 
     player: {
-      ticketId: state.player.ticketId,
-      headId: headOf(state).id,
-      energy: state.player.energy,
+      ticketId: player.ticketId,
+      headId: headOf(state, seat).id,
+      energy: player.energy,
       energyMax: energyMax(state, effects),
-      totalCommits: state.player.totalCommits,
-      crunch: isCrunch(state),
-      wip: wipExtra(state),
+      totalCommits: player.totalCommits,
+      crunch: isCrunch(state, seat),
+      wip: wipExtra(state, seat),
       reviewedRatio: reviewedRatio(state),
       unreviewed: current === null ? 0 : unreadAiOn(state, current).length,
     },
@@ -473,7 +476,7 @@ export function toSnapshot(state: RunState): RunSnapshot {
     devs,
     autopilot: effects.autopilot,
     idleSpeedTier: effects.idleSpeedTier,
-    hack: hackOffer(state, effects),
+    hack: hackOffer(state, seat, effects),
     austerity: austerityOf(state.moneyEarned),
     flags: { ...state.flags },
     objective:

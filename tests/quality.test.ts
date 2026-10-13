@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { toLogLine } from "@/game/core/log";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 import type { QualityChange } from "@/game/core/types";
@@ -178,7 +179,7 @@ describe("production", () => {
     for (const ticket of Object.values(idle.tickets)) {
       if (ticket.status === "backlog") ticket.status = "cancelled";
     }
-    expect(getAvailableActions(idle).some(isType("rest"))).toBe(false);
+    expect(getAvailableActions(idle, SOLO_SEAT).some(isType("rest"))).toBe(false);
   });
 
   test("hotfix commits are exempt from the release roll", () => {

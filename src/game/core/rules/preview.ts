@@ -13,6 +13,7 @@ import {
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, money, ref, signed, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
+import { playerOf } from "@/game/core/rules/crew";
 import { hackOffer } from "@/game/core/rules/hack";
 import {
   commitChance,
@@ -32,7 +33,7 @@ import { currentTicket, getTicket, mostIndebtedOn, unreadAiOn } from "@/game/cor
 import { tierScale } from "@/game/core/rules/tier";
 import { treeUnlocked } from "@/game/core/rules/tree";
 import { pointsFor } from "@/game/core/rules/write";
-import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
+import type { ActionPreview, PlayerAction, RunState, Seat } from "@/game/core/types";
 
 /**
  * What an action will cost and what it might do, worked out before the player
@@ -43,7 +44,7 @@ import type { ActionPreview, PlayerAction, RunState } from "@/game/core/types";
  * three is still a decision — it just moves the difficulty from "guess the
  * rules" to "weigh the odds", which is the game worth playing.
  */
-export function getActionPreview(state: RunState, action: PlayerAction): ActionPreview {
+export function getActionPreview(state: RunState, seat: Seat, action: PlayerAction): ActionPreview {
   const effects = gatherEffects(state);
 
   switch (action.type) {
@@ -58,23 +59,24 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       return { action, energyCost: 0, consumesTurn: false, notes: [] };
 
     case "commit": {
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, seat);
       if (ticket === null) return { action, energyCost: 0, consumesTurn: true, notes: [] };
 
       // Priced as the thing it would become: a refactor's odds and its price
       // are the refactor's, not the plain commit's it is offered beside.
       const kind = commitKindFor(ticket, action.kind);
 
-      const cost = nodeEnergyCost(state, kind, action.mode);
-      const chance = commitChance(state, action.mode, kind, effects);
+      const cost = nodeEnergyCost(state, seat, kind, action.mode);
+      const chance = commitChance(state, seat, action.mode, kind, effects);
       const notes: I18nText[] = [...cost.notes, ...chance.notes];
 
       let debt = 0;
       if (action.mode === "ai") {
         // Documentation pays the debt of the next machine-written commit, so
         // the preview shows the covered price rather than the rate.
-        if (state.player.docsCharges > 0) {
-          notes.push(text("notes.documented", { count: state.player.docsCharges }));
+        const { docsCharges } = playerOf(state, seat);
+        if (docsCharges > 0) {
+          notes.push(text("notes.documented", { count: docsCharges }));
         } else {
           debt = Math.max(0, BALANCE.debt.perAiCommit - effects.aiDebtDiscount);
         }
@@ -108,16 +110,17 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "review": {
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, seat);
       const cost = reviewEnergyCost(state, effects);
       const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
-      const cleaned = Math.min(unreviewed, reviewCleanCount(state, effects));
+      const cleaned = Math.min(unreviewed, reviewCleanCount(state, seat, effects));
       // `-0` would be correct arithmetic and a nuisance everywhere downstream.
       const repaid = cleaned * BALANCE.review.repayPerCommit;
       const delta = repaid === 0 ? 0 : -repaid;
 
       const notes: I18nText[] = [...cost.notes];
-      if (state.player.aiChain >= BALANCE.review.chainLength) notes.push(text("notes.fresh"));
+      if (playerOf(state, seat).aiChain >= BALANCE.review.chainLength)
+        notes.push(text("notes.fresh"));
 
       return {
         action,
@@ -129,7 +132,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "submit": {
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, seat);
       const notes: I18nText[] = [];
       if (ticket !== null) {
         const unread = unreadAiOn(state, ticket).length;
@@ -144,10 +147,15 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
       const ticket =
         state.phase.kind === "pr_accepted"
           ? getTicket(state, state.phase.ticketId)
-          : currentTicket(state);
+          : currentTicket(state, seat);
       // An obstacle lands on its feature: no event on the way, nothing back.
       const obstacle = ticket?.parentId !== undefined;
-      const cost = nodeEnergyCost(state, obstacle ? "obstacle_merge" : "feature_merge", undefined);
+      const cost = nodeEnergyCost(
+        state,
+        seat,
+        obstacle ? "obstacle_merge" : "feature_merge",
+        undefined,
+      );
       const notes: I18nText[] = [...cost.notes];
       if (ticket !== null && !obstacle) {
         const risk = mergeEventChance(state, ticket);
@@ -166,7 +174,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     // Fixing writes the first fix commit now, by hand: it is that commit's
     // price and roll. Shipping anyway is free here, and its merge pays.
     case "resume":
-      return { ...getActionPreview(state, { type: "commit", mode: "craft", kind: "fix" }), action };
+      return {
+        ...getActionPreview(state, seat, { type: "commit", mode: "craft", kind: "fix" }),
+        action,
+      };
 
     case "followup": {
       const bugs = state.phase.kind === "ticket_rejected" ? state.phase.bugs : 0;
@@ -182,9 +193,10 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "rest": {
-      const regen = restRegen(state);
+      const regen = restRegen(state, seat);
       const notes: I18nText[] = [text("notes.rest_regen", { energy: regen })];
-      if (wipExtra(state) > 0) notes.push(text("notes.rest_wip", { count: wipExtra(state) }));
+      if (wipExtra(state, seat) > 0)
+        notes.push(text("notes.rest_wip", { count: wipExtra(state, seat) }));
       // Offered only while work waits, so production always sees it.
       notes.push(text("notes.rest_patience", { patience: BALANCE.quality.perRest }));
       return { action, energyCost: 0, consumesTurn: true, notes };
@@ -325,7 +337,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
     }
 
     case "hack": {
-      const kind = hackOffer(state, effects);
+      const kind = hackOffer(state, seat, effects);
       const notes: I18nText[] =
         kind === null ? [] : [text(`notes.hack_win.${kind}`), text(`notes.hack_lose.${kind}`)];
       return {
@@ -379,7 +391,7 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 
     case "resolve_conflict": {
       if (action.how === "manual") {
-        const chance = conflictChance(state, effects);
+        const chance = conflictChance(state, seat, effects);
         return {
           action,
           energyCost: BALANCE.failure.conflictManualEnergy,
@@ -407,10 +419,11 @@ export function getActionPreview(state: RunState, action: PlayerAction): ActionP
 /** Previews for everything currently legal, keyed for the HUD. */
 export function previewAll(
   state: RunState,
+  seat: Seat,
   actions: readonly PlayerAction[],
 ): Record<string, ActionPreview> {
   const out: Record<string, ActionPreview> = {};
-  for (const action of actions) out[actionKey(action)] = getActionPreview(state, action);
+  for (const action of actions) out[actionKey(action)] = getActionPreview(state, seat, action);
   return out;
 }
 

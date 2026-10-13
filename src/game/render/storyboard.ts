@@ -4,6 +4,7 @@ import type { RevealSnapshot } from "@/game/bridge/reveal";
 import { type I18nText, money, signed as signedAmount, text } from "@/game/core/i18n";
 import { headOf } from "@/game/core/map/graph";
 import { MAIN_LANE } from "@/game/core/map/layout";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import type { GameEvent, NodeId, RunState } from "@/game/core/types";
 import { nodeX, nodeY } from "@/game/render/coords";
 import { palette } from "@/game/render/palette";
@@ -362,7 +363,7 @@ export function planBatch(
         // not been forked yet.
         flush();
         settle();
-        const head = headOf(state);
+        const head = headOf(state, SOLO_SEAT);
         cursor = revealed.has(head.id) ? head.id : cursor;
         away = true;
         steps.push({ kind: "look", y: nodeY(rows.of(head)), hold: STORY.look });

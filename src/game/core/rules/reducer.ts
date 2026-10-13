@@ -11,6 +11,7 @@ import { isActionAvailable } from "@/game/core/rules/actions";
 import { reportCapacity } from "@/game/core/rules/capacity";
 import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { applyDevValues } from "@/game/core/rules/dev";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
@@ -32,7 +33,7 @@ import {
   startTicket,
 } from "@/game/core/rules/tickets";
 import { placeTree } from "@/game/core/rules/tree";
-import type { ApplyResult, PlayerAction, RunState } from "@/game/core/types";
+import type { ApplyResult, PlayerAction, RunState, Seat } from "@/game/core/types";
 import { InvalidActionError } from "@/game/core/types";
 
 /**
@@ -51,18 +52,22 @@ import { InvalidActionError } from "@/game/core/types";
  * conflict defers it again to the choice that resolves it, so one review
  * never costs two turns.
  */
-export function applyAction(state: RunState, action: PlayerAction): ApplyResult {
+export function applyAction(
+  state: RunState,
+  action: PlayerAction,
+  seat: Seat = SOLO_SEAT,
+): ApplyResult {
   if (state.phase.kind === "game_over") {
     throw new InvalidActionError("The run is over");
   }
-  if (!isActionAvailable(state, action)) {
+  if (!isActionAvailable(state, seat, action)) {
     throw new InvalidActionError(
       `${action.type} is not available during phase ${state.phase.kind}`,
     );
   }
 
   const draft = structuredClone(state);
-  const context = createContext(draft);
+  const context = createContext(draft, seat);
   const wasCrunch = draft.player.energy <= BALANCE.energy.crunchThreshold;
 
   const consumesTurn = dispatch(context, action);
@@ -77,7 +82,7 @@ export function applyAction(state: RunState, action: PlayerAction): ApplyResult 
     !isOver(context) &&
     draft.phase.kind === "choose_action" &&
     !boardIsEmpty(draft) &&
-    nothingToDo(draft)
+    nothingToDo(draft, SOLO_SEAT)
   ) {
     passTurn(context);
     endTurn(context);

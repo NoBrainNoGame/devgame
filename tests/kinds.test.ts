@@ -5,6 +5,7 @@ import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -188,10 +189,10 @@ describe("ticket kinds", () => {
     if (extra === undefined) throw new Error("expected a backlog ticket");
     extra.status = "open";
     extra.kind = "client_bug";
-    expect(wipExtra(state)).toBe(1);
+    expect(wipExtra(state, SOLO_SEAT)).toBe(1);
     extra.kind = "hotfix";
     extra.mustWrite = "hotfix";
-    expect(wipExtra(state)).toBe(0);
+    expect(wipExtra(state, SOLO_SEAT)).toBe(0);
   });
 
   test("a run with every kind on the board keeps its invariants and replays", () => {

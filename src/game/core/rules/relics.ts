@@ -10,6 +10,7 @@ import type { Effects } from "@/game/content/effects";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, leadSeat, playerOf } from "@/game/core/rules/crew";
 import { repayDebt } from "@/game/core/rules/debt";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy, syncEnergyMax } from "@/game/core/rules/energy";
@@ -34,7 +35,7 @@ import type { NodeId, RunState } from "@/game/core/types";
 function holds(state: RunState, effects: Effects, when: RelicCondition): boolean {
   switch (when) {
     case "energy_missing":
-      return state.player.energy < energyMax(state, effects);
+      return playerOf(state, leadSeat(state)).energy < energyMax(state, effects);
     case "debt_present":
       return state.debt >= BALANCE.relics.debtWorthClearing;
     case "quality_present":
@@ -132,7 +133,7 @@ function applyBoost(context: RuleContext, relicId: RelicId): void {
   if (boost === undefined) return;
 
   if (boost.fullEnergy === true) {
-    gainEnergy(context, energyMax(state, context.effects) - state.player.energy, "relic");
+    gainEnergy(context, energyMax(state, context.effects) - actorOf(context).energy, "relic");
   }
   if (boost.debt !== undefined) repayDebt(context, boost.debt === "all" ? state.debt : boost.debt);
   if (boost.quality !== undefined) lowerQuality(context, boost.quality, "event");

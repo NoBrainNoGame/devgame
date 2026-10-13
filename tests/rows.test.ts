@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { advancePushes, emptyPushes } from "@/game/bridge/pushes";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { MapNode, NodeId } from "@/game/core/types";
 import { rowsOf } from "@/game/render/rows";
@@ -65,7 +66,7 @@ describe("rows", () => {
       let state = newRun(`rows-${i}`);
       let ledger = emptyPushes();
       for (let n = 0; n < 150 && state.phase.kind !== "game_over"; n += 1) {
-        const action = policy("ai")(state, getAvailableActions(state));
+        const action = policy("ai")(state, getAvailableActions(state, SOLO_SEAT));
         if (action === undefined) break;
         const result = applyAction(state, action);
         ledger = advancePushes(ledger, result.events, result.state).ledger;

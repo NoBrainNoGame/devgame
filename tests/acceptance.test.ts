@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import {
   buggedOn,
@@ -46,7 +47,7 @@ describe("the pull request review", () => {
     state.debt = BALANCE.acceptance.maxDebt + 1;
     const ticket = ticketInHand(state);
 
-    expect(getAvailableActions(state).some(isType("submit"))).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("submit"))).toBe(false);
     expect(waitsOnlyForHealth(state, ticket)).toBe(true);
     expect(offersOf(state, ticket)).toContain("refactor");
 
@@ -54,7 +55,7 @@ describe("the pull request review", () => {
       const result = applyAction(state, { type: "commit", mode: "craft", kind: "refactor" });
       if (eventsOfType(result.events, "debt_refactored").length === 0) continue;
       expect(result.state.debt).toBeLessThanOrEqual(BALANCE.acceptance.maxDebt);
-      expect(getAvailableActions(result.state).some(isType("submit"))).toBe(true);
+      expect(getAvailableActions(result.state, SOLO_SEAT).some(isType("submit"))).toBe(true);
       return;
     }
     throw new Error("no refactor landed in 20 tries");
@@ -65,7 +66,7 @@ describe("the pull request review", () => {
       const state = makeReady(inHand(`pr-debt-${kind}`));
       ticketInHand(state).kind = kind;
       state.debt = BALANCE.acceptance.maxDebt + 25;
-      expect(getAvailableActions(state).some(isType("submit"))).toBe(true);
+      expect(getAvailableActions(state, SOLO_SEAT).some(isType("submit"))).toBe(true);
     }
   });
 
@@ -85,7 +86,7 @@ describe("the pull request review", () => {
     const state = makeReady(inHand("pr-debt-showcase"));
     state.showcase = { backlog: 0 };
     state.debt = BALANCE.acceptance.maxDebt + 10;
-    expect(getAvailableActions(state).some(isType("submit"))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("submit"))).toBe(true);
   });
 
   test("unread machine work gets caught, adds fix points, and brings a ticket with it", () => {
@@ -133,7 +134,7 @@ describe("the pull request review", () => {
         reason: "fired",
         cause: "rejection",
       });
-      expect(getAvailableActions(result.state)).toEqual([]);
+      expect(getAvailableActions(result.state, SOLO_SEAT)).toEqual([]);
     }
     expect(seen).toBe(true);
   });
@@ -148,7 +149,7 @@ describe("the pull request review", () => {
     if (node !== undefined) node.commit.bugged = true;
 
     expect(offersOf(state, ticket)).toEqual(["fix"]);
-    expect(getAvailableActions(state).some((a) => a.type === "submit")).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some((a) => a.type === "submit")).toBe(false);
 
     const fixed = applyAction(state, { type: "commit", mode: "craft", kind: "fix" }).state;
     const after = fixed.tickets[ticket.id];
@@ -158,7 +159,7 @@ describe("the pull request review", () => {
     // ticket can go back to review.
     if (rolled?.kind === "fix") {
       expect(buggedOn(fixed, after)).toEqual([]);
-      expect(getAvailableActions(fixed).some((a) => a.type === "submit")).toBe(true);
+      expect(getAvailableActions(fixed, SOLO_SEAT).some((a) => a.type === "submit")).toBe(true);
     }
   });
 
@@ -200,7 +201,7 @@ describe("the pull request review", () => {
     const landed = eventsOfType(events, "bug_fixed").length === 1;
     expect(after?.nodeIds.length).toBe(ticket.nodeIds.length + (landed ? 1 : 0));
     expect(buggedOn(resumed, ticketInHand(resumed)).length).toBe(landed ? 0 : 1);
-    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(landed);
+    expect(getAvailableActions(resumed, SOLO_SEAT).some(isType("submit"))).toBe(landed);
   });
 
   test("a flagged commit blocks the next submit until a fix takes the bug out", () => {
@@ -216,7 +217,7 @@ describe("the pull request review", () => {
     expect(buggedOn(rejected, ticket)).toEqual([first, second]);
 
     const resumed = applyAction(rejected, { type: "resume" }).state;
-    expect(getAvailableActions(resumed).some(isType("submit"))).toBe(false);
+    expect(getAvailableActions(resumed, SOLO_SEAT).some(isType("submit"))).toBe(false);
     expect(offersOf(resumed, ticketInHand(resumed))).toContain("fix");
 
     // The oldest flagged commit is the one a fix redoes.
@@ -251,7 +252,7 @@ describe("the pull request review", () => {
     if (planted !== undefined) planted.commit.bugged = true;
     expect(offersOf(flagged, ticketInHand(flagged))).toContain("fix");
     expect(offersOf(flagged, ticketInHand(flagged))).not.toContain("refactor");
-    expect(getAvailableActions(flagged).some(isType("submit"))).toBe(false);
+    expect(getAvailableActions(flagged, SOLO_SEAT).some(isType("submit"))).toBe(false);
   });
 
   test("a refactor takes back exactly what its most expensive commit cost", () => {

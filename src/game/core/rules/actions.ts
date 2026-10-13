@@ -22,7 +22,7 @@ import {
   playerTickets,
 } from "@/game/core/rules/tickets";
 import { canPlaceTree } from "@/game/core/rules/tree";
-import type { PlayerAction, RunState } from "@/game/core/types";
+import type { PlayerAction, RunState, Seat } from "@/game/core/types";
 
 /**
  * Every move the player may legally make right now.
@@ -43,16 +43,16 @@ import type { PlayerAction, RunState } from "@/game/core/types";
  * full, and not before, and never while the codebase's health is under the
  * floor the reviewer refuses at.
  */
-export function getAvailableActions(state: RunState): PlayerAction[] {
+export function getAvailableActions(state: RunState, seat: Seat): PlayerAction[] {
   switch (state.phase.kind) {
     case "choose_action": {
       const actions: PlayerAction[] = [];
-      const ticket = currentTicket(state);
+      const ticket = currentTicket(state, seat);
 
       for (const waiting of backlogTickets(state)) {
         actions.push({ type: "start", ticketId: waiting.id });
       }
-      for (const open of playerTickets(state)) {
+      for (const open of playerTickets(state, seat)) {
         if (open.id !== ticket?.id) actions.push({ type: "checkout", ticketId: open.id });
       }
 
@@ -66,7 +66,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
           actions.push({ type: "commit", mode: "ai", kind });
         }
 
-        if (canReview(state, gatherEffects(state))) actions.push({ type: "review" });
+        if (canReview(state, seat, gatherEffects(state))) actions.push({ type: "review" });
         // Full and clean, a ticket goes to review, once the codebase's health
         // clears the floor; an obstacle lands back on its feature without one.
         if (isReady(state, ticket)) {
@@ -76,7 +76,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       }
       // With nothing to do the turns pass on their own (`applyAction`): a
       // rest is a choice only while work waits, where it costs patience.
-      if (!nothingToDo(state)) actions.push({ type: "rest" });
+      if (!nothingToDo(state, seat)) actions.push({ type: "rest" });
 
       for (const id of TREE_IDS) {
         if (canPlaceTree(state, id)) actions.push({ type: "tree", id });
@@ -95,7 +95,7 @@ export function getAvailableActions(state: RunState): PlayerAction[] {
       for (const id of ACQUISITION_IDS) {
         if (canAcquire(state, id)) actions.push({ type: "acquire", id });
       }
-      if (hackOffer(state, effects) !== null) actions.push({ type: "hack" });
+      if (hackOffer(state, seat, effects) !== null) actions.push({ type: "hack" });
       return actions;
     }
 
@@ -165,10 +165,10 @@ export function isSameAction(a: PlayerAction, b: PlayerAction): boolean {
   }
 }
 
-export function isActionAvailable(state: RunState, action: PlayerAction): boolean {
+export function isActionAvailable(state: RunState, seat: Seat, action: PlayerAction): boolean {
   // Legal whenever the run is on, and never in the list: the HUD, the
   // autopilot and the simulator all pick from the list, so none of them ever
   // takes one. `replayRun` refuses a log that holds one.
   if (action.type === "dev_set") return state.phase.kind !== "game_over";
-  return getAvailableActions(state).some((candidate) => isSameAction(candidate, action));
+  return getAvailableActions(state, seat).some((candidate) => isSameAction(candidate, action));
 }

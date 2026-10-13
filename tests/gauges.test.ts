@@ -16,6 +16,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
 import { BALANCE } from "@/game/core/balance";
 import { signed } from "@/game/core/i18n";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 
 import { newRun } from "./helpers";
 
@@ -36,7 +37,7 @@ describe("the gauges turned over", () => {
   });
 
   test("a fresh run shows a blurred band, no exact number", () => {
-    const snapshot = toSnapshot(newRun("gauges-fresh"));
+    const snapshot = toSnapshot(newRun("gauges-fresh"), SOLO_SEAT);
     const health = healthOf(snapshot.debt);
     if (snapshot.debt.exact === null) expect(health.exact).toBeNull();
     expect(health.range[0]).toBeLessThanOrEqual(health.range[1]);
@@ -88,7 +89,7 @@ describe("holding the gauges until the canvas shows them move", () => {
 
   test("cues release in order, never backwards, and only for their own batch", () => {
     resetGameStore();
-    const snapshot = toSnapshot(newRun("gauges-release"));
+    const snapshot = toSnapshot(newRun("gauges-release"), SOLO_SEAT);
     const live = readout(snapshot);
     gameStore.setState({
       snapshot,
@@ -114,7 +115,7 @@ describe("holding the gauges until the canvas shows them move", () => {
 
   test("what no cue will move is released at once; the end of the story releases the rest", () => {
     resetGameStore();
-    const snapshot = toSnapshot(newRun("gauges-uncued"));
+    const snapshot = toSnapshot(newRun("gauges-uncued"), SOLO_SEAT);
     const live = readout(snapshot);
     gameStore.setState({
       snapshot,

@@ -6,6 +6,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor, SUPERVISOR_REASONS } from "@/game/bridge/supervisor";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction } from "@/game/core/types";
 
@@ -28,25 +29,25 @@ import {
  */
 describe("the idle clock's target", () => {
   const legal = (state: ReturnType<typeof newRun>): void => {
-    const target = idleTarget(toSnapshot(state));
+    const target = idleTarget(toSnapshot(state, SOLO_SEAT));
     expect(target).toBeDefined();
     if (target === undefined) return;
-    expect(getAvailableActions(state).some((a) => isSameAction(a, target))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some((a) => isSameAction(a, target))).toBe(true);
   };
 
   test("nothing in hand and no supervisor: it starts a ticket", () => {
     const state = newRun("idle-start");
-    expect(idleTarget(toSnapshot(state))?.type).toBe("start");
+    expect(idleTarget(toSnapshot(state, SOLO_SEAT))?.type).toBe("start");
     legal(state);
   });
 
   test("a ticket in hand and no supervisor: it writes by hand while the energy holds, rests when it does not", () => {
     const state = inHand("idle-rest");
-    const writes = idleTarget(toSnapshot(state));
+    const writes = idleTarget(toSnapshot(state, SOLO_SEAT));
     expect(writes).toEqual({ type: "commit", mode: "craft" });
     legal(state);
     state.player.energy = 2;
-    expect(idleTarget(toSnapshot(state))?.type).toBe("rest");
+    expect(idleTarget(toSnapshot(state, SOLO_SEAT))?.type).toBe("rest");
     legal(state);
   });
 
@@ -55,29 +56,29 @@ describe("the idle clock's target", () => {
     plantAiCommit(state);
     plantAiCommit(state);
     state.player.energy = state.player.energyMax;
-    const free = idleTarget(toSnapshot(state));
+    const free = idleTarget(toSnapshot(state, SOLO_SEAT));
     expect(free).toBeDefined();
     expect(free?.type).not.toBe("review");
     state.upgrades.ai_supervisor = 1;
-    expect(idleTarget(toSnapshot(state))?.type).toBe("review");
+    expect(idleTarget(toSnapshot(state, SOLO_SEAT))?.type).toBe("review");
   });
 
   test("a full ticket and no supervisor: it opens the pull request", () => {
     const state = makeReady(inHand("idle-submit"));
-    expect(idleTarget(toSnapshot(state))?.type).toBe("submit");
+    expect(idleTarget(toSnapshot(state, SOLO_SEAT))?.type).toBe("submit");
     legal(state);
   });
 
   test("an accepted review waits for the merge; a refused one carries on", () => {
     const accepted = applyAction(makeReady(inHand("idle-merge")), { type: "submit" }).state;
     if (accepted.phase.kind === "pr_accepted") {
-      expect(idleTarget(toSnapshot(accepted))?.type).toBe("merge");
+      expect(idleTarget(toSnapshot(accepted, SOLO_SEAT))?.type).toBe("merge");
       legal(accepted);
     }
     const rejected = makeRefusable(inHand("idle-resume"));
     const refused = applyAction(rejected, { type: "submit" }).state;
     expect(refused.phase.kind).toBe("ticket_rejected");
-    expect(idleTarget(toSnapshot(refused))?.type).toBe("resume");
+    expect(idleTarget(toSnapshot(refused, SOLO_SEAT))?.type).toBe("resume");
     legal(refused);
   });
 
@@ -88,9 +89,9 @@ describe("the idle clock's target", () => {
     planted.commit.reviewed = true;
     planted.commit.debt = BALANCE.debt.perAiCommit;
     state.debt = BALANCE.acceptance.maxDebt + 1;
-    state.player.energy = toSnapshot(state).player.energyMax;
+    state.player.energy = toSnapshot(state, SOLO_SEAT).player.energyMax;
 
-    const snapshot = toSnapshot(state);
+    const snapshot = toSnapshot(state, SOLO_SEAT);
     expect(snapshot.tickets.find((t) => t.id === snapshot.player.ticketId)?.waitingOnHealth).toBe(
       true,
     );
@@ -107,7 +108,7 @@ describe("the idle clock's target", () => {
       limit: 200,
       stop: (s) => s.phase.kind === "choose_relic",
     });
-    expect(idleTarget(toSnapshot(relic))?.type).toBe("choose_relic");
+    expect(idleTarget(toSnapshot(relic, SOLO_SEAT))?.type).toBe("choose_relic");
     legal(relic);
 
     const { state: conflict } = findSeed((r) => r.state.phase.kind === "resolve_conflict", {
@@ -116,7 +117,7 @@ describe("the idle clock's target", () => {
       limit: 300,
       stop: (s) => s.phase.kind === "resolve_conflict",
     });
-    const move = idleTarget(toSnapshot(conflict));
+    const move = idleTarget(toSnapshot(conflict, SOLO_SEAT));
     expect(move?.type === "resolve_conflict" && move.how).toBe("manual");
     legal(conflict);
   });
@@ -124,7 +125,7 @@ describe("the idle clock's target", () => {
   test("a run that is over has no move", () => {
     const state = inHand("idle-over");
     state.phase = { kind: "game_over", reason: "burnout" };
-    expect(idleTarget(toSnapshot(state))).toBeUndefined();
+    expect(idleTarget(toSnapshot(state, SOLO_SEAT))).toBeUndefined();
     expect(isType("rest")({ type: "rest" })).toBe(true);
   });
 
@@ -135,11 +136,13 @@ describe("the idle clock's target", () => {
       if (state.phase.kind !== "choose_action") continue;
       state.upgrades.ai_supervisor = level;
       state.money = 5_000;
-      const snapshot = toSnapshot(state);
+      const snapshot = toSnapshot(state, SOLO_SEAT);
       const move = chooseSupervisor(snapshot);
       expect(move).toBeDefined();
       if (move === undefined) continue;
-      expect(getAvailableActions(state).some((a) => isSameAction(a, move.action))).toBe(true);
+      expect(getAvailableActions(state, SOLO_SEAT).some((a) => isSameAction(a, move.action))).toBe(
+        true,
+      );
       expect(SUPERVISOR_REASONS).toContain(move.reason);
       if (level === 1) expect(move.action).toEqual(chooseAutopilot(snapshot) as PlayerAction);
       // The bar and the driver read the same move.
@@ -155,7 +158,7 @@ describe("the idle clock's target", () => {
     if (shipped === undefined) throw new Error("expected a feature");
     shipped.status = "merged";
     shipped.load = 10_000;
-    const move = chooseSupervisor(toSnapshot(state));
+    const move = chooseSupervisor(toSnapshot(state, SOLO_SEAT));
     expect(move?.reason).toBe("buy");
     expect(move?.action.type).toBe("buy");
   });
@@ -167,7 +170,7 @@ describe("the idle clock's target", () => {
       state.money = 2_000;
       let stalls = 0;
       for (let i = 0; i < 300 && state.phase.kind !== "game_over"; i += 1) {
-        const target = idleTarget(toSnapshot(state));
+        const target = idleTarget(toSnapshot(state, SOLO_SEAT));
         if (target === undefined) {
           stalls += 1;
           break;

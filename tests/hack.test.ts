@@ -4,6 +4,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { capacityOf } from "@/game/core/rules/economy";
 import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects } from "@/game/core/rules/modifiers";
@@ -20,7 +21,7 @@ import { eventsOfType, inHand, play, policy } from "./helpers";
  */
 
 function offered(state: RunState): boolean {
-  return getAvailableActions(state).some((a) => a.type === "hack");
+  return getAvailableActions(state, SOLO_SEAT).some((a) => a.type === "hack");
 }
 
 function desperate(seed: string): RunState {
@@ -45,14 +46,16 @@ function flipUntil(
 describe("the hack offer", () => {
   test("is absent in an ordinary turn and appears with production's patience nearly gone", () => {
     const calm = inHand("calm");
-    expect(hackOffer(calm, gatherEffects(calm))).toBeNull();
+    expect(hackOffer(calm, SOLO_SEAT, gatherEffects(calm))).toBeNull();
     expect(offered(calm)).toBe(false);
-    expect(getActionPreview(calm, { type: "hack" }).blocked?.key).toBe("notes.hack_unavailable");
+    expect(getActionPreview(calm, SOLO_SEAT, { type: "hack" }).blocked?.key).toBe(
+      "notes.hack_unavailable",
+    );
 
     const state = desperate("patience");
-    expect(hackOffer(state, gatherEffects(state))).toBe("patience");
+    expect(hackOffer(state, SOLO_SEAT, gatherEffects(state))).toBe("patience");
     expect(offered(state)).toBe(true);
-    const preview = getActionPreview(state, { type: "hack" });
+    const preview = getActionPreview(state, SOLO_SEAT, { type: "hack" });
     expect(preview.successPct).toBe(BALANCE.hack.chancePct);
     expect(preview.consumesTurn).toBe(true);
     expect(preview.notes.map((n) => n.key)).toEqual([
@@ -72,7 +75,7 @@ describe("the hack offer", () => {
       tired.nextTicketSerial += 1;
       tired.tickets[id] = { ...model, id, status: "open", nodeIds: [] };
     }
-    expect(hackOffer(tired, gatherEffects(tired))).toBe("energy");
+    expect(hackOffer(tired, SOLO_SEAT, gatherEffects(tired))).toBe("energy");
 
     const saturated = inHand("saturated");
     saturated.money = 0;
@@ -80,7 +83,7 @@ describe("the hack offer", () => {
     if (shipped === undefined) throw new Error("expected a feature");
     shipped.status = "merged";
     shipped.load = capacityOf(gatherEffects(saturated)) * 2;
-    expect(hackOffer(saturated, gatherEffects(saturated))).toBe("capacity");
+    expect(hackOffer(saturated, SOLO_SEAT, gatherEffects(saturated))).toBe("capacity");
   });
 
   test("is offered once a sprint, whatever the coin said", () => {
@@ -88,7 +91,7 @@ describe("the hack offer", () => {
     const after = applyAction(state, { type: "hack" }).state;
     if (after.phase.kind === "game_over") return;
     after.quality = state.quality;
-    expect(hackOffer(after, gatherEffects(after))).toBeNull();
+    expect(hackOffer(after, SOLO_SEAT, gatherEffects(after))).toBeNull();
     expect(offered(after)).toBe(false);
   });
 
@@ -114,7 +117,7 @@ describe("the hack offer", () => {
 
     const state = desperate("supervisor");
     state.upgrades.ai_supervisor = 3;
-    const move = chooseSupervisor(toSnapshot(state));
+    const move = chooseSupervisor(toSnapshot(state, SOLO_SEAT));
     expect(move?.action.type).not.toBe("hack");
   });
 });

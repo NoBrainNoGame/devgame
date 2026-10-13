@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isActionAvailable } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { devSheet } from "@/game/core/rules/dev";
 import { applyAction } from "@/game/core/rules/reducer";
 import { tierOf } from "@/game/core/rules/tier";
@@ -22,12 +23,14 @@ const devSet = (values: Extract<PlayerAction, { type: "dev_set" }>["values"]): P
 describe("dev_set", () => {
   test("is legal while the run is on, and never offered", () => {
     const state = newRun("dev-legal");
-    expect(isActionAvailable(state, devSet({ money: 1 }))).toBe(true);
-    expect(getAvailableActions(state).some((action) => action.type === "dev_set")).toBe(false);
+    expect(isActionAvailable(state, SOLO_SEAT, devSet({ money: 1 }))).toBe(true);
+    expect(getAvailableActions(state, SOLO_SEAT).some((action) => action.type === "dev_set")).toBe(
+      false,
+    );
 
     const over = applyAction(state, devSet({ quality: BALANCE.quality.max })).state;
     expect(over.phase.kind).toBe("game_over");
-    expect(isActionAvailable(over, devSet({ money: 1 }))).toBe(false);
+    expect(isActionAvailable(over, SOLO_SEAT, devSet({ money: 1 }))).toBe(false);
   });
 
   test("writes the values, costs no turn and says nothing", () => {

@@ -4,6 +4,7 @@ import { fnv1a } from "@/game/core/hash";
 import { tipOfLane, tipOfTicket } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, countCommit, occupiedSeats, playerOf, seatOf } from "@/game/core/rules/crew";
 import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -208,7 +209,8 @@ export function writeCommit(
     emit(context, { type: "node_done", nodeId: node.id, mode, kind, broken: true });
     return node;
   }
-  state.player.totalCommits += 1;
+  countCommit(context);
+  const player = actorOf(context);
   state.stats.commitsLanded[mode] += 1;
   const debtBefore = state.debt;
 
@@ -216,15 +218,15 @@ export function writeCommit(
 
   if (mode === "ai") {
     // Documentation pays the debt for you, one machine-written commit at a time.
-    if (state.player.docsCharges > 0) {
-      state.player.docsCharges -= 1;
-      emit(context, { type: "docs_used", nodeId: node.id, remaining: state.player.docsCharges });
+    if (player.docsCharges > 0) {
+      player.docsCharges -= 1;
+      emit(context, { type: "docs_used", nodeId: node.id, remaining: player.docsCharges });
     } else {
       addDebt(context, Math.max(0, debt.perAiCommit - context.effects.aiDebtDiscount));
     }
-    state.player.aiChain += 1;
+    player.aiChain += 1;
   } else {
-    state.player.aiChain = 0;
+    player.aiChain = 0;
     if (debt.perCraftCommit > 0) addDebt(context, debt.perCraftCommit);
   }
 
@@ -240,7 +242,7 @@ export function writeCommit(
   if (cost > 0) node.commit.debt = cost;
 
   if (kind === "refactor") {
-    state.player.freeRefactor = false;
+    player.freeRefactor = false;
     // The commit that cost the most is the one worth redoing. A forced refactor
     // ticket has no commits of its own to redo, and repays a flat amount.
     const targetId = mostIndebtedOn(state, ticket);
@@ -297,8 +299,9 @@ export function fillPoints(context: RuleContext, ticket: Ticket, delta: number):
 
 /** Documentation: the next few machine-written commits carry no debt. */
 function writeDocs(context: RuleContext): void {
-  context.state.player.docsCharges += BALANCE.docs.charges;
-  emit(context, { type: "docs_written", charges: context.state.player.docsCharges });
+  const player = actorOf(context);
+  player.docsCharges += BALANCE.docs.charges;
+  emit(context, { type: "docs_written", charges: player.docsCharges });
 }
 
 /**
@@ -361,7 +364,11 @@ export function completeObstacle(
     throw new Error(`completeObstacle: ${ticket.id} has nothing to land on`);
   }
   if (byTeam === undefined) {
-    spendEnergy(context, nodeEnergyCost(state, "obstacle_merge", undefined).value, "merge");
+    spendEnergy(
+      context,
+      nodeEnergyCost(state, seatOf(context), "obstacle_merge", undefined).value,
+      "merge",
+    );
   }
 
   const node = writeNode(context, {
@@ -382,7 +389,10 @@ export function completeObstacle(
   // A follow-up landed: the bug it was opened for is out before the release.
   const fixed = ticket.fixesNodeId === undefined ? undefined : state.nodes[ticket.fixesNodeId];
   if (fixed !== undefined) delete fixed.commit.bugged;
-  if (state.player.ticketId === ticket.id) state.player.ticketId = parent.id;
+  for (const seat of occupiedSeats(state)) {
+    const player = playerOf(state, seat);
+    if (player.ticketId === ticket.id) player.ticketId = parent.id;
+  }
 
   emit(context, {
     type: "obstacle_cleared",
@@ -416,7 +426,11 @@ export function completeMerge(
   const byTeam = options.byTeam;
 
   if (byTeam === undefined) {
-    spendEnergy(context, nodeEnergyCost(state, "feature_merge", undefined).value, "merge");
+    spendEnergy(
+      context,
+      nodeEnergyCost(state, seatOf(context), "feature_merge", undefined).value,
+      "merge",
+    );
   }
 
   // A merge lands what is on the remote.
@@ -451,7 +465,7 @@ export function completeMerge(
   if (fixed !== undefined) delete fixed.commit.bugged;
 
   if (byTeam === undefined) {
-    state.player.totalCommits += 1;
+    countCommit(context);
     state.sprintPlayerDelivered += 1;
     if (ticket.kind === "vip") state.sprintCounters.vipDelivered += 1;
     if (ticket.kind === "client_bug") state.sprintCounters.bugsDelivered += 1;
@@ -532,8 +546,12 @@ export function writeRelease(context: RuleContext): { merge: MapNode; release: M
     parents: main === null ? [dev.id] : [main.id, dev.id],
     commit: { mode: "craft", reviewed: true },
   });
-  spendEnergy(context, nodeEnergyCost(state, "sprint_merge", undefined).value, "merge");
-  state.player.totalCommits += 1;
+  spendEnergy(
+    context,
+    nodeEnergyCost(state, seatOf(context), "sprint_merge", undefined).value,
+    "merge",
+  );
+  countCommit(context);
   emit(context, { type: "node_done", nodeId: merge.id, mode: "craft", kind: "sprint_merge" });
 
   const release = writeNode(context, {
@@ -542,7 +560,7 @@ export function writeRelease(context: RuleContext): { merge: MapNode; release: M
     parents: [merge.id],
     commit: { mode: "craft", reviewed: true },
   });
-  state.player.totalCommits += 1;
+  countCommit(context);
   emit(context, { type: "node_done", nodeId: release.id, mode: "craft", kind: "release" });
 
   gainEnergy(

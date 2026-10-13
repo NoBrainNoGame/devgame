@@ -1,5 +1,6 @@
 import { type RunSnapshot, toSnapshot } from "@/game/bridge/snapshot";
 import { isActionAvailable } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { type CreateRunOptions, createRun } from "@/game/core/run";
 import type { GameEvent, PlayerAction, RunState } from "@/game/core/types";
@@ -34,7 +35,7 @@ export function rebuildRun(
     // A saved log was legal when it was recorded. If it is not legal now, the
     // rules changed under it — stop and keep what replayed cleanly rather
     // than build a state that never existed.
-    if (!isActionAvailable(state, action)) break;
+    if (!isActionAvailable(state, SOLO_SEAT, action)) break;
     const result = applyAction(state, action);
     state = result.state;
     observe?.(result.events, state);
@@ -59,5 +60,5 @@ export function snapshotOfSave(save: RunSaveDto): RunSnapshot {
     },
     save.actions,
   );
-  return toSnapshot(state);
+  return toSnapshot(state, SOLO_SEAT);
 }

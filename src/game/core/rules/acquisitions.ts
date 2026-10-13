@@ -3,6 +3,7 @@ import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
 import { headOf } from "@/game/core/map/graph";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { seatOf } from "@/game/core/rules/crew";
 import { addDebt } from "@/game/core/rules/debt";
 import { recordIncident } from "@/game/core/rules/events";
 import { buyStrongestCompetitor } from "@/game/core/rules/market";
@@ -80,5 +81,5 @@ export function acquire(context: RuleContext, id: AcquisitionId): void {
   addDebt(context, def.debt);
   // The incident lands on the head of `dev`: what was bought is in
   // production now, and production is where it breaks.
-  if (def.incident) recordIncident(context, "acquisition", headOf(state).id);
+  if (def.incident) recordIncident(context, "acquisition", headOf(state, seatOf(context)).id);
 }

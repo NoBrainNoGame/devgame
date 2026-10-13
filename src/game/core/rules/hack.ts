@@ -4,13 +4,14 @@ import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { playerOf, seatOf } from "@/game/core/rules/crew";
 import { capacityOf, projectedLoadOf } from "@/game/core/rules/economy";
 import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
 import { wipExtra } from "@/game/core/rules/modifiers";
 import { gameOver } from "@/game/core/rules/over";
 import { lowerQuality, qualityMax } from "@/game/core/rules/quality";
-import type { HackKind, RunState } from "@/game/core/types";
+import type { HackKind, RunState, Seat } from "@/game/core/types";
 
 /**
  * Hacking the outside world. Not a move in the ordinary sense: it is
@@ -24,12 +25,13 @@ import type { HackKind, RunState } from "@/game/core/types";
  * never hacks reaches the same game it always did.
  */
 
-export function hackOffer(state: RunState, effects: Effects): HackKind | null {
+export function hackOffer(state: RunState, seat: Seat, effects: Effects): HackKind | null {
   if (state.hackSprint === state.sprint) return null;
   const { hack } = BALANCE;
 
   if (state.quality * 100 >= qualityMax(effects) * hack.offerAtQualityPct) return "patience";
-  if (state.player.energy === 0 && wipExtra(state) >= hack.offerAtWipExtra) return "energy";
+  if (playerOf(state, seat).energy === 0 && wipExtra(state, seat) >= hack.offerAtWipExtra)
+    return "energy";
   if (capacityStatus(state, effects) === "saturated") {
     const advice = capacityAdvice(state, effects, projectedLoadOf(state) - capacityOf(effects));
     if (advice !== undefined && advice.cost > state.money) return "capacity";
@@ -39,7 +41,7 @@ export function hackOffer(state: RunState, effects: Effects): HackKind | null {
 
 export function performHack(context: RuleContext): void {
   const { state, effects } = context;
-  const kind = hackOffer(state, effects);
+  const kind = hackOffer(state, seatOf(context), effects);
   if (kind === null) throw new Error("No hack is offered right now");
 
   state.hackSprint = state.sprint;
@@ -70,5 +72,5 @@ export function performHack(context: RuleContext): void {
   }
 
   if (kind === "patience") gameOver(context, "caught");
-  else recordIncident(context, "hack", headOf(state).id);
+  else recordIncident(context, "hack", headOf(state, seatOf(context)).id);
 }

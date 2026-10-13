@@ -15,6 +15,7 @@ import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
+import { actorOf } from "@/game/core/rules/crew";
 import { initialMarket } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { drawObjective } from "@/game/core/rules/objectives";
@@ -195,8 +196,9 @@ export function createRun(options: CreateRunOptions): RunState {
 
   const context = createContext(state);
 
-  state.player.energyMax = energyMax(state, context.effects);
-  state.player.energy = state.player.energyMax;
+  const player = actorOf(context);
+  player.energyMax = energyMax(state, context.effects);
+  player.energy = player.energyMax;
 
   // The repository's first commit, on `main`, so the first sprint's `dev` is
   // seen forking off it rather than standing alone.

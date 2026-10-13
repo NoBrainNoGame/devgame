@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { type AppliedPayload, GameSession } from "@/game/bridge/session";
 import { gameStore, resetGameStore } from "@/game/bridge/store";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { emptyMeta } from "@/game/dto/meta";
 
 /**
@@ -23,7 +24,7 @@ function session(): GameSession {
 }
 
 function firstMove(run: GameSession) {
-  const action = getAvailableActions(run.getState())[0];
+  const action = getAvailableActions(run.getState(), SOLO_SEAT)[0];
   if (action === undefined) throw new Error("no move at turn one");
   return action;
 }

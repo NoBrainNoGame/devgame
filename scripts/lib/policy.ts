@@ -11,6 +11,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { capacityAdvice } from "@/game/core/rules/capacity";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthlyReport, projectedLoadOf } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { skillPointPrice } from "@/game/core/rules/shop";
@@ -80,7 +81,7 @@ function prefer(actions: PlayerAction[], ...matchers: ((a: PlayerAction) => bool
  * cheapest ticket, delivered soonest.
  */
 function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
-  if (currentTicket(state) !== null) return undefined;
+  if (currentTicket(state, SOLO_SEAT) !== null) return undefined;
 
   const starts = actions.filter(
     (a): a is Extract<PlayerAction, { type: "start" }> => a.type === "start",
@@ -109,7 +110,7 @@ function chooseStart(state: RunState, actions: PlayerAction[]): PlayerAction | u
  * the full ticket and died of it, which made every sim figure wrong.
  */
 function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction | undefined {
-  const current = currentTicket(state);
+  const current = currentTicket(state, SOLO_SEAT);
   if (current === null) return undefined;
   const checkout = (ticket: Ticket): PlayerAction | undefined =>
     actions.find((a) => a.type === "checkout" && a.ticketId === ticket.id);
@@ -121,7 +122,7 @@ function chooseCheckout(state: RunState, actions: PlayerAction[]): PlayerAction 
     }
   }
 
-  const open = playerTickets(state).filter(
+  const open = playerTickets(state, SOLO_SEAT).filter(
     (ticket) => !waitsOnlyForObstacle(state, ticket) && !waitsOnlyForHealth(state, ticket),
   );
   if (open.length === 0) return undefined;
@@ -238,7 +239,7 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
     if (hack !== undefined) return hack;
   }
 
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
   const lowEnergy = state.player.energy <= 3;
   const fallback: PlayerAction = { type: "review" };
@@ -338,7 +339,7 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
 
   // Out of breath: everyone but the naive machine player takes a turn off,
   // when the board still leaves room to rest.
-  const restWorth = BALANCE.energy.restRegen - wipExtra(state) >= 3;
+  const restWorth = BALANCE.energy.restRegen - wipExtra(state, SOLO_SEAT) >= 3;
   if (policy !== "ai" && lowEnergy && restWorth) {
     const rest = actions.find(isRest);
     if (rest !== undefined) return rest;
@@ -384,7 +385,7 @@ export function chooseQuit(state: RunState, actions: PlayerAction[]): PlayerActi
     find((a) => a.type === "resolve_conflict");
   if (forced !== undefined) return forced;
 
-  if (currentTicket(state) === null) {
+  if (currentTicket(state, SOLO_SEAT) === null) {
     const open = find((a) => a.type === "start") ?? find((a) => a.type === "checkout");
     if (open !== undefined) return open;
   }

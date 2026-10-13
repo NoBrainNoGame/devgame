@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { DEV_RANK, UPGRADES, upgradeCost, upgradeUnlocked } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { capacityOf, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { getActionPreview } from "@/game/core/rules/preview";
@@ -18,11 +19,11 @@ import { eventsOfType, inHand } from "./helpers";
  */
 
 function buys(state: RunState): string[] {
-  return getAvailableActions(state).flatMap((a) => (a.type === "buy" ? [a.id] : []));
+  return getAvailableActions(state, SOLO_SEAT).flatMap((a) => (a.type === "buy" ? [a.id] : []));
 }
 
 function hires(state: RunState): string[] {
-  return getAvailableActions(state).flatMap((a) => (a.type === "hire" ? [a.rank] : []));
+  return getAvailableActions(state, SOLO_SEAT).flatMap((a) => (a.type === "hire" ? [a.rank] : []));
 }
 
 function atTier(seed: string, tier: number, money: number): RunState {
@@ -56,7 +57,7 @@ describe("tiers gate the shop", () => {
     expect(offered).toContain("servers");
     expect(offered).not.toContain("datacenter");
     expect(offered).not.toContain("coworking");
-    const preview = getActionPreview(state, { type: "buy", id: "datacenter" });
+    const preview = getActionPreview(state, SOLO_SEAT, { type: "buy", id: "datacenter" });
     expect(preview.blocked?.key).toBe("notes.tier_locked");
     expect(() => applyAction(state, { type: "buy", id: "datacenter" })).toThrow();
   });
@@ -73,7 +74,7 @@ describe("tiers gate the shop", () => {
   test("a rank is hired from its tier", () => {
     const state = atTier("rank", 0, 1e9);
     expect(hires(state)).toEqual(["junior"]);
-    expect(getActionPreview(state, { type: "hire", rank: "senior" }).blocked?.key).toBe(
+    expect(getActionPreview(state, SOLO_SEAT, { type: "hire", rank: "senior" }).blocked?.key).toBe(
       "notes.tier_locked",
     );
     state.tier = DEV_RANK.senior.tier;
@@ -130,7 +131,7 @@ describe("what the money buys", () => {
     const hired = site.hires;
     if (hired === undefined) throw new Error("The office is expected to bring a team");
     const rank = DEV_RANK[hired.rank];
-    const notes = getActionPreview(state, { type: "buy", id: "office" }).notes;
+    const notes = getActionPreview(state, SOLO_SEAT, { type: "buy", id: "office" }).notes;
     const params = (key: string) => notes.find((note) => note.key === key)?.params;
 
     const seats = BALANCE.team.baseSeats;
@@ -161,7 +162,9 @@ describe("what the money buys", () => {
       expect(gatherEffects(current).autopilot).toBe(level);
     }
     expect(
-      getAvailableActions(current).some((a) => a.type === "buy" && a.id === "ai_supervisor"),
+      getAvailableActions(current, SOLO_SEAT).some(
+        (a) => a.type === "buy" && a.id === "ai_supervisor",
+      ),
     ).toBe(false);
   });
 });

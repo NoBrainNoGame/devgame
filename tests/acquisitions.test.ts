@@ -5,6 +5,7 @@ import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { capacityStatus, reportCapacity } from "@/game/core/rules/capacity";
 import { createContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { getActionPreview } from "@/game/core/rules/preview";
@@ -28,7 +29,7 @@ function ready(seed: string, tier: number, money: number): RunState {
 }
 
 function acquires(state: RunState): string[] {
-  return getAvailableActions(state).flatMap((a) => (a.type === "acquire" ? [a.id] : []));
+  return getAvailableActions(state, SOLO_SEAT).flatMap((a) => (a.type === "acquire" ? [a.id] : []));
 }
 
 describe("acquisitions", () => {
@@ -36,20 +37,20 @@ describe("acquisitions", () => {
     expect(acquires(ready("locked", 1, 1e9))).toEqual([]);
     const state = ready("open", 2, 1e9);
     expect(acquires(state)).toEqual(["startup"]);
-    expect(getActionPreview(state, { type: "acquire", id: "scaleup" }).blocked?.key).toBe(
-      "notes.tier_locked",
-    );
+    expect(
+      getActionPreview(state, SOLO_SEAT, { type: "acquire", id: "scaleup" }).blocked?.key,
+    ).toBe("notes.tier_locked");
     const poor = ready("poor", 2, 10);
     expect(acquires(poor)).toEqual([]);
-    expect(getActionPreview(poor, { type: "acquire", id: "startup" }).blocked?.key).toBe(
+    expect(getActionPreview(poor, SOLO_SEAT, { type: "acquire", id: "startup" }).blocked?.key).toBe(
       "notes.too_expensive",
     );
 
     const after = applyAction(state, { type: "acquire", id: "startup" }).state;
     expect(acquires(after)).toEqual([]);
-    expect(getActionPreview(after, { type: "acquire", id: "startup" }).blocked?.key).toBe(
-      "notes.already_acquired",
-    );
+    expect(
+      getActionPreview(after, SOLO_SEAT, { type: "acquire", id: "startup" }).blocked?.key,
+    ).toBe("notes.already_acquired");
     expect(() => applyAction(after, { type: "acquire", id: "startup" })).toThrow();
   });
 

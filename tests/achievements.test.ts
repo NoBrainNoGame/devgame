@@ -12,6 +12,7 @@ import {
 } from "@/game/content";
 import { achievementsInRun, achievementsOfAccount } from "@/game/core/achievements";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction, RunState } from "@/game/core/types";
 import { mergeMeta } from "@/lib/profile/merge";
@@ -31,7 +32,7 @@ function collect(
   const earned = new Set<AchievementId>();
   let state = start;
   for (let i = 0; i < limit && state.phase.kind !== "game_over"; i += 1) {
-    const action = pick(state, getAvailableActions(state));
+    const action = pick(state, getAvailableActions(state, SOLO_SEAT));
     if (action === undefined) break;
     const result = applyAction(state, action);
     state = result.state;
@@ -86,7 +87,7 @@ describe("earning them", () => {
 
   test("an action is only credited with what it did", () => {
     const state = inHand("credit");
-    const action = getAvailableActions(state).find((a) => a.type === "commit");
+    const action = getAvailableActions(state, SOLO_SEAT).find((a) => a.type === "commit");
     if (action === undefined) throw new Error("A ticket in hand offers a commit");
     const result = applyAction(state, action);
     const earned = achievementsInRun({ state: result.state, events: result.events, action });
@@ -97,7 +98,7 @@ describe("earning them", () => {
 
   test("watching changes nothing in the run", () => {
     const state = inHand("pure");
-    const action = getAvailableActions(state)[0];
+    const action = getAvailableActions(state, SOLO_SEAT)[0];
     if (action === undefined) throw new Error("A run in progress offers something");
     const result = applyAction(state, action);
     const before = JSON.stringify(result.state);
@@ -108,7 +109,7 @@ describe("earning them", () => {
   test("a showcase earns nothing: the landing page's run is not the visitor's", () => {
     const state = inHand("showcase");
     state.showcase = { backlog: 3 };
-    const action = getAvailableActions(state).find((a) => a.type === "commit");
+    const action = getAvailableActions(state, SOLO_SEAT).find((a) => a.type === "commit");
     if (action === undefined) throw new Error("A ticket in hand offers a commit");
     const result = applyAction(state, action);
     expect(achievementsInRun({ state: result.state, events: result.events, action })).toEqual([]);

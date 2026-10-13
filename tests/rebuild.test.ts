@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { rebuildRun, snapshotOfSave } from "@/game/bridge/rebuild";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
 import type { PlayerAction } from "@/game/core/types";
@@ -22,7 +23,7 @@ function played(count: number): PlayerAction[] {
   let state = createRun(OPTIONS);
   const actions: PlayerAction[] = [];
   while (actions.length < count && state.phase.kind !== "game_over") {
-    const action = getAvailableActions(state)[0];
+    const action = getAvailableActions(state, SOLO_SEAT)[0];
     if (action === undefined) break;
     state = applyAction(state, action).state;
     actions.push(action);
@@ -48,7 +49,7 @@ describe("rebuilding a run from its log", () => {
       clientRunId: "5f0c4a52-4b6f-4c9e-9a57-0a1c1a0f4c11",
       createdAt: "2026-09-25T00:00:00.000Z",
     };
-    expect(snapshotOfSave(save)).toEqual(toSnapshot(state));
+    expect(snapshotOfSave(save)).toEqual(toSnapshot(state, SOLO_SEAT));
   });
 
   test("a log the rules no longer accept stops where it breaks", () => {

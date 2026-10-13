@@ -5,6 +5,7 @@ import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import { availableSkills } from "@/game/core/rules/sprint";
@@ -79,7 +80,7 @@ describe("the backlog", () => {
 
   test("starting a ticket is free and puts it in hand; its column comes with the first commit", () => {
     const state = newRun("start");
-    const start = getAvailableActions(state).find(isType("start"));
+    const start = getAvailableActions(state, SOLO_SEAT).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a start");
 
     const after = applyAction(state, start).state;
@@ -98,7 +99,7 @@ describe("the backlog", () => {
   test("a second ticket takes its own column once written, and starting or switching is free", () => {
     const one = inHand("two-columns");
     plantCommit(one, "craft");
-    const start = getAvailableActions(one).find(isType("start"));
+    const start = getAvailableActions(one, SOLO_SEAT).find(isType("start"));
     if (start?.type !== "start") throw new Error("expected a second ticket");
 
     // Starting a second one puts it in your hand: the camera follows as on a switch.

@@ -1,11 +1,12 @@
 import type { Effects } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { actorOf, playerOf, seatOf } from "@/game/core/rules/crew";
 import { repayDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
 import { currentTicket, unreadAiOn } from "@/game/core/rules/tickets";
-import type { NodeId, RunState } from "@/game/core/types";
+import type { NodeId, RunState, Seat } from "@/game/core/types";
 
 /**
  * Reading back what the machine wrote.
@@ -41,12 +42,12 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
     spendEnergy(context, reviewEnergyCost(state, context.effects).value, "review");
   }
 
-  const chain = state.player.aiChain >= review.chainLength;
-  const budget = reviewCleanCount(state, context.effects);
+  const chain = playerOf(state, seatOf(context)).aiChain >= review.chainLength;
+  const budget = reviewCleanCount(state, seatOf(context), context.effects);
 
   // Most recent first: the point of the chain bonus is that fresh code is
   // cheaper to read, so freshness is what gets read.
-  const candidates = [...reviewable(state, free)].reverse();
+  const candidates = [...reviewable(state, seatOf(context), free)].reverse();
   const cleaned: NodeId[] = [];
   for (const id of candidates) {
     if (cleaned.length >= budget) break;
@@ -75,8 +76,8 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
   return { nodeIds: cleaned, debtDelta: -debtDelta, chain };
 }
 
-function reviewable(state: RunState, includeShipped: boolean): NodeId[] {
-  const ticket = currentTicket(state);
+function reviewable(state: RunState, seat: Seat, includeShipped: boolean): NodeId[] {
+  const ticket = currentTicket(state, seat);
   const onTicket = ticket === null ? [] : unreadAiOn(state, ticket);
   if (!includeShipped) return onTicket;
 
@@ -88,8 +89,8 @@ function reviewable(state: RunState, includeShipped: boolean): NodeId[] {
 }
 
 /** Whether the ticket in hand has machine-written commits nobody has read. */
-export function hasUnreviewedAi(state: RunState): boolean {
-  const ticket = currentTicket(state);
+export function hasUnreviewedAi(state: RunState, seat: Seat): boolean {
+  const ticket = currentTicket(state, seat);
   return ticket !== null && unreadAiOn(state, ticket).length > 0;
 }
 
@@ -101,8 +102,8 @@ export function hasUnreviewedAi(state: RunState): boolean {
  * a way to throw a turn away. `canReview` stays an effect so a profile or a
  * relic could still take it away.
  */
-export function canReview(state: RunState, effects: Effects): boolean {
-  return effects.canReview && hasUnreviewedAi(state);
+export function canReview(state: RunState, seat: Seat, effects: Effects): boolean {
+  return effects.canReview && hasUnreviewedAi(state, seat);
 }
 
 /**
@@ -112,12 +113,12 @@ export function canReview(state: RunState, effects: Effects): boolean {
 export function runFreeReview(context: RuleContext, cadence: number): void {
   if (cadence <= 0) return;
 
-  const { player } = context.state;
+  const player = actorOf(context);
   player.turnsSinceFreeReview += 1;
   if (player.turnsSinceFreeReview < cadence) return;
 
   player.turnsSinceFreeReview = 0;
-  if (reviewable(context.state, true).length === 0) return;
+  if (reviewable(context.state, seatOf(context), true).length === 0) return;
 
   performReview(context, true);
 }

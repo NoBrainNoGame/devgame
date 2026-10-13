@@ -5,6 +5,7 @@ import { idleTarget } from "@/game/bridge/idle";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { createContext } from "@/game/core/rules/context";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { spawnObstacle, waitsOnlyForObstacle } from "@/game/core/rules/tickets";
 import type { RunState } from "@/game/core/types";
@@ -40,7 +41,7 @@ describe("a full ticket that only its obstacle holds back", () => {
 
   test("is offered no commit that fills points, though the rules still allow one", () => {
     const { state, parentId, obstacleId } = fullAndBlocked("wait-2");
-    const snapshot = toSnapshot(state);
+    const snapshot = toSnapshot(state, SOLO_SEAT);
     const offered = snapshot.actions.filter((a) => a.type === "commit");
     for (const action of offered) {
       expect(action.type === "commit" && ["docs", "risky", undefined].includes(action.kind)).toBe(
@@ -51,14 +52,14 @@ describe("a full ticket that only its obstacle holds back", () => {
     expect(snapshot.actions).toContainEqual({ type: "checkout", ticketId: obstacleId });
 
     // Legal all the same: an old log that wrote one here still replays.
-    const legal = getAvailableActions(state);
+    const legal = getAvailableActions(state, SOLO_SEAT);
     expect(legal).toContainEqual({ type: "commit", mode: "craft" });
     expect(() => applyAction(state, { type: "commit", mode: "craft" })).not.toThrow();
   });
 
   test("sends the idle clock to the obstacle", () => {
     const { state, obstacleId } = fullAndBlocked("wait-3");
-    const snapshot = toSnapshot(state);
+    const snapshot = toSnapshot(state, SOLO_SEAT);
     expect(chooseAutopilot(snapshot)).toEqual({ type: "checkout", ticketId: obstacleId });
     expect(idleTarget(snapshot)).toEqual({ type: "checkout", ticketId: obstacleId });
   });

@@ -4,6 +4,7 @@ import { TICKET_KIND } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import {
   buggedOn,
@@ -38,7 +39,7 @@ function atSpawn(prefix: string): PlayResult {
 }
 
 function obstacleInHand(state: RunState) {
-  const ticket = currentTicket(state);
+  const ticket = currentTicket(state, SOLO_SEAT);
   if (ticket === null || ticket.parentId === undefined) throw new Error("no obstacle in hand");
   const parent = state.tickets[ticket.parentId];
   if (parent === undefined) throw new Error("no parent");
@@ -64,7 +65,7 @@ describe("an obstacle turning up", () => {
     // The commit that turned it up is the feature's, and HEAD stands on it
     // until the obstacle writes its own.
     expect(parent.nodeIds).toContain(event.nodeId);
-    expect(headOf(state).id).toBe(parent.nodeIds[parent.nodeIds.length - 1] ?? "");
+    expect(headOf(state, SOLO_SEAT).id).toBe(parent.nodeIds[parent.nodeIds.length - 1] ?? "");
     expect(obstaclesOf(state, parent).map((o) => o.id)).toEqual([ticket.id]);
     expect(isReady(state, { ...parent, filled: parent.points })).toBe(false);
     expect(checkInvariants(state)).toEqual([]);
@@ -73,12 +74,12 @@ describe("an obstacle turning up", () => {
   test("writes in its own column off the feature's tip, and never on dev", () => {
     const { state } = atSpawn("fork");
     const { parent } = obstacleInHand(state);
-    const craft = getAvailableActions(state).find(
+    const craft = getAvailableActions(state, SOLO_SEAT).find(
       (a) => a.type === "commit" && a.mode === "craft" && a.kind === undefined,
     );
     if (craft === undefined) throw new Error("cannot write");
     const after = applyAction(state, craft).state;
-    const ticket = currentTicket(after);
+    const ticket = currentTicket(after, SOLO_SEAT);
     if (ticket === null) throw new Error("hand emptied");
     if (ticket.nodeIds.length === 0) return; // the roll missed: nothing to inspect
     const first = after.nodes[ticket.nodeIds[0] ?? ""];
@@ -156,13 +157,13 @@ describe("an obstacle turning up", () => {
     full.nextDepth += 1;
     own.nodeIds = [id];
 
-    const types = getAvailableActions(full).map((a) => a.type);
+    const types = getAvailableActions(full, SOLO_SEAT).map((a) => a.type);
     expect(types).toContain("merge");
     expect(types).not.toContain("submit");
 
     // Back on the feature, full but held: no pull request to open.
     const held = applyAction(full, { type: "checkout", ticketId: feature.id }).state;
-    expect(getAvailableActions(held).map((a) => a.type)).not.toContain("submit");
+    expect(getAvailableActions(held, SOLO_SEAT).map((a) => a.type)).not.toContain("submit");
     expect(checkInvariants(full)).toEqual([]);
   });
 

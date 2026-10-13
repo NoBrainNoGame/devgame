@@ -1,4 +1,5 @@
 import { BALANCE } from "@/game/core/balance";
+import { commitsOf } from "@/game/core/rules/crew";
 import type { RunState } from "@/game/core/types";
 
 /**
@@ -9,7 +10,7 @@ import type { RunState } from "@/game/core/types";
 export function computeScore(state: RunState): number {
   const { score } = BALANCE;
   return (
-    state.player.totalCommits * score.perCommit +
+    commitsOf(state) * score.perCommit +
     state.pointsDelivered * score.perTicketPoint +
     Math.max(0, state.sprint - 1) * score.perSprintCompleted
   );

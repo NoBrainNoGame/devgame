@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { UPGRADES, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthlyReport, monthTurns } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { getActionPreview } from "@/game/core/rules/preview";
@@ -187,14 +188,16 @@ describe("the shop", () => {
   test("an upgrade is offered only when it can be paid for, and costs no turn", () => {
     const state = inHand("shop");
     state.money = 0;
-    expect(getAvailableActions(state).some(isType("buy"))).toBe(false);
+    expect(getAvailableActions(state, SOLO_SEAT).some(isType("buy"))).toBe(false);
 
     const rich = structuredClone(state);
     rich.money = upgradeCost("servers", 0) ?? 0;
-    const buy = getAvailableActions(rich).find((a) => a.type === "buy" && a.id === "servers");
+    const buy = getAvailableActions(rich, SOLO_SEAT).find(
+      (a) => a.type === "buy" && a.id === "servers",
+    );
     expect(buy).toBeDefined();
     if (buy === undefined) return;
-    expect(getActionPreview(rich, buy).consumesTurn).toBe(false);
+    expect(getActionPreview(rich, SOLO_SEAT, buy).consumesTurn).toBe(false);
 
     const after = applyAction(rich, buy).state;
     expect(after.turn).toBe(rich.turn);
@@ -223,7 +226,7 @@ describe("the shop", () => {
 
     const broke = structuredClone(once);
     broke.money = skillPointPrice(once) - 1;
-    expect(getAvailableActions(broke).some(isType("buy_point"))).toBe(false);
+    expect(getAvailableActions(broke, SOLO_SEAT).some(isType("buy_point"))).toBe(false);
   });
 
   test("buying moves nothing but the money: same board, same rolls", () => {

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 
@@ -72,7 +73,7 @@ describe("the written graph", () => {
       expect(nodes[1]?.kind).toBe("sprint_start");
       expect(nodes[1]?.lane).toBe(DEV_LANE);
       expect(nodes[1]?.parents).toEqual([nodes[0]?.id ?? ""]);
-      expect(headOf(state).id).toBe(nodes[1]?.id ?? "");
+      expect(headOf(state, SOLO_SEAT).id).toBe(nodes[1]?.id ?? "");
     }
   });
 
@@ -155,7 +156,7 @@ describe("the written graph", () => {
     const state = inHand("reuse-column");
     plantCommit(state, "craft");
     const first = ticketInHand(state);
-    const second = getAvailableActions(state).find(isType("start"));
+    const second = getAvailableActions(state, SOLO_SEAT).find(isType("start"));
     if (second?.type !== "start") throw new Error("expected a second ticket");
     // Starting it puts it in hand.
     const onSecond = applyAction(state, second).state;
@@ -167,7 +168,7 @@ describe("the written graph", () => {
     if (landed.phase.kind === "resolve_conflict") return;
     expect(landed.tickets[first.id]?.lane).toBeUndefined();
 
-    const third = getAvailableActions(landed).find(isType("start"));
+    const third = getAvailableActions(landed, SOLO_SEAT).find(isType("start"));
     if (third?.type !== "start") return;
     const onThird = applyAction(landed, third).state;
     plantCommit(onThird, "craft");
@@ -199,7 +200,7 @@ describe("the written graph", () => {
       const played = play(newRun(`head-${i}`), { pick: policy("ai"), limit: 80 });
       const state = played.state;
 
-      const head = headOf(state);
+      const head = headOf(state, SOLO_SEAT);
       expect(state.nodes[head.id]).toBeDefined();
 
       const ticketId = state.player.ticketId;

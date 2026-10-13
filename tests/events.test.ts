@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { buggedOn, offersOf, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
 
@@ -97,7 +98,7 @@ describe("a roll that misses", () => {
 
     // A broken commit holds nothing: the pull request opens over it.
     const ready = makeReady(state);
-    expect(getAvailableActions(ready).some(isType("submit"))).toBe(true);
+    expect(getAvailableActions(ready, SOLO_SEAT).some(isType("submit"))).toBe(true);
     const after = applyAction(ready, { type: "submit" }).state;
     expect(ticketInHand(after).nodeIds).not.toContain(draft);
     expect(after.nodes[draft]).toBeDefined();
@@ -121,7 +122,7 @@ describe("a roll that misses", () => {
     if (hotfix === undefined) return;
 
     const onIt = applyAction(state, { type: "checkout", ticketId: hotfix.id }).state;
-    const commits = getAvailableActions(onIt).filter(isType("commit"));
+    const commits = getAvailableActions(onIt, SOLO_SEAT).filter(isType("commit"));
     expect(commits.length).toBe(2);
     expect(commits.every((a) => a.type === "commit" && a.kind === undefined)).toBe(true);
 

@@ -4,6 +4,7 @@ import type { ProfileId } from "@/game/content";
 import { fnv1a } from "@/game/core/hash";
 import { createRng } from "@/game/core/rng";
 import { getAvailableActions } from "@/game/core/rules/actions";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
@@ -390,7 +391,7 @@ export function playFixtureRun(options: PlayOptions): PlayedRun {
   while (state.phase.kind !== "game_over" && state.turn < maxTurns) {
     if (options.stopAtSprint !== undefined && state.sprint >= options.stopAtSprint) break;
 
-    const legal = getAvailableActions(state);
+    const legal = getAvailableActions(state, SOLO_SEAT);
     if (legal.length === 0) {
       throw new Error(`${options.seed}: the engine offers no action at turn ${state.turn}`);
     }
