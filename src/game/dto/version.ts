@@ -12,8 +12,9 @@ import {
   TICKET_KINDS,
   TREE_IDS,
   UPGRADE_IDS,
+  WORLD_EVENT_IDS,
 } from "@/game/content";
-import { BALANCE } from "@/game/core/balance";
+import { BALANCE, CREW_BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1aHex } from "@/game/core/hash";
 
 /**
@@ -130,3 +131,29 @@ export function fingerprintFor(epoch: number): string {
 }
 
 export const RULES_FINGERPRINT = fingerprintFor(RULES_EPOCH);
+
+/**
+ * The same two numbers for a company. A company replays under the solo rules
+ * too, so its fingerprint hashes theirs as well: a solo balance change moves
+ * both. `CREW_EPOCH` is bumped by hand when a change to the company rules
+ * (rounds, seats, sites, the vote, the world) makes an old log replay to a
+ * different game. Solo scores never read either: `RULES_EPOCH` and
+ * `RULES_FINGERPRINT` do not move for a company.
+ */
+export const CREW_EPOCH = 1;
+
+export function crewFingerprintFor(epoch: number): string {
+  return fnv1aHex(
+    canonicalJson({
+      epoch,
+      rules: RULES_FINGERPRINT,
+      balance: CREW_BALANCE,
+      worldEvents: WORLD_EVENT_IDS,
+    }),
+  );
+}
+
+export const CREW_FINGERPRINT = crewFingerprintFor(CREW_EPOCH);
+
+/** A company log's shape. Bumped by hand, with a migration, like `SAVE_VERSION`. */
+export const COMPANY_SAVE_VERSION = 1;

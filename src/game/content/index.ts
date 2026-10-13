@@ -94,6 +94,7 @@ export {
   DEV_RANK,
   DEV_RANKS,
   devColourIndex,
+  humanColourIndex,
   isDevRank,
   nextRank,
   PLAYER_COLOUR,

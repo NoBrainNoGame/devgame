@@ -100,10 +100,25 @@ export const DEV_COLOUR_COUNT = 8;
 /** The player's colour index. */
 export const PLAYER_COLOUR = 0;
 
-/** Which of the colours a developer wears: their serial, wrapping past the player's. */
-export function devColourIndex(id: string): number {
+/**
+ * Which of the colours a developer wears: their serial, wrapping past the
+ * player's. In a company the humans wear colours too (`reserved`), and a
+ * developer takes the next one nobody wears, so a bot is never mistaken for
+ * a teammate while there are colours to spare.
+ */
+export function devColourIndex(id: string, reserved: ReadonlySet<number> = new Set()): number {
   const serial = Number(id.slice(1));
-  return Number.isInteger(serial) && serial > 0 ? serial % DEV_COLOUR_COUNT : PLAYER_COLOUR;
+  if (!Number.isInteger(serial) || serial <= 0) return PLAYER_COLOUR;
+  for (let step = 0; step < DEV_COLOUR_COUNT; step += 1) {
+    const colour = (serial + step) % DEV_COLOUR_COUNT;
+    if (!reserved.has(colour)) return colour;
+  }
+  return serial % DEV_COLOUR_COUNT;
+}
+
+/** The colour of a human of a company, by seat: the first is the solo player's. */
+export function humanColourIndex(seat: number): number {
+  return seat % DEV_COLOUR_COUNT;
 }
 
 export function isDevRank(value: string): value is DevRank {

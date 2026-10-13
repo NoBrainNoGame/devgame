@@ -9,12 +9,25 @@ import type {
   TreeNodeId,
   UpgradeId,
 } from "@/game/content";
-import { COMPETITOR_IDS, DEV_RANK, DEV_RANKS, devColourIndex } from "@/game/content";
+import {
+  COMPETITOR_IDS,
+  DEV_RANK,
+  DEV_RANKS,
+  devColourIndex,
+  humanColourIndex,
+} from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { type CapacityAdvice, capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
-import { playerOf } from "@/game/core/rules/crew";
+import {
+  occupiedSeats,
+  phaseOf,
+  playerOf,
+  seatState,
+  siteHeadcount,
+  siteOf,
+} from "@/game/core/rules/crew";
 import { monthlyReport, paydayIn, projectedLoadOf } from "@/game/core/rules/economy";
 import { hackOffer } from "@/game/core/rules/hack";
 import { competitorsAlive, powerOf, priceWarMonthsLeft } from "@/game/core/rules/market";
@@ -32,7 +45,7 @@ import { previewAll } from "@/game/core/rules/preview";
 import { qualityMax } from "@/game/core/rules/quality";
 import { sprintTurns } from "@/game/core/rules/relics";
 import { skillPointPrice } from "@/game/core/rules/shop";
-import { devCapacity, hireCostOf, maxSeats, ticketsOf } from "@/game/core/rules/team";
+import { devCapacity, hireCostOf, seatsFor, ticketsOf } from "@/game/core/rules/team";
 import {
   buggedOn,
   currentTicket,
@@ -45,7 +58,7 @@ import {
   waitsOnlyForObstacle,
 } from "@/game/core/rules/tickets";
 import { austerityOf } from "@/game/core/rules/tier";
-import { computeScore } from "@/game/core/score";
+import { computeScore, playerScore } from "@/game/core/score";
 import type {
   ActionPreview,
   CapacityLevel,
@@ -62,6 +75,8 @@ import type {
   RunState,
   RunStats,
   Seat,
+  SeatPhase,
+  SiteId,
   Ticket,
   TicketId,
 } from "@/game/core/types";
@@ -114,6 +129,8 @@ export interface TicketView {
   mrr: number;
   /** The developer working it, when it is not you. */
   assignee?: DevId;
+  /** The human holding it, in a company. */
+  holder?: Seat;
   /** The developer who landed it, when it was not you: a merge clears `assignee`. */
   deliveredBy?: DevId;
   /** The feature this obstacle stands on. */
@@ -210,6 +227,41 @@ export interface EconomyView {
   hireCosts: Record<DevRank, number>;
 }
 
+/** One human of a company, as the team panel and the ranking show them. */
+export interface SeatView {
+  seat: Seat;
+  name: string;
+  site: SiteId;
+  /** Which of the team's colours they wear: `--color-dev-<colour>`. */
+  colour: number;
+  energy: number;
+  energyMax: number;
+  ticketId: TicketId | null;
+  /** The question only they are being asked, when there is one. */
+  pending?: SeatPhase["kind"];
+  /** What they have brought the company so far. */
+  score: number;
+}
+
+export interface SiteView {
+  id: SiteId;
+  upgrade: UpgradeId | "hq";
+  seats: number;
+  /** Humans and hired developers sitting there. */
+  used: number;
+}
+
+/** A company as one of its humans sees it. */
+export interface CrewView {
+  name: string;
+  mySeat: Seat;
+  mySite: SiteId;
+  sites: SiteView[];
+  seats: SeatView[];
+  /** Those who left, with what they brought. */
+  left: { seat: Seat; name: string; score: number }[];
+}
+
 export interface RunSnapshot {
   seed: string;
   mode: RunMode;
@@ -230,12 +282,17 @@ export interface RunSnapshot {
   /** What the run went through, for the screen that ends it. */
   stats: RunStats;
 
+  /** What this human is being asked: their own question, else the company's. */
   phase: Phase;
+  /** The company's question (bonus, event), whoever is being asked it. Solo: the same as `phase`. */
+  companyPhase: Phase;
   actions: PlayerAction[];
   /** Keyed by `actionKey`, so a button can look up its own numbers. */
   previews: Record<string, ActionPreview>;
 
   player: PlayerView;
+  /** Present in a company. */
+  crew?: CrewView;
   debt: DebtView;
 
   skills: SkillId[];
@@ -288,6 +345,37 @@ export interface RunSnapshot {
 
   /** The board, oldest ticket first. */
   tickets: TicketView[];
+}
+
+function crewView(state: RunState, mySeat: Seat): CrewView {
+  const crew = state.crew;
+  if (crew === undefined) throw new Error("crewView: not a company");
+  return {
+    name: crew.name,
+    mySeat,
+    mySite: siteOf(state, mySeat),
+    sites: Object.entries(crew.sites).map(([id, site]) => ({
+      id,
+      upgrade: site.upgrade,
+      seats: site.seats,
+      used: siteHeadcount(state, id),
+    })),
+    seats: occupiedSeats(state).map((seat) => {
+      const held = seatState(state, seat);
+      return {
+        seat,
+        name: held.name,
+        site: held.site,
+        colour: humanColourIndex(seat),
+        energy: held.player.energy,
+        energyMax: held.player.energyMax,
+        ticketId: held.player.ticketId,
+        ...(held.pending === undefined ? {} : { pending: held.pending.kind }),
+        score: playerScore(state, seat),
+      };
+    }),
+    left: Object.entries(crew.left).map(([seat, who]) => ({ seat: Number(seat), ...who })),
+  };
 }
 
 /** The ticket's commits that count: a broken one is only on your machine, and the next push drops it. */
@@ -363,6 +451,7 @@ export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
     ...(ticket.skillId === undefined ? {} : { skillId: ticket.skillId }),
     mrr: ticket.mrr,
     ...(ticket.assignee === undefined ? {} : { assignee: ticket.assignee }),
+    ...(ticket.holder === undefined ? {} : { holder: ticket.holder }),
     ...deliveredBy(state, ticket),
     ...(ticket.parentId === undefined ? {} : { parentId: ticket.parentId }),
     blockedBy: obstaclesOf(state, ticket).map((obstacle) => obstacle.id),
@@ -382,10 +471,11 @@ export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
   const report = monthlyReport(state, effects);
   const alert = capacityStatus(state, effects);
   const projected = projectedLoadOf(state);
+  const humanColours = new Set(occupiedSeats(state).map(humanColourIndex));
   const devs: DevView[] = state.devs.map((dev) => ({
     id: dev.id,
     name: dev.name,
-    colour: devColourIndex(dev.id),
+    colour: devColourIndex(dev.id, humanColours),
     rank: dev.rank,
     capacity: devCapacity(dev, effects),
     ticketIds: ticketsOf(state, dev.id).map((ticket) => ticket.id),
@@ -414,7 +504,8 @@ export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
     qualityMax: qualityMax(effects),
     stats: { ...state.stats, qualityBySource: { ...state.stats.qualityBySource } },
 
-    phase: state.phase,
+    phase: phaseOf(state, seat),
+    companyPhase: state.phase,
     actions,
     previews: previewAll(state, seat, actions),
 
@@ -429,6 +520,8 @@ export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
       reviewedRatio: reviewedRatio(state),
       unreviewed: current === null ? 0 : unreadAiOn(state, current).length,
     },
+
+    ...(state.crew === undefined ? {} : { crew: crewView(state, seat) }),
 
     debt: debtView(state, effects),
 
@@ -457,7 +550,7 @@ export function toSnapshot(state: RunState, seat: Seat): RunSnapshot {
         state.tier >= BALANCE.economy.tier.last
           ? null
           : BALANCE.economy.tier.first * BALANCE.economy.tier.growth ** state.tier,
-      seats: { used: state.devs.length, max: maxSeats(effects) },
+      seats: seatsFor(state, effects, seat),
       alert,
       projectedLoad: projected,
       advice:

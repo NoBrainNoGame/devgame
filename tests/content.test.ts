@@ -27,6 +27,10 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import {
+  COMPANY_SAVE_VERSION,
+  CREW_EPOCH,
+  CREW_FINGERPRINT,
+  crewFingerprintFor,
   fingerprintFor,
   RULES_EPOCH,
   RULES_EPOCHS,
@@ -249,5 +253,18 @@ describe("rules fingerprint", () => {
     expect(fingerprintFor(RULES_EPOCH)).toBe(RULES_FINGERPRINT);
     expect(fingerprintFor(RULES_EPOCH + 1)).not.toBe(RULES_FINGERPRINT);
     expect(fingerprintFor(RULES_EPOCH - 1)).not.toBe(RULES_FINGERPRINT);
+  });
+});
+
+describe("the company's own versions", () => {
+  test("pin the company fingerprint: a change of its rules must be a decision", () => {
+    expect(CREW_FINGERPRINT).toBe("24df92b8");
+    expect(COMPANY_SAVE_VERSION).toBe(1);
+  });
+
+  test("the epoch feeds the fingerprint, and it is not the solo one", () => {
+    expect(crewFingerprintFor(CREW_EPOCH)).toBe(CREW_FINGERPRINT);
+    expect(crewFingerprintFor(CREW_EPOCH + 1)).not.toBe(CREW_FINGERPRINT);
+    expect(CREW_FINGERPRINT).not.toBe(RULES_FINGERPRINT);
   });
 });
