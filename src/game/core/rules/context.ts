@@ -1,7 +1,8 @@
 import type { Effects } from "@/game/content";
 import { createRng, type Rng } from "@/game/core/rng";
+import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { gatherEffects } from "@/game/core/rules/modifiers";
-import type { GameEvent, RunState } from "@/game/core/types";
+import type { GameEvent, RunState, Seat } from "@/game/core/types";
 
 /**
  * The working set for one action.
@@ -15,15 +16,18 @@ import type { GameEvent, RunState } from "@/game/core/types";
  */
 export interface RuleContext {
   state: RunState;
+  /** The human acting. Solo: always `SOLO_SEAT`. Null when the engine acts alone. */
+  seat: Seat | null;
   rng: Rng;
   events: GameEvent[];
   effects: Effects;
   refresh(): void;
 }
 
-export function createContext(state: RunState): RuleContext {
+export function createContext(state: RunState, seat: Seat | null = SOLO_SEAT): RuleContext {
   const context: RuleContext = {
     state,
+    seat,
     rng: createRng(state.rng),
     events: [],
     effects: gatherEffects(state),

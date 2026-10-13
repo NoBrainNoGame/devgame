@@ -173,6 +173,12 @@ export interface Ticket {
   late?: true;
 }
 
+/**
+ * A human at the keyboard. Solo has exactly one, seat 0; a company has as many
+ * as its sites hold, numbered in the order they joined and never reused.
+ */
+export type Seat = number;
+
 export interface Player {
   /** The ticket being written. Null between tickets. */
   ticketId: TicketId | null;

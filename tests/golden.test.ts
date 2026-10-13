@@ -44,7 +44,11 @@ describe("solo state is frozen", () => {
       const { state, actions } = play(start, { pick, limit: c.limit });
       const got = { hash: hashState(state), score: computeScore(state), actions: actions.length };
       if (process.env.GOLDEN_PRINT === "1") console.info(c.name, JSON.stringify(got));
-      else expect({ hash: got.hash, score: got.score }).toEqual(PINNED[c.name]);
+      else {
+        const pinned = PINNED[c.name];
+        if (pinned === undefined) throw new Error(`${c.name}: no pin, run with GOLDEN_PRINT=1`);
+        expect({ hash: got.hash, score: got.score }).toEqual(pinned);
+      }
     });
   }
 });
