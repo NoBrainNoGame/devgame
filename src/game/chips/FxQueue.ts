@@ -121,7 +121,7 @@ export class FxQueue extends booyah.Queue {
       // purchase shows its own price; the canvas has no money to raise.
       const steps = planBatch(payload.events, payload.state, reveal.snapshot(), translate, {
         reviewHold: interactive,
-        economyPops: !isShopAction(payload.action),
+        economyPops: payload.action === undefined || !isShopAction(payload.action),
         pushes: payload.pushes,
       });
       const cued = new Set<string>();

@@ -10,6 +10,8 @@ import {
   phaseOf,
   playerOf,
   siteMembers,
+  siteView,
+  ticketVisibleAt,
 } from "@/game/core/rules/crew";
 import { applyAction, applyRound, joinCrew, leaveCrew } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
@@ -283,5 +285,71 @@ describe("a company's snapshot", () => {
       version: SAVE_VERSION,
     });
     expect(toSnapshot(solo, 0).crew).toBeUndefined();
+  });
+});
+
+describe("a site's view", () => {
+  /** Two sites, one human each, a commit apiece. */
+  function twoSites(): RunState {
+    let state = structuredClone(company());
+    if (state.crew === undefined) throw new Error("no crew");
+    state.crew.sites["office-1"] = { upgrade: "office", seats: 4 };
+    state = joinCrew(state, { name: "Bob", site: "office-1" }).state;
+    state = start(start(state, 0), 1);
+    return applyRound(state, {
+      actions: { 0: { type: "commit", mode: "craft" }, 1: { type: "commit", mode: "craft" } },
+      world: noWorld,
+    }).state;
+  }
+
+  test("shows the trunks and its own people's branches, and nobody else's", () => {
+    const state = twoSites();
+    const authors = (view: RunState): Seat[] =>
+      Object.values(view.nodes).flatMap((node) =>
+        node.commit.seat === undefined ? [] : [node.commit.seat],
+      );
+    expect(authors(state).sort()).toEqual([0, 1]);
+    expect(authors(siteView(state, HEAD_OFFICE))).toEqual([0]);
+    expect(authors(siteView(state, "office-1"))).toEqual([1]);
+    // The trunks are everyone's.
+    const trunk = (view: RunState): number =>
+      Object.values(view.nodes).filter((node) => node.lane <= 1).length;
+    expect(trunk(siteView(state, HEAD_OFFICE))).toBe(trunk(state));
+  });
+
+  test("leaves no node pointing at a parent that is not there", () => {
+    const state = twoSites();
+    for (const site of [HEAD_OFFICE, "office-1"]) {
+      const view = siteView(state, site);
+      for (const node of Object.values(view.nodes)) {
+        for (const parent of node.parents) expect(view.nodes[parent]).toBeDefined();
+      }
+      for (const ticket of Object.values(view.tickets)) {
+        for (const id of ticket.nodeIds) expect(view.nodes[id]).toBeDefined();
+      }
+    }
+  });
+
+  test("the board is the company's backlog and the site's own open tickets", () => {
+    const state = twoSites();
+    const mine = Object.values(state.tickets).filter((ticket) =>
+      ticketVisibleAt(state, ticket, HEAD_OFFICE),
+    );
+    expect(mine.some((ticket) => ticket.holder === 1)).toBe(false);
+    expect(mine.some((ticket) => ticket.holder === 0)).toBe(true);
+    const fresh = company();
+    const backlog = Object.values(fresh.tickets).filter((ticket) => ticket.status === "backlog");
+    expect(backlog.length).toBeGreaterThan(0);
+    expect(backlog.every((ticket) => ticketVisibleAt(fresh, ticket, "anywhere"))).toBe(true);
+  });
+
+  test("solo is its own view", () => {
+    const solo = createRun({
+      seed: "s",
+      mode: "classic",
+      profileId: "junior",
+      version: SAVE_VERSION,
+    });
+    expect(siteView(solo, HEAD_OFFICE)).toBe(solo);
   });
 });

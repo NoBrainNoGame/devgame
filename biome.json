@@ -119,11 +119,10 @@
               "level": "error",
               "options": {
                 "paths": {
-                  "pixi.js": "The realtime server is a Bun process: no rendering here.",
+                  "pixi.js": "src/realtime is a Bun process and its browser client: no rendering here.",
                   "react": "The realtime server is a Bun process: no UI here.",
                   "react-dom": "The realtime server is a Bun process: no UI here.",
                   "next": "The realtime server is not Next: the app and the server share the game and the protocol only.",
-                  "zustand": "The realtime server owns the world in memory; a store is the client's.",
                   "@ghom/booyah": "Chips are the scene's; the server never draws."
                 },
                 "patterns": [

@@ -1,10 +1,12 @@
 import { CREW_BALANCE } from "@/game/core/balance";
+import { DEV_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { gameOver } from "@/game/core/rules/over";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { playerScore } from "@/game/core/score";
 import type {
+  NodeId,
   Phase,
   Player,
   RunState,
@@ -252,4 +254,75 @@ export function missRound(context: RuleContext, seat: Seat): void {
   } finally {
     context.seat = before;
   }
+}
+
+/**
+ * Whether a ticket is on this site's board. The backlog is the company's, and
+ * so is anything nobody holds; an open ticket belongs to the site of the
+ * human or the hired developer working it.
+ */
+export function ticketVisibleAt(state: RunState, ticket: Ticket, site: SiteId): boolean {
+  if (state.crew === undefined) return true;
+  if (ticket.assignee !== undefined) {
+    const dev = state.devs.find((other) => other.id === ticket.assignee);
+    return dev?.site === undefined ? true : dev.site === site;
+  }
+  if (ticket.holder === undefined) return true;
+  const held = state.crew.seats[ticket.holder];
+  return held === undefined ? true : held.site === site;
+}
+
+/**
+ * The commits a site sees: the trunks and everything on them, and the branches
+ * of the tickets its own people hold. Another site's branch is another
+ * site's business, and a graph of thirty people's branches would be
+ * unreadable for any of them.
+ */
+export function visibleNodeIds(state: RunState, site: SiteId): Set<NodeId> {
+  const visible = new Set<NodeId>();
+  for (const node of Object.values(state.nodes)) {
+    if (node.lane <= DEV_LANE) {
+      visible.add(node.id);
+      continue;
+    }
+    const ticket = node.ticketId === undefined ? undefined : state.tickets[node.ticketId];
+    if (ticket === undefined || ticketVisibleAt(state, ticket, site)) visible.add(node.id);
+  }
+  return visible;
+}
+
+/**
+ * The run as one site's scene draws it: the same state with the other sites'
+ * branches taken out, the merges that brought them home keeping only the
+ * parents that are still there. Pure and shallow — rules never see it, only
+ * the canvas does.
+ */
+export function siteView(state: RunState, site: SiteId): RunState {
+  if (state.crew === undefined) return state;
+  const visible = visibleNodeIds(state, site);
+  const nodes: RunState["nodes"] = {};
+  for (const [id, node] of Object.entries(state.nodes)) {
+    if (!visible.has(id)) continue;
+    nodes[id] = node.parents.every((parent) => visible.has(parent))
+      ? node
+      : { ...node, parents: node.parents.filter((parent) => visible.has(parent)) };
+  }
+  const tickets: RunState["tickets"] = {};
+  for (const [id, ticket] of Object.entries(state.tickets)) {
+    const mine = ticket.nodeIds.filter((nodeId) => visible.has(nodeId));
+    const mergeHidden = ticket.mergeNodeId !== undefined && !visible.has(ticket.mergeNodeId);
+    if (mine.length === ticket.nodeIds.length && !mergeHidden) {
+      tickets[id] = ticket;
+      continue;
+    }
+    const { mergeNodeId: _merge, ...rest } = ticket;
+    tickets[id] = {
+      ...rest,
+      nodeIds: mine,
+      ...(ticket.mergeNodeId !== undefined && !mergeHidden
+        ? { mergeNodeId: ticket.mergeNodeId }
+        : {}),
+    };
+  }
+  return { ...state, nodes, tickets };
 }

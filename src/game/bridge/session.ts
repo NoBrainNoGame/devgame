@@ -2,15 +2,16 @@ import { Emitter } from "@/game/bridge/emitter";
 import { holdFor, readout } from "@/game/bridge/gauges";
 import { advancePushes, emptyPushes, type PushLedger, type PushOp } from "@/game/bridge/pushes";
 import { rebuildRun } from "@/game/bridge/rebuild";
-import { toSnapshot } from "@/game/bridge/snapshot";
+import { type RunSnapshot, toSnapshot } from "@/game/bridge/snapshot";
 import { gameStore } from "@/game/bridge/store";
 import { achievementsInRun } from "@/game/core/achievements";
 import { isActionAvailable } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { SOLO_SEAT, siteView, ticketVisibleAt, visibleNodeIds } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
-import type { ShowcaseOptions } from "@/game/core/run";
+import { hashState, type ShowcaseOptions } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
-import type { GameEvent, PlayerAction, RunState, Seat } from "@/game/core/types";
+import type { GameEvent, PlayerAction, RunState, Seat, SiteId } from "@/game/core/types";
+import { applyEntry, type CompanyEntry, type CompanyStart, startCompany } from "@/game/dto/company";
 import type { MetaProgressDto } from "@/game/dto/meta";
 import type { RunSaveDto } from "@/game/dto/run";
 import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
@@ -26,8 +27,11 @@ import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
 export interface AppliedPayload {
   events: GameEvent[];
   state: RunState;
-  /** The action that produced them: a purchase is told differently from a turn. */
-  action: PlayerAction;
+  /**
+   * The action that produced them: a purchase is told differently from a turn.
+   * Absent when it was a round, or somebody else's entry, with none of mine in it.
+   */
+  action?: PlayerAction;
   /** This publication's number, so a late effect can tell it belongs to an older one. */
   batch: number;
   /** What the batch pushed, in the order the story tells it. */
@@ -53,6 +57,23 @@ export interface Presentation {
   holdGauges: boolean;
 }
 
+/**
+ * A session in a company: the state is built from what the server sent and
+ * moved only by the entries it sends after. Nothing the player does is
+ * applied here — it is sent, and applied when its echo comes back, the same
+ * for everybody and in the same order.
+ */
+export interface CompanyOptions {
+  start: CompanyStart;
+  site: SiteId;
+  /** A compaction to start from instead of the beginning. */
+  snapshot?: RunState;
+  /** Entries after the snapshot (or after the beginning). */
+  entries: readonly CompanyEntry[];
+  /** Hands an action to the server. */
+  send: (action: PlayerAction) => DispatchResult;
+}
+
 export interface SessionOptions {
   seed: string;
   mode: "classic" | "daily";
@@ -62,6 +83,8 @@ export interface SessionOptions {
   createdAt: string;
   /** The human this session plays. Absent: the solo seat. */
   seat?: Seat;
+  /** Present: a company's session, not a solo run. */
+  company?: CompanyOptions;
   /** Replays a previously saved log, so a reload resumes where it left off. */
   resumeActions?: readonly PlayerAction[];
   /** The landing page's run: a team from turn 1, and no way to lose. */
@@ -78,13 +101,29 @@ export type DispatchResult = { ok: true } | { ok: false; reason: string };
 
 export class GameSession extends Emitter {
   private readonly actionLog: PlayerAction[] = [];
+  private readonly entryLog: CompanyEntry[] = [];
   private state: RunState;
+  /** The scene's picture of a company's state: the other sites' branches taken out. */
+  private view: { of: RunState; state: RunState } | null = null;
   private pushes: PushLedger = emptyPushes();
   private presentation: Presentation = { animated: true, holdGauges: false };
   private batch = 0;
 
   constructor(private readonly options: SessionOptions) {
     super();
+    const { company } = options;
+    if (company !== undefined) {
+      this.state = company.snapshot ?? startCompany(company.start);
+      for (const entry of company.entries) {
+        const result = applyEntry(this.state, entry);
+        this.state = result.state;
+        this.entryLog.push(entry);
+        this.pushes = advancePushes(this.pushes, result.events, this.state).ledger;
+      }
+      this.publish();
+      return;
+    }
+
     const rebuilt = rebuildRun(
       {
         seed: options.seed,
@@ -113,8 +152,28 @@ export class GameSession extends Emitter {
     return this.options.seat ?? SOLO_SEAT;
   }
 
+  /** What the scene draws from: in a company, the state as the viewer's site sees it. */
   getState(): RunState {
+    const { company } = this.options;
+    if (company === undefined) return this.state;
+    if (this.view?.of !== this.state) {
+      this.view = { of: this.state, state: siteView(this.state, company.site) };
+    }
+    return this.view.state;
+  }
+
+  /** The state the rules run on, in full: for the hash and the checks, never for drawing. */
+  getRawState(): RunState {
     return this.state;
+  }
+
+  /** Whether the session plays a company. */
+  get isCompany(): boolean {
+    return this.options.company !== undefined;
+  }
+
+  getEntries(): CompanyEntry[] {
+    return [...this.entryLog];
   }
 
   /** Which of the run's commits are pushed, as the graph ends a batch. */
@@ -134,6 +193,14 @@ export class GameSession extends Emitter {
    * player would see a commit resolve before the node it happened on appeared.
    */
   dispatch(action: PlayerAction, origin?: { x: number; y: number }): DispatchResult {
+    const { company } = this.options;
+    if (company !== undefined) {
+      // Sending is not applying: the canvas may still be playing the last entry.
+      if (!isActionAvailable(this.state, this.seat, action)) {
+        return { ok: false, reason: "illegal" };
+      }
+      return company.send(action);
+    }
     if (gameStore.getState().pendingAnimation) {
       return { ok: false, reason: "animating" };
     }
@@ -162,8 +229,59 @@ export class GameSession extends Emitter {
     return { ok: true };
   }
 
+  /**
+   * An entry the server sent, applied to the company and played on the canvas.
+   * False when the rules refuse it, which means this client drifted.
+   */
+  applyEntry(entry: CompanyEntry): boolean {
+    const { company } = this.options;
+    if (company === undefined) throw new Error("applyEntry: a solo run has no entries");
+    let result: { state: RunState; events: GameEvent[] };
+    try {
+      result = applyEntry(this.state, entry);
+    } catch {
+      return false;
+    }
+    this.state = result.state;
+    this.entryLog.push(entry);
+    const pushed = advancePushes(this.pushes, result.events, result.state);
+    this.pushes = pushed.ledger;
+
+    const mine = this.myAction(entry);
+    this.batch += 1;
+    this.publish(result.events, mine);
+    const payload: AppliedPayload = {
+      events: result.events,
+      state: this.getState(),
+      batch: this.batch,
+      pushes: pushed.ops,
+      ...(mine === undefined ? {} : { action: mine }),
+    };
+    this.emit("applied", payload);
+    return true;
+  }
+
+  /** The hash of the state the rules run on, to compare with the server's. */
+  hash(): string {
+    return hashState(this.state);
+  }
+
+  /** My part of an entry: the action I took in it, when I took one. */
+  private myAction(entry: CompanyEntry): PlayerAction | undefined {
+    if (entry.kind === "act")
+      return entry.seat === this.seat ? (entry.action as PlayerAction) : undefined;
+    if (entry.kind === "round") {
+      const chosen = entry.actions[String(this.seat)];
+      return chosen === undefined || chosen === "missed" ? undefined : (chosen as PlayerAction);
+    }
+    return undefined;
+  }
+
   /** The whole run, small enough to put in `localStorage` or a JSON column. */
   save(): RunSaveDto {
+    if (this.options.company !== undefined) {
+      throw new Error("A company has no local save: the server keeps it");
+    }
     return {
       version: SAVE_VERSION,
       rules: RULES_FINGERPRINT,
@@ -185,7 +303,7 @@ export class GameSession extends Emitter {
     const isOver = this.state.phase.kind === "game_over";
 
     const review = events.find((event) => event.type === "pr_reviewed");
-    const snapshot = toSnapshot(this.state, this.seat);
+    const snapshot = this.snapshotOf();
     // The gauges keep their old values until the canvas shows them moving.
     const previous = gameStore.getState().snapshot;
     const heldGauges =
@@ -209,6 +327,26 @@ export class GameSession extends Emitter {
         action === undefined ? [] : achievementsInRun({ state: this.state, events, action }),
       lastError: null,
     });
+  }
+
+  /** The HUD's view: the engine's snapshot, with the other sites' branches and tickets left out. */
+  private snapshotOf(): RunSnapshot {
+    const snapshot = toSnapshot(this.state, this.seat);
+    const { company } = this.options;
+    if (company === undefined) return snapshot;
+    const visible = visibleNodeIds(this.state, company.site);
+    const board = new Set(
+      Object.values(this.state.tickets)
+        .filter((ticket) => ticketVisibleAt(this.state, ticket, company.site))
+        .map((ticket) => ticket.id),
+    );
+    return {
+      ...snapshot,
+      nodes: Object.fromEntries(Object.entries(snapshot.nodes).filter(([id]) => visible.has(id))),
+      tickets: snapshot.tickets
+        .filter((ticket) => board.has(ticket.id))
+        .map((ticket) => ({ ...ticket, nodeIds: ticket.nodeIds.filter((id) => visible.has(id)) })),
+    };
   }
 
   /** Changes how the run is shown, live: the scene may come and go under it. */

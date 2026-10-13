@@ -9,6 +9,7 @@ import type { SceneControls } from "@/game/chips/context";
 import type { I18nText } from "@/game/core/i18n";
 import { type DevSheet, devSheet } from "@/game/core/rules/dev";
 import type { PlayerAction } from "@/game/core/types";
+import type { CompanyEntry } from "@/game/dto/company";
 import type { RunSaveDto } from "@/game/dto/run";
 
 /**
@@ -69,8 +70,14 @@ export interface GameHandle {
     /** Fit the picture without letting go of the head: for a canvas that watches a run. */
     frame(): void;
   };
-  /** The run so far, ready to persist. */
+  /** The run so far, ready to persist. A company has none: the server keeps it. */
   save(): RunSaveDto;
+  /** A company only: an entry the server sent, applied and played. False if the rules refuse it. */
+  applyEntry(entry: CompanyEntry): boolean;
+  /** A company only: the hash of the state, to compare with the server's. */
+  hash(): string;
+  /** Whether the canvas is still playing the last thing it was given. */
+  busy(): boolean;
   /** The exact values the development panel edits, and their ceilings. */
   devSheet(): DevSheet;
   getActions(): PlayerAction[];
@@ -127,6 +134,8 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       ? {}
       : { resumeActions: resume.actions, startingSkillPoints: resume.startingSkillPoints }),
     ...(options.showcase === undefined ? {} : { showcase: options.showcase }),
+    ...(options.seat === undefined ? {} : { seat: options.seat }),
+    ...(options.company === undefined ? {} : { company: options.company }),
   });
 
   const controls: SceneControls = { camera: null, skip: null };
@@ -203,6 +212,15 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
     },
     save() {
       return session.save();
+    },
+    applyEntry(entry) {
+      return session.applyEntry(entry);
+    },
+    hash() {
+      return session.hash();
+    },
+    busy() {
+      return gameStore.getState().pendingAnimation;
     },
     devSheet() {
       return devSheet(session.getState());

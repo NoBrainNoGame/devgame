@@ -1,7 +1,7 @@
 import "@/lib/server-only";
 
 import type { RunState } from "@/game/core/types";
-import type { CompanyEntry, CompanySaveDto } from "@/game/dto/company";
+import type { CompanyEntry, CompanyStart } from "@/game/dto/company";
 
 /**
  * What the realtime server keeps, in terms of the world and not of any
@@ -10,10 +10,7 @@ import type { CompanyEntry, CompanySaveDto } from "@/game/dto/company";
  * per tick, so a company never has a round on disk without its hash.
  */
 
-export type CompanyStart = Pick<
-  CompanySaveDto,
-  "seed" | "name" | "founder" | "profileId" | "unlockedSkills" | "startingSkillPoints"
->;
+export type { CompanyStart };
 
 export interface StoredEntry {
   seq: number;

@@ -73,6 +73,12 @@ export const CompanySaveSchema = z.object({
 export type CompanyEntry = z.infer<typeof CompanyEntrySchema>;
 export type CompanySaveDto = z.infer<typeof CompanySaveSchema>;
 
+/** How a company begins: its founder, its profile and the unlocks that shape its map. */
+export type CompanyStart = Pick<
+  CompanySaveDto,
+  "seed" | "name" | "founder" | "profileId" | "unlockedSkills" | "startingSkillPoints"
+>;
+
 export interface CompanySeatResult {
   seat: Seat;
   name: string;
