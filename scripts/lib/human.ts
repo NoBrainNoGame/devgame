@@ -3,7 +3,7 @@ import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { RELICS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { energyMax } from "@/game/core/rules/modifiers";
 import {
   buggedOn,
@@ -117,7 +117,7 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
     return chance(persona.greed * 0.5) ? { type: "followup" } : { type: "resume" };
   }
   if (state.phase.kind === "resolve_conflict") {
-    const tired = state.player.energy <= BALANCE.failure.conflictManualEnergy;
+    const tired = playerOf(state, SOLO_SEAT).energy <= BALANCE.failure.conflictManualEnergy;
     return {
       type: "resolve_conflict",
       how: tired || chance(persona.aiTaste * 0.5) ? "ai" : "manual",
@@ -214,7 +214,7 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
   // Tired: the careful notice at four, the careless at one. And the tired
   // reach for the machine, which is the trap the game sets.
   const restAt = 1 + Math.round(persona.energyCare * 3);
-  const energy = state.player.energy;
+  const energy = playerOf(state, SOLO_SEAT).energy;
   if (energy <= restAt) {
     const rest = find((a) => a.type === "rest");
     if (rest !== undefined && chance(0.3 + persona.energyCare * 0.6)) return rest;
@@ -241,7 +241,11 @@ export function chooseHuman(state: RunState, actions: PlayerAction[]): PlayerAct
   }
 
   // Docs before a stretch of machine work, for the ones who know the trick.
-  if (state.player.docsCharges === 0 && persona.aiTaste > 0.5 && chance(persona.attention * 0.25)) {
+  if (
+    playerOf(state, SOLO_SEAT).docsCharges === 0 &&
+    persona.aiTaste > 0.5 &&
+    chance(persona.attention * 0.25)
+  ) {
     const docs = commit("craft", "docs");
     if (docs !== undefined) return docs;
   }

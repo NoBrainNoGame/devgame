@@ -4,7 +4,14 @@ import { fnv1a } from "@/game/core/hash";
 import { tipOfLane, tipOfTicket } from "@/game/core/map/graph";
 import { DEV_LANE, MAIN_LANE } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, countCommit, occupiedSeats, playerOf, seatOf } from "@/game/core/rules/crew";
+import {
+  actorOf,
+  countCommit,
+  occupiedSeats,
+  playerOf,
+  seatOf,
+  seatState,
+} from "@/game/core/rules/crew";
 import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
@@ -52,6 +59,17 @@ interface NodeSpec {
   commit: NodeCommit;
 }
 
+const HUMAN_KINDS: ReadonlySet<NodeKind> = new Set([
+  "commit",
+  "refactor",
+  "fix",
+  "risky",
+  "docs",
+  "hotfix",
+  "feature_merge",
+  "obstacle_merge",
+]);
+
 function writeNode(context: RuleContext, spec: NodeSpec): MapNode {
   const { state } = context;
   const id: NodeId = `${state.sprint}:${state.nextNodeSerial}`;
@@ -74,6 +92,10 @@ function writeNode(context: RuleContext, spec: NodeSpec): MapNode {
       fnv1a(`${state.seed}:${id}`),
     ),
   };
+  // A company's graph says whose hands wrote a commit; a bot's carry `author`.
+  if (state.crew !== undefined && context.seat !== null && node.commit.author === undefined) {
+    if (HUMAN_KINDS.has(spec.kind)) node.commit.seat = context.seat;
+  }
   state.nextDepth += 1;
   state.nodes[id] = node;
   return node;
@@ -466,6 +488,11 @@ export function completeMerge(
 
   if (byTeam === undefined) {
     countCommit(context);
+    if (state.crew !== undefined) {
+      const { contribution } = seatState(state, seatOf(context));
+      contribution.pointsDelivered += ticket.points;
+      contribution.ticketsDelivered += 1;
+    }
     state.sprintPlayerDelivered += 1;
     if (ticket.kind === "vip") state.sprintCounters.vipDelivered += 1;
     if (ticket.kind === "client_bug") state.sprintCounters.bugsDelivered += 1;

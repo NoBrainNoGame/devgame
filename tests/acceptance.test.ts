@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import {
   buggedOn,
@@ -286,7 +286,7 @@ describe("the pull request review", () => {
     for (let i = 0; i < 30; i += 1) {
       // A fresh seed each try: the same state rolls the same dice.
       const state = inHand(`pr-cost-memo-${i}`);
-      state.player.docsCharges = 0;
+      playerOf(state, SOLO_SEAT).docsCharges = 0;
       const result = applyAction(state, { type: "commit", mode: "ai" });
       const done = eventsOfType(result.events, "node_done")[0];
       if (done === undefined || result.state.phase.kind !== "choose_action") continue;

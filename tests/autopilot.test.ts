@@ -6,7 +6,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor, SUPERVISOR_REASONS } from "@/game/bridge/supervisor";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import type { PlayerAction } from "@/game/core/types";
 
@@ -46,7 +46,7 @@ describe("the idle clock's target", () => {
     const writes = idleTarget(toSnapshot(state, SOLO_SEAT));
     expect(writes).toEqual({ type: "commit", mode: "craft" });
     legal(state);
-    state.player.energy = 2;
+    playerOf(state, SOLO_SEAT).energy = 2;
     expect(idleTarget(toSnapshot(state, SOLO_SEAT))?.type).toBe("rest");
     legal(state);
   });
@@ -55,7 +55,7 @@ describe("the idle clock's target", () => {
     const state = inHand("idle-judgement");
     plantAiCommit(state);
     plantAiCommit(state);
-    state.player.energy = state.player.energyMax;
+    playerOf(state, SOLO_SEAT).energy = playerOf(state, SOLO_SEAT).energyMax;
     const free = idleTarget(toSnapshot(state, SOLO_SEAT));
     expect(free).toBeDefined();
     expect(free?.type).not.toBe("review");
@@ -89,7 +89,7 @@ describe("the idle clock's target", () => {
     planted.commit.reviewed = true;
     planted.commit.debt = BALANCE.debt.perAiCommit;
     state.debt = BALANCE.acceptance.maxDebt + 1;
-    state.player.energy = toSnapshot(state, SOLO_SEAT).player.energyMax;
+    playerOf(state, SOLO_SEAT).energy = toSnapshot(state, SOLO_SEAT).player.energyMax;
 
     const snapshot = toSnapshot(state, SOLO_SEAT);
     expect(snapshot.tickets.find((t) => t.id === snapshot.player.ticketId)?.waitingOnHealth).toBe(

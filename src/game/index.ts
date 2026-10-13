@@ -57,6 +57,7 @@ export type {
   QualitySource,
   RunMode,
   RunStats,
+  SoloMode,
   TicketId,
 } from "@/game/core/types";
 export { DETOUR_KINDS } from "@/game/core/types";

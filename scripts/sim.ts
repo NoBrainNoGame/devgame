@@ -17,7 +17,7 @@
 import { isProfileId, PROFILE_IDS, type ProfileId } from "@/game/content";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { capacityOf, loadOf, monthlyReport, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -37,7 +37,7 @@ const DEFAULT_MAX_TURNS = 1500;
 const MAX_FREE_STREAK = 200;
 
 interface Outcome {
-  reason: "burnout" | "fired" | "caught" | "stuck" | "capped";
+  reason: "burnout" | "fired" | "caught" | "dissolved" | "stuck" | "capped";
   turns: number;
   sprints: number;
   score: number;
@@ -262,7 +262,7 @@ function playOne(
             : action.type;
       const ticket = currentTicket(state, SOLO_SEAT);
       console.log(
-        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${state.player.energy} debt=${state.debt} q=${state.quality} wip=${playerTickets(state, SOLO_SEAT).length} $=${state.money} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
+        `t${state.turn} s${state.sprint}/${state.sprintTurn} ${label.padEnd(20)} e=${playerOf(state, SOLO_SEAT).energy} debt=${state.debt} q=${state.quality} wip=${playerTickets(state, SOLO_SEAT).length} $=${state.money} ${ticket === null ? "-" : `${ticket.id} ${ticket.filled}/${ticket.points}`} ${state.phase.kind}`,
       );
     }
   }
@@ -320,7 +320,7 @@ function summarise(
     turns: state.turn,
     sprints: Math.max(0, state.sprint - 1),
     score: computeScore(state),
-    commits: state.player.totalCommits,
+    commits: playerOf(state, SOLO_SEAT).totalCommits,
     ticketsDelivered: state.ticketsDelivered,
     pointsDelivered: state.pointsDelivered,
     finalDebt: state.debt,

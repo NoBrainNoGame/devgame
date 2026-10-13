@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { DEV_LANE, FIRST_FEATURE_LANE, MAIN_LANE, nodeSerial } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 
@@ -203,7 +203,7 @@ describe("the written graph", () => {
       const head = headOf(state, SOLO_SEAT);
       expect(state.nodes[head.id]).toBeDefined();
 
-      const ticketId = state.player.ticketId;
+      const ticketId = playerOf(state, SOLO_SEAT).ticketId;
       const ticket = ticketId === null ? undefined : state.tickets[ticketId];
       const parent = ticket?.parentId === undefined ? undefined : state.tickets[ticket.parentId];
       if (ticket !== undefined && ticket.nodeIds.length > 0) {

@@ -6,7 +6,7 @@ import { NARRATIVE_EVENT_IDS, NARRATIVE_EVENTS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isSameAction } from "@/game/core/rules/actions";
 import { createContext } from "@/game/core/rules/context";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { answerEvent, maybeNarrative } from "@/game/core/rules/narrative";
 import { getActionPreview } from "@/game/core/rules/preview";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -148,7 +148,7 @@ describe("when a question opens", () => {
 describe("answering", () => {
   test("applies the effects through the usual channels, and costs no turn", () => {
     const state = open("sprint_start", "client_export", 0);
-    const energy = state.player.energy;
+    const energy = playerOf(state, SOLO_SEAT).energy;
     const turn = state.turn;
     const { state: after, events } = applyAction(state, {
       type: "answer",
@@ -157,7 +157,7 @@ describe("answering", () => {
     });
     expect(after.turn).toBe(turn);
     expect(after.phase.kind).toBe("choose_action");
-    expect(after.player.energy).toBe(energy - 4);
+    expect(playerOf(after, SOLO_SEAT).energy).toBe(energy - 4);
     expect(after.market.shareBonus).toBe(2);
     expect(eventsOfType(events, "narrative_answered")[0]?.choice).toBe("deliver");
     expect(eventsOfType(events, "share_changed").length).toBe(1);
@@ -165,7 +165,7 @@ describe("answering", () => {
 
   test("a ticket, a departure, a price war and a payment each land where they should", () => {
     const vip = open("sprint_start", "vip_deadline", 0);
-    const held = vip.player.ticketId;
+    const held = playerOf(vip, SOLO_SEAT).ticketId;
     const { state: withTicket, events: accepted } = applyAction(vip, {
       type: "answer",
       eventId: "vip_deadline",
@@ -175,8 +175,8 @@ describe("answering", () => {
     // ticket you held; the turn is not spent.
     const arrived = Object.values(withTicket.tickets).find((t) => t.kind === "vip");
     expect(arrived?.status).toBe("open");
-    expect(withTicket.player.ticketId).toBe(arrived?.id ?? null);
-    expect(withTicket.player.ticketId).not.toBe(held);
+    expect(playerOf(withTicket, SOLO_SEAT).ticketId).toBe(arrived?.id ?? null);
+    expect(playerOf(withTicket, SOLO_SEAT).ticketId).not.toBe(held);
     expect(withTicket.turn).toBe(vip.turn);
     expect(eventsOfType(accepted, "ticket_started").length).toBe(1);
 

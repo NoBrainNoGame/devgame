@@ -1,7 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { DEV_LANE } from "@/game/core/map/layout";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { currentTicket, ensureLane, offersOf } from "@/game/core/rules/tickets";
 import { createRun } from "@/game/core/run";
@@ -92,7 +92,7 @@ export function plantCommit(state: RunState, mode: CommitMode): string {
   };
   state.nextDepth += 1;
   ticket.nodeIds.push(id);
-  state.player.totalCommits += 1;
+  playerOf(state, SOLO_SEAT).totalCommits += 1;
   return id;
 }
 

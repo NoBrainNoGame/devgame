@@ -4,7 +4,7 @@ import { BALANCE } from "@/game/core/balance";
 import { headOf } from "@/game/core/map/graph";
 import { capacityAdvice, capacityStatus } from "@/game/core/rules/capacity";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { playerOf, seatOf } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT, seatOf } from "@/game/core/rules/crew";
 import { capacityOf, projectedLoadOf } from "@/game/core/rules/economy";
 import { gainEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
@@ -57,7 +57,11 @@ export function performHack(context: RuleContext): void {
         lowerQuality(context, patienceRelief, "hack");
         return;
       case "energy":
-        gainEnergy(context, state.player.energyMax - state.player.energy, "hack");
+        gainEnergy(
+          context,
+          playerOf(state, SOLO_SEAT).energyMax - playerOf(state, SOLO_SEAT).energy,
+          "hack",
+        );
         return;
       case "capacity": {
         const advice = capacityAdvice(state, effects, projectedLoadOf(state) - capacityOf(effects));

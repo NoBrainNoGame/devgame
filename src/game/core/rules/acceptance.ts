@@ -1,7 +1,7 @@
 import { BALANCE } from "@/game/core/balance";
 import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { seatOf } from "@/game/core/rules/crew";
+import { clearSeatPhase, phaseOf, seatOf, setSeatPhase } from "@/game/core/rules/crew";
 import { drawMergeEvent } from "@/game/core/rules/events";
 import { mergeEventChance } from "@/game/core/rules/modifiers";
 import { raiseQuality } from "@/game/core/rules/quality";
@@ -68,7 +68,7 @@ export function performSubmit(context: RuleContext): void {
   });
 
   if (accepted) {
-    state.phase = { kind: "pr_accepted", ticketId: ticket.id };
+    setSeatPhase(context, { kind: "pr_accepted", ticketId: ticket.id });
     return;
   }
 
@@ -99,7 +99,7 @@ export function performSubmit(context: RuleContext): void {
   const extra = backlogTickets(state)[0];
   if (extra !== undefined) openTicket(context, extra, true);
 
-  state.phase = { kind: "ticket_rejected", ticketId: ticket.id, bugs };
+  setSeatPhase(context, { kind: "ticket_rejected", ticketId: ticket.id, bugs });
 }
 
 /**
@@ -109,8 +109,9 @@ export function performSubmit(context: RuleContext): void {
  */
 export function performMerge(context: RuleContext): void {
   const { state } = context;
-  if (state.phase.kind === "pr_accepted") {
-    land(context, getTicket(state, state.phase.ticketId));
+  const phase = phaseOf(state, seatOf(context));
+  if (phase.kind === "pr_accepted") {
+    land(context, getTicket(state, phase.ticketId));
     return;
   }
   // An obstacle needs no review: full, it lands back on its feature.
@@ -129,7 +130,7 @@ function land(context: RuleContext, ticket: Ticket): void {
   if (context.rng.chance(mergeEventChance(state, ticket))) {
     const event = drawMergeEvent(context);
     if (event.outcome === "conflict") {
-      state.phase = { kind: "resolve_conflict", source: "merge", ticketId: ticket.id };
+      setSeatPhase(context, { kind: "resolve_conflict", source: "merge", ticketId: ticket.id });
       emit(context, { type: "conflict", ticketId: ticket.id });
       return;
     }
@@ -137,7 +138,7 @@ function land(context: RuleContext, ticket: Ticket): void {
   }
 
   completeMerge(context, ticket, { noRegen });
-  state.phase = { kind: "choose_action" };
+  clearSeatPhase(context);
 }
 
 /**
@@ -150,7 +151,7 @@ function land(context: RuleContext, ticket: Ticket): void {
  */
 export function followupTicket(context: RuleContext): void {
   const { state } = context;
-  const phase = state.phase;
+  const phase = phaseOf(state, seatOf(context));
   if (phase.kind !== "ticket_rejected") throw new Error("followupTicket: nothing was rejected");
 
   const ticket = getTicket(state, phase.ticketId);
@@ -166,12 +167,14 @@ export function followupTicket(context: RuleContext): void {
   }
   state.stats.followups += ticketIds.length;
   emit(context, { type: "followup", ticketId: ticket.id, bugs: ticketIds.length, ticketIds });
-  state.phase = { kind: "pr_accepted", ticketId: ticket.id };
+  setSeatPhase(context, { kind: "pr_accepted", ticketId: ticket.id });
 }
 
 /** Keep the commits and fix what was found: the reducer writes the first fix at once. */
 export function resumeTicket(context: RuleContext): void {
   const { state } = context;
-  if (state.phase.kind !== "ticket_rejected") throw new Error("resumeTicket: nothing was rejected");
-  state.phase = { kind: "choose_action" };
+  if (phaseOf(state, seatOf(context)).kind !== "ticket_rejected") {
+    throw new Error("resumeTicket: nothing was rejected");
+  }
+  clearSeatPhase(context);
 }

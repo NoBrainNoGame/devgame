@@ -3,7 +3,15 @@ import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
 import { pickFeatureLane, ticketSerial } from "@/game/core/map/layout";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, occupiedSeats, playerOf, seatOf } from "@/game/core/rules/crew";
+import {
+  actorOf,
+  assignHolder,
+  occupiedSeats,
+  playerOf,
+  routeSeat,
+  seatOf,
+  ticketHolder,
+} from "@/game/core/rules/crew";
 import { raiseQuality } from "@/game/core/rules/quality";
 import type { DetourKind, NodeId, RunState, Seat, Ticket, TicketId } from "@/game/core/types";
 
@@ -33,8 +41,10 @@ export function backlogTickets(state: RunState): Ticket[] {
 }
 
 /** Open tickets that are yours: what the team holds is not on your desk. */
-export function playerTickets(state: RunState, _seat: Seat): Ticket[] {
-  return openTickets(state).filter((ticket) => ticket.assignee === undefined);
+export function playerTickets(state: RunState, seat: Seat): Ticket[] {
+  return openTickets(state).filter(
+    (ticket) => ticket.assignee === undefined && ticketHolder(ticket) === seat,
+  );
 }
 
 export function currentTicket(state: RunState, seat: Seat): Ticket | null {
@@ -258,6 +268,7 @@ export function spawnObstacle(context: RuleContext, parent: Ticket, nodeId: Node
     nameKey: obstacleNameKey(fnv1a(`${state.seed}:${id}`)),
     ...(parent.assignee === undefined ? {} : { assignee: parent.assignee }),
   };
+  if (parent.holder !== undefined) ticket.holder = parent.holder;
   state.tickets[id] = ticket;
   state.stats.arrivedByKind.obstacle += 1;
   // Started for whoever was writing: the feature's author is the obstacle's.
@@ -334,7 +345,10 @@ export function openTicket(context: RuleContext, ticket: Ticket, forced: boolean
   // Started by you, it is what you work on now. Forced on you, it waits if
   // you held something: being pulled off your feature by a production bug is
   // a punishment the WIP malus already delivers, and it would do it twice.
-  const player = actorOf(context);
+  // Started by a human it is theirs; forced, it goes to the lightest desk.
+  const seat = forced ? routeSeat(context) : seatOf(context);
+  assignHolder(state, ticket, seat);
+  const player = playerOf(state, seat);
   const held = player.ticketId;
   const switching = !forced && held !== null && held !== ticket.id;
   if (!forced || held === null) player.ticketId = ticket.id;

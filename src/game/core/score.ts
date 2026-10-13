@@ -1,6 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
-import { commitsOf } from "@/game/core/rules/crew";
-import type { RunState } from "@/game/core/types";
+import { commitsOf, seatState } from "@/game/core/rules/crew";
+import type { RunState, Seat } from "@/game/core/types";
 
 /**
  * A run's score. Commits are the body of it, every story point delivered is
@@ -13,6 +13,23 @@ export function computeScore(state: RunState): number {
     commitsOf(state) * score.perCommit +
     state.pointsDelivered * score.perTicketPoint +
     Math.max(0, state.sprint - 1) * score.perSprintCompleted
+  );
+}
+
+/**
+ * What one human of a company brought it: their own commits, the points they
+ * delivered and the sprints they were there for. The company's score is the
+ * run's; this is the part that ranks the players.
+ */
+export function playerScore(state: RunState, seat: Seat): number {
+  const { score } = BALANCE;
+  const gone = state.crew?.left[seat];
+  if (gone !== undefined) return gone.score;
+  const { player, contribution } = seatState(state, seat);
+  return (
+    player.totalCommits * score.perCommit +
+    contribution.pointsDelivered * score.perTicketPoint +
+    contribution.sprints * score.perSprintCompleted
   );
 }
 

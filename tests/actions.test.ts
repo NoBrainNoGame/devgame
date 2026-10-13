@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { getAvailableActions, isActionAvailable } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { InvalidActionError } from "@/game/core/types";
 
@@ -11,7 +11,7 @@ describe("getAvailableActions", () => {
   test("a fresh run has a backlog to start from and nothing in hand", () => {
     const state = newRun("actions-1");
     expect(state.phase.kind).toBe("choose_action");
-    expect(state.player.ticketId).toBeNull();
+    expect(playerOf(state, SOLO_SEAT).ticketId).toBeNull();
 
     const types = getAvailableActions(state, SOLO_SEAT).map((a) => a.type);
     expect(types).toContain("start");
@@ -46,7 +46,7 @@ describe("getAvailableActions", () => {
   test("a commit is legal even with no energy left to pay for it", () => {
     const state = inHand("actions-3");
     const broke = structuredClone(state);
-    broke.player.energy = 0;
+    playerOf(broke, SOLO_SEAT).energy = 0;
 
     expect(isActionAvailable(broke, SOLO_SEAT, { type: "commit", mode: "craft" })).toBe(true);
   });
@@ -65,7 +65,7 @@ describe("getAvailableActions", () => {
 
   test("switching to the ticket already in hand is not an option", () => {
     const state = inHand("actions-checkout");
-    const mine = state.player.ticketId;
+    const mine = playerOf(state, SOLO_SEAT).ticketId;
     expect(mine).not.toBeNull();
     expect(
       getAvailableActions(state, SOLO_SEAT).some(

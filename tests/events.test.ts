@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { buggedOn, offersOf, openTickets, unreadAiOn } from "@/game/core/rules/tickets";
 
@@ -52,7 +52,7 @@ describe("a roll that misses", () => {
     // not a commit to your name, not a bug, nothing for a review to read.
     const ticket = ticketInHand(state);
     expect(ticket.nodeIds).toContain(done.nodeId);
-    expect(state.player.totalCommits).toBe(before.player.totalCommits);
+    expect(playerOf(state, SOLO_SEAT).totalCommits).toBe(playerOf(before, SOLO_SEAT).totalCommits);
     expect(state.stats.commitsLanded).toEqual(before.stats.commitsLanded);
     expect(buggedOn(state, ticket)).toEqual([]);
     expect(unreadAiOn(state, ticket)).toEqual([]);
@@ -76,7 +76,9 @@ describe("a roll that misses", () => {
       const parent = now.nodes[landed.nodeId]?.parents[0];
       if (below === undefined) expect(now.nodes[parent ?? ""]?.lane).toBe(1);
       else expect(parent).toBe(below);
-      expect(now.player.totalCommits).toBe(before.player.totalCommits + 1);
+      expect(playerOf(now, SOLO_SEAT).totalCommits).toBe(
+        playerOf(before, SOLO_SEAT).totalCommits + 1,
+      );
       return;
     }
     throw new Error("no commit landed in 20 tries");
@@ -206,7 +208,7 @@ describe("debt explosion", () => {
     expect(forced?.mustWrite).toBe("refactor");
     expect(forced?.points).toBe(BALANCE.debt.explosionPoints);
     // Still in hand: the refactor waits rather than yanking you off your ticket.
-    expect(once.state.player.ticketId).toBe(loaded.player.ticketId);
+    expect(playerOf(once.state, SOLO_SEAT).ticketId).toBe(playerOf(loaded, SOLO_SEAT).ticketId);
 
     // The debt is still over the line; a second ticket must not open.
     const twice = applyAction(once.state, { type: "commit", mode: "craft" });

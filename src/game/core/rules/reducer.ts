@@ -1,3 +1,4 @@
+import type { WorldEventId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { appendLog } from "@/game/core/log";
 import {
@@ -11,11 +12,22 @@ import { isActionAvailable } from "@/game/core/rules/actions";
 import { reportCapacity } from "@/game/core/rules/capacity";
 import { performCommit, resolveConflictPhase } from "@/game/core/rules/commit";
 import { createContext, emit, type RuleContext } from "@/game/core/rules/context";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import {
+  actorOf,
+  forEachSeat,
+  isCrew,
+  joinSeat,
+  leaveSeat,
+  missRound,
+  occupiedSeats,
+  phaseOf,
+  playerOf,
+  SOLO_SEAT,
+} from "@/game/core/rules/crew";
 import { applyDebtDecay, checkExplosion } from "@/game/core/rules/debt";
 import { applyDevValues } from "@/game/core/rules/dev";
 import { closeMonth, monthTurns } from "@/game/core/rules/economy";
-import { checkBurnout, passTurn, performRest, reportCrunch } from "@/game/core/rules/energy";
+import { burnedOut, passTurn, performRest, reportCrunch } from "@/game/core/rules/energy";
 import { performHack } from "@/game/core/rules/hack";
 import { forgetOldHistory } from "@/game/core/rules/history";
 import { freeReviewCadence, nothingToDo } from "@/game/core/rules/modifiers";
@@ -33,8 +45,32 @@ import {
   startTicket,
 } from "@/game/core/rules/tickets";
 import { placeTree } from "@/game/core/rules/tree";
-import type { ApplyResult, PlayerAction, RunState, Seat } from "@/game/core/types";
+import { applyWorldEvent } from "@/game/core/rules/worldEvents";
+import type {
+  ApplyResult,
+  PlayerAction,
+  PlayerActionType,
+  RivalPower,
+  RunState,
+  Seat,
+  SiteId,
+} from "@/game/core/types";
 import { InvalidActionError } from "@/game/core/types";
+
+/**
+ * The actions that spend the turn. A company plays them in rounds
+ * (`applyRound`), one per human, so `applyAction` refuses them there; the
+ * others are free and apply at once, as in solo.
+ */
+export const TURN_ACTIONS: ReadonlySet<PlayerActionType> = new Set<PlayerActionType>([
+  "commit",
+  "review",
+  "rest",
+  "merge",
+  "resume",
+  "hack",
+  "resolve_conflict",
+]);
 
 /**
  * The one entry point into the rules.
@@ -51,6 +87,10 @@ import { InvalidActionError } from "@/game/core/types";
  * the merge that follows, a refusal hands it to its answer, and a merge
  * conflict defers it again to the choice that resolves it, so one review
  * never costs two turns.
+ *
+ * In a company only the free actions come through here, for the seat that
+ * took them; the turn actions of every seat are resolved together by
+ * `applyRound`.
  */
 export function applyAction(
   state: RunState,
@@ -60,39 +100,45 @@ export function applyAction(
   if (state.phase.kind === "game_over") {
     throw new InvalidActionError("The run is over");
   }
+  const crew = isCrew(state);
+  if (crew && TURN_ACTIONS.has(action.type)) {
+    throw new InvalidActionError(`${action.type} is a turn action: a company plays it in a round`);
+  }
   if (!isActionAvailable(state, seat, action)) {
     throw new InvalidActionError(
-      `${action.type} is not available during phase ${state.phase.kind}`,
+      `${action.type} is not available during phase ${phaseOf(state, seat).kind}`,
     );
   }
 
   const draft = structuredClone(state);
   const context = createContext(draft, seat);
-  const wasCrunch = draft.player.energy <= BALANCE.energy.crunchThreshold;
+  const wasCrunch = actorOf(context).energy <= BALANCE.energy.crunchThreshold;
 
   const consumesTurn = dispatch(context, action);
 
-  if (consumesTurn && !isOver(context)) endTurn(context);
+  if (!crew) {
+    if (consumesTurn && !isOver(context)) endTurn(context);
 
-  // Nothing in hand and nothing to start while the team still works: the
-  // turns pass on their own, as free rests, until the sprint closes or a
-  // ticket comes back to you (a hotfix, a departure). Bounded by the sprint's
-  // box: its end enters the bonus choice or opens a board with tickets on it.
-  while (
-    !isOver(context) &&
-    draft.phase.kind === "choose_action" &&
-    !boardIsEmpty(draft) &&
-    nothingToDo(draft, SOLO_SEAT)
-  ) {
-    passTurn(context);
-    endTurn(context);
-  }
+    // Nothing in hand and nothing to start while the team still works: the
+    // turns pass on their own, as free rests, until the sprint closes or a
+    // ticket comes back to you (a hotfix, a departure). Bounded by the sprint's
+    // box: its end enters the bonus choice or opens a board with tickets on it.
+    while (
+      !isOver(context) &&
+      draft.phase.kind === "choose_action" &&
+      !boardIsEmpty(draft) &&
+      nothingToDo(draft, SOLO_SEAT)
+    ) {
+      passTurn(context);
+      endTurn(context);
+    }
 
-  // Everything delivered and nothing waiting: the sprint has no reason to run
-  // its clock down, so the release ships now. The player never sees a panel
-  // with nothing on it.
-  if (!isOver(context) && draft.phase.kind === "choose_action" && boardIsEmpty(draft)) {
-    endSprint(context);
+    // Everything delivered and nothing waiting: the sprint has no reason to run
+    // its clock down, so the release ships now. The player never sees a panel
+    // with nothing on it.
+    if (!isOver(context) && draft.phase.kind === "choose_action" && boardIsEmpty(draft)) {
+      endSprint(context);
+    }
   }
 
   reportCrunch(context, wasCrunch);
@@ -100,6 +146,119 @@ export function applyAction(
   // A run that never ends cannot keep everything it wrote.
   if (draft.showcase !== null) forgetOldHistory(draft);
 
+  return { state: draft, events: context.events };
+}
+
+/** What a seat did with its round. `skipped`: it chose something an earlier seat made illegal. */
+export type SeatOutcome = "acted" | "skipped" | "missed" | "passed";
+
+/** The turn action of every seat (or `"missed"`), and what the world brings this round. */
+export interface RoundInput {
+  actions: Readonly<Record<Seat, PlayerAction | "missed">>;
+  world: { rivals: readonly RivalPower[]; event?: WorldEventId };
+}
+
+export interface RoundResult extends ApplyResult {
+  outcomes: Record<Seat, SeatOutcome>;
+}
+
+/**
+ * One round of a company: the world moves, each seat plays its turn action in
+ * seat order, then the clock advances exactly one turn. Seat order is the
+ * tie-break of simultaneous play: an earlier seat's merge can make a later
+ * seat's choice illegal, and that choice is then skipped without penalty.
+ *
+ * A seat that sent nothing is `"missed"`: a rest that gives nothing back and
+ * costs the company patience, unless it had nothing to do anyway, in which
+ * case the turn simply passes.
+ */
+export function applyRound(state: RunState, round: RoundInput): RoundResult {
+  if (state.crew === undefined) throw new InvalidActionError("Rounds are for companies");
+  if (state.phase.kind === "game_over") throw new InvalidActionError("The run is over");
+  if (state.phase.kind !== "choose_action") {
+    throw new InvalidActionError(
+      `The company is deciding (${state.phase.kind}): answer before the next round`,
+    );
+  }
+
+  const draft = structuredClone(state);
+  const context = createContext(draft, null);
+  draft.market.rivals = [...round.world.rivals];
+  if (round.world.event !== undefined) applyWorldEvent(context, round.world.event);
+
+  const outcomes: Record<Seat, SeatOutcome> = {};
+  const crunching = new Map<Seat, boolean>();
+  for (const seat of occupiedSeats(draft)) {
+    crunching.set(seat, playerOf(draft, seat).energy <= BALANCE.energy.crunchThreshold);
+  }
+
+  for (const seat of occupiedSeats(draft)) {
+    if (isOver(context)) break;
+    context.seat = seat;
+    const entry = round.actions[seat] ?? "missed";
+
+    if (entry === "missed") {
+      if (nothingToDo(draft, seat) && phaseOf(draft, seat).kind === "choose_action") {
+        passTurn(context);
+        emit(context, { type: "seat_passed", seat });
+        outcomes[seat] = "passed";
+      } else {
+        missRound(context, seat);
+        outcomes[seat] = "missed";
+      }
+      continue;
+    }
+
+    if (!TURN_ACTIONS.has(entry.type) || !isActionAvailable(draft, seat, entry)) {
+      outcomes[seat] = "skipped";
+      continue;
+    }
+    dispatch(context, entry);
+    outcomes[seat] = "acted";
+  }
+  context.seat = null;
+
+  if (!isOver(context)) endTurn(context);
+
+  // The release ships as soon as nothing is left on the board.
+  if (!isOver(context) && draft.phase.kind === "choose_action" && boardIsEmpty(draft)) {
+    endSprint(context);
+  }
+
+  for (const [seat, was] of crunching) {
+    if (draft.crew?.seats[seat] === undefined) continue;
+    context.seat = seat;
+    reportCrunch(context, was);
+  }
+  context.seat = null;
+
+  appendLog(draft, context.events);
+  forgetOldHistory(draft);
+  return { state: draft, events: context.events, outcomes };
+}
+
+/** A human takes a seat. The only thing that changes the company's roster from outside. */
+export function joinCrew(state: RunState, member: { name: string; site: SiteId }): ApplyResult {
+  if (state.crew === undefined) throw new InvalidActionError("Only a company has seats");
+  if (state.phase.kind === "game_over") throw new InvalidActionError("The run is over");
+  const draft = structuredClone(state);
+  const context = createContext(draft, null);
+  try {
+    joinSeat(context, member.name, member.site);
+  } catch (error) {
+    throw new InvalidActionError(error instanceof Error ? error.message : "Cannot join");
+  }
+  appendLog(draft, context.events);
+  return { state: draft, events: context.events };
+}
+
+/** A human leaves their seat, for good: their work goes to the others. */
+export function leaveCrew(state: RunState, seat: Seat): ApplyResult {
+  if (state.crew?.seats[seat] === undefined) throw new InvalidActionError(`Seat ${seat} is vacant`);
+  const draft = structuredClone(state);
+  const context = createContext(draft, null);
+  leaveSeat(context, seat, "left");
+  appendLog(draft, context.events);
   return { state: draft, events: context.events };
 }
 
@@ -203,7 +362,7 @@ function endTurn(context: RuleContext): void {
   const { state } = context;
 
   applyDebtDecay(context);
-  runFreeReview(context, freeReviewCadence(context.effects));
+  forEachSeat(context, () => runFreeReview(context, freeReviewCadence(context.effects)));
   checkExplosion(context);
   // The team works after you, on this turn's board, so a merge of theirs
   // lands on `dev` before the release that might ship this turn.
@@ -230,5 +389,14 @@ function endTurn(context: RuleContext): void {
   if (state.sprintTurn >= sprintTurns(state)) endSprint(context);
   if (isOver(context)) return;
 
-  if (checkBurnout(context)) gameOver(context, "burnout");
+  const burned = burnedOut(context);
+  if (state.crew === undefined) {
+    if (burned.length > 0) gameOver(context, "burnout");
+    return;
+  }
+  // A company loses the human, not the run: their work goes to the others.
+  for (const seat of burned) {
+    if (isOver(context)) return;
+    leaveSeat(context, seat, "burnout");
+  }
 }

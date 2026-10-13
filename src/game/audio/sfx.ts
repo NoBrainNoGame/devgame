@@ -80,6 +80,11 @@ export function sfxFor(event: GameEvent): SfxId | null {
       return "game_over";
     // Heard through what they cause, or not worth a sound of their own.
     case "turn_started":
+    case "seat_joined":
+    case "seat_left":
+    case "seat_missed":
+    case "seat_passed":
+    case "world_event":
     case "points":
     case "energy":
     case "rested":

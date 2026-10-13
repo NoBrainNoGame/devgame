@@ -10,7 +10,7 @@ import { setIdleSettings } from "@/components/hud/idleStore";
 import type { PagePoint } from "@/components/hud/origin";
 import { Button } from "@/components/ui/button";
 import { notify } from "@/components/ui/notify";
-import type { GameHandle, MetaProgressDto, PlayerAction, RunMode, RunSaveDto } from "@/game";
+import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto, SoloMode } from "@/game";
 import { gameStore, useGameStore } from "@/game";
 import { snapshotOfSave } from "@/game/bridge/rebuild";
 import { Link } from "@/i18n/navigation";
@@ -69,7 +69,7 @@ type Stage =
       kind: "running";
       runKey: string;
       seed: string;
-      mode: RunMode;
+      mode: SoloMode;
       profileId: MetaProgressDto["unlockedProfiles"][number];
       clientRunId: string;
       createdAt: string;
@@ -168,7 +168,7 @@ export function PlayClient(props: PlayClientProps) {
   const start = useCallback(
     (choice: {
       profileId: MetaProgressDto["unlockedProfiles"][number];
-      mode: RunMode;
+      mode: SoloMode;
       playerName: string;
     }) => {
       // The name is a setting: it survives the run and follows the account.

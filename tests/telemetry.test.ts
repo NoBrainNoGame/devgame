@@ -20,7 +20,7 @@ function toSave(state: RunState, actions: PlayerAction[]): RunSaveDto {
     version: SAVE_VERSION,
     rules: RULES_FINGERPRINT,
     seed: state.seed,
-    mode: state.mode,
+    mode: state.mode === "daily" ? "daily" : "classic",
     profileId: state.profileId,
     unlockedSkills: state.unlockedSkills,
     startingSkillPoints: state.startingSkillPoints,

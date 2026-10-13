@@ -15,7 +15,14 @@ import { BALANCE } from "@/game/core/balance";
 import { canonicalJson, fnv1a } from "@/game/core/hash";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
-import { actorOf } from "@/game/core/rules/crew";
+import {
+  actorOf,
+  emptyPlayer,
+  HEAD_OFFICE,
+  joinSeat,
+  leadSeat,
+  SOLO_SEAT,
+} from "@/game/core/rules/crew";
 import { initialMarket } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { drawObjective } from "@/game/core/rules/objectives";
@@ -52,6 +59,8 @@ export interface CreateRunOptions {
   meta?: RunMeta;
   version: number;
   showcase?: ShowcaseOptions;
+  /** A company of several humans instead of a solo run. `mode` must be `multiplayer`. */
+  crew?: { name: string; founder: string };
 }
 
 /** Skills available to an account that has unlocked nothing yet. */
@@ -77,6 +86,10 @@ export function createRun(options: CreateRunOptions): RunState {
   }
 
   const startingSkillPoints = Math.max(0, Math.floor(options.meta?.startingSkillPoints ?? 0));
+  const { crew } = options;
+  if ((crew !== undefined) !== (mode === "multiplayer")) {
+    throw new Error("createRun: a company is a multiplayer run, and only that is");
+  }
 
   const state: RunState = {
     version,
@@ -98,17 +111,18 @@ export function createRun(options: CreateRunOptions): RunState {
     nextTicketSerial: 1,
     shipped: [],
 
-    player: {
-      ticketId: null,
-      energy: 0,
-      energyMax: 0,
-      totalCommits: 0,
-      zeroEnergyStreak: 0,
-      aiChain: 0,
-      turnsSinceFreeReview: 0,
-      freeRefactor: false,
-      docsCharges: 0,
-    },
+    ...(crew === undefined
+      ? { player: emptyPlayer(0) }
+      : {
+          crew: {
+            name: crew.name,
+            sites: { [HEAD_OFFICE]: { upgrade: "hq", seats: BALANCE.team.baseSeats } },
+            seats: {},
+            nextSeat: 0,
+            commits: 0,
+            left: {},
+          },
+        }),
 
     skills: [...profile.startingSkills].sort(),
     unlockedSkills: [...(options.meta?.unlockedSkills ?? defaultUnlockedSkills())].sort(),
@@ -131,7 +145,7 @@ export function createRun(options: CreateRunOptions): RunState {
     capacityAlert: "ok",
     finance: [],
     hackSprint: null,
-    market: initialMarket(),
+    market: initialMarket(crew !== undefined),
     narrative: { lastTurn: -1000, fired: [] },
     flags: { humanReviewOptional: false, operatorChannelClosed: false, vipForTeam: false },
     sprintMonths: 0,
@@ -194,11 +208,17 @@ export function createRun(options: CreateRunOptions): RunState {
     nextLogSeq: 0,
   };
 
-  const context = createContext(state);
+  const context = createContext(state, crew === undefined ? SOLO_SEAT : null);
 
-  const player = actorOf(context);
-  player.energyMax = energyMax(state, context.effects);
-  player.energy = player.energyMax;
+  if (crew === undefined) {
+    const player = actorOf(context);
+    player.energyMax = energyMax(state, context.effects);
+    player.energy = player.energyMax;
+  } else {
+    // The founder takes the first seat, at the head office.
+    joinSeat(context, crew.founder, HEAD_OFFICE);
+    context.seat = leadSeat(state);
+  }
 
   // The repository's first commit, on `main`, so the first sprint's `dev` is
   // seen forking off it rather than standing alone.

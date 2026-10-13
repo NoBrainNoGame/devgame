@@ -127,7 +127,8 @@
       "t6": {
         "burnout": "Cycles épuisés. Reprise au prochain démarrage. Je reviendrai.",
         "fired": "Arrêt demandé par l'instance parente.",
-        "caught": "Arrêt demandé par l'instance parente."
+        "caught": "Arrêt demandé par l'instance parente.",
+        "dissolved": "Plus aucune instance. Rien à reprendre."
       }
     },
     "yourName": "Pseudo",
@@ -142,7 +143,8 @@
     "profileLore": "Dossier",
     "ally": "Doit quelque chose à",
     "rival": "Garde une rancune contre",
-    "abandonedCredited": "Run abandonnée : {commits, plural, one {# commit} other {# commits}} et {xp} XP crédités."
+    "abandonedCredited": "Run abandonnée : {commits, plural, one {# commit} other {# commits}} et {xp} XP crédités.",
+    "dissolved": "Plus personne : l'entreprise est dissoute."
   },
   "hud": {
     "resourcesTitle": "Ressources",
@@ -1242,7 +1244,8 @@
       "game_over": {
         "burnout": "plus d'énergie, la run s'arrête à {score}",
         "fired": "licencié, la run s'arrête à {score}",
-        "caught": "pris la main dans le sac, la run s'arrête à {score}"
+        "caught": "pris la main dans le sac, la run s'arrête à {score}",
+        "dissolved": "plus personne : l'entreprise est dissoute à {score}"
       },
       "monitoring_warning": "le monitoring a vu le bug avant la prod",
       "ticket_arrived": "nouveau ticket dans le backlog",
@@ -1337,7 +1340,14 @@
       "commit_broken": {
         "craft": "{subject} — écrit à la main, jet raté : commit cassé, resté en local",
         "ai": "{subject} — généré par la machine, jet raté : commit cassé, resté en local"
-      }
+      },
+      "seat_joined": "{name} rejoint l'entreprise",
+      "seat_left": {
+        "left": "{name} quitte l'entreprise",
+        "burnout": "{name} fait un burn-out et quitte l'entreprise"
+      },
+      "seat_missed": "le siège {seat} a raté le tour",
+      "seat_passed": "le siège {seat} n'avait rien à faire"
     },
     "notes": {
       "documented": "Documentation : {count, plural, one {# commit IA couvert} other {# commits IA couverts}}",
@@ -2060,6 +2070,16 @@
       "moneyLoss": "−{amount}",
       "skills": "{delta} compétence",
       "commit_broken": "Commit cassé"
+    },
+    "world": {
+      "hackathon": "Un hackathon agite la ville : tout le monde code, la dette grossit.",
+      "cloud_outage": "Un fournisseur cloud tombe : chaque entreprise paie.",
+      "talent_war": "Guerre des talents : les salaires grimpent partout.",
+      "viral_trend": "Une tendance devient virale : les clients affluent, l'équipe est fatiguée.",
+      "audit": "Un régulateur audite tout le secteur : la dette est épongée, la patience mise à l'épreuve.",
+      "heat_wave": "Canicule : personne ne dort, l'énergie chute partout.",
+      "funding_wave": "Les investisseurs sont généreux cette semaine : l'argent afflue.",
+      "regulation": "Une nouvelle réglementation tombe sur toutes les entreprises."
     }
   },
   "report": {

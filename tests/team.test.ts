@@ -4,7 +4,7 @@ import { DEV_RANK } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthTurns } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -84,7 +84,7 @@ describe("the team's turn", () => {
     expect(assigned[0]?.ticketId).toBe(oldest.id);
     expect(after.tickets[oldest.id]?.assignee).toBe("d1");
     expect(after.tickets[oldest.id]?.status).toBe("open");
-    expect(after.player.ticketId).toBe(state.player.ticketId);
+    expect(playerOf(after, SOLO_SEAT).ticketId).toBe(playerOf(state, SOLO_SEAT).ticketId);
     expect(
       getAvailableActions(after, SOLO_SEAT).some(
         (a) => a.type === "checkout" && a.ticketId === oldest.id,
@@ -121,7 +121,7 @@ describe("the team's turn", () => {
 
   test("a team commit fills points without touching your chain, your debt or your count", () => {
     const state = withJunior("commit");
-    state.player.aiChain = 3;
+    playerOf(state, SOLO_SEAT).aiChain = 3;
     // A ticket big enough not to land within the two turns measured: a
     // customer's bug of two points would, and its merge is a commit too.
     for (const ticket of backlogTickets(state)) ticket.points = Math.max(ticket.points, 5);
@@ -135,9 +135,9 @@ describe("the team's turn", () => {
     // Picked up and written on the first turn, written again on the second.
     const ticket = ticketsOf(after, "d1")[0];
     expect(ticket?.filled).toBe(2 * DEV_RANK.junior.speed);
-    expect(after.player.aiChain).toBe(3);
+    expect(playerOf(after, SOLO_SEAT).aiChain).toBe(3);
     expect(after.debt).toBe(state.debt);
-    expect(after.player.totalCommits).toBe(state.player.totalCommits);
+    expect(playerOf(after, SOLO_SEAT).totalCommits).toBe(playerOf(state, SOLO_SEAT).totalCommits);
     expect(wipExtra(after, SOLO_SEAT)).toBe(wipExtra(state, SOLO_SEAT));
     expect(playerTickets(after, SOLO_SEAT).map((t) => t.id)).toEqual(
       playerTickets(state, SOLO_SEAT).map((t) => t.id),
@@ -150,7 +150,7 @@ describe("the team's turn", () => {
     if (target === undefined) throw new Error("expected a backlog ticket");
     target.points = 1;
     target.skillId = "coffee";
-    state.player.energy = 10;
+    playerOf(state, SOLO_SEAT).energy = 10;
 
     // One point: picked up, written and landed in the same turn.
     const first = state;
@@ -163,7 +163,7 @@ describe("the team's turn", () => {
     expect(after.skills).toContain("coffee");
     expect(after.pointsDelivered).toBe(first.pointsDelivered + 1);
     expect(after.ticketsDelivered).toBe(first.ticketsDelivered + 1);
-    expect(after.player.totalCommits).toBe(first.player.totalCommits);
+    expect(playerOf(after, SOLO_SEAT).totalCommits).toBe(playerOf(first, SOLO_SEAT).totalCommits);
     expect(after.sprintPlayerDelivered).toBe(first.sprintPlayerDelivered);
     // One rest, worth the rest's regen, and the skill's raised ceiling — no
     // merge cost, no merge regen.
@@ -216,7 +216,7 @@ describe("the team's turn", () => {
     for (const ticket of sortedTickets(pulled)) {
       if (ticket.id !== theirs.id && ticket.status !== "merged") ticket.status = "cancelled";
     }
-    pulled.player.ticketId = null;
+    playerOf(pulled, SOLO_SEAT).ticketId = null;
     pulled.money = 100_000;
     expect(getAvailableActions(pulled, SOLO_SEAT).some(isType("rest"))).toBe(false);
 

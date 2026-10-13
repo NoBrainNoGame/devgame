@@ -8,7 +8,7 @@ import { SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { createRun } from "@/game/core/run";
 import { accountSkillPoints } from "@/game/core/score";
-import type { PlayerAction, RunMode, RunState } from "@/game/core/types";
+import type { PlayerAction, RunState, SoloMode } from "@/game/core/types";
 import type { MetaProgressDto } from "@/game/dto/meta";
 import type { RunSaveDto } from "@/game/dto/run";
 import { RULES_FINGERPRINT, SAVE_VERSION } from "@/game/dto/version";
@@ -55,7 +55,7 @@ export interface FixtureAccount {
   /** Dailies played, on the server's seed for that day, with the sprint held until. */
   daily: readonly (readonly [which: "today" | "yesterday", held: number])[];
   /** A run still going in that mode — the cloud save the play page resumes. */
-  inProgress?: RunMode;
+  inProgress?: SoloMode;
   /** A classic run left behind for another one. */
   abandoned?: boolean;
   /** A tampered log the server refused. */
@@ -338,7 +338,7 @@ const DEFAULT_MAX_TURNS = 1500;
 
 export interface PlayOptions {
   seed: string;
-  mode: RunMode;
+  mode: SoloMode;
   profileId: ProfileId;
   policy: PolicyName;
   /** The account's progress when the run started: unlocks and starting points come from it. */

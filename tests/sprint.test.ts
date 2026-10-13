@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { RELIC_IDS, RELICS } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { ticketsFor } from "@/game/core/map/tickets";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { availableSkills } from "@/game/core/rules/sprint";
 import { backlogTickets, sortedTickets } from "@/game/core/rules/tickets";
@@ -38,7 +39,7 @@ describe("sprint boundary", () => {
     });
 
     expect(state.skillPoints).toBeGreaterThanOrEqual(BALANCE.tree.perSprint);
-    expect(state.player.energy).toBeGreaterThan(0);
+    expect(playerOf(state, SOLO_SEAT).energy).toBeGreaterThan(0);
   });
 
   test("the clock ships the release at the end of the box", () => {

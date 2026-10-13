@@ -1,6 +1,6 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, seatOf } from "@/game/core/rules/crew";
+import { actorOf, clearSeatPhase, phaseOf, seatOf } from "@/game/core/rules/crew";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { drawAmbient, resolveConflict } from "@/game/core/rules/events";
 import { commitChance, nodeEnergyCost } from "@/game/core/rules/modifiers";
@@ -70,7 +70,7 @@ function writeAndSettle(
     if (context.rng.chance(BALANCE.commit.ambientOnSuccessPct)) drawAmbient(context);
   }
 
-  state.phase = { kind: "choose_action" };
+  clearSeatPhase(context);
   return node;
 }
 
@@ -81,7 +81,7 @@ function writeAndSettle(
  */
 export function resolveConflictPhase(context: RuleContext, how: "manual" | "ai"): void {
   const { state } = context;
-  const phase = state.phase;
+  const phase = phaseOf(state, seatOf(context));
   if (phase.kind !== "resolve_conflict") throw new Error("resolveConflictPhase: no conflict");
 
   const ticket = getTicket(state, phase.ticketId);
@@ -90,5 +90,5 @@ export function resolveConflictPhase(context: RuleContext, how: "manual" | "ai")
   if (!resolved) return;
 
   completeMerge(context, ticket, { hiddenBug });
-  state.phase = { kind: "choose_action" };
+  clearSeatPhase(context);
 }

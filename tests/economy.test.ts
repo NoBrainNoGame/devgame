@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { UPGRADES, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthlyReport, monthTurns } from "@/game/core/rules/economy";
 import { gatherEffects } from "@/game/core/rules/modifiers";
 import { getActionPreview } from "@/game/core/rules/preview";
@@ -210,7 +210,7 @@ describe("the shop", () => {
     const state = inHand("coffee");
     state.money = 1000;
     const after = applyAction(state, { type: "buy", id: "coffee_machine" }).state;
-    expect(after.player.energyMax).toBe(state.player.energyMax + 3);
+    expect(playerOf(after, SOLO_SEAT).energyMax).toBe(playerOf(state, SOLO_SEAT).energyMax + 3);
   });
 
   test("a skill point costs more each time, and buys a point", () => {

@@ -10,7 +10,7 @@ import type { Effects } from "@/game/content/effects";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, leadSeat, playerOf } from "@/game/core/rules/crew";
+import { actorOf, forEachSeat, leadSeat, playerOf, seatOf } from "@/game/core/rules/crew";
 import { repayDebt } from "@/game/core/rules/debt";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gainEnergy, syncEnergyMax } from "@/game/core/rules/energy";
@@ -19,7 +19,7 @@ import { adjustShare } from "@/game/core/rules/market";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { changeMoney } from "@/game/core/rules/money";
 import { lowerQuality } from "@/game/core/rules/quality";
-import { addDev, maxSeats } from "@/game/core/rules/team";
+import { addDev, hasRoom } from "@/game/core/rules/team";
 import { backlogTickets } from "@/game/core/rules/tickets";
 import { tierScale } from "@/game/core/rules/tier";
 import type { NodeId, RunState } from "@/game/core/types";
@@ -41,13 +41,13 @@ function holds(state: RunState, effects: Effects, when: RelicCondition): boolean
     case "quality_present":
       return state.quality >= BALANCE.relics.qualityWorthEasing;
     case "seat_free":
-      return state.devs.length < maxSeats(effects);
+      return hasRoom(state, effects, leadSeat(state));
     case "dev_promotable":
       return state.devs.some((dev) => nextRank(dev.rank) !== dev.rank);
     case "no_discount":
       return state.boosts.shopDiscountPct === 0;
     case "no_free_hire":
-      return !state.boosts.freeHire && state.devs.length < maxSeats(effects);
+      return !state.boosts.freeHire && hasRoom(state, effects, leadSeat(state));
     case "unread_ai":
       return Object.values(state.nodes).some(
         (node) => node.commit.mode === "ai" && !node.commit.reviewed,
@@ -133,11 +133,13 @@ function applyBoost(context: RuleContext, relicId: RelicId): void {
   if (boost === undefined) return;
 
   if (boost.fullEnergy === true) {
-    gainEnergy(context, energyMax(state, context.effects) - actorOf(context).energy, "relic");
+    forEachSeat(context, () => {
+      gainEnergy(context, energyMax(state, context.effects) - actorOf(context).energy, "relic");
+    });
   }
   if (boost.debt !== undefined) repayDebt(context, boost.debt === "all" ? state.debt : boost.debt);
   if (boost.quality !== undefined) lowerQuality(context, boost.quality, "event");
-  if (boost.dev !== undefined && state.devs.length < maxSeats(context.effects)) {
+  if (boost.dev !== undefined && hasRoom(state, context.effects, seatOf(context))) {
     addDev(context, boost.dev, { relic: relicId });
   }
   if (boost.promote === true) {

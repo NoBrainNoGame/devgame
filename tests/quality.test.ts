@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BALANCE } from "@/game/core/balance";
 import { toLogLine } from "@/game/core/log";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { openTickets } from "@/game/core/rules/tickets";
 import type { QualityChange } from "@/game/core/types";
@@ -225,7 +225,7 @@ describe("production", () => {
   test("the sprint ships early when the board is empty", () => {
     const state = makeReady(inHand("early"));
     for (const ticket of Object.values(state.tickets)) {
-      if (ticket.id !== state.player.ticketId) ticket.status = "merged";
+      if (ticket.id !== playerOf(state, SOLO_SEAT).ticketId) ticket.status = "merged";
     }
 
     const result = submitAndMerge(state);
@@ -237,8 +237,8 @@ describe("production", () => {
   test("the sprint clock ships the release before the burnout check", () => {
     const state = inHand("clock");
     state.sprintTurn = BALANCE.sprint.turns - 1;
-    state.player.energy = 0;
-    state.player.zeroEnergyStreak = BALANCE.energy.burnoutStreak - 1;
+    playerOf(state, SOLO_SEAT).energy = 0;
+    playerOf(state, SOLO_SEAT).zeroEnergyStreak = BALANCE.energy.burnoutStreak - 1;
 
     const result = applyAction(state, { type: "commit", mode: "craft" });
     expect(eventsOfType(result.events, "sprint_ended").length).toBe(1);

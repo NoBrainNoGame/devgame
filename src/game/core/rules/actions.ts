@@ -7,6 +7,7 @@ import {
 } from "@/game/content";
 import { canonicalJson } from "@/game/core/hash";
 import { canAcquire } from "@/game/core/rules/acquisitions";
+import { leadSeat, phaseOf } from "@/game/core/rules/crew";
 import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects, nothingToDo } from "@/game/core/rules/modifiers";
 import { choiceCost } from "@/game/core/rules/narrative";
@@ -44,7 +45,17 @@ import type { PlayerAction, RunState, Seat } from "@/game/core/types";
  * floor the reviewer refuses at.
  */
 export function getAvailableActions(state: RunState, seat: Seat): PlayerAction[] {
-  switch (state.phase.kind) {
+  const phase = phaseOf(state, seat);
+  // The company's question is put to its lead seat; the others wait for the answer.
+  if (
+    state.crew !== undefined &&
+    (phase.kind === "choose_relic" || phase.kind === "event") &&
+    seat !== leadSeat(state)
+  ) {
+    return [];
+  }
+
+  switch (phase.kind) {
     case "choose_action": {
       const actions: PlayerAction[] = [];
       const ticket = currentTicket(state, seat);
@@ -90,7 +101,7 @@ export function getAvailableActions(state: RunState, seat: Seat): PlayerAction[]
       }
       if (canBuySkillPoint(state)) actions.push({ type: "buy_point" });
       for (const rank of DEV_RANKS) {
-        if (canHire(state, effects, rank)) actions.push({ type: "hire", rank });
+        if (canHire(state, effects, seat, rank)) actions.push({ type: "hire", rank });
       }
       for (const id of ACQUISITION_IDS) {
         if (canAcquire(state, id)) actions.push({ type: "acquire", id });
@@ -112,10 +123,10 @@ export function getAvailableActions(state: RunState, seat: Seat): PlayerAction[]
       return [{ type: "resume" }, { type: "followup" }];
 
     case "choose_relic":
-      return state.phase.offer.map((relicId) => ({ type: "choose_relic", relicId }) as const);
+      return phase.offer.map((relicId) => ({ type: "choose_relic", relicId }) as const);
 
     case "event": {
-      const { eventId } = state.phase;
+      const { eventId } = phase;
       return NARRATIVE_EVENTS[eventId].choices
         .filter((choice) => choiceCost(state, eventId, choice.id) <= state.money)
         .map((choice) => ({ type: "answer", eventId, choice: choice.id }) as const);

@@ -4,7 +4,7 @@ import { TICKET_KIND } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { checkInvariants, headOf } from "@/game/core/map/graph";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import {
   buggedOn,
@@ -120,7 +120,7 @@ describe("an obstacle turning up", () => {
     expect(merge?.ticketId).toBe(parent.id);
     expect(merge?.parents).toHaveLength(2);
     expect(after.tickets[parent.id]?.nodeIds).toContain(merge?.id ?? "");
-    expect(after.player.ticketId).toBe(parent.id);
+    expect(playerOf(after, SOLO_SEAT).ticketId).toBe(parent.id);
     expect(obstaclesOf(after, after.tickets[parent.id] ?? parent)).toEqual([]);
     // Nothing delivered: an obstacle is a wall, not a reward.
     expect(after.pointsDelivered).toBe(scoreBefore);
@@ -252,7 +252,7 @@ describe("an obstacle on the team's ticket", () => {
     const parent = state.tickets[event.parentId];
     if (obstacle === undefined || parent === undefined) throw new Error("lost");
     expect(obstacle.assignee).toBe(parent.assignee);
-    expect(state.player.ticketId).not.toBe(obstacle.id);
+    expect(playerOf(state, SOLO_SEAT).ticketId).not.toBe(obstacle.id);
 
     // Left to the team, the obstacle lands on the feature and the feature on dev.
     const rest: PlayerAction = { type: "rest" };

@@ -2,8 +2,9 @@ import type { SkillId } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import { forEachSeat, seatState } from "@/game/core/rules/crew";
 import { closeMonth, loadOf, mrrOf } from "@/game/core/rules/economy";
-import { gainEnergy } from "@/game/core/rules/energy";
+import { shareEnergy } from "@/game/core/rules/energy";
 import { recordIncident } from "@/game/core/rules/events";
 import { grantSkillPoints } from "@/game/core/rules/grants";
 import { adjustShare } from "@/game/core/rules/market";
@@ -72,7 +73,13 @@ export function endSprint(context: RuleContext): void {
   grantSkillPoints(context, BALANCE.tree.perSprint);
 
   const regen = Math.round(energyMax(state, context.effects) * BALANCE.energy.sprintEndRegenRatio);
-  gainEnergy(context, regen, "sprint_end");
+  shareEnergy(context, regen, "sprint_end");
+  // Being there when the release ships is what a human's sprint is worth.
+  if (state.crew !== undefined) {
+    forEachSeat(context, (seat) => {
+      seatState(state, seat).contribution.sprints += 1;
+    });
+  }
 
   const offer = drawRelicOffer(context, BALANCE.sprint.relicOffer + (extraRelic ? 1 : 0));
   emit(context, { type: "sprint_ended", sprint: state.sprint, offer });

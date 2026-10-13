@@ -1,7 +1,8 @@
 import { DEV_RANK, type Effects, TICKET_KIND, UPGRADE_IDS, UPGRADES } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { driftMarket, revenueMultiplier, shareOf } from "@/game/core/rules/market";
+import { driftMarket, powerOf, revenueMultiplier, shareOf } from "@/game/core/rules/market";
+import { gatherEffects } from "@/game/core/rules/modifiers";
 import { changeMoney } from "@/game/core/rules/money";
 import { raiseQuality } from "@/game/core/rules/quality";
 import { payTeam } from "@/game/core/rules/team";
@@ -55,6 +56,11 @@ export function mrrOf(state: RunState, effects: Effects): number {
     if (ticket.status === "merged" && TICKET_KIND[ticket.kind].earnsMrr) base += ticket.mrr;
   }
   return Math.floor((base * (100 + effects.mrrBonusPct)) / 100);
+}
+
+/** What the company weighs on its market: revenue plus users. The world's ranking and rivals read it. */
+export function companyPower(state: RunState): number {
+  return powerOf(mrrOf(state, gatherEffects(state)), loadOf(state));
 }
 
 export function loadOf(state: RunState): number {

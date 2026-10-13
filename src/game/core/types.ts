@@ -26,7 +26,9 @@ export type TicketId = string;
 /** `d${serial}`. A hired developer, for the life of the run. */
 export type DevId = string;
 
-export type RunMode = "classic" | "daily";
+/** `multiplayer`: a company of several humans. Never in a solo save: its schema refuses it. */
+export type SoloMode = "classic" | "daily";
+export type RunMode = SoloMode | "multiplayer";
 
 /**
  * The ways a commit on a ticket may be written, beyond an ordinary one.
@@ -92,6 +94,8 @@ export interface NodeCommit {
   debt?: number;
   /** Written by a hired developer rather than by you. Never `HEAD`. */
   author?: DevId;
+  /** Written by a human of a company, by seat. Absent in solo and on a bot's. */
+  seat?: Seat;
 }
 
 /**
@@ -146,6 +150,8 @@ export interface Ticket {
   mrr: number;
   /** The developer working it, when it is not you. */
   assignee?: DevId;
+  /** The human holding it, in a company. Absent in solo, where it is seat 0. */
+  holder?: Seat;
   /** The sprint it arrived in, so a ticket left in the backlog can be assigned. */
   sprintArrived: number;
   /** The column it writes in, taken when opened and handed back when merged. */
@@ -198,7 +204,7 @@ export interface Player {
 }
 
 /** `caught`: a hack of the outside world went wrong with production's patience already gone. */
-export type GameOverReason = "burnout" | "fired" | "caught";
+export type GameOverReason = "burnout" | "fired" | "caught" | "dissolved";
 
 /** What a hack of the outside world would buy, when it is offered at all. */
 export type HackKind = "patience" | "energy" | "capacity";
@@ -221,7 +227,16 @@ export interface MarketState {
   /** The month a price war ends, null when there is none. */
   priceWarUntilMonth: number | null;
   competitors: Record<CompetitorId, CompetitorState>;
+  /**
+   * The other companies of the world, in a company's market, as the power each
+   * weighed at the start of the round. Absent in solo, where the scripted
+   * competitors above are the market.
+   */
+  rivals?: RivalPower[];
 }
+
+/** One rival company's weight on the market, for one round. */
+export type RivalPower = number;
 
 export interface ObjectiveState {
   id: ObjectiveId;
@@ -332,6 +347,47 @@ export interface Dev {
   /** Tickets landed, which is what promotes them. */
   delivered: number;
   hiredSprint: number;
+  /** The site it sits at, in a company. Absent in solo. */
+  site?: SiteId;
+}
+
+/** A place of the company: the head office, or a site bought. */
+export type SiteId = string;
+
+/** What a seat is asked on its own, apart from the company's question. */
+export type SeatPhase = Extract<
+  Phase,
+  { kind: "resolve_conflict" } | { kind: "pr_accepted" } | { kind: "ticket_rejected" }
+>;
+
+/** What a human has brought the company: the part of the score that is theirs. */
+export interface Contribution {
+  pointsDelivered: number;
+  ticketsDelivered: number;
+  sprints: number;
+}
+
+export interface SeatState {
+  name: string;
+  site: SiteId;
+  joinedTurn: number;
+  player: Player;
+  pending?: SeatPhase;
+  contribution: Contribution;
+}
+
+/** Several humans developing one company. Absent in solo. */
+export interface CrewState {
+  name: string;
+  /** Head office and sites bought; `seats` is how many people each holds, humans and bots. */
+  sites: Record<SiteId, { upgrade: UpgradeId | "hq"; seats: number }>;
+  seats: Record<Seat, SeatState>;
+  /** The next seat number: a seat is never reused. */
+  nextSeat: number;
+  /** Commits written by every human, which is what the company's score counts. */
+  commits: number;
+  /** Those who left, frozen: their name and what they brought. */
+  left: Record<Seat, { name: string; score: number }>;
 }
 
 export type Phase =
@@ -389,7 +445,10 @@ export interface RunState {
   /** Everything merged on `dev` since the last release, for the bugs it ships. */
   shipped: NodeId[];
 
-  player: Player;
+  /** The only human of a solo run. Absent in a company, where each seat has its own. */
+  player?: Player;
+  /** Present in a company. Solo states carry neither field's twin. */
+  crew?: CrewState;
 
   skills: SkillId[];
   /** Skills this account has unlocked; tickets draw their rewards from it. */
@@ -688,6 +747,13 @@ export type GameEvent =
   /** A developer picked a ticket up from the backlog. */
   | { type: "ticket_assigned"; ticketId: TicketId; devId: DevId }
   | { type: "crunch"; active: boolean }
+  | { type: "seat_joined"; seat: Seat; name: string; site: SiteId }
+  | { type: "seat_left"; seat: Seat; name: string; reason: "left" | "burnout" }
+  /** The deadline passed with no action: a rest without regeneration, and patience lost. */
+  | { type: "seat_missed"; seat: Seat }
+  /** Nothing to do and nothing to start: the turn passed by itself. */
+  | { type: "seat_passed"; seat: Seat }
+  | { type: "world_event"; eventId: string }
   | { type: "game_over"; reason: GameOverReason; cause?: QualitySource; score: number };
 
 export interface ApplyResult {

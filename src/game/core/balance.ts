@@ -493,3 +493,37 @@ export const BALANCE = {
 } as const;
 
 export type Balance = typeof BALANCE;
+
+/**
+ * The numbers of a company of several humans. Kept apart from `BALANCE` on
+ * purpose: `RULES_FINGERPRINT` hashes that one, and a solo score must not move
+ * because a company got a longer vote. `CREW_FINGERPRINT` hashes this one.
+ */
+export const CREW_BALANCE = {
+  crew: {
+    /** Patience a missed round costs the company, as a rest would. */
+    missPatience: 1,
+    /** Rounds missed in a row before the supervisor drives the seat. */
+    missesBeforeAutopilot: 3,
+    roundSeconds: 30,
+    voteSeconds: 30,
+    /** Rounds on autopilot after which the seat is released. */
+    autopilotReleaseRounds: 120,
+  },
+  sites: {
+    /** How many of each site upgrade a company may buy. */
+    maxPerKind: 12,
+    /** Each site of a kind costs this much more than the one before. */
+    priceGrowth: 1.6,
+  },
+  world: {
+    /** Chance in percent that a round brings a world event. */
+    eventChancePct: 6,
+    /** Rounds during which no other world event can fall. */
+    eventCooldownRounds: 20,
+    /** Weight the market keeps for those who are not there: a lone company is not a monopoly. */
+    phantomPower: 50,
+  },
+} as const;
+
+export type CrewBalance = typeof CREW_BALANCE;

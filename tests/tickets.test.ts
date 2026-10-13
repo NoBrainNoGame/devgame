@@ -5,7 +5,7 @@ import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { ticketsFor } from "@/game/core/map/tickets";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { energyMax } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
 import { availableSkills } from "@/game/core/rules/sprint";
@@ -90,7 +90,7 @@ describe("the backlog", () => {
     expect(ticket?.status).toBe("open");
     // Open but unwritten: no column yet, so the graph shows no empty lane.
     expect(ticket?.lane).toBeUndefined();
-    expect(after.player.ticketId).toBe(start.ticketId);
+    expect(playerOf(after, SOLO_SEAT).ticketId).toBe(start.ticketId);
 
     plantCommit(after, "craft");
     expect(after.tickets[start.ticketId]?.lane).toBeGreaterThanOrEqual(2);
@@ -104,15 +104,18 @@ describe("the backlog", () => {
 
     // Starting a second one puts it in your hand: the camera follows as on a switch.
     const { state: two, events } = applyAction(one, start);
-    expect(two.player.ticketId).toBe(start.ticketId);
+    expect(playerOf(two, SOLO_SEAT).ticketId).toBe(start.ticketId);
     expect(two.turn).toBe(one.turn);
     expect(eventsOfType(events, "checkout").length).toBe(1);
     plantCommit(two, "craft");
     const lanes = openTickets(two).map((ticket) => ticket.lane);
     expect(new Set(lanes).size).toBe(2);
 
-    const back = applyAction(two, { type: "checkout", ticketId: one.player.ticketId ?? "" }).state;
-    expect(back.player.ticketId).toBe(one.player.ticketId);
+    const back = applyAction(two, {
+      type: "checkout",
+      ticketId: playerOf(one, SOLO_SEAT).ticketId ?? "",
+    }).state;
+    expect(playerOf(back, SOLO_SEAT).ticketId).toBe(playerOf(one, SOLO_SEAT).ticketId);
     expect(back.turn).toBe(two.turn);
   });
 
@@ -173,8 +176,8 @@ describe("the backlog", () => {
     // Enough energy to sit through a whole sprint without burning out: the
     // test is about the board's patience, not the player's.
     deep.tree.stamina = 100;
-    deep.player.energyMax = energyMax(deep);
-    deep.player.energy = deep.player.energyMax;
+    playerOf(deep, SOLO_SEAT).energyMax = energyMax(deep);
+    playerOf(deep, SOLO_SEAT).energy = playerOf(deep, SOLO_SEAT).energyMax;
     // Only a feature can wait past the grace: a customer's bug is gone with
     // its sprint, and the codebase's own request is never forced. Everything
     // waiting at the start is made a feature so the board has one to force.
@@ -190,7 +193,7 @@ describe("the backlog", () => {
         // Nor production's patience: every rest taken while the backlog
         // waits costs some, and would get the player fired first.
         state.quality = 0;
-        if (state.player.ticketId === null && !started) {
+        if (playerOf(state, SOLO_SEAT).ticketId === null && !started) {
           started = true;
           return actions.find((a) => a.type === "start");
         }

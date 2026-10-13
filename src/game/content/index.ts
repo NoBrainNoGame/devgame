@@ -134,3 +134,5 @@ export {
   upgradesIn,
   upgradeUnlocked,
 } from "@/game/content/upgrades";
+export type { WorldEventEffect, WorldEventId } from "@/game/content/worldEvents";
+export { isWorldEventId, WORLD_EVENT_IDS, WORLD_EVENTS } from "@/game/content/worldEvents";

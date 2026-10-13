@@ -1,7 +1,7 @@
 import type { Effects } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, playerOf, seatOf } from "@/game/core/rules/crew";
+import { actorOf, playerOf, SOLO_SEAT, seatOf } from "@/game/core/rules/crew";
 import { repayDebt } from "@/game/core/rules/debt";
 import { spendEnergy } from "@/game/core/rules/energy";
 import { reviewCleanCount, reviewEnergyCost } from "@/game/core/rules/modifiers";
@@ -62,7 +62,7 @@ export function performReview(context: RuleContext, free: boolean): ReviewOutcom
   if (debtDelta > 0) repayDebt(context, debtDelta);
 
   // A review breaks the streak whether or not it found anything to read.
-  state.player.aiChain = 0;
+  playerOf(state, SOLO_SEAT).aiChain = 0;
   state.stats.reviews += 1;
 
   emit(context, {

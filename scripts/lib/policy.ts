@@ -11,7 +11,7 @@ import {
 } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { capacityAdvice } from "@/game/core/rules/capacity";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthlyReport, projectedLoadOf } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { skillPointPrice } from "@/game/core/rules/shop";
@@ -241,7 +241,7 @@ export function choose(policy: PolicyName, state: RunState, actions: PlayerActio
 
   const ticket = currentTicket(state, SOLO_SEAT);
   const unreviewed = ticket === null ? 0 : unreadAiOn(state, ticket).length;
-  const lowEnergy = state.player.energy <= 3;
+  const lowEnergy = playerOf(state, SOLO_SEAT).energy <= 3;
   const fallback: PlayerAction = { type: "review" };
 
   // A point costs no turn, so any policy that ignores them is leaving value on

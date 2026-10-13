@@ -1,5 +1,5 @@
 import { COMPETITOR_IDS, COMPETITORS, type CompetitorId } from "@/game/content";
-import { BALANCE } from "@/game/core/balance";
+import { BALANCE, CREW_BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { tierScale } from "@/game/core/rules/tier";
 import type { MarketState, RunState } from "@/game/core/types";
@@ -15,16 +15,23 @@ import type { MarketState, RunState } from "@/game/core/types";
  * happens to be standing.
  */
 
-export function initialMarket(): MarketState {
+export function initialMarket(crew = false): MarketState {
   const competitors = {} as MarketState["competitors"];
   for (const id of COMPETITOR_IDS) {
     const def = COMPETITORS[id];
+    // A company's rivals are the other companies of its world: the scripted
+    // ones wait forever, so nothing in the narrative can name one.
     competitors[id] =
-      def.entersAtTier <= 0
+      def.entersAtTier <= 0 && !crew
         ? { strength: def.baseStrength, status: "alive" }
         : { strength: 0, status: "waiting" };
   }
-  return { shareBonus: 0, priceWarUntilMonth: null, competitors };
+  return {
+    shareBonus: 0,
+    priceWarUntilMonth: null,
+    competitors,
+    ...(crew ? { rivals: [] } : {}),
+  };
 }
 
 /** The run's weight on the market: revenue, and users at ten to the euro. */
@@ -39,10 +46,11 @@ export function competitorsAlive(state: RunState): CompetitorId[] {
 /** The run's share of the market, 0 to 1. */
 export function shareOf(state: RunState, mrr: number, load: number): number {
   const power = powerOf(mrr, load);
-  const rivals = competitorsAlive(state).reduce(
-    (sum, id) => sum + state.market.competitors[id].strength,
-    0,
-  );
+  const rivals =
+    state.market.rivals === undefined
+      ? competitorsAlive(state).reduce((sum, id) => sum + state.market.competitors[id].strength, 0)
+      : state.market.rivals.reduce((sum, rival) => sum + rival, 0) +
+        CREW_BALANCE.world.phantomPower;
   const raw = power + rivals <= 0 ? 0 : power / (power + rivals);
   return Math.min(1, Math.max(0, raw + state.market.shareBonus / 100));
 }
@@ -97,6 +105,8 @@ export function buyStrongestCompetitor(context: RuleContext): CompetitorId | und
  */
 export function driftMarket(context: RuleContext): void {
   const { state, rng } = context;
+  // The world moves the rivals of a company, once a round, from outside.
+  if (state.market.rivals !== undefined) return;
   const { jitterPct, merge } = BALANCE.market;
 
   for (const id of COMPETITOR_IDS) {

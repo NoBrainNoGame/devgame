@@ -59,6 +59,26 @@ export function toLogLine(
     case "rested":
       return { seq, turn, kind: "note", text: text("log.rested", { energy: event.energy }) };
 
+    case "seat_joined":
+      return { seq, turn, kind: "note", text: text("log.seat_joined", { name: event.name }) };
+
+    case "seat_left":
+      return {
+        seq,
+        turn,
+        kind: "note",
+        text: text(`log.seat_left.${event.reason}`, { name: event.name }),
+      };
+
+    case "seat_missed":
+      return { seq, turn, kind: "revert", text: text("log.seat_missed", { seat: event.seat }) };
+
+    case "seat_passed":
+      return { seq, turn, kind: "note", text: text("log.seat_passed", { seat: event.seat }) };
+
+    case "world_event":
+      return { seq, turn, kind: "system", text: text(`game.world.${event.eventId}`) };
+
     case "tier_reached":
       return { seq, turn, kind: "feat", text: text("log.tier_reached", { tier: event.tier }) };
 

@@ -13,7 +13,7 @@ import {
 import { BALANCE } from "@/game/core/balance";
 import { type I18nText, money, ref, signed, text } from "@/game/core/i18n";
 import { commitKindFor } from "@/game/core/rules/commit";
-import { playerOf } from "@/game/core/rules/crew";
+import { phaseOf, playerOf } from "@/game/core/rules/crew";
 import { hackOffer } from "@/game/core/rules/hack";
 import {
   commitChance,
@@ -33,7 +33,7 @@ import { currentTicket, getTicket, mostIndebtedOn, unreadAiOn } from "@/game/cor
 import { tierScale } from "@/game/core/rules/tier";
 import { treeUnlocked } from "@/game/core/rules/tree";
 import { pointsFor } from "@/game/core/rules/write";
-import type { ActionPreview, PlayerAction, RunState, Seat } from "@/game/core/types";
+import type { ActionPreview, PlayerAction, RunState, Seat, TicketId } from "@/game/core/types";
 
 /**
  * What an action will cost and what it might do, worked out before the player
@@ -145,8 +145,8 @@ export function getActionPreview(state: RunState, seat: Seat, action: PlayerActi
 
     case "merge": {
       const ticket =
-        state.phase.kind === "pr_accepted"
-          ? getTicket(state, state.phase.ticketId)
+        phaseOf(state, seat).kind === "pr_accepted"
+          ? getTicket(state, pendingTicket(state, seat))
           : currentTicket(state, seat);
       // An obstacle lands on its feature: no event on the way, nothing back.
       const obstacle = ticket?.parentId !== undefined;
@@ -180,7 +180,8 @@ export function getActionPreview(state: RunState, seat: Seat, action: PlayerActi
       };
 
     case "followup": {
-      const bugs = state.phase.kind === "ticket_rejected" ? state.phase.bugs : 0;
+      const phase = phaseOf(state, seat);
+      const bugs = phase.kind === "ticket_rejected" ? phase.bugs : 0;
       return {
         action,
         energyCost: 0,
@@ -414,6 +415,12 @@ export function getActionPreview(state: RunState, seat: Seat, action: PlayerActi
     case "dev_set":
       return { action, energyCost: 0, consumesTurn: false, notes: [] };
   }
+}
+
+function pendingTicket(state: RunState, seat: Seat): TicketId {
+  const phase = phaseOf(state, seat);
+  if (phase.kind !== "pr_accepted") throw new Error("pendingTicket: no pull request is accepted");
+  return phase.ticketId;
 }
 
 /** Previews for everything currently legal, keyed for the HUD. */

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { discounted, RELIC_KEEP_IDS, RELICS, type RelicId, upgradeCost } from "@/game/content";
 import { BALANCE } from "@/game/core/balance";
 import { createContext } from "@/game/core/rules/context";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { monthlyReport } from "@/game/core/rules/economy";
 import { energyMax, gatherEffects } from "@/game/core/rules/modifiers";
 import { qualityMax, raiseQuality } from "@/game/core/rules/quality";
@@ -53,7 +54,7 @@ describe("what is offered", () => {
     expect(now).toContain("grant");
     for (const id of RELIC_KEEP_IDS) expect(now).toContain(id);
 
-    fresh.player.energy -= 1;
+    playerOf(fresh, SOLO_SEAT).energy -= 1;
     fresh.debt = BALANCE.relics.debtWorthClearing;
     fresh.quality = BALANCE.relics.qualityWorthEasing;
     fresh.boosts.shopDiscountPct = 25;
@@ -101,9 +102,9 @@ describe("what is offered", () => {
 describe("boosts", () => {
   test("second wind fills the bar", () => {
     const state = atOffer("boost-energy");
-    state.player.energy = 1;
+    playerOf(state, SOLO_SEAT).energy = 1;
     const after = take(state, "second_wind").state;
-    expect(after.player.energy).toBe(energyMax(after));
+    expect(playerOf(after, SOLO_SEAT).energy).toBe(energyMax(after));
   });
 
   test("clean slate clears the debt; the post-mortem eases production", () => {

@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { rebuildRun } from "@/game/bridge/rebuild";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions, isActionAvailable } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { devSheet } from "@/game/core/rules/dev";
 import { applyAction } from "@/game/core/rules/reducer";
 import { tierOf } from "@/game/core/rules/tier";
@@ -45,7 +45,7 @@ describe("dev_set", () => {
     expect(next.skillPoints).toBe(7);
     expect(next.xpEarned).toBe(99);
     expect(next.debt).toBe(30);
-    expect(next.player.energy).toBe(10);
+    expect(playerOf(next, SOLO_SEAT).energy).toBe(10);
     // Clamped to what the ticket holds.
     expect(next.tickets[ticket.id]?.filled).toBe(ticket.points);
     expect(next.turn).toBe(state.turn);
@@ -73,10 +73,12 @@ describe("dev_set", () => {
 
     expect(next.tree.stamina).toBe(5);
     expect(next.upgrades.coworking).toBe(1);
-    expect(next.player.energyMax).toBeGreaterThan(state.player.energyMax);
-    expect(next.player.energy).toBe(next.player.energyMax);
+    expect(playerOf(next, SOLO_SEAT).energyMax).toBeGreaterThan(
+      playerOf(state, SOLO_SEAT).energyMax,
+    );
+    expect(playerOf(next, SOLO_SEAT).energy).toBe(playerOf(next, SOLO_SEAT).energyMax);
     expect(next.devs).toHaveLength(state.devs.length + 1);
-    expect(devSheet(next).max.energy).toBe(next.player.energyMax);
+    expect(devSheet(next).max.energy).toBe(playerOf(next, SOLO_SEAT).energyMax);
   });
 
   test("replays in the browser, identically", () => {

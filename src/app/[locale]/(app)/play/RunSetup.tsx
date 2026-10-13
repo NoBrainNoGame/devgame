@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { accountSkillPoints, type MetaProgressDto, type RunMode, type RunSaveDto } from "@/game";
+import { accountSkillPoints, type MetaProgressDto, type RunSaveDto, type SoloMode } from "@/game";
 import { ACHIEVEMENT_IDS, PROFILE_IDS, PROFILES } from "@/game/content";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export interface RunSetupProps {
   signedIn: boolean;
   onStart: (choice: {
     profileId: MetaProgressDto["unlockedProfiles"][number];
-    mode: RunMode;
+    mode: SoloMode;
     /** What the run calls you, signed out. Saved with the settings. */
     playerName: string;
   }) => void;
@@ -69,7 +69,7 @@ export function RunSetup({
   const [profileId, setProfileId] = useState<MetaProgressDto["unlockedProfiles"][number]>(
     meta.unlockedProfiles[0] ?? "junior",
   );
-  const [mode, setMode] = useState<RunMode>("classic");
+  const [mode, setMode] = useState<SoloMode>("classic");
   const [playerName, setPlayerName] = useState(meta.settings.playerName);
   const [confirming, setConfirming] = useState(false);
   const start = (): void =>

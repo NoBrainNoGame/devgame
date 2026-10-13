@@ -1,8 +1,9 @@
 import { BALANCE } from "@/game/core/balance";
 import { emit, type RuleContext } from "@/game/core/rules/context";
-import { actorOf, seatOf } from "@/game/core/rules/crew";
+import { actorOf, forEachSeat, seatOf } from "@/game/core/rules/crew";
 import { energyMax, restCostsPatience, restRegen } from "@/game/core/rules/modifiers";
 import { raiseQuality } from "@/game/core/rules/quality";
+import type { Seat } from "@/game/core/types";
 
 /**
  * Energy is the run's clock. Every commit spends it, merges and weekends give
@@ -71,14 +72,25 @@ export function passTurn(context: RuleContext): void {
 /** Recomputes the ceiling after a skill or relic changed it, keeping the fill. */
 
 export function syncEnergyMax(context: RuleContext): void {
-  const player = actorOf(context);
-  const max = energyMax(context.state, context.effects);
-  if (max === player.energyMax) return;
+  // A skill or a relic belongs to the company: every human's tank follows.
+  forEachSeat(context, () => {
+    const player = actorOf(context);
+    const max = energyMax(context.state, context.effects);
+    if (max === player.energyMax) return;
 
-  const gained = max - player.energyMax;
-  player.energyMax = max;
-  if (gained > 0) gainEnergy(context, gained, "max_raised");
-  else player.energy = Math.min(player.energy, max);
+    const gained = max - player.energyMax;
+    player.energyMax = max;
+    if (gained > 0) gainEnergy(context, gained, "max_raised");
+    else player.energy = Math.min(player.energy, max);
+  });
+}
+
+/** Energy to every human at once: what a sprint's end, an event or the world gives or takes. */
+export function shareEnergy(context: RuleContext, amount: number, reason: string): void {
+  forEachSeat(context, () => {
+    if (amount >= 0) gainEnergy(context, amount, reason);
+    else spendEnergy(context, -amount, reason);
+  });
 }
 
 /**
@@ -86,15 +98,25 @@ export function syncEnergyMax(context: RuleContext): void {
  * has ended in burnout.
  */
 export function checkBurnout(context: RuleContext): boolean {
-  const player = actorOf(context);
+  return burnedOut(context).length > 0;
+}
 
-  if (player.energy > 0) {
-    player.zeroEnergyStreak = 0;
-    return false;
-  }
-
-  player.zeroEnergyStreak += 1;
-  return player.zeroEnergyStreak >= BALANCE.energy.burnoutStreak;
+/**
+ * Seats whose energy has been at zero for the streak that ends a run. Solo:
+ * the one seat, and the run is over. A company loses the seat, not the run.
+ */
+export function burnedOut(context: RuleContext): Seat[] {
+  const burned: Seat[] = [];
+  forEachSeat(context, (seat) => {
+    const player = actorOf(context);
+    if (player.energy > 0) {
+      player.zeroEnergyStreak = 0;
+      return;
+    }
+    player.zeroEnergyStreak += 1;
+    if (player.zeroEnergyStreak >= BALANCE.energy.burnoutStreak) burned.push(seat);
+  });
+  return burned;
 }
 
 /** Emits a crunch event when the state changed, so the HUD can react once. */

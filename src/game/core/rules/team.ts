@@ -9,6 +9,15 @@ import {
 import { BALANCE } from "@/game/core/balance";
 import { fnv1a } from "@/game/core/hash";
 import { emit, type RuleContext } from "@/game/core/rules/context";
+import {
+  assignHolder,
+  forEachSeat,
+  routeSeat,
+  seatOf,
+  siteHeadcount,
+  siteOf,
+  siteSeats,
+} from "@/game/core/rules/crew";
 import { changeMoney } from "@/game/core/rules/money";
 import {
   backlogTickets,
@@ -18,7 +27,16 @@ import {
   sortedTickets,
 } from "@/game/core/rules/tickets";
 import { completeMerge, completeObstacle, writeTeamCommit } from "@/game/core/rules/write";
-import type { Dev, DevId, DevSource, RunState, Ticket, TicketId } from "@/game/core/types";
+import type {
+  Dev,
+  DevId,
+  DevSource,
+  RunState,
+  Seat,
+  SiteId,
+  Ticket,
+  TicketId,
+} from "@/game/core/types";
 
 /**
  * The hired team.
@@ -52,15 +70,31 @@ export function maxSeats(effects: Effects): number {
   return BALANCE.team.baseSeats + effects.teamSeats;
 }
 
+/** People at the acting seat's site against the seats it has: where a hire would sit. */
+export function seatsFor(
+  state: RunState,
+  effects: Effects,
+  seat: Seat,
+): { used: number; max: number } {
+  if (state.crew === undefined) return { used: state.devs.length, max: maxSeats(effects) };
+  const site = siteOf(state, seat);
+  return { used: siteHeadcount(state, site), max: siteSeats(state, site) };
+}
+
+export function hasRoom(state: RunState, effects: Effects, seat: Seat): boolean {
+  const { used, max } = seatsFor(state, effects, seat);
+  return used < max;
+}
+
 /** The fee here and now: nothing while a bonus pays for the next hire. */
 export function hireCostOf(state: RunState, effects: Effects, rank: DevRank): number {
   return state.boosts.freeHire ? 0 : hireCostFor(effects, rank);
 }
 
-export function canHire(state: RunState, effects: Effects, rank: DevRank): boolean {
+export function canHire(state: RunState, effects: Effects, seat: Seat, rank: DevRank): boolean {
   return (
     DEV_RANK[rank].tier <= state.tier &&
-    state.devs.length < maxSeats(effects) &&
+    hasRoom(state, effects, seat) &&
     hireCostOf(state, effects, rank) <= state.money
   );
 }
@@ -69,7 +103,12 @@ export function canHire(state: RunState, effects: Effects, rank: DevRank): boole
  * Puts a developer on the roster. The one door for hiring, for a site that
  * brings its team and for an acquisition: whoever pays, the dev is the same.
  */
-export function addDev(context: RuleContext, rank: DevRank, source?: DevSource): Dev {
+export function addDev(
+  context: RuleContext,
+  rank: DevRank,
+  source?: DevSource,
+  site?: SiteId,
+): Dev {
   const { state } = context;
   const dev: Dev = {
     id: `d${state.nextDevSerial}`,
@@ -78,6 +117,7 @@ export function addDev(context: RuleContext, rank: DevRank, source?: DevSource):
     hiredRank: rank,
     delivered: 0,
     hiredSprint: state.sprint,
+    ...(state.crew === undefined ? {} : { site: site ?? siteOf(state, seatOf(context)) }),
   };
   state.nextDevSerial += 1;
   state.devs.push(dev);
@@ -112,8 +152,8 @@ export function hireDev(context: RuleContext, rank: DevRank): Dev {
   if (DEV_RANK[rank].tier > state.tier) {
     throw new Error(`A ${rank} is hired from tier ${DEV_RANK[rank].tier}`);
   }
-  if (state.devs.length >= maxSeats(context.effects)) {
-    throw new Error(`The team is full at ${maxSeats(context.effects)}`);
+  if (!hasRoom(state, context.effects, seatOf(context))) {
+    throw new Error(`The team is full at ${seatsFor(state, context.effects, seatOf(context)).max}`);
   }
   const cost = hireCostOf(state, context.effects, rank);
   if (cost > state.money) throw new Error(`A ${rank} costs ${cost}, you have ${state.money}`);
@@ -264,11 +304,14 @@ export function releaseDev(context: RuleContext, dev: Dev): void {
   if (state.showcase !== null) return;
   const handedBack = ticketsOf(state, dev.id).map((ticket) => ticket.id);
   for (const ticket of sortedTickets(state)) {
-    if (ticket.assignee === dev.id) delete ticket.assignee;
+    if (ticket.assignee !== dev.id) continue;
+    delete ticket.assignee;
+    // In a company the work goes to the lightest desk, not to the one who did not ask.
+    assignHolder(state, ticket, routeSeat(context));
   }
   state.devs = state.devs.filter((other) => other.id !== dev.id);
   state.stats.devsLeft += 1;
 
   emit(context, { type: "dev_left", devId: dev.id, name: dev.name, ticketIds: handedBack });
-  settleCurrent(context);
+  forEachSeat(context, () => settleCurrent(context));
 }

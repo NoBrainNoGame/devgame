@@ -4,7 +4,7 @@ import { toSnapshot } from "@/game/bridge/snapshot";
 import { chooseSupervisor } from "@/game/bridge/supervisor";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { capacityOf } from "@/game/core/rules/economy";
 import { hackOffer } from "@/game/core/rules/hack";
 import { gatherEffects } from "@/game/core/rules/modifiers";
@@ -66,7 +66,7 @@ describe("the hack offer", () => {
 
   test("appears with no energy under a pile of tickets, and with servers saturated and no rung affordable", () => {
     const tired = inHand("tired");
-    tired.player.energy = 0;
+    playerOf(tired, SOLO_SEAT).energy = 0;
     const model = Object.values(tired.tickets).find((t) => t.kind === "feature");
     if (model === undefined) throw new Error("expected a feature");
     // Two more features open in hand, on top of the one already there.

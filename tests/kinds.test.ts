@@ -5,7 +5,7 @@ import { BALANCE } from "@/game/core/balance";
 import { checkInvariants } from "@/game/core/map/graph";
 import { arriveTickets } from "@/game/core/map/tickets";
 import { createContext } from "@/game/core/rules/context";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
 import { gatherEffects, wipExtra } from "@/game/core/rules/modifiers";
 import { applyAction } from "@/game/core/rules/reducer";
@@ -41,7 +41,7 @@ function land(
   ticket: Ticket,
 ): { state: RunState; events: ReturnType<typeof createContext>["events"] } {
   ticket.status = "open";
-  state.player.ticketId = ticket.id;
+  playerOf(state, SOLO_SEAT).ticketId = ticket.id;
   plantCommit(state, "craft");
   const context = createContext(state);
   ticket.filled = ticket.points;
@@ -163,7 +163,7 @@ describe("ticket kinds", () => {
   test("a migration costs debt with every commit and buys a level of servers when it lands", () => {
     const { state, ticket } = withKind("migration", "migration");
     ticket.status = "open";
-    state.player.ticketId = ticket.id;
+    playerOf(state, SOLO_SEAT).ticketId = ticket.id;
     const debt = state.debt;
     const { state: after, events } = applyAction(state, { type: "commit", mode: "craft" });
     const written = after.tickets[ticket.id];

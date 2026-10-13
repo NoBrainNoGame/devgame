@@ -5,7 +5,7 @@ import { idleTarget } from "@/game/bridge/idle";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { getAvailableActions } from "@/game/core/rules/actions";
 import { createContext } from "@/game/core/rules/context";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import { applyAction } from "@/game/core/rules/reducer";
 import { spawnObstacle, waitsOnlyForObstacle } from "@/game/core/rules/tickets";
 import type { RunState } from "@/game/core/types";
@@ -25,7 +25,7 @@ function fullAndBlocked(seed: string): { state: RunState; parentId: string; obst
   if (nodeId === undefined) throw new Error("expected a commit on the ticket");
   const obstacle = spawnObstacle(createContext(state), parent, nodeId);
   // The obstacle takes the hand; the player goes back to the feature.
-  state.player.ticketId = parent.id;
+  playerOf(state, SOLO_SEAT).ticketId = parent.id;
   return { state, parentId: parent.id, obstacleId: obstacle.id };
 }
 

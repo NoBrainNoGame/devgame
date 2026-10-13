@@ -11,7 +11,7 @@ import { arriveTicketOfKind } from "@/game/core/map/tickets";
 import { emit, type RuleContext } from "@/game/core/rules/context";
 import { addDebt, repayDebt } from "@/game/core/rules/debt";
 import { loadOf, mrrOf } from "@/game/core/rules/economy";
-import { gainEnergy, spendEnergy } from "@/game/core/rules/energy";
+import { shareEnergy } from "@/game/core/rules/energy";
 import { grantSkillPoints } from "@/game/core/rules/grants";
 import {
   adjustShare,
@@ -141,8 +141,7 @@ export function answerEvent(context: RuleContext, eventId: NarrativeEventId, cho
   if (cost > 0) changeMoney(context, -cost, "event");
   if (effect.money !== undefined) changeMoney(context, effect.money * scale, "event");
   if (effect.energy !== undefined) {
-    if (effect.energy >= 0) gainEnergy(context, effect.energy, "event");
-    else spendEnergy(context, -effect.energy, "event");
+    shareEnergy(context, effect.energy, "event");
   }
   if (effect.debt !== undefined) {
     if (effect.debt >= 0) addDebt(context, effect.debt);

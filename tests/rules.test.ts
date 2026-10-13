@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { toSnapshot } from "@/game/bridge/snapshot";
 import { BALANCE } from "@/game/core/balance";
 import { getAvailableActions } from "@/game/core/rules/actions";
-import { SOLO_SEAT } from "@/game/core/rules/crew";
+import { playerOf, SOLO_SEAT } from "@/game/core/rules/crew";
 import {
   commitChance,
   debtView,
@@ -55,7 +55,7 @@ describe("commit", () => {
     // Topped up: energy clamps at zero, and a clamped spend is a different
     // rule from the one under test.
     const state = structuredClone(writingACommit("cost"));
-    state.player.energy = state.player.energyMax;
+    playerOf(state, SOLO_SEAT).energy = playerOf(state, SOLO_SEAT).energyMax;
 
     const action = { type: "commit", mode: "craft" } as const;
     const preview = getActionPreview(state, SOLO_SEAT, action);
@@ -96,7 +96,7 @@ describe("commit", () => {
 
   test("a commit that lands fills the ticket by what the preview said", () => {
     const state = inHand("fill");
-    state.player.energy = state.player.energyMax;
+    playerOf(state, SOLO_SEAT).energy = playerOf(state, SOLO_SEAT).energyMax;
     const ticket = ticketInHand(state);
 
     let current = state;
@@ -169,7 +169,7 @@ describe("commit", () => {
 
     const hopeless = structuredClone(state);
     hopeless.debt = 100;
-    hopeless.player.energy = 0;
+    playerOf(hopeless, SOLO_SEAT).energy = 0;
     expect(commitChance(hopeless, SOLO_SEAT, "ai", "commit").value).toBeGreaterThanOrEqual(
       BALANCE.commit.clamp.min,
     );
@@ -217,9 +217,9 @@ describe("energy and crunch", () => {
     const state = inHand("crunch");
 
     const rested = structuredClone(state);
-    rested.player.energy = BALANCE.energy.crunchThreshold + 1;
+    playerOf(rested, SOLO_SEAT).energy = BALANCE.energy.crunchThreshold + 1;
     const tired = structuredClone(state);
-    tired.player.energy = BALANCE.energy.crunchThreshold;
+    playerOf(tired, SOLO_SEAT).energy = BALANCE.energy.crunchThreshold;
 
     expect(isCrunch(rested, SOLO_SEAT)).toBe(false);
     expect(isCrunch(tired, SOLO_SEAT)).toBe(true);
@@ -229,25 +229,27 @@ describe("energy and crunch", () => {
   });
 
   test("energy never goes below zero or above the ceiling", () => {
-    const { state } = findSeed((r) => r.state.player.energy === 0, {
+    const { state } = findSeed((r) => playerOf(r.state, SOLO_SEAT).energy === 0, {
       prefix: "floor",
       pick: policy("craft"),
       limit: 120,
     });
 
-    expect(state.player.energy).toBe(0);
-    expect(state.player.energy).toBeLessThanOrEqual(state.player.energyMax);
+    expect(playerOf(state, SOLO_SEAT).energy).toBe(0);
+    expect(playerOf(state, SOLO_SEAT).energy).toBeLessThanOrEqual(
+      playerOf(state, SOLO_SEAT).energyMax,
+    );
   });
 
   test("burnout needs a second turn at zero, not just the first", () => {
     const spent = structuredClone(writingACommit("burnout"));
-    spent.player.energy = 0;
-    spent.player.zeroEnergyStreak = 0;
+    playerOf(spent, SOLO_SEAT).energy = 0;
+    playerOf(spent, SOLO_SEAT).zeroEnergyStreak = 0;
 
     const once = applyAction(spent, { type: "commit", mode: "craft" }).state;
     expect(once.phase.kind === "game_over" && once.phase.reason === "burnout").toBe(false);
-    expect(once.player.energy).toBe(0);
-    expect(once.player.zeroEnergyStreak).toBe(1);
+    expect(playerOf(once, SOLO_SEAT).energy).toBe(0);
+    expect(playerOf(once, SOLO_SEAT).zeroEnergyStreak).toBe(1);
   });
 
   test("a run that burns out says so", () => {
@@ -369,9 +371,9 @@ describe("review", () => {
   test("reviewing fresh work reads more of it", () => {
     const state = newRun("chain");
     const cold = structuredClone(state);
-    cold.player.aiChain = 0;
+    playerOf(cold, SOLO_SEAT).aiChain = 0;
     const hot = structuredClone(state);
-    hot.player.aiChain = BALANCE.review.chainLength;
+    playerOf(hot, SOLO_SEAT).aiChain = BALANCE.review.chainLength;
 
     expect(reviewCleanCount(hot, SOLO_SEAT)).toBe(
       reviewCleanCount(cold, SOLO_SEAT) + BALANCE.review.chainBonus,
@@ -415,7 +417,7 @@ describe("review", () => {
     expect(cost).toBeGreaterThan(0);
 
     const after = applyAction(state, { type: "review" }).state;
-    expect(state.player.energy - after.player.energy).toBe(cost);
+    expect(playerOf(state, SOLO_SEAT).energy - playerOf(after, SOLO_SEAT).energy).toBe(cost);
   });
 
   test("pair programming makes a review cheaper, in the rules and not only in the preview", () => {
@@ -426,8 +428,8 @@ describe("review", () => {
     const plain = applyAction(state, { type: "review" }).state;
     const discounted = applyAction(cheap, { type: "review" }).state;
 
-    expect(state.player.energy - plain.player.energy).toBeGreaterThan(
-      cheap.player.energy - discounted.player.energy,
+    expect(playerOf(state, SOLO_SEAT).energy - playerOf(plain, SOLO_SEAT).energy).toBeGreaterThan(
+      playerOf(cheap, SOLO_SEAT).energy - playerOf(discounted, SOLO_SEAT).energy,
     );
   });
 
@@ -435,7 +437,7 @@ describe("review", () => {
     const state = makeReviewable(inHand("free-review"));
     const automated = structuredClone(state);
     automated.tree.review_bot = 1;
-    automated.player.turnsSinceFreeReview = BALANCE.review.botCadence - 1;
+    playerOf(automated, SOLO_SEAT).turnsSinceFreeReview = BALANCE.review.botCadence - 1;
     // Something shipped unread, which only the automatic review can reach.
     const shippedId = plantAiCommit(automated);
     ticketInHand(automated).nodeIds.pop();
@@ -488,7 +490,7 @@ describe("free actions", () => {
     expect(gatherEffects(fresh)).toEqual(gatherEffects(newRun("head-start")));
 
     const placed = applyAction(fresh, { type: "tree", id: "stamina" }).state;
-    expect(placed.player.energyMax).toBe(fresh.player.energyMax + 2);
+    expect(playerOf(placed, SOLO_SEAT).energyMax).toBe(playerOf(fresh, SOLO_SEAT).energyMax + 2);
   });
 
   test("CI makes every roll better", () => {
@@ -515,7 +517,7 @@ describe("free actions", () => {
 describe("documentation", () => {
   test("buys the next machine-written commits out of their debt", () => {
     const { after: written } = committedAs("docs");
-    expect(written.player.docsCharges).toBe(BALANCE.docs.charges);
+    expect(playerOf(written, SOLO_SEAT).docsCharges).toBe(BALANCE.docs.charges);
 
     const after = play(written, { pick: prefer(isCommit("ai")), limit: 6 });
 
@@ -528,7 +530,7 @@ describe("documentation", () => {
 
     const covered = Math.min(BALANCE.docs.charges, machineWritten.length);
     expect(eventsOfType(after.events, "docs_used").length).toBe(covered);
-    expect(after.state.player.docsCharges).toBe(BALANCE.docs.charges - covered);
+    expect(playerOf(after.state, SOLO_SEAT).docsCharges).toBe(BALANCE.docs.charges - covered);
   });
 
   test("the preview stops advertising a debt it will not charge", () => {
