@@ -103,6 +103,26 @@ SELECT indexname, indexdef FROM pg_indexes
 WHERE indexname IN ('Run_one_in_progress', 'Run_one_finished_per_fingerprint');
 ```
 
+### The multiplayer indexes are hand-written too
+
+`00000000000007_multiplayer` adds two more partial unique indexes on
+`CompanyMember`: **one live occupant per seat** (`companyId, seat` where
+`leftAt IS NULL`) and **one live seat per profile** (`profileId` where
+`leftAt IS NULL`). Prisma cannot express them and will not reproduce them in a
+diff; `migrate dev` may propose to drop them. Check
+`\d "CompanyMember"` after any migration that touches the table.
+
+## The multiplayer tables have one writer
+
+`World`, `Company`, `CompanyMember` and `CompanyEntry` are written only by the
+realtime server (`src/realtime/prismaStore.ts`), one transaction per tick. A
+company is its `start` (seed, founder, unlocks) plus its `CompanyEntry` rows;
+`snapshot` is a compaction of the state every 50 rounds (the entries it covers
+are deleted), stored with its hash. Nothing a client sends is in a column, a
+score included: `Company.score` and `CompanyMember.finalScore` are what the
+engine computed. JSON columns are re-validated on read; a company that does not
+replay to its last hash is not served.
+
 ## `VisitDay` counts pages, not people
 
 One row per UTC day, route and language: views, and visits (a browser tab's

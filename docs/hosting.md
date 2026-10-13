@@ -129,6 +129,29 @@ next app costs its ~70 MB standalone layer. To skip it, set
 `RUN_MIGRATIONS=false` and run `bun run db:deploy` by hand or from a deploy
 pipeline before each deploy (the repository's CI does not).
 
+### The realtime server
+
+Multiplayer needs a second process: `bun run realtime`, bundled by
+`bun run realtime:build` into `dist/realtime/server.js`. The image carries Bun
+and the bundle, and `entrypoint.sh` runs both processes: when one exits the
+other is stopped and the container exits with the first one's status, so the
+platform restarts the pair. `EXPOSE 3000 3200`; the healthcheck covers both.
+
+- **One replica.** The worlds live in the realtime server's memory (they are
+  replayed from Postgres at boot, not shared), so a second replica would be a
+  second world with the same clock. Scale the app, never this.
+- **Domain or port.** Browsers reach it at `REALTIME_URL` (a `wss://` host, e.g.
+  a second domain proxied to port 3200) or, unset, at `APP_URL`'s host on
+  `REALTIME_PORT`. The proxy must forward WebSocket upgrades and keep idle
+  connections for at least a minute (the client pings every 20 s).
+- **Memory.** A company's state is a few hundred KB; 64 companies per world is
+  the cap (`REALTIME_LIMITS`), well inside a small VPS.
+- **Off.** `REALTIME_ENABLED=false` (or no `DATABASE_URL`) runs the app alone:
+  the Multi link and the pages disappear and `/api/realtime/ticket` is a 404.
+- **Restarts.** A stop signal makes the server flush its writes before it
+  exits; players reconnect on their own and are re-seated. A deploy costs
+  the seconds it takes to boot.
+
 ### Scheduled jobs
 
 Coolify's per-application **Scheduled Tasks**; no crontab, no scheduler:

@@ -68,6 +68,18 @@ Breaking one is a bug even if it typechecks. Code cites them by number: 1, 3,
     barrel pulls in a gamepad module calling radash functions that no longer
     exist (that file explains).
 
+## Multiplayer
+
+A company of several humans is the same engine with `RunState.crew`
+(`docs/game-design.md`, "L'entreprise à plusieurs"; `docs/maintenance.md`, "The
+company"). `src/realtime/` is a **separate Bun process** (`bun run realtime`)
+that owns the worlds in memory; it imports the engine and the protocol, never
+Next, React or the scene (Biome enforces it), and its files start with
+`@/lib/server-only` like the other server code. `src/realtime/client/` is its
+browser half. `RULES_EPOCH` and `RULES_FINGERPRINT` do not move for a company:
+it has its own `CREW_EPOCH` / `CREW_FINGERPRINT`, and `tests/golden.test.ts`
+pins solo hashes.
+
 ## Layout
 
 `src/app/[locale]/layout.tsx` is one `h-dvh` column: the header, then the route

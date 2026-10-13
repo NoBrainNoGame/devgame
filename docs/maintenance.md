@@ -659,6 +659,58 @@ Check: `bun run check`; a save without the field loads through `migrate`; an
 overclaim is refused by `overclaims`; `replayRun` on a live session keeps its
 `stats.hash`.
 
+## The company (multiplayer)
+
+A company is the same engine with several `player`s: `RunState.crew` replaces
+`RunState.player`, and a solo state carries no field a company adds, so its
+hash does not move. Read `docs/game-design.md` ("L'entreprise à plusieurs")
+first.
+
+**Rules that read a player take a seat.** `playerOf(state, seat)`,
+`actorOf(context)` and `seatOf(context)` (`rules/crew.ts`) are the only doors:
+never read `state.player` in a rule. A reader (`currentTicket`, `commitChance`,
+`getAvailableActions`…) takes a **required** `seat`, so a wrong one cannot hide;
+a mutator reads the acting seat from the context. What touches everybody (a
+sprint's end, a relic's energy, a world event) goes through `forEachSeat` or
+`shareEnergy`. A question only one seat is asked uses `setSeatPhase` /
+`phaseOf`; the company's own (`choose_relic`, `event`) stays in `state.phase`.
+
+**Adding a rule that holds something per human** (a ticket, a chain, a counter):
+put it on `Player`, create it in `emptyPlayer`, and decide what `leaveSeat`
+does with it. A new optional field on a shared type must never be written in
+solo, or every solo hash moves: use `...(isCrew ? {…} : {})`.
+
+**Epochs.** A company has its own `CREW_EPOCH` and `CREW_FINGERPRINT`
+(`dto/version.ts`), which hash `CREW_BALANCE`, the world events' ids and the solo
+fingerprint. Bump `CREW_EPOCH` by the same rule as `RULES_EPOCH` when a change
+to rounds, seats, sites, the vote or the world makes an old company log replay
+to a different game; repin `CREW_FINGERPRINT` in `tests/content.test.ts`. A
+change that moves `RULES_FINGERPRINT` moves it too. `tests/golden.test.ts` pins
+solo hashes: a line failing there is a solo replay broken by a company
+change, never a number to repin.
+
+**The log.** A company's entries are `join`, `leave`, `act` (a free action) and
+`round` (every seat's turn action, or a miss, plus the world's rivals and event).
+`applyEntry` (`dto/company.ts`) is the one place that applies them, on the
+server, in the browser and in `replayCompany`. A new action type needs the
+solo steps (`PlayerAction`, DTO schema, `getAvailableActions`) and a decision:
+is it a turn action (`TURN_ACTIONS` in `rules/reducer.ts`) or free?
+
+**The realtime server** (`src/realtime/`) owns the worlds in memory. `world.ts`
+is pure of sockets and clocks (it is tested without a network); `server.ts` is
+the only file that opens a port. It may import the engine, the bridge's
+snapshot and autopilot, and the protocol, never the app or the scene (Biome
+enforces it). A protocol frame that changes shape bumps `PROTOCOL_VERSION`.
+Its state is persisted one transaction per tick and replayed at boot; if the
+last hash does not land, the company is abandoned rather than served.
+
+**What breaks silently.** Reading `Object.values(state.crew.seats)` (use
+`occupiedSeats`: its order is the rule); a seat number reused; a `Math.random`
+or `Date.now` in `core/world.ts`; an `.env.example` without `REALTIME_*`
+(they are optional, but the file lists every variable `env.ts` reads); a
+hand-edited migration losing the two partial unique indexes of
+`00000000000007_multiplayer`.
+
 ## Seeds and the daily
 
 ### How a seed becomes a game

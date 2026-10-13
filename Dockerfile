@@ -74,15 +74,23 @@ ENV NODE_ENV=production \
 
 RUN node ./node_modules/.bin/next build
 
+# The realtime server (multiplayer) is a Bun process bundled into one file; Bun
+# is already in this stage. It runs beside the app in the same container.
+RUN bun run realtime:build
+
 # ---------------------------------------------------------------------------
 # runner — what actually serves traffic.
 # ---------------------------------------------------------------------------
 FROM node:${NODE_VERSION}-slim AS runner
 WORKDIR /app
 
+# Bun runs the realtime server beside the app (entrypoint.sh starts both).
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
+    REALTIME_PORT=3200 \
     HOSTNAME=0.0.0.0
 
 # Prisma's schema engine probes for libssl at start-up and warns loudly on every
@@ -99,6 +107,7 @@ RUN groupadd --system --gid 1001 nodejs \
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/dist/realtime ./realtime
 
 # Migrations run at start-up (see entrypoint.sh), so the schema and a Prisma CLI
 # have to ship too. They live together under /app/migrator, self-contained: the
@@ -112,12 +121,14 @@ COPY --chown=nextjs:nodejs entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
 USER nextjs
-EXPOSE 3000
+EXPOSE 3000 3200
 
 # Shallow on purpose: it answers from the event loop without touching Postgres,
 # so a database outage does not make the orchestrator kill a healthy process.
+# The realtime server is checked too, when it is on (it is off with
+# REALTIME_ENABLED=false, or with no DATABASE_URL).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "const on=process.env.DATABASE_URL&&!['false','0'].includes(process.env.REALTIME_ENABLED||'true');const ok=(u)=>fetch(u).then(r=>r.ok);Promise.all([ok('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health'),on?ok('http://127.0.0.1:'+(process.env.REALTIME_PORT||3200)+'/realtime/health'):true]).then(r=>process.exit(r.every(Boolean)?0:1)).catch(()=>process.exit(1))"
 
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["node", "server.js"]

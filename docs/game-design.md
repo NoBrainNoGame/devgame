@@ -652,6 +652,59 @@ selon la tension (0,6 palier, 0,4 patience). Muet : réglage `sound`. Manquent 
 service Web Audio (seul `NullAudioService` est branché) et les fichiers (`null`
 dans `manifest.ts`).
 
+## L'entreprise à plusieurs
+
+Le mode multijoueur (`mode: "multiplayer"`) fait de plusieurs humains les
+développeurs d'**une même entreprise**. L'entreprise est un seul état de
+partie : le graphe, le backlog, la trésorerie, la dette, la patience de la
+production, le marché, les compétences et les bonus. Chaque humain garde en
+propre son énergie, son ticket en main, sa chaîne de commits et ses questions
+personnelles (un merge à démêler, une review à lire). Le moteur reste pur : une
+entreprise est une graine plus la liste ordonnée de ses entrées (`join`,
+`leave`, `act`, `round`), rien d'autre.
+
+**Les sites.** L'entreprise commence au siège (`hq`, `team.baseSeats` places).
+Chaque site acheté (`coworking`, `office`…) devient un lieu à part, avec ses
+places et son équipe embauchée ; on peut en acheter plusieurs de chaque sorte,
+chacun plus cher que le précédent (`CREW_BALANCE.sites`). Les places d'un site
+se partagent entre ses humains et ses développeurs embauchés. Un joueur ne voit
+que le graphe et le tableau des gens de son site ; le backlog reste commun.
+
+**Le tour simultané.** Toutes les 30 secondes, chaque humain a choisi **un**
+coup de tour (commit, review, repos, merge, reprise, hack, résolution de
+conflit) ; les coups libres (démarrer un ticket, acheter, embaucher, soumettre,
+arbre) s'appliquent à l'instant, comme en solo. Le serveur applique les coups
+dans l'ordre des places, puis l'horloge du sprint avance d'**un** tour. Un coup
+devenu illégal parce qu'une place précédente a changé le tableau est sauté sans
+pénalité (le serveur le remplace avant par le pilote automatique de niveau 0).
+
+**Les tours ratés.** Sans coup à l'échéance, la place fait un repos sans
+récupération d'énergie et l'entreprise perd un peu de patience. Une place qui
+n'avait rien à faire passe son tour sans rien coûter. Après trois tours ratés
+d'affilée, le superviseur joue la place jusqu'au retour du joueur (n'importe
+quel message le ramène) ; après 120 tours de pilote automatique, la place est
+libérée. Un burn-out libère la place sans finir la partie ; la dernière place
+libérée **dissout** l'entreprise.
+
+**Les questions de l'entreprise.** Le bonus de sprint et les événements
+narratifs sont tranchés par un **vote** de 30 secondes : le plus voté gagne, à
+égalité la première place tranche, sans vote c'est la première option. Aucun
+tour ne se joue pendant un vote.
+
+**Le monde.** Les entreprises vivent dans un monde persistant. Leur marché est
+fait des **autres entreprises réelles** (leur puissance au début du tour), plus
+un poids fantôme pour qu'une entreprise seule ne soit pas un monopole. Un
+événement du monde (hackathon, panne cloud, canicule…) tombe sur toutes les
+entreprises et tous les joueurs à la fois. Un joueur en attente peut être
+recruté par une entreprise qui a une place libre, ou fonder la sienne.
+
+**Le score.** Le score d'une entreprise est celui du solo (commits de tous,
+points livrés, sprints), calculé par le moteur. Le classement des joueurs
+compte les commits de chacun, les points qu'il a livrés et les sprints où il
+était là ; ce qu'un joueur a apporté est figé quand il part. Les chiffres
+propres au multijoueur vivent dans `CREW_BALANCE`, hors de `BALANCE`, pour que
+le solo ne bouge pas.
+
 ## Écarts avec le document initial
 
 - Bots rivaux sur `main` : retirés, perdre une course n'apprend rien ; un ticket
