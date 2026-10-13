@@ -120,6 +120,8 @@ export const LIMITS = {
   report: { limit: 3, windowMs: 60 * 60_000 },
   /** Each run sample is replayed server-side: a few an hour from one address. */
   telemetry: { limit: 30, windowMs: 60 * 60_000 },
+  /** A ticket is minted per connection; a reconnect loop is the only way past this. */
+  realtimeTicket: { limit: 20, windowMs: 60_000 },
 } as const satisfies Record<string, RateLimit>;
 
 /** A 429 that says when to come back rather than just refusing. */

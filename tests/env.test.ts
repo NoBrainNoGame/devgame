@@ -43,3 +43,36 @@ describe("environment", () => {
     expect(env.CRON_SECRET).toBeUndefined();
   });
 });
+
+describe("environment: multiplayer", () => {
+  const secret = "0123456789abcdef0123456789abcdef";
+  const online = {
+    DATABASE_URL: "postgresql://x",
+    BETTER_AUTH_SECRET: secret,
+    DAILY_SEED_SECRET: secret,
+  };
+
+  test("is off offline, on online, and switched off by REALTIME_ENABLED", () => {
+    expect(parseEnvironment({}).MULTI).toBe(false);
+    expect(parseEnvironment(online).MULTI).toBe(true);
+    expect(parseEnvironment({ ...online, REALTIME_ENABLED: "false" }).MULTI).toBe(false);
+    expect(parseEnvironment({ ...online, REALTIME_ENABLED: "0" }).MULTI).toBe(false);
+    expect(() => parseEnvironment({ ...online, REALTIME_ENABLED: "maybe" })).toThrow(
+      /REALTIME_ENABLED/,
+    );
+  });
+
+  test("the socket is the app's host on the realtime port unless told otherwise", () => {
+    expect(parseEnvironment({}).REALTIME_PORT).toBe(3200);
+    expect(parseEnvironment({}).REALTIME_WS_URL).toBe("ws://localhost:3200/realtime/ws");
+    expect(parseEnvironment({ APP_URL: "https://devgame.example" }).REALTIME_WS_URL).toBe(
+      "wss://devgame.example:3200/realtime/ws",
+    );
+    expect(parseEnvironment({ REALTIME_URL: "https://rt.example" }).REALTIME_WS_URL).toBe(
+      "wss://rt.example/realtime/ws",
+    );
+    expect(parseEnvironment({ REALTIME_PORT: "4000" }).REALTIME_WS_URL).toBe(
+      "ws://localhost:4000/realtime/ws",
+    );
+  });
+});

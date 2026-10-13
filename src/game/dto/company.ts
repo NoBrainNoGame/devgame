@@ -23,7 +23,11 @@ const MAX_SEAT = 4096;
 
 const SeatSchema = z.number().int().min(0).max(MAX_SEAT);
 
-const NameSchema = z.string().trim().min(3).max(24);
+/** A company's name, chosen by its founder. */
+export const CompanyNameSchema = z.string().trim().min(3).max(24);
+
+/** A human's name: their profile's display name, which can be short. */
+export const MemberNameSchema = z.string().trim().min(1).max(24);
 
 /** What a human may do on their own, at once. `dev_set` is the development panel's, never a company's. */
 const CompanyActionSchema = PlayerActionSchema.refine((action) => action.type !== "dev_set", {
@@ -36,7 +40,7 @@ const RoundActionsSchema = z.record(
 );
 
 export const CompanyEntrySchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("join"), name: NameSchema, site: z.string().min(1).max(40) }),
+  z.object({ kind: z.literal("join"), name: MemberNameSchema, site: z.string().min(1).max(40) }),
   z.object({ kind: z.literal("leave"), seat: SeatSchema }),
   /** A free action, applied at once. */
   z.object({ kind: z.literal("act"), seat: SeatSchema, action: CompanyActionSchema }),
@@ -58,8 +62,8 @@ export const CompanySaveSchema = z.object({
   /** Company rules the company was played against. */
   crew: z.string().min(1).max(16),
   seed: z.string().min(1).max(64),
-  name: NameSchema,
-  founder: NameSchema,
+  name: CompanyNameSchema,
+  founder: MemberNameSchema,
   profileId: z.enum(PROFILE_IDS),
   unlockedSkills: z.array(z.enum(SKILL_IDS)).max(SKILL_IDS.length),
   startingSkillPoints: z.number().int().min(0).max(999),

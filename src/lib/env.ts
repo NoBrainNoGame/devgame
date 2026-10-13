@@ -64,6 +64,19 @@ const schema = z
      * keep the seed memoised in the `DailySeed` table, so boards stay comparable.
      */
     DAILY_SEED_SECRET: secret("DAILY_SEED_SECRET"),
+
+    /**
+     * The realtime server (`bun run realtime`) that runs the multiplayer
+     * worlds: the port it listens on, the WebSocket URL browsers reach it at
+     * when that is not `APP_URL`'s host on that port, and whether multiplayer
+     * is on at all. Everything optional: a deploy without it is a solo game.
+     */
+    REALTIME_PORT: z.coerce.number().int().min(1).max(65535).default(3200),
+    REALTIME_URL: optionalString.pipe(z.url().optional()),
+    REALTIME_ENABLED: z
+      .enum(["true", "false", "1", "0"])
+      .default("true")
+      .transform((value) => value === "true" || value === "1"),
   })
   .superRefine((value, context) => {
     if (value.DATABASE_URL === undefined) return;
@@ -81,7 +94,27 @@ const schema = z
     ...value,
     /** Whether a server side exists: a database, and the secrets that guard it. */
     ONLINE: value.DATABASE_URL !== undefined,
+  }))
+  .transform((value) => ({
+    ...value,
+    /** Whether multiplayer exists: a server side, and the realtime server not switched off. */
+    MULTI: value.ONLINE && value.REALTIME_ENABLED,
+    /** Where a browser opens its WebSocket. */
+    REALTIME_WS_URL: realtimeSocketUrl(value.REALTIME_URL, value.APP_URL, value.REALTIME_PORT),
   }));
+
+/**
+ * The WebSocket address of the realtime server: the configured one, else the
+ * app's own host on the realtime port, with `ws` or `wss` to match.
+ */
+function realtimeSocketUrl(configured: string | undefined, appUrl: string, port: number): string {
+  const base = new URL(configured ?? appUrl);
+  if (configured === undefined) base.port = String(port);
+  base.protocol = base.protocol === "https:" || base.protocol === "wss:" ? "wss:" : "ws:";
+  base.pathname = "/realtime/ws";
+  base.search = "";
+  return base.toString();
+}
 
 /** Exported for the tests; the app reads `env`. */
 export function parseEnvironment(source: Record<string, string | undefined>) {
