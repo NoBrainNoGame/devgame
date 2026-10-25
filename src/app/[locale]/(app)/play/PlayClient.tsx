@@ -29,6 +29,7 @@ import {
   writePendingSubmit,
 } from "@/lib/storage/sync";
 import { useMetaStore } from "@/lib/storage/useMetaStore";
+import { randomUuid } from "@/lib/utils/uuid";
 import { CHECKPOINT_EVERY_SPRINTS } from "@/lib/telemetry/schema";
 import { sendRunSample } from "@/lib/telemetry/send";
 
@@ -183,7 +184,7 @@ export function PlayClient(props: PlayClientProps) {
       const seed =
         choice.mode === "daily" && props.dailySeed !== null
           ? props.dailySeed
-          : crypto.randomUUID().replaceAll("-", "").slice(0, 16);
+          : randomUuid().replaceAll("-", "").slice(0, 16);
 
       // A run left behind is worth knowing about: where players stop.
       const left = pickLongerRun(readLocalRun(), resumable);
@@ -202,11 +203,11 @@ export function PlayClient(props: PlayClientProps) {
 
       setStage({
         kind: "running",
-        runKey: crypto.randomUUID(),
+        runKey: randomUuid(),
         seed,
         mode: choice.mode,
         profileId: choice.profileId,
-        clientRunId: crypto.randomUUID(),
+        clientRunId: randomUuid(),
         createdAt: new Date().toISOString(),
       });
     },
@@ -222,7 +223,7 @@ export function PlayClient(props: PlayClientProps) {
 
     setStage({
       kind: "running",
-      runKey: crypto.randomUUID(),
+      runKey: randomUuid(),
       seed: resumable.seed,
       mode: resumable.mode,
       profileId: resumable.profileId,
