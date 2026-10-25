@@ -13,8 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { authClient } from "@/lib/auth-client";
+import { loginHref } from "@/lib/login-return";
 
 /**
  * Just enough of the session to draw the menu. The full Better Auth session
@@ -30,6 +31,7 @@ export function AuthMenu({ viewer }: { viewer: Viewer | null }): React.JSX.Eleme
   const t = useTranslations("common");
   const nav = useTranslations("nav");
   const router = useRouter();
+  const pathname = usePathname();
   const [busy, setBusy] = useState(false);
 
   async function signOut(): Promise<void> {
@@ -44,7 +46,7 @@ export function AuthMenu({ viewer }: { viewer: Viewer | null }): React.JSX.Eleme
   if (viewer === null) {
     return (
       <Button asChild variant="ghost" size="sm">
-        <Link href="/login">
+        <Link href={loginHref(pathname)}>
           <LogIn aria-hidden="true" />
           <span className="max-sm:sr-only">{t("signIn")}</span>
         </Link>

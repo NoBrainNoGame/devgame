@@ -17,6 +17,7 @@ import { accountSkillPoints, emptyMeta, xpForLevel } from "@/game";
 import { redirect } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { loginHref } from "@/lib/login-return";
 import { getMyProfile } from "@/lib/profile/actions";
 import { alternatesFor } from "@/lib/seo";
 import { getSession } from "@/lib/session";
@@ -42,7 +43,7 @@ export default async function ProfilePage(): Promise<React.JSX.Element> {
   const locale = await getLocale();
   // `redirect` returns `never`, so the coalesce both sends the visitor to the
   // login page and leaves `session` non-null for the rest of the function.
-  const session = (await getSession()) ?? redirect({ href: "/login", locale });
+  const session = (await getSession()) ?? redirect({ href: loginHref("/profile"), locale });
 
   const [t, common, play, profileNames, skillNames] = await Promise.all([
     getTranslations("profile"),

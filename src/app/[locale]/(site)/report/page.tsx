@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { redirect } from "@/i18n/navigation";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { loginHref } from "@/lib/login-return";
 import { alternatesFor } from "@/lib/seo";
 import { getSession } from "@/lib/session";
 
@@ -35,7 +36,7 @@ const RECENT_RUNS = 3;
 export default async function ReportPage(): Promise<React.JSX.Element> {
   if (!env.ONLINE) notFound();
   const locale = await getLocale();
-  const session = (await getSession()) ?? redirect({ href: "/login", locale });
+  const session = (await getSession()) ?? redirect({ href: loginHref("/report"), locale });
   const t = await getTranslations("report");
 
   const [profile, mine, runs] = await Promise.all([

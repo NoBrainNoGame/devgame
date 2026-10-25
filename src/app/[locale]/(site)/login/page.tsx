@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 import { isGoogleEnabled } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { DEFAULT_RETURN, parseReturnPath } from "@/lib/login-return";
 import { alternatesFor } from "@/lib/seo";
 import { getSession } from "@/lib/session";
 
@@ -22,12 +24,17 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function LoginPage(): Promise<React.JSX.Element> {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<React.JSX.Element> {
   // Offline there is no account to have: the page does not exist here.
   if (!env.ONLINE) notFound();
 
-  const [locale, session] = await Promise.all([getLocale(), getSession()]);
-  if (session !== null) redirect({ href: "/profile", locale });
+  const [locale, session, params] = await Promise.all([getLocale(), getSession(), searchParams]);
+  const next = parseReturnPath(params.next, routing.locales);
+  if (session !== null) redirect({ href: next ?? "/profile", locale });
 
   const t = await getTranslations("login");
 
@@ -40,7 +47,7 @@ export default async function LoginPage(): Promise<React.JSX.Element> {
         {/* The locale prefix is written in by hand: Better Auth builds the
             callback URL itself and knows nothing about `@/i18n/navigation`. */}
         <LoginForm
-          callbackUrl={`/${locale}/play`}
+          callbackUrl={`/${locale}${next === "/" ? "" : (next ?? DEFAULT_RETURN)}`}
           googleEnabled={isGoogleEnabled}
           showDevHint={env.NODE_ENV === "development"}
         />

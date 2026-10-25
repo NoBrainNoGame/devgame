@@ -4,6 +4,7 @@ import { getLocale } from "next-intl/server";
 import { RealtimeConnection } from "@/components/multi/connection";
 import { redirect } from "@/i18n/navigation";
 import { env } from "@/lib/env";
+import { loginHref } from "@/lib/login-return";
 import { getSession } from "@/lib/session";
 
 /**
@@ -19,6 +20,6 @@ export default async function MultiLayout({
 }): Promise<React.JSX.Element> {
   if (!env.MULTI) notFound();
   const locale = await getLocale();
-  (await getSession()) ?? redirect({ href: "/login", locale });
+  (await getSession()) ?? redirect({ href: loginHref("/multi"), locale });
   return <RealtimeConnection>{children}</RealtimeConnection>;
 }

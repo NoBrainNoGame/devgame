@@ -4,7 +4,8 @@ import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
+import { loginHref } from "@/lib/login-return";
 import { cn } from "@/lib/utils";
 import { realtimeClient } from "@/realtime/client/instance";
 import { useRealtime } from "@/realtime/client/store";
@@ -30,6 +31,7 @@ export function RealtimeConnection({ children }: { children: React.ReactNode }):
  */
 export function ConnectionBanner({ className }: { className?: string }): React.JSX.Element | null {
   const t = useTranslations("multi.connection");
+  const pathname = usePathname();
   const connection = useRealtime((state) => state.connection);
   const attempt = useRealtime((state) => state.attempt);
   if (connection === "open" || connection === "idle") return null;
@@ -58,7 +60,7 @@ export function ConnectionBanner({ className }: { className?: string }): React.J
       <span>{text}</span>
       {closed ? (
         <Button asChild size="xs" variant="outline">
-          <Link href="/login">{t("signIn")}</Link>
+          <Link href={loginHref(pathname)}>{t("signIn")}</Link>
         </Button>
       ) : null}
       {outdated ? (

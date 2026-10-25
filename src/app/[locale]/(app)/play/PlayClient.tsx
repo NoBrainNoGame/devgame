@@ -14,6 +14,7 @@ import type { GameHandle, MetaProgressDto, PlayerAction, RunSaveDto, SoloMode } 
 import { gameStore, useGameStore } from "@/game";
 import { snapshotOfSave } from "@/game/bridge/rebuild";
 import { Link } from "@/i18n/navigation";
+import { loginHref } from "@/lib/login-return";
 import { applyRunToMeta } from "@/lib/profile/progression";
 import { submitRun } from "@/lib/run/actions";
 import {
@@ -29,9 +30,9 @@ import {
   writePendingSubmit,
 } from "@/lib/storage/sync";
 import { useMetaStore } from "@/lib/storage/useMetaStore";
-import { randomUuid } from "@/lib/utils/uuid";
 import { CHECKPOINT_EVERY_SPRINTS } from "@/lib/telemetry/schema";
 import { sendRunSample } from "@/lib/telemetry/send";
+import { randomUuid } from "@/lib/utils/uuid";
 
 import { RunSetup } from "./RunSetup";
 import { RunStage } from "./RunStage";
@@ -456,7 +457,7 @@ function SubmitFooter({
           {t("signInToSubmitHint")}
         </p>
         <Button variant="outline" asChild>
-          <Link href="/login">{t("signInToSubmit")}</Link>
+          <Link href={loginHref("/play")}>{t("signInToSubmit")}</Link>
         </Button>
       </>
     );
