@@ -51,6 +51,12 @@ export interface MountOptions extends Omit<SessionOptions, "resumeActions"> {
   audio?: AudioService;
   /** Whether the page holds the canvas's story still — a modal is open. */
   paused?: () => boolean;
+  /**
+   * The picture gave way (a lost WebGL context, a scene that failed to start)
+   * and is about to be rebuilt around the same run. A run picks up where the
+   * picture left it; the landing page's demo starts over instead.
+   */
+  onSceneLost?: () => void;
 }
 
 export interface GameHandle {
@@ -178,6 +184,7 @@ export async function mountGame(element: HTMLElement, options: MountOptions): Pr
       const holdGauges =
         animated && sceneOptions.pops && sceneOptions.interactive && !sceneOptions.reducedMotion;
       session.setPresentation({ animated, holdGauges });
+      if (scene === null && mode !== "none") options.onSceneLost?.();
       if (!owns()) return;
       gameStore.setState({
         renderMode: mode,

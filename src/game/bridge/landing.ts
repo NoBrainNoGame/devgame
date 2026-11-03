@@ -2,6 +2,7 @@
 
 import { chooseDemo, DEMO_SESSION, demoDone } from "@/game/bridge/demo";
 import { type GameHandle, mountGame } from "@/game/bridge/mount";
+import { modeAfter, pageSceneMemory, recordFailure, SCENE_RETRY } from "@/game/bridge/sceneGuard";
 import { gameStore } from "@/game/bridge/store";
 import type { I18nText } from "@/game/core/i18n";
 
@@ -12,6 +13,9 @@ import type { I18nText } from "@/game/core/i18n";
  * scene draws the graph alone, without the column of commit subjects and
  * without the numbers a turn pops off its commit: the tree is the picture,
  * hovering a commit still says what it was, and the demo keeps its pace.
+ *
+ * A picture that gives way (a lost WebGL context) plays the demo again from
+ * nothing rather than carrying on mid-story under a rebuilt scene.
  */
 
 export interface LandingHandle {
@@ -36,6 +40,25 @@ export async function mountLanding(
   let generation = 0;
   let handle: GameHandle | null = null;
   let disposed = false;
+  // Each restart is a fresh mount whose supervisor counts from zero, so the
+  // losses are counted here, by the same rule: WebGL that keeps failing is
+  // given up for the page, as the supervisor would have.
+  let losses: number[] = [];
+
+  const lost = (): void => {
+    if (disposed) return;
+    losses = recordFailure(losses, performance.now());
+    if (modeAfter("webgl", losses) !== "webgl") {
+      // Canvas2D failing as often: the mount's own supervisor takes it from here.
+      if (pageSceneMemory.webglGivenUp) return;
+      pageSceneMemory.webglGivenUp = true;
+      losses = [];
+    }
+    // Out of the supervisor's own call: it is still unwinding the failure.
+    setTimeout(() => {
+      if (!disposed) void start();
+    }, SCENE_RETRY.delayMs);
+  };
 
   const start = async (): Promise<void> => {
     generation += 1;
@@ -55,6 +78,7 @@ export async function mountLanding(
       showPops: false,
       playerName: options.playerName,
       transparent: true,
+      onSceneLost: lost,
     });
     if (!current()) {
       mounted.dispose();
