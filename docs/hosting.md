@@ -269,6 +269,56 @@ deploy is `./deploy/deploy.sh` again.
 - **Legal pages**: the host and the email provider are named in
   `messages/*.json` (`legal.publisher.hostName`, `emailProvider`, …).
 
+## Vercel + Render (free, multiplayer included)
+
+What runs `devgame.nobrainnogame.ghom.fr`: the site on Vercel (Hobby), the
+realtime server on Render (free web service), Postgres on Neon (free). No
+machine to look after; the price is a realtime server that sleeps.
+
+| Piece | Where | Config |
+|---|---|---|
+| Site (Next.js) | Vercel, region `fra1` | `vercel.json` |
+| Realtime server | Render, Frankfurt | `render.yaml`, `deploy/render/realtime.Dockerfile` |
+| Postgres | Neon, Frankfurt | its own project (quotas apart from other apps) |
+
+- **Migrations** run in Vercel's build (`vercel.json`), over
+  `DATABASE_URL_UNPOOLED`: Neon's pooled URL cannot hold Prisma Migrate's
+  advisory lock. The app itself uses the pooled `DATABASE_URL`.
+- **The realtime image** skips `next build`: dependencies, the Prisma client,
+  then the same `realtime:build` bundle as the main Dockerfile, run by Bun.
+  Render routes to port 10000, so `PORT` and `REALTIME_PORT` both say 10000.
+- **Shared secrets**: `BETTER_AUTH_SECRET` signs the tickets the site hands
+  out and the realtime server checks, and `DAILY_SEED_SECRET` is validated by
+  both: same values on both platforms. The realtime server only accepts the
+  origin of `APP_URL`.
+- **It sleeps.** A free Render service stops after 15 minutes without traffic;
+  the first player after that waits about a minute while it boots and replays
+  the worlds from Postgres. Do not add a keep-alive ping: a server that never
+  sleeps keeps Neon's compute awake too, and the free compute quota runs out.
+
+### Variables
+
+Vercel (Production):
+
+```
+DATABASE_URL=<Neon, pooled>
+DATABASE_URL_UNPOOLED=<Neon, direct>
+APP_URL=https://devgame.nobrainnogame.ghom.fr
+BETTER_AUTH_URL=https://devgame.nobrainnogame.ghom.fr
+BETTER_AUTH_SECRET=<shared>
+DAILY_SEED_SECRET=<shared>
+CRON_SECRET=<any, 16+ characters>
+REALTIME_URL=https://<the Render service>.onrender.com
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+```
+
+Render asks for `DATABASE_URL`, `BETTER_AUTH_SECRET` and `DAILY_SEED_SECRET`
+when the Blueprint is created; `render.yaml` sets the rest.
+
+Google: authorised JavaScript origin `https://devgame.nobrainnogame.ghom.fr`,
+redirect URI `https://devgame.nobrainnogame.ghom.fr/api/auth/callback/google`.
+
 ## If this does not fit you
 
 An ordinary containerised Next server talking to Postgres over a URL:

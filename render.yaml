@@ -1,0 +1,30 @@
+# Render Blueprint: the realtime server (multiplayer) on Render's free web
+# service. The site runs on Vercel (vercel.json). See docs/hosting.md,
+# "Vercel + Render".
+#
+# Secrets are `sync: false`: Render asks for them when the Blueprint is created
+# and never reads them from this file.
+services:
+  - type: web
+    name: devgame-realtime
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: multiplayer
+    dockerfilePath: ./deploy/render/realtime.Dockerfile
+    dockerContext: .
+    healthCheckPath: /realtime/health
+    autoDeploy: true
+    envVars:
+      # Same values as the site on Vercel: the realtime server checks tickets
+      # signed with BETTER_AUTH_SECRET and only accepts the site's origin.
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: DAILY_SEED_SECRET
+        sync: false
+      - key: APP_URL
+        value: https://devgame.nobrainnogame.ghom.fr
+      - key: BETTER_AUTH_URL
+        value: https://devgame.nobrainnogame.ghom.fr
