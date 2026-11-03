@@ -5,6 +5,7 @@ import "@/lib/server-only";
 import { type MetaProgressDto, MetaProgressSchema } from "@/game";
 import { type ActionResult, fail, guard, ok } from "@/lib/actions/result";
 import { prisma } from "@/lib/db";
+import { defaultDisplayName } from "@/lib/profile/default-name";
 import { mergeMeta } from "@/lib/profile/merge";
 import { toColumns, toMeta } from "@/lib/profile/row";
 import { hit, LIMITS } from "@/lib/rate-limit";
@@ -114,21 +115,4 @@ export async function setDisplayName(name: unknown): Promise<ActionResult<string
     await prisma.profile.update({ where: { userId }, data: { displayName: trimmed } });
     return ok(trimmed);
   });
-}
-
-/**
- * A name to start from. The player can change it on their profile page.
- *
- * Blank is not the same as absent: a magic-link signup leaves `name` as an
- * empty string, which `??` happily accepts and which made every player "dev".
- */
-async function defaultDisplayName(userId: string): Promise<string> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-
-  for (const candidate of [user?.name, user?.email?.split("@")[0]]) {
-    const trimmed = candidate?.trim() ?? "";
-    if (trimmed.length >= 2) return trimmed.slice(0, 24);
-  }
-
-  return "dev";
 }

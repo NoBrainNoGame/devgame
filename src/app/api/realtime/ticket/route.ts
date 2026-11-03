@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
+import { defaultDisplayName } from "@/lib/profile/default-name";
 import { hit, LIMITS, rateKey, tooManyRequests } from "@/lib/rate-limit";
 import { mintTicket } from "@/lib/realtime/ticket";
 import { getSession } from "@/lib/session";
@@ -16,6 +17,10 @@ function refuse(status: number, code: string, message: string): Response {
  * so every check is made here and none is left to the button that calls it:
  * multiplayer on, a signed-in player (a guest has nobody to be in a company),
  * not suspended, and a profile row to name them by.
+ *
+ * A player who signs in and heads straight for multiplayer has no profile yet
+ * (solo creates it on its first sync), so one is made here with the default
+ * name rather than refused: a refusal read as a server that never answers.
  */
 export async function GET(request: Request): Promise<Response> {
   if (!env.MULTI || env.BETTER_AUTH_SECRET === undefined) {
@@ -31,11 +36,15 @@ export async function GET(request: Request): Promise<Response> {
   );
   if (!verdict.allowed) return tooManyRequests(verdict);
 
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true, displayName: true, bannedAt: true },
-  });
-  if (profile === null) return refuse(409, "no-profile", "Play a run first so you have a profile");
+  const select = { id: true, displayName: true, bannedAt: true } as const;
+  const profile =
+    (await prisma.profile.findUnique({ where: { userId: session.user.id }, select })) ??
+    (await prisma.profile.upsert({
+      where: { userId: session.user.id },
+      create: { userId: session.user.id, displayName: await defaultDisplayName(session.user.id) },
+      update: {},
+      select,
+    }));
   if (profile.bannedAt !== null) return refuse(403, "suspended", "This account is suspended");
 
   const ticket = mintTicket(env.BETTER_AUTH_SECRET, {
