@@ -1,6 +1,7 @@
 # Devgame
 
-A browser roguelike whose dungeon is a **Git graph written as you play**. You
+An **online incremental dev company simulator**, played on a **Git graph
+written as you play**. You
 are a developer on a project that never ships. Every sprint brings tickets;
 every ticket is story points to fill, one commit at a time; every commit is a
 choice between writing it yourself and letting the machine write it. The

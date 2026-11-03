@@ -226,7 +226,7 @@ function StructuredData({
     applicationCategory: "Game",
     gamePlatform: "Web browser",
     playMode: "SinglePlayer",
-    genre: ["Roguelike", "Strategy"],
+    genre: ["Incremental", "Simulation", "Strategy"],
     operatingSystem: "Any",
     offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
   };
