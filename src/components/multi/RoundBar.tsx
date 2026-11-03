@@ -42,7 +42,10 @@ export function RoundBar(): React.JSX.Element | null {
             : t("waiting");
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-line border-b bg-panel/60 px-3 py-1.5 text-xs">
+    <div
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 border-line border-b bg-panel/60 px-3 py-1.5 text-xs"
+      data-tutorial="round"
+    >
       <span className="font-display font-semibold uppercase tracking-[0.12em] text-cyber">
         {t("label", { round: round?.round ?? 0 })}
       </span>

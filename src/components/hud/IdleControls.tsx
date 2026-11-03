@@ -35,7 +35,7 @@ export function IdleControls(): React.JSX.Element {
     idleTarget(snapshot) === undefined;
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1" data-tutorial="idle">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button

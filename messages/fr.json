@@ -2215,7 +2215,11 @@
       "upcoming": "à venir",
       "builtWith": "Fait avec {tools}.",
       "rules": "Version des règles : {fingerprint}"
-    }
+    },
+    "tutorial": "Tutoriel",
+    "tutorialHint": "Une explication la première fois qu'une fonctionnalité compte pour vous, une seule à la fois.",
+    "tutorialRestart": "Recommencer",
+    "tutorialRestartHint": "Réapprendre depuis le début, leçons déjà vues comprises."
   },
   "toasts": {
     "label": "Notifications",
@@ -2563,6 +2567,215 @@
       "action": "Se connecter",
       "expiry": "Le lien est valable quinze minutes et ne sert qu'une fois.",
       "ignore": "Si vous n'avez rien demandé, ignorez cet e-mail : personne ne pourra se connecter sans lui."
+    }
+  },
+  "tutorial": {
+    "step": "{step}/{total}",
+    "next": "Suivant",
+    "done": "Compris",
+    "skipLesson": "Passer cette leçon",
+    "skipAll": "Passer tout le tutoriel",
+    "lessons": {
+      "lobby": {
+        "s1": {
+          "title": "Le mode entreprise",
+          "body": "Ici, plusieurs joueurs développent une même entreprise : un seul graphe, un seul backlog, une seule trésorerie. Chacun garde son énergie et son ticket en main."
+        },
+        "s2": {
+          "title": "Rejoindre ou fonder",
+          "body": "Rejoignez une entreprise qui a une place libre, ou fondez la vôtre en lui donnant un nom. Sans rien faire, vous restez dans la liste d'attente, où une entreprise peut vous recruter."
+        }
+      },
+      "welcome": {
+        "s1": {
+          "title": "Votre dépôt",
+          "body": "Ce graphe est votre projet Git. Chaque point est un commit, chaque colonne une branche. HEAD marque où vous en êtes. Le graphe ne se clique pas : il raconte ce que vous faites."
+        },
+        "s2": {
+          "title": "Où décider",
+          "body": "Tout se joue dans le panneau des actions : il propose les coups du tour et dit ce que chacun coûte. Les jauges, en haut, disent comment vous allez ; le ticket en main et l'entreprise ont leur propre panneau."
+        }
+      },
+      "company": {
+        "s1": {
+          "title": "Une entreprise à plusieurs",
+          "body": "Vous partagez ce graphe, le backlog, l'argent, la dette et la patience de la production avec vos collègues. Ce qui vous appartient : votre énergie, votre ticket en main et vos commits."
+        },
+        "s2": {
+          "title": "Votre site",
+          "body": "Vous voyez le graphe et l'équipe de votre site. Le backlog, lui, est commun à toute l'entreprise."
+        }
+      },
+      "round": {
+        "s1": {
+          "title": "Un tour toutes les 30 secondes",
+          "body": "Tout le monde joue en même temps. Avant la fin du compte à rebours, choisissez un coup de tour : commit, review, souffler, merge… Il s'applique quand le tour se résout, pour tous à la fois."
+        },
+        "s2": {
+          "title": "Les coups gratuits",
+          "body": "Démarrer un ticket, acheter, embaucher, ouvrir une PR ou placer un point de compétence ne prend pas votre tour : ça s'applique tout de suite. Les points de couleur montrent qui a déjà choisi."
+        }
+      },
+      "board": {
+        "s1": {
+          "title": "Prenez un ticket",
+          "body": "Vous n'avez rien en main. Ouvrez le tableau du projet et démarrez un ticket : c'est gratuit, et il passe aussitôt en main."
+        }
+      },
+      "commit": {
+        "s1": {
+          "title": "À la main ou par l'IA",
+          "body": "Un commit artisanal rapporte 1 point et coûte de l'énergie selon le type. Un commit IA rapporte 3 points pour 1 d'énergie, mais rate plus souvent, ajoute de la dette et peut cacher un bug."
+        },
+        "s2": {
+          "title": "Tout est sur la carte",
+          "body": "Chaque bouton affiche sa chance de réussite, son coût et ce qu'il rapporte. Un jet raté écrit quand même un commit, cassé : il ne compte pour rien, on recommence."
+        }
+      },
+      "pending": {
+        "s1": {
+          "title": "Coup envoyé",
+          "body": "Votre coup attend la fin du tour : rien n'est encore joué. Vous pouvez en choisir un autre, ou l'annuler, jusqu'à la fin du compte à rebours."
+        }
+      },
+      "review": {
+        "s1": {
+          "title": "Relire le code de l'IA",
+          "body": "Ce ticket contient des commits IA que personne n'a relus. Une review coûte un tour : elle rembourse de la dette, et un commit relu ne casse plus ni la PR ni la prod."
+        }
+      },
+      "pr": {
+        "s1": {
+          "title": "Ouvrir la PR",
+          "body": "Le ticket a tous ses points. Ouvrez la pull request : c'est gratuit. La review peut attraper les commits IA non relus."
+        },
+        "s2": {
+          "title": "Accepté ou refusé",
+          "body": "Acceptée, le merge coûte un tour et livre le ticket. Refusée, corrigez les bugs signalés, ou livrez quand même avec un ticket de suivi par bug."
+        }
+      },
+      "energy": {
+        "s1": {
+          "title": "L'énergie baisse",
+          "body": "Commits, reviews et merges la dépensent. Sous le seuil de crunch, tous vos jets sont pénalisés ; plusieurs fins de tour à zéro, c'est le burnout et la fin de la partie."
+        },
+        "s2": {
+          "title": "Souffler",
+          "body": "Souffler rend de l'énergie mais la production voit la pause et perd un peu de patience. Les merges en rendent aussi, et la fin du sprint en rend la moitié."
+        }
+      },
+      "missed": {
+        "s1": {
+          "title": "Tour raté",
+          "body": "Vous n'avez pas choisi de coup à temps : votre place a soufflé sans récupérer d'énergie et l'entreprise a perdu un peu de patience. Après trois tours ratés d'affilée, le superviseur joue à votre place."
+        }
+      },
+      "hotfix": {
+        "s1": {
+          "title": "Un incident en prod",
+          "body": "Du code non relu a cassé la production : un hotfix est ouvert. Il passe avant le reste. Un commit à la fois, à un point chacun, quelle que soit la façon de l'écrire."
+        }
+      },
+      "obstacle": {
+        "s1": {
+          "title": "Un obstacle",
+          "body": "Un commit a soulevé un problème imprévu, ouvert dans sa propre branche. Tant qu'il est ouvert, la feature ne peut pas partir en review : réglez-le, puis revenez-y."
+        }
+      },
+      "patience": {
+        "s1": {
+          "title": "La patience de la production",
+          "body": "Incidents, PR refusées, pauses, tickets imposés : la production s'impatiente. Vide, c'est le licenciement. Un sprint propre la fait remonter, et le journal dit toujours pourquoi elle bouge."
+        }
+      },
+      "revenue": {
+        "s1": {
+          "title": "Un ticket livré rapporte",
+          "body": "Chaque feature livrée rapporte tous les mois jusqu'à la fin de la partie. Il y a trois paies par sprint : revenus, puis abonnements et salaires."
+        },
+        "s2": {
+          "title": "Les paliers",
+          "body": "Plus vous avez gagné au total, plus l'entreprise change d'échelle : de nouveaux achats, des tickets plus gros et mieux payés. Dépenser ne fait jamais reculer d'un palier."
+        }
+      },
+      "debt": {
+        "s1": {
+          "title": "La santé du code baisse",
+          "body": "L'IA, les commits risqués et les conflits ajoutent de la dette. Elle pénalise vos jets et vos merges, et sous un plancher la PR ne s'ouvre plus."
+        },
+        "s2": {
+          "title": "Refactorer",
+          "body": "Un commit de refacto rembourse la dette d'un commit du ticket. Si elle continue de monter, une refacto vous sera imposée."
+        }
+      },
+      "vote": {
+        "s1": {
+          "title": "La fin du sprint se vote",
+          "body": "À la clôture, l'entreprise choisit un bonus parmi trois cartes, et les événements posent des questions. Tout se tranche par un vote de 30 secondes : le plus voté l'emporte."
+        }
+      },
+      "sprint": {
+        "s1": {
+          "title": "La fin du sprint approche",
+          "body": "Le sprint est une boîte de tours. À sa clôture viennent la release, les échéances, l'objectif du sprint et un point de compétence."
+        },
+        "s2": {
+          "title": "La release",
+          "body": "Chaque commit IA non relu livré peut provoquer un incident à la release. Relisez avant de livrer, ou débloquez le bot de review dans l'arbre (CI/CD)."
+        }
+      },
+      "upgrades": {
+        "s1": {
+          "title": "De quoi dépenser",
+          "body": "Vous avez des points de compétence ou de quoi acheter. Les Améliorations regroupent l'arbre de compétences, le recrutement et la boutique. Rien de tout ça ne coûte un tour."
+        },
+        "s2": {
+          "title": "Où regarder",
+          "body": "L'arbre donne des bonus pour la partie. Le recrutement fait travailler des développeurs à votre place. La boutique vend l'infra, la croissance et l'outillage. Le bouton brille quand il y a du nouveau."
+        }
+      },
+      "capacity": {
+        "s1": {
+          "title": "Les serveurs saturent",
+          "body": "Vos utilisateurs approchent la capacité des serveurs. Au-delà, le surplus ne rapporte rien et la production perd patience. L'alerte mène au barreau conseillé dans la boutique."
+        }
+      },
+      "team": {
+        "s1": {
+          "title": "Votre équipe",
+          "body": "Un développeur embauché prend seul les plus anciens tickets qu'il accepte, code relu sans dette et merge seul. Il coûte son salaire à chaque paie ; impayé, il part et vous rend ses tickets."
+        }
+      },
+      "teammates": {
+        "s1": {
+          "title": "Vos collègues",
+          "body": "Les autres joueurs de l'entreprise apparaissent ici avec leur énergie et leur ticket. Dans la barre du tour, un point de couleur se remplit quand chacun a choisi son coup."
+        }
+      },
+      "sites": {
+        "s1": {
+          "title": "Plusieurs sites",
+          "body": "L'entreprise a ouvert un nouveau site. Chacun a ses places, son équipe et son graphe ; vous ne voyez que le vôtre, mais le backlog reste commun."
+        }
+      },
+      "companyDialog": {
+        "s1": {
+          "title": "L'entreprise grandit",
+          "body": "Un nouveau palier est atteint. La fenêtre Entreprise montre les finances, le marché et les concurrents, et qui travaille pour vous."
+        }
+      },
+      "hack": {
+        "s1": {
+          "title": "Une sortie de secours",
+          "body": "Situation tendue : un hack est proposé, une fois par sprint. Pile ou face. Gagné, il vous tire d'affaire ; perdu, c'est un incident, voire la fin si c'était la patience."
+        }
+      },
+      "idle": {
+        "s1": {
+          "title": "Le mode Auto",
+          "body": "Activé, le jeu joue le coup prévu quand vous ne faites rien pendant quelques secondes. Utile pour laisser tourner ; il ne s'arrête qu'avec son interrupteur."
+        }
+      }
     }
   }
 }

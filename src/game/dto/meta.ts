@@ -27,6 +27,17 @@ export const SettingsSchema = z.object({
   reducedMotion: z.boolean().default(false),
   /** What the run calls you, signed out. Signed in, the account's name wins. */
   playerName: z.string().trim().max(24).default(""),
+  /**
+   * The tutorial's lessons already taken or skipped, and whether the player
+   * turned the whole of it off. Ids are the HUD's (`components/tutorial`); one
+   * a later build retired is simply never asked for again.
+   */
+  tutorial: z
+    .object({
+      done: z.array(z.string().max(40)).max(64).default([]),
+      off: z.boolean().default(false),
+    })
+    .default({ done: [], off: false }),
 });
 
 /**
@@ -89,6 +100,7 @@ export function emptyMeta(now: string): MetaProgressDto {
       sfxVolume: DEFAULT_VOLUMES.sfx,
       reducedMotion: false,
       playerName: "",
+      tutorial: { done: [], off: false },
     },
     metaVersion: 0,
     updatedAt: now,

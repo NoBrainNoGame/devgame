@@ -139,6 +139,24 @@ function DisplayTab() {
         checked={settings.reducedMotion}
         onChange={(reducedMotion) => update({ reducedMotion })}
       />
+      <Toggle
+        label={t("tutorial")}
+        hint={t("tutorialHint")}
+        checked={!settings.tutorial.off}
+        onChange={(on) => update({ tutorial: { ...settings.tutorial, off: !on } })}
+      />
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-muted-foreground text-xs">{t("tutorialRestartHint")}</p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="shrink-0"
+          disabled={settings.tutorial.done.length === 0 && !settings.tutorial.off}
+          onClick={() => update({ tutorial: { done: [], off: false } })}
+        >
+          {t("tutorialRestart")}
+        </Button>
+      </div>
     </div>
   );
 }

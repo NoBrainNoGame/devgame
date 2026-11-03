@@ -35,6 +35,24 @@ describe("settings", () => {
     expect(parsed.settings.sfxVolume).toBe(80);
   });
 
+  test("a meta saved before the tutorial existed starts it from the beginning", () => {
+    const old = emptyMeta(NOW);
+    const { tutorial: _tutorial, ...before } = old.settings;
+    const parsed = MetaProgressSchema.parse({ ...old, settings: before });
+    expect(parsed.settings.tutorial).toEqual({ done: [], off: false });
+  });
+
+  test("the tutorial's list is bounded", () => {
+    const meta = emptyMeta(NOW);
+    const done = Array.from({ length: 65 }, (_, i) => `lesson${i}`);
+    expect(
+      MetaProgressSchema.safeParse({
+        ...meta,
+        settings: { ...meta.settings, tutorial: { done, off: false } },
+      }).success,
+    ).toBe(false);
+  });
+
   test("a level outside 0–100 is refused", () => {
     const meta = emptyMeta(NOW);
     expect(

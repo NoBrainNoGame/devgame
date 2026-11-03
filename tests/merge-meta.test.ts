@@ -109,6 +109,7 @@ describe("mergeMeta", () => {
         sfxVolume: 80,
         reducedMotion: false,
         playerName: "",
+        tutorial: { done: [], off: false },
       },
     });
     const newer = meta({
@@ -120,6 +121,7 @@ describe("mergeMeta", () => {
         sfxVolume: 35,
         reducedMotion: true,
         playerName: "",
+        tutorial: { done: ["commit"], off: true },
       },
     });
 
@@ -129,6 +131,7 @@ describe("mergeMeta", () => {
       sfxVolume: 35,
       reducedMotion: true,
       playerName: "",
+      tutorial: { done: ["commit"], off: true },
     });
   });
 });

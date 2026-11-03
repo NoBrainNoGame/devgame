@@ -74,7 +74,7 @@ export function ResourceBar({
       <div className="flex justify-start">
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="w-52 shrink-0">
+            <div className="w-52 shrink-0" data-tutorial="sprint">
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-muted-foreground">
                   {common("sprint")}{" "}
@@ -129,7 +129,7 @@ export function ResourceBar({
       </div>
 
       <div className="flex flex-wrap items-center justify-center gap-4">
-        <div className="w-56 shrink-0">
+        <div className="w-56 shrink-0" data-tutorial="energy">
           <div className="mb-1 flex items-baseline justify-between">
             <span className={cn("text-muted-foreground", player.crunch && "text-branch-hotfix")}>
               {tiered("energyLabel")}
@@ -151,7 +151,7 @@ export function ResourceBar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="w-44 shrink-0">
+            <div className="w-44 shrink-0" data-tutorial="health">
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-muted-foreground">{common("codeHealth")}</span>
                 <span className="tabular-nums text-debt">{healthText(health)}</span>
@@ -171,7 +171,7 @@ export function ResourceBar({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="w-44 shrink-0">
+            <div className="w-44 shrink-0" data-tutorial="patience">
               <div className="mb-1 flex items-baseline justify-between">
                 <span className="text-muted-foreground">{tiered("patience")}</span>
                 <span
@@ -197,7 +197,13 @@ export function ResourceBar({
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button size="sm" variant="outline" className="shrink-0" onClick={onOpenCompany}>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0"
+              onClick={onOpenCompany}
+              data-tutorial="company money"
+            >
               <Building2 className="size-4" />
               <AnimatedCounter
                 gauge="money"
@@ -244,6 +250,7 @@ export function ResourceBar({
               variant="outline"
               className={cn("shrink-0", upgradesNews && "upgrades-ready")}
               onClick={onOpenUpgrades}
+              data-tutorial="upgrades"
             >
               <Sparkles className="size-4" />
               {t("upgrades")}

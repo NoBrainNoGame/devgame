@@ -15,10 +15,12 @@ export function RouteCard({ onOpen }: { onOpen: () => void }) {
   const t = useTranslations("achievements");
   const records = useMetaStore((state) => state.meta.achievements);
   const hydrated = useMetaStore((state) => state.hydrated);
+  // The road is the tutorial too: skipping the tutorial skips it.
+  const tutorialOff = useMetaStore((state) => state.meta.settings.tutorial.off);
   const earned = new Set<string>(records.map((record) => record.id));
   const next = nextOnRoute(earned);
 
-  if (!hydrated || next === null) return null;
+  if (!hydrated || tutorialOff || next === null) return null;
   const done = ACHIEVEMENT_ROUTE.filter((id) => earned.has(id)).length;
   const Icon = ACHIEVEMENT_ICONS[next];
 

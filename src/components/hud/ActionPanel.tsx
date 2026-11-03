@@ -73,7 +73,7 @@ export function ActionPanel({
   const hack = snapshot.actions.find((action) => action.type === "hack");
 
   return (
-    <section className="space-y-3">
+    <section className="space-y-3" data-tutorial="actions">
       <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
         {tiered("actionsTitle")}
       </h2>

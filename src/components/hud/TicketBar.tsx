@@ -42,12 +42,16 @@ export function TicketBar({
   const blinking = blinkingTabs(snapshot, open);
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto border-line border-b bg-panel/40 px-3 py-2">
+    <div
+      className="flex items-center gap-2 overflow-x-auto border-line border-b bg-panel/40 px-3 py-2"
+      data-tutorial="tickets"
+    >
       <Button
         size="sm"
         variant={open.length === 0 ? "default" : "outline"}
         className="shrink-0"
         onClick={onOpenBoard}
+        data-tutorial="board"
       >
         <KanbanSquare className="size-4" />
         {t("board")}

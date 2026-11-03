@@ -1265,3 +1265,23 @@ h3,
     animation: none;
   }
 }
+
+/*
+ * What the tutorial's lesson is about, lit up while it is on screen: an
+ * outline that breathes, drawn outside the element so nothing inside moves.
+ */
+.tutorial-target {
+  outline: 2px solid var(--color-cyber);
+  outline-offset: 3px;
+  animation: tutorial-breathe 1.6s ease-in-out infinite;
+}
+@keyframes tutorial-breathe {
+  50% {
+    outline-color: color-mix(in oklab, var(--color-cyber) 35%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tutorial-target {
+    animation: none;
+  }
+}

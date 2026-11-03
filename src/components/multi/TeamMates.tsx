@@ -17,7 +17,7 @@ export function TeamMates(): React.JSX.Element | null {
   const elsewhere = crew.seats.length - here.length;
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-2" data-tutorial="teammates">
       <h3 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
         {t("title")}
       </h3>

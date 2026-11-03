@@ -20,7 +20,11 @@ export function PendingBar(): React.JSX.Element | null {
   if (round === null || (question !== null && question.result === null)) return null;
 
   return (
-    <section className="space-y-1 border border-time/40 bg-time/5 p-2 text-xs" aria-live="polite">
+    <section
+      className="space-y-1 border border-time/40 bg-time/5 p-2 text-xs"
+      aria-live="polite"
+      data-tutorial="pending"
+    >
       <h3 className="hud-title font-medium text-muted-foreground uppercase tracking-wider">
         {t("title")}
       </h3>

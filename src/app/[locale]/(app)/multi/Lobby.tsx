@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ConnectionBanner } from "@/components/multi/connection";
 import { useRealtimeErrors } from "@/components/multi/errors";
+import { TutorialCoach } from "@/components/tutorial/TutorialCoach";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ export function Lobby({ userName }: { userName: string }): React.JSX.Element {
   return (
     <div className="relative min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
       <ConnectionBanner />
+      <TutorialCoach where="lobby" multi snapshot={null} />
       <div className="mx-auto max-w-3xl space-y-6 pt-8">
         <header className="space-y-1">
           <h1 className="font-display font-bold text-2xl text-cyber uppercase tracking-[0.12em]">
@@ -51,7 +53,10 @@ export function Lobby({ userName }: { userName: string }): React.JSX.Element {
           </p>
         </header>
 
-        <section className="space-y-2 border border-line bg-panel/40 p-4">
+        <section
+          className="space-y-2 border border-line bg-panel/40 p-4"
+          data-tutorial="lobby-create"
+        >
           <h2 className="hud-title font-medium text-muted-foreground text-xs uppercase tracking-wider">
             {t("createTitle")}
           </h2>

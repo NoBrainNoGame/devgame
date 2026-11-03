@@ -37,6 +37,7 @@ import { useAusterity } from "@/components/hud/useAusterity";
 import { useGameAlerts } from "@/components/hud/useGameAlerts";
 import { useUpgradesNews } from "@/components/hud/useUpgradesNews";
 import { useAudioSettings } from "@/components/settings/useSettings";
+import { TutorialCoach } from "@/components/tutorial/TutorialCoach";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CompanyOptions, GameHandle, MetaProgressDto, RunSaveDto } from "@/game";
 import { useGameStore } from "@/game";
@@ -163,6 +164,8 @@ export function RunStage({
   useAusterityOverride();
   useAudioSettings();
   const bars = useToastsBelow();
+  // The player's own run, solo or in a company; never the debugger's replay.
+  const tutorial = onOpenAchievements !== undefined || options.company !== undefined;
 
   return (
     <ReducedMotionProvider reduced={options.reducedMotion ?? false}>
@@ -195,7 +198,10 @@ export function RunStage({
             {slots?.leftBottom}
           </aside>
 
-          <div className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2">
+          <div
+            className="relative order-1 min-h-72 min-w-0 flex-1 bg-bg lg:order-2"
+            data-tutorial="graph"
+          >
             {/* Behind the graph: the rain the higher tiers bring, fading in by its ramp. */}
             <MatrixRain />
             {/* Above the rain, so its canvas is transparent and the container paints the background. */}
@@ -290,6 +296,14 @@ export function RunStage({
           </>
         )}
         {slots?.overlay}
+        {tutorial ? (
+          <TutorialCoach
+            where="stage"
+            multi={options.company !== undefined}
+            snapshot={snapshot}
+            upgradesNews={upgradesNews.any}
+          />
+        ) : null}
       </div>
     </ReducedMotionProvider>
   );

@@ -2215,7 +2215,11 @@
       "upcoming": "coming soon",
       "builtWith": "Made with {tools}.",
       "rules": "Rules version: {fingerprint}"
-    }
+    },
+    "tutorial": "Tutorial",
+    "tutorialHint": "An explanation the first time a feature matters to you, one at a time.",
+    "tutorialRestart": "Start over",
+    "tutorialRestartHint": "Learn again from the start, lessons already seen included."
   },
   "toasts": {
     "label": "Notifications",
@@ -2563,6 +2567,215 @@
       "action": "Sign in",
       "expiry": "The link is valid for fifteen minutes and works once.",
       "ignore": "If you did not ask for it, ignore this email: nobody can sign in without it."
+    }
+  },
+  "tutorial": {
+    "step": "{step}/{total}",
+    "next": "Next",
+    "done": "Got it",
+    "skipLesson": "Skip this lesson",
+    "skipAll": "Skip the whole tutorial",
+    "lessons": {
+      "lobby": {
+        "s1": {
+          "title": "Company mode",
+          "body": "Here, several players build one company together: one graph, one backlog, one bank account. Each keeps their own energy and their own ticket."
+        },
+        "s2": {
+          "title": "Join or found",
+          "body": "Join a company with a free seat, or found your own by naming it. Otherwise you stay on the waiting list, where a company can recruit you."
+        }
+      },
+      "welcome": {
+        "s1": {
+          "title": "Your repository",
+          "body": "This graph is your Git project. Each dot is a commit, each column a branch. HEAD marks where you stand. The graph is not clickable: it tells the story of what you do."
+        },
+        "s2": {
+          "title": "Where to decide",
+          "body": "Everything happens in the actions panel: it offers this turn's moves and says what each one costs. The gauges at the top say how you are doing; the ticket in hand and the company have their own panel."
+        }
+      },
+      "company": {
+        "s1": {
+          "title": "A shared company",
+          "body": "You share this graph, the backlog, the money, the debt and production's patience with your colleagues. Yours alone: your energy, your ticket in hand and your commits."
+        },
+        "s2": {
+          "title": "Your site",
+          "body": "You see the graph and the team of your own site. The backlog is common to the whole company."
+        }
+      },
+      "round": {
+        "s1": {
+          "title": "A turn every 30 seconds",
+          "body": "Everyone plays at once. Before the countdown ends, pick one turn move: commit, review, rest, merge… It applies when the round resolves, for everybody together."
+        },
+        "s2": {
+          "title": "Free moves",
+          "body": "Starting a ticket, buying, hiring, opening a PR or placing a skill point does not take your turn: it applies at once. The coloured dots show who has already chosen."
+        }
+      },
+      "board": {
+        "s1": {
+          "title": "Pick up a ticket",
+          "body": "You hold nothing. Open the project board and start a ticket: it is free, and it goes straight into your hands."
+        }
+      },
+      "commit": {
+        "s1": {
+          "title": "By hand or by AI",
+          "body": "A hand-written commit earns 1 point and costs energy depending on its type. An AI commit earns 3 points for 1 energy, but fails more often, adds debt and may hide a bug."
+        },
+        "s2": {
+          "title": "It is all on the card",
+          "body": "Each button shows its chance of success, its cost and what it earns. A failed roll still writes a commit, broken: it counts for nothing, just try again."
+        }
+      },
+      "pending": {
+        "s1": {
+          "title": "Move sent",
+          "body": "Your move waits for the end of the round: nothing has happened yet. You can pick another or cancel it until the countdown ends."
+        }
+      },
+      "review": {
+        "s1": {
+          "title": "Review the AI's code",
+          "body": "This ticket holds AI commits nobody has read. A review costs a turn: it pays back debt, and a reviewed commit can no longer break the PR or production."
+        }
+      },
+      "pr": {
+        "s1": {
+          "title": "Open the PR",
+          "body": "The ticket has all its points. Open the pull request: it is free. The review may catch unread AI commits."
+        },
+        "s2": {
+          "title": "Accepted or refused",
+          "body": "Accepted, the merge costs a turn and ships the ticket. Refused, fix the flagged bugs, or ship anyway with a follow-up ticket per bug."
+        }
+      },
+      "energy": {
+        "s1": {
+          "title": "Energy is running low",
+          "body": "Commits, reviews and merges spend it. Below the crunch threshold every roll suffers; several turns ending at zero mean burnout, and the end of the run."
+        },
+        "s2": {
+          "title": "Rest",
+          "body": "Resting gives energy back, but production sees the break and loses a little patience. Merges give some back too, and the end of a sprint restores half."
+        }
+      },
+      "missed": {
+        "s1": {
+          "title": "Missed turn",
+          "body": "You did not choose a move in time: your seat rested without recovering energy and the company lost a little patience. After three missed turns in a row, the supervisor plays for you."
+        }
+      },
+      "hotfix": {
+        "s1": {
+          "title": "An incident in production",
+          "body": "Unread code broke production: a hotfix is open. It comes first. One commit at a time, one point each, whichever way you write it."
+        }
+      },
+      "obstacle": {
+        "s1": {
+          "title": "An obstacle",
+          "body": "A commit uncovered an unexpected problem, opened on its own branch. While it is open, the feature cannot go to review: deal with it, then go back."
+        }
+      },
+      "patience": {
+        "s1": {
+          "title": "Production's patience",
+          "body": "Incidents, refused PRs, breaks, forced tickets: production grows impatient. Empty, you are fired. A clean sprint restores it, and the log always says why it moved."
+        }
+      },
+      "revenue": {
+        "s1": {
+          "title": "A shipped ticket pays",
+          "body": "Every shipped feature earns every month until the end of the run. There are three paydays per sprint: revenue, then subscriptions and salaries."
+        },
+        "s2": {
+          "title": "Tiers",
+          "body": "The more you have earned in total, the bigger the company grows: new purchases, bigger and better-paid tickets. Spending never takes a tier back."
+        }
+      },
+      "debt": {
+        "s1": {
+          "title": "Code health is dropping",
+          "body": "AI, risky commits and conflicts add debt. It hurts your rolls and merges, and below a floor the PR will not open."
+        },
+        "s2": {
+          "title": "Refactor",
+          "body": "A refactor commit pays back the debt of one of the ticket's commits. If it keeps rising, a refactor will be forced on you."
+        }
+      },
+      "vote": {
+        "s1": {
+          "title": "The sprint's end is voted",
+          "body": "At the close, the company picks one bonus out of three cards, and events ask questions. Each is settled by a 30-second vote: the most voted option wins."
+        }
+      },
+      "sprint": {
+        "s1": {
+          "title": "The sprint is ending soon",
+          "body": "A sprint is a box of turns. Its close brings the release, the deadlines, the sprint objective and a skill point."
+        },
+        "s2": {
+          "title": "The release",
+          "body": "Every unread AI commit that shipped may cause an incident at release. Review before shipping, or unlock the review bot in the tree (CI/CD)."
+        }
+      },
+      "upgrades": {
+        "s1": {
+          "title": "Something to spend",
+          "body": "You have skill points or money to spend. Upgrades gathers the skill tree, hiring and the shop. None of it costs a turn."
+        },
+        "s2": {
+          "title": "Where to look",
+          "body": "The tree gives bonuses for the run. Hiring puts developers to work for you. The shop sells infrastructure, growth and tooling. The button glows when something new appears."
+        }
+      },
+      "capacity": {
+        "s1": {
+          "title": "Servers are filling up",
+          "body": "Your users are nearing server capacity. Beyond it, the surplus earns nothing and production loses patience. The alert leads to the advised rung in the shop."
+        }
+      },
+      "team": {
+        "s1": {
+          "title": "Your team",
+          "body": "A hired developer takes the oldest tickets they accept on their own, writes reviewed code without debt and merges alone. They cost their salary every payday; unpaid, they leave and hand their tickets back."
+        }
+      },
+      "teammates": {
+        "s1": {
+          "title": "Your colleagues",
+          "body": "The company's other players appear here with their energy and their ticket. In the round bar, a coloured dot fills once each of them has chosen a move."
+        }
+      },
+      "sites": {
+        "s1": {
+          "title": "Several sites",
+          "body": "The company has opened a new site. Each has its seats, its team and its graph; you only see your own, but the backlog stays common."
+        }
+      },
+      "companyDialog": {
+        "s1": {
+          "title": "The company is growing",
+          "body": "A new tier is reached. The Company window shows the finances, the market and the competitors, and who works for you."
+        }
+      },
+      "hack": {
+        "s1": {
+          "title": "An emergency exit",
+          "body": "Things are tight: a hack is on offer, once per sprint. Heads or tails. Won, it gets you out; lost, it is an incident, or the end if patience was at stake."
+        }
+      },
+      "idle": {
+        "s1": {
+          "title": "Auto mode",
+          "body": "Switched on, the game plays the planned move when you do nothing for a few seconds. Handy to let it run; only its switch stops it."
+        }
+      }
     }
   }
 }
