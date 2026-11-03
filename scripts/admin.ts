@@ -454,7 +454,7 @@ async function runsPage(csrf: string): Promise<Response> {
         ? String(save.data.actions.length)
         : '<span class="bad">unreadable</span>';
       const who = run.profile.displayName ?? run.profile.user.email;
-      const debug = `${env.APP_URL}/fr/debug/${encodeURIComponent(run.id)}`;
+      const debug = `${env.APP_URL}/debug/${encodeURIComponent(run.id)}`;
       return `<tr><td>${esc(date(run.updatedAt))}</td><td>${esc(who)}<br><span class="muted">${esc(run.profile.user.email)}</span></td><td><code>${esc(run.seed)}</code><br><span class="muted">${esc(run.mode)}</span></td><td>${esc(run.status)}</td><td class="num">${actions}</td><td class="num">${run.score ?? "—"}</td><td><a href="${esc(debug)}" target="_top">Debug</a></td></tr>`;
     })
     .join("");
@@ -506,7 +506,7 @@ async function reportsPage(csrf: string, status: string, flash?: string): Promis
       .slice(0, 3)
       .map(
         (run) =>
-          `<a href="${esc(`${env.APP_URL}/fr/debug/${encodeURIComponent(run.id)}`)}" target="_top">Debug run · ${esc(date(run.updatedAt))} · ${esc(run.status)}</a>`,
+          `<a href="${esc(`${env.APP_URL}/debug/${encodeURIComponent(run.id)}`)}" target="_top">Debug run · ${esc(date(run.updatedAt))} · ${esc(run.status)}</a>`,
       )
       .join(" · ");
 

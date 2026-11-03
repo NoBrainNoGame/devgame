@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
  */
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/fr/play", "/en/play"] }],
+    rules: [{ userAgent: "*", allow: "/", disallow: ["/api/", "/play", "/en/play"] }],
     sitemap: new URL("/sitemap.xml", env.APP_URL).toString(),
     host: env.APP_URL,
   };

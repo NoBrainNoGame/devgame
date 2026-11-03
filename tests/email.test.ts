@@ -9,6 +9,8 @@ describe("localeOfMagicLink", () => {
   test("reads the locale the login page wrote into the callback", () => {
     expect(localeOfMagicLink(link("/en/multi"))).toBe("en");
     expect(localeOfMagicLink(link("/fr/profile"))).toBe("fr");
+    // French, the default, has no prefix.
+    expect(localeOfMagicLink(link("/multi"))).toBe("fr");
   });
 
   test("falls back to the default locale", () => {

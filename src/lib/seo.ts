@@ -1,11 +1,11 @@
-import { routing } from "@/i18n/routing";
+import { localizedPath, routing } from "@/i18n/routing";
 
 /**
  * The handful of absolute URLs that metadata needs.
  *
- * Search engines and link previews want fully qualified URLs, and the site is
- * served under a locale prefix, so every canonical and every alternate has to
- * be built rather than guessed. Doing it in one place is what stops the sitemap
+ * Search engines and link previews want fully qualified URLs, and only English
+ * pages carry a locale prefix, so every canonical and every alternate has to be
+ * built rather than guessed. Doing it in one place is what stops the sitemap
  * and the `<head>` from disagreeing about what the canonical URL is — a
  * disagreement search engines resolve by ignoring both.
  *
@@ -28,7 +28,7 @@ export const INDEXABLE_PATHS = [
 export type IndexablePath = (typeof INDEXABLE_PATHS)[number];
 
 export function siteUrl(origin: string, locale: string, path = ""): string {
-  return new URL(`/${locale}${path}`, origin).toString();
+  return new URL(localizedPath(locale, path), origin).toString();
 }
 
 /**

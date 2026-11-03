@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { localizedPath, routing } from "@/i18n/routing";
 import { isGoogleEnabled } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { DEFAULT_RETURN, parseReturnPath } from "@/lib/login-return";
@@ -44,10 +44,10 @@ export default async function LoginPage({
       <p className="mt-2 text-muted-foreground text-sm">{t("subtitle")}</p>
 
       <div className="mt-8">
-        {/* The locale prefix is written in by hand: Better Auth builds the
+        {/* The locale prefix is built by hand: Better Auth builds the
             callback URL itself and knows nothing about `@/i18n/navigation`. */}
         <LoginForm
-          callbackUrl={`/${locale}${next === "/" ? "" : (next ?? DEFAULT_RETURN)}`}
+          callbackUrl={localizedPath(locale, next ?? DEFAULT_RETURN)}
           googleEnabled={isGoogleEnabled}
           showDevHint={env.NODE_ENV === "development"}
         />
