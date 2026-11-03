@@ -1,0 +1,69 @@
+# Production on one VM (Oracle Cloud Always Free, or any box with Docker):
+# the app and its realtime server in one container, Postgres beside it, and
+# Caddy in front for HTTPS. See docs/hosting.md, "One VM with Docker".
+#
+# Run it through deploy/deploy.sh, which passes deploy/.env both to Compose (for
+# the ${...} below) and to the app. That file holds the secrets and is never
+# committed; deploy/setup.sh writes it.
+
+name: devgame
+
+services:
+  app:
+    build:
+      context: ..
+      target: runner
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://devgame:${POSTGRES_PASSWORD:?run deploy/setup.sh first}@postgres:5432/devgame?schema=public
+      APP_URL: https://${DOMAIN:?set DOMAIN in deploy/.env}
+      BETTER_AUTH_URL: https://${DOMAIN}
+      # Same host as the site, under /realtime/: one certificate, and the
+      # realtime server's origin check sees the site's own origin.
+      REALTIME_URL: https://${DOMAIN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # No published port: only Caddy reaches 3000 and 3200.
+    expose:
+      - "3000"
+      - "3200"
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: devgame
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: devgame
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devgame -d devgame"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The certificates: losing them means asking Let's Encrypt again, and its
+      # rate limits count failed and repeated requests.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -46,6 +46,14 @@ const schema = z
     GOOGLE_CLIENT_ID: optionalString,
     GOOGLE_CLIENT_SECRET: optionalString,
 
+    /**
+     * Resend sends the magic link: an API key, and the sender it signs as
+     * (`Devgame <login@your-domain>`, on a domain verified at Resend). Both or
+     * neither; without them, production cannot send a link at all.
+     */
+    RESEND_API_KEY: optionalString,
+    EMAIL_FROM: optionalString,
+
     /** Bearer secret shared by every route under /api/cron. Absent: those routes are off. */
     CRON_SECRET: secret("CRON_SECRET"),
 
@@ -79,6 +87,13 @@ const schema = z
       .transform((value) => value === "true" || value === "1"),
   })
   .superRefine((value, context) => {
+    if ((value.RESEND_API_KEY === undefined) !== (value.EMAIL_FROM === undefined)) {
+      context.addIssue({
+        code: "custom",
+        path: [value.RESEND_API_KEY === undefined ? "RESEND_API_KEY" : "EMAIL_FROM"],
+        message: "RESEND_API_KEY and EMAIL_FROM go together: set both, or neither",
+      });
+    }
     if (value.DATABASE_URL === undefined) return;
     for (const name of ["BETTER_AUTH_SECRET", "DAILY_SEED_SECRET"] as const) {
       if (value[name] === undefined) {
@@ -94,6 +109,8 @@ const schema = z
     ...value,
     /** Whether a server side exists: a database, and the secrets that guard it. */
     ONLINE: value.DATABASE_URL !== undefined,
+    /** Whether a magic link can go out by email rather than to the server log. */
+    EMAIL: value.RESEND_API_KEY !== undefined && value.EMAIL_FROM !== undefined,
   }))
   .transform((value) => ({
     ...value,

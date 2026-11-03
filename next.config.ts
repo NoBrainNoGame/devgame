@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
    * cheapest way to make both bundlers agree on what it is.
    */
   transpilePackages: ["@ghom/booyah", "@ghom/utils", "@ghom/event-emitter"],
+
+  /** Lets other machines on the LAN load the dev server (multiplayer testing). */
+  allowedDevOrigins: ["192.168.1.29"],
 };
 
 export default createNextIntlPlugin("./src/i18n/request.ts")(nextConfig);

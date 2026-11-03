@@ -2557,5 +2557,14 @@
       "empty": "Aucune entreprise ne joue en ce moment.",
       "play": "Jouer avec d'autres"
     }
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Votre lien de connexion à Devgame",
+      "intro": "Cliquez sur ce lien pour vous connecter à Devgame :",
+      "action": "Se connecter",
+      "expiry": "Le lien est valable quinze minutes et ne sert qu'une fois.",
+      "ignore": "Si vous n'avez rien demandé, ignorez cet e-mail : personne ne pourra se connecter sans lui."
+    }
   }
 }

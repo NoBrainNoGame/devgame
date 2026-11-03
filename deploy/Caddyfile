@@ -1,0 +1,14 @@
+# Caddy gets and renews the certificate for $DOMAIN by itself, and proxies
+# WebSocket upgrades without being told to.
+{$DOMAIN} {
+	encode zstd gzip
+
+	# The realtime server: /realtime/ws (the game) and /realtime/health.
+	handle /realtime/* {
+		reverse_proxy app:3200
+	}
+
+	handle {
+		reverse_proxy app:3000
+	}
+}

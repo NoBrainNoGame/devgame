@@ -29,6 +29,13 @@ describe("environment", () => {
     );
   });
 
+  test("email needs both the Resend key and the sender", () => {
+    expect(() => parseEnvironment({ RESEND_API_KEY: "re_x" })).toThrow(/EMAIL_FROM/);
+    expect(() => parseEnvironment({ EMAIL_FROM: "a@b.c" })).toThrow(/RESEND_API_KEY/);
+    expect(parseEnvironment({}).EMAIL).toBe(false);
+    expect(parseEnvironment({ RESEND_API_KEY: "re_x", EMAIL_FROM: "a@b.c" }).EMAIL).toBe(true);
+  });
+
   test("a short secret is refused even offline", () => {
     expect(() => parseEnvironment({ CRON_SECRET: "short" })).toThrow(/CRON_SECRET/);
   });

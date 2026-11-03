@@ -9,6 +9,9 @@ build
 .env
 .env.*
 !.env.example
+# The server's own configuration, deploy/.env included: patterns here match
+# from the root only, so `.env` above does not cover it.
+deploy
 
 .git
 .gitignore

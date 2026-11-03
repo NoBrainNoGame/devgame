@@ -3,6 +3,8 @@
 Target: **Coolify on a single VPS** hosting many unrelated apps; `Dockerfile`,
 `entrypoint.sh`, `output: "standalone"` and `/api/health` exist for it. Vercel
 also works unchanged ([below](#if-this-does-not-fit-you)).
+For a single app on a free machine, [one VM with Docker](#one-vm-with-docker)
+runs the same image without Coolify.
 
 ## Why this shape
 
@@ -197,12 +199,75 @@ Beyond the required variables everything degrades on purpose, except:
 
 | Left unset | Consequence |
 |---|---|
-| `GOOGLE_CLIENT_ID` / `SECRET` | **Nobody can sign in.** |
+| `GOOGLE_CLIENT_ID` / `SECRET` **and** `RESEND_API_KEY` / `EMAIL_FROM` | **Nobody can sign in.** |
 
-No variable alone fixes it: no email provider ships, so `sendMagicLink` in
-`src/lib/auth.ts` *throws* in production. Fill in the Google pair or implement
-`sendMagicLink` before launch. Signed out, the game still works against
-`localStorage`, minus cloud saves and the leaderboard.
+The magic link goes out through Resend (`src/lib/email.ts`) when
+`RESEND_API_KEY` and `EMAIL_FROM` are set; without them `sendMagicLink`
+*throws* in production. Set Resend, the Google pair, or both before launch.
+Signed out, the game still works against `localStorage`, minus cloud saves and
+the leaderboard.
+
+## One VM with Docker
+
+`deploy/` runs the production image on one machine with no platform: the app
+and its realtime server in one container, Postgres beside it, Caddy in front
+for HTTPS. Written for **Oracle Cloud Always Free** (an Ampere A1 VM, arm64,
+which the Dockerfile builds for), it works on any Ubuntu box with Docker.
+
+| File | Role |
+|---|---|
+| `compose.yml` | app, Postgres, Caddy; only Caddy publishes ports (80, 443) |
+| `Caddyfile` | certificate for `$DOMAIN`; `/realtime/*` to port 3200, the rest to 3000 |
+| `setup.sh` | once: Docker, firewall, `deploy/.env` with generated secrets, backup cron |
+| `deploy.sh` | each deploy: `git pull`, rebuild, restart (migrations run at boot) |
+| `backup.sh` | nightly `pg_dump`, 14 days kept, in `~/devgame-backups` |
+
+The realtime server shares the site's host (`REALTIME_URL` = `APP_URL`, socket
+at `wss://<domain>/realtime/ws`): one certificate, and its origin check sees
+the site's own origin. `deploy/.env` holds the secrets: never committed
+(`.env*`), kept out of the image (`.dockerignore`), readable by its owner only.
+
+### Oracle Cloud, once
+
+1. **Instance**: Compute → Create instance, image **Ubuntu 24.04**, shape
+   **VM.Standard.A1.Flex** (Always Free allows up to 4 OCPU / 24 GB in total;
+   2 OCPU / 12 GB is plenty). Add your SSH key. If the region has no A1
+   capacity, retry later or pick another availability domain.
+2. **Ports**: the instance's VCN → Security List → Ingress rules from
+   `0.0.0.0/0`: TCP 80, TCP 443, UDP 443. The VM's own iptables also rejects
+   them; `setup.sh` opens those.
+3. **Domain**: an A record to the instance's public IP. With no domain yet,
+   `<ip-with-dashes>.sslip.io` (e.g. `129-151-1-2.sslip.io`) resolves to that
+   IP with no setup, and Let's Encrypt issues for it.
+4. **Idle reclaim**: Oracle may reclaim an Always Free instance that stays
+   nearly idle for a week. Upgrading the account to Pay As You Go (still free
+   within the Always Free limits) exempts it.
+
+### On the VM
+
+```bash
+git clone https://github.com/NoBrainNoGame/devgame.git && cd devgame
+./deploy/setup.sh devgame.example.com
+nano deploy/.env        # RESEND_API_KEY, EMAIL_FROM (and Google if wanted)
+exit                    # log back in: the docker group applies to new sessions
+cd devgame && ./deploy/deploy.sh
+```
+
+The first build takes several minutes. `docker compose -f deploy/compose.yml
+logs -f app` shows the migrations, then both servers starting. Each later
+deploy is `./deploy/deploy.sh` again.
+
+- **Resend**: verify the sending domain (DNS records Resend gives you), create
+  an API key, set `EMAIL_FROM=Devgame <login@that-domain>`. An sslip.io name
+  cannot be verified: sending needs a domain you own.
+- **Google**: authorised redirect URI
+  `https://<domain>/api/auth/callback/google`.
+- **Restore**: `gunzip -c ~/devgame-backups/<file>.sql.gz | docker compose -f
+  deploy/compose.yml --env-file deploy/.env exec -T postgres psql -U devgame -d
+  devgame`. The dumps sit on the same VM: copy them elsewhere (OCI Object
+  Storage has a free tier) to survive losing the machine.
+- **Legal pages**: the host and the email provider are named in
+  `messages/*.json` (`legal.publisher.hostName`, `emailProvider`, …).
 
 ## If this does not fit you
 

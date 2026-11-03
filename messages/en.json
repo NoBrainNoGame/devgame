@@ -2557,5 +2557,14 @@
       "empty": "No company is playing right now.",
       "play": "Play with others"
     }
+  },
+  "email": {
+    "magicLink": {
+      "subject": "Your Devgame sign-in link",
+      "intro": "Click this link to sign in to Devgame:",
+      "action": "Sign in",
+      "expiry": "The link is valid for fifteen minutes and works once.",
+      "ignore": "If you did not ask for it, ignore this email: nobody can sign in without it."
+    }
   }
 }

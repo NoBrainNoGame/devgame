@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins";
 
 import { prisma } from "@/lib/db";
+import { sendMagicLinkEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 
 /**
@@ -61,28 +62,19 @@ function buildAuth() {
     plugins: [
       magicLink({
         /**
-         * ⚠ WIRE THIS BEFORE YOU DEPLOY.
-         *
-         * No email provider ships with the starter, so in development the link
-         * goes to the server log — enough to sign in locally. In production we
-         * throw instead of silently swallowing sign-in attempts, which means that
-         * unless you either fill in the Google OAuth pair or implement this
-         * function, **nobody can sign in to your deployed app**.
-         *
-         * A minimal Resend implementation:
-         *
-         *   await new Resend(env.RESEND_API_KEY).emails.send({
-         *     from: "you@yourdomain.com",
-         *     to: email,
-         *     subject: "Your sign-in link",
-         *     text: url,
-         *   });
+         * Resend when it is configured. Without it, development writes the link
+         * to the server log, enough to sign in locally; production throws
+         * rather than swallow the attempt, so a deploy with neither Resend nor
+         * Google lets **nobody** sign in.
          */
         async sendMagicLink({ email, url }) {
+          if (env.EMAIL) {
+            await sendMagicLinkEmail(email, url);
+            return;
+          }
           if (env.NODE_ENV === "production") {
             throw new Error(
-              "Magic link email sending is not configured. Wire an email provider " +
-                "in src/lib/auth.ts before deploying.",
+              "Magic links cannot be sent: set RESEND_API_KEY and EMAIL_FROM (docs/hosting.md).",
             );
           }
 
