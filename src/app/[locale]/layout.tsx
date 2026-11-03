@@ -6,6 +6,7 @@ import { getTranslations } from "next-intl/server";
 
 import { Footer } from "@/components/shell/Footer";
 import { Header } from "@/components/shell/Header";
+import { RealtimeWake } from "@/components/shell/RealtimeWake";
 import { VisitBeacon } from "@/components/shell/VisitBeacon";
 import { ToastManager } from "@/components/ui/notify";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -120,6 +121,8 @@ export default async function LocaleLayout({
             </div>
             {/* Inside the intl provider: it reads the locale and the pathname. */}
             {env.ONLINE ? <VisitBeacon /> : null}
+            {/* Starts a sleeping realtime server on arrival, not on "play online". */}
+            {env.MULTI ? <RealtimeWake healthUrl={env.REALTIME_HEALTH_URL} /> : null}
             {/* Inside it too: a toast's window buttons are translated. */}
             <ToastManager />
           </TooltipProvider>

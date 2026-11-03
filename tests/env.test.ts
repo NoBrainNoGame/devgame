@@ -82,4 +82,11 @@ describe("environment: multiplayer", () => {
       "ws://localhost:4000/realtime/ws",
     );
   });
+
+  test("the wake-up ping goes to the realtime server's health check, over http(s)", () => {
+    expect(parseEnvironment({}).REALTIME_HEALTH_URL).toBe("http://localhost:3200/realtime/health");
+    expect(parseEnvironment({ REALTIME_URL: "https://rt.example" }).REALTIME_HEALTH_URL).toBe(
+      "https://rt.example/realtime/health",
+    );
+  });
 });

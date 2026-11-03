@@ -118,7 +118,20 @@ const schema = z
     MULTI: value.ONLINE && value.REALTIME_ENABLED,
     /** Where a browser opens its WebSocket. */
     REALTIME_WS_URL: realtimeSocketUrl(value.REALTIME_URL, value.APP_URL, value.REALTIME_PORT),
+  }))
+  .transform((value) => ({
+    ...value,
+    /** What a browser pings to wake the realtime server before anyone plays. */
+    REALTIME_HEALTH_URL: realtimeHealthUrl(value.REALTIME_WS_URL),
   }));
+
+/** The realtime server's health check, at the same host as its WebSocket. */
+function realtimeHealthUrl(socketUrl: string): string {
+  const url = new URL(socketUrl);
+  url.protocol = url.protocol === "wss:" ? "https:" : "http:";
+  url.pathname = "/realtime/health";
+  return url.toString();
+}
 
 /**
  * The WebSocket address of the realtime server: the configured one, else the

@@ -6,8 +6,11 @@ const nextConfig: NextConfig = {
    * The production image is built from `.next/standalone` — see the Dockerfile
    * and docs/hosting.md. Removing this produces an image that boots and then
    * 404s on every asset.
+   *
+   * Not on Vercel: it traces and packages the functions itself, and a
+   * standalone build there fails looking for `.next/next-server.js.nft.json`.
    */
-  output: "standalone",
+  output: process.env.VERCEL ? undefined : "standalone",
 
   /**
    * Booyah ships ESM whose relative imports have no file extension and whose
