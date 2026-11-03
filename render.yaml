@@ -10,7 +10,7 @@ services:
     runtime: docker
     plan: free
     region: frankfurt
-    branch: multiplayer
+    branch: main
     dockerfilePath: ./deploy/render/realtime.Dockerfile
     dockerContext: .
     healthCheckPath: /realtime/health
